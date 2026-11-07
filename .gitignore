@@ -1,0 +1,31 @@
+# Secretos (nunca al repo)
+.indec_token*
+indec_token.txt
+.env
+.env.*
+!.env.example
+
+# Generados por el pipeline (se rearman con python pipeline/obtener_datos.py)
+DatosArgentina.html
+datos/datos.js
+datos/mensual.csv
+
+# datos/cache/ SÍ se versiona: es el respaldo cuando una fuente oficial se cae.
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Node (para cuando haya frontend nuevo)
+node_modules/
+.next/
+dist/
+
+# Claude: preferencias personales
+CLAUDE.local.md
+.claude/settings.local.json
+
+# Sistema
+Thumbs.db
+.DS_Store

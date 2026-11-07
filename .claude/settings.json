@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python pipeline/obtener_datos.py --solo-pagina)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)"
+    ],
+    "ask": [
+      "Bash(git push*)"
+    ],
+    "deny": [
+      "Read(./.indec_token*)",
+      "Read(./indec_token.txt)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./DatosArgentina.html)",
+      "Read(./datos/datos.js)",
+      "Read(./datos/cache/**)"
+    ]
+  }
+}
