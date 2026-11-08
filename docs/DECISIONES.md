@@ -38,3 +38,26 @@ Una entrada por decisión de arquitectura. Formato: contexto, decisión, por qu�
 - El dominio propio queda para más adelante (probablemente `.com.ar` en NIC Argentina); cambiarlo después no rompe nada si las URLs internas son relativas.
 
 **Estado**: decidido. Se revisa si cambian ingresos, tráfico o presupuesto.
+
+## D-002 · Nombre del sitio: Duelo de Datos — DECIDIDO (2026-11-08)
+
+**Contexto**: "DatosArgentina" describe de dónde salen los datos, pero no lo que hace distinto al sitio: la comunidad elige qué datos importan y otros les responden con otros datos, y gana el más votado.
+
+**Decisión**: el sitio se llama **Duelo de Datos**. La bajada aclara el país, por ejemplo "Datos de Argentina, en debate". "Argentina" no va en el nombre: el contexto lo dan el dominio `.com.ar` y los títulos de cada página ("Salario real en Argentina"), que pesan más en Google que el nombre del sitio.
+
+**Por qué**
+- Dice lo que hace: un dato contra otro.
+- Suena a debate y no a pelea, a diferencia de "Guerra de Datos", y encaja con un sitio con moderación.
+- Al 2026-11-08 están libres `duelodedatos.com.ar`, `duelodedatos.ar` y `duelodedatos.com` (consulta RDAP a NIC Argentina y Verisign; confirmar al comprar).
+
+**Descartados**
+- **Dato Mata Relato**: `datomatarelato.com.ar` está registrado desde 2026-05 y redirige a **DatoPuro** (datopuro.com.ar), un sitio casi igual al nuestro (datos oficiales que se actualizan solos, comparados por presidente). También están ocupados `.com` y `.ar`. Además, la frase está asociada a un lado político.
+- **Guerra de Datos**: demasiado agresivo.
+- **Batalla de Datos**, **Contradato**: buenas opciones, con dominios libres; quedan como alternativas.
+
+**Competencia a tener en cuenta**: DatoPuro cubre los mismos datos y el ranking por presidente, pero no tiene comunidad ni debate. La diferencia de Duelo de Datos está en la parte social.
+
+**Pendiente**
+- Comprar `duelodedatos.com.ar` (y, si se puede, `.ar` y `.com` para que nadie los use). Es un cambio respecto de D-001, que dejaba el dominio para más adelante; el costo es bajo.
+- Reservar el usuario en X e Instagram (no verificado).
+- Renombrar en el código y en los docs, como tarea aparte: repo de GitHub (`datos-argentina` → `duelo-de-datos`, GitHub redirige el nombre viejo), `DatosArgentina.html` y su generación en `pipeline/obtener_datos.py`, título y encabezado de `src/index.html`, `src/app.js`, `pipeline/catalogo.py`, `README.md`, `CLAUDE.md`, `.claude/settings.json` y la skill `nueva-serie`. El nombre del proyecto en Cloudflare conviene que ya sea `duelo-de-datos`.
