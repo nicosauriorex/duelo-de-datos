@@ -9,6 +9,8 @@ indec_token.txt
 DueloDeDatos.html
 datos/datos.js
 datos/mensual.csv
+web/public/datos/
+web/out/
 
 # datos/cache/ SÍ se versiona: es el respaldo cuando una fuente oficial se cae.
 

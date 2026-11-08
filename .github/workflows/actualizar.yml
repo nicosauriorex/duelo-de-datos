@@ -4,9 +4,10 @@ on:
   schedule:
     - cron: "0 0 * * *" # 21:00 en Argentina
   push:
-    branches: [main]
+    branches: [main, migracion-nextjs]
     paths:
       - "src/**"
+      - "web/**"
       - "pipeline/**"
       - "requirements.txt"
       - ".github/workflows/actualizar.yml"
@@ -38,6 +39,12 @@ jobs:
 
       - run: pip install -r requirements.txt
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
       - name: Bajar datos y armar la página
         env:
           INDEC_TOKEN: ${{ secrets.INDEC_TOKEN }}
@@ -68,6 +75,8 @@ jobs:
           python pipeline/verificar_series.py $ARGS
 
       - name: Commitear datos
+        # Solo en main: en la rama de migración no se toca el caché versionado.
+        if: github.ref == 'refs/heads/main'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -99,9 +108,29 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages project create duelo-de-datos --production-branch=main
 
-      - name: Publicar en Cloudflare Pages
+      - name: Publicar el sitio viejo en Cloudflare Pages (producción)
+        # Hasta el corte, el sitio principal sigue siendo el HTML generado. Al cortar se invierte con el preview.
+        if: github.ref == 'refs/heads/main'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy publicar --project-name=duelo-de-datos --branch=main
+
+      - name: Compilar el sitio nuevo (Next.js)
+        # Va después de publicar el sitio viejo: si falla, no frena la actualización diaria.
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
+          {
+            echo "- Sitio nuevo (preview): $(du -sh out | cut -f1) en web/out"
+            echo "- Preview: https://nextjs.duelo-de-datos.pages.dev"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publicar el sitio nuevo como preview
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy web/out --project-name=duelo-de-datos --branch=nextjs
