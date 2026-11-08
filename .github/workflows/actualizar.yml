@@ -1,0 +1,107 @@
+name: Actualizar datos y publicar
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # 21:00 en Argentina
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "pipeline/**"
+      - "requirements.txt"
+      - ".github/workflows/actualizar.yml"
+  workflow_dispatch:
+    inputs:
+      aceptar_menos_series:
+        description: "Aceptar menos series"
+        type: boolean
+        default: false
+
+concurrency:
+  group: actualizar-datos
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Bajar datos y armar la página
+        env:
+          INDEC_TOKEN: ${{ secrets.INDEC_TOKEN }}
+        shell: bash # con pipefail: si el pipeline falla, el paso falla
+        run: python pipeline/obtener_datos.py 2>&1 | tee pipeline.log
+
+      - name: Resumen de fuentes
+        # Corre aunque el pipeline falle, para ver el log en el resumen. Lo que sigue no corre.
+        if: always() && hashFiles('pipeline.log') != ''
+        run: |
+          {
+            echo "## Actualización de datos"
+            echo
+            echo "### Fuentes con problemas"
+            if grep -iE "uso cache|error|no disponible|Sin INDEC_TOKEN" pipeline.log > problemas.log; then
+              echo '```'; cat problemas.log; echo '```'
+            else
+              echo "Todas las fuentes respondieron"
+            fi
+            echo
+            grep -m1 "Fuente de precios e IPC:" pipeline.log | sed 's/^/- /' || true
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verificar series
+        run: |
+          ARGS=""
+          if [ "${{ inputs.aceptar_menos_series }}" = "true" ]; then ARGS="--aceptar-menos"; fi
+          python pipeline/verificar_series.py $ARGS
+
+      - name: Commitear datos
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add datos/cache datos/series_esperadas.txt
+          if git diff --cached --quiet; then
+            echo "Sin cambios en los datos."
+          else
+            FECHA=$(TZ=America/Argentina/Buenos_Aires date +%F)
+            git commit -m "Actualizar datos $FECHA"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+
+      - name: Armar carpeta a publicar
+        run: |
+          mkdir -p publicar
+          cp DatosArgentina.html publicar/index.html
+          TAM=$(du -h publicar/index.html | cut -f1)
+          {
+            echo "- Tamaño de la página: $TAM"
+            echo "- Sitio: https://duelo-de-datos.pages.dev"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Crear proyecto de Cloudflare si no existe
+        uses: cloudflare/wrangler-action@v3
+        continue-on-error: true
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages project create duelo-de-datos --production-branch=main
+
+      - name: Publicar en Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy publicar --project-name=duelo-de-datos --branch=main
