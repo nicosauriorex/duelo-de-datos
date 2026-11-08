@@ -28,6 +28,7 @@ Todo en español: código, comentarios, nombres de variables, commits y textos d
 - Ideas sueltas del usuario: `docs/IDEAS.md`. No implementarlas sin que se pida.
   - Al bajar una idea a spec: marcarla con `→ spec: docs/specs/<nombre>.md`.
   - Al terminar de implementar y verificar: tachar la idea con la fecha (`~~idea~~ ✅ AAAA-MM-DD`), pasarla a la sección "Hecho" al final y poner `Estado: implementada (fecha)` en la spec. No borrar.
+  - Llevar el estado de cada bloque en la tabla "Próximos bloques" de `docs/ROADMAP.md` (spec lista / hecho). "¿Qué sigue?" = el primer bloque no hecho de esa tabla.
 - Detalle de modelos/agentes/flujo: `docs/COMO-TRABAJAMOS.md` (para el usuario; no hace falta leerlo en cada tarea).
 
 # Compact instructions

@@ -1,18 +1,32 @@
 # Hoja de ruta
 
-Orden propuesto. Cada fase se divide en specs chicas (`docs/specs/`), y cada spec se implementa en su propia sesión.
+Cómo se trabaja: idea en `docs/IDEAS.md` → spec en `docs/specs/` (sesión de specs) → implementación en una sesión nueva → se tacha la idea. Cuando alguien pregunta "¿qué sigue?", se toma el primer bloque de la tabla de abajo que no esté hecho.
 
-| Fase | Qué | Necesita backend | Estado |
-|---|---|---|---|
-| 0 | Ordenar proyecto, git, config de Claude | No | Hecho (2026-11-07) |
-| 1 | Stack decidido (D-001); subir a GitHub, publicar la página actual en Cloudflare, pipeline automático diario (ver detalle abajo) | No | Hecho (2026-11-08) |
-| 2 | Migrar el frontend al stack elegido sin perder funciones; arreglar el filtro de fecha de Histórico | No | Hecho (2026-11-08), con dominio propio https://primerolosdatos.com.ar |
-| 3 | Precios medidos en salarios; ranking de presidentes (son solo cálculos sobre datos que ya hay) | No | Pendiente |
-| 4 | Cuentas (anónimas) + botón Compartir (imagen descargable + texto) | Sí | Pendiente |
-| 5 | Comunidad: posts, votos, comentarios, respuestas con dato, moderación, rankings | Sí | Pendiente |
-| 6 | Novedades + calendario de publicaciones + predicciones | Sí | Pendiente |
+## Hecho
 
-La fase 3 no depende de la 4 y puede ir antes o en paralelo: suma contenido sin sumar complejidad.
+| Fase | Qué | Estado |
+|---|---|---|
+| 0 | Ordenar proyecto, git, config de Claude | Hecho (2026-11-07) |
+| 1 | Stack decidido (D-001); subir a GitHub, publicar en Cloudflare, pipeline automático diario (ver detalle abajo) | Hecho (2026-11-08) |
+| 2 | Migrar el frontend a Next.js sin perder funciones | Hecho (2026-11-08), con dominio propio https://primerolosdatos.com.ar |
+
+## Próximos bloques, en orden (2026-11-08)
+
+Del 1 al 5 no necesitan backend ni datos nuevos: se pueden ir publicando de a uno. El cambio de diseño visual va después del 5, cuando ya esté clara la estructura de la página.
+
+| # | Bloque | Ideas (secciones de IDEAS.md) | Backend | Estado |
+|---|---|---|---|---|
+| 1 | Histórico en el celular | Histórico: celular y gráficos | No | Hecho (2026-11-08) — [spec](specs/historico-celular.md) |
+| 2 | Medidas y opciones más simples | Histórico: medidas y opciones (las primeras seis) | No | Spec lista, falta implementar — [spec](specs/medidas-y-opciones.md) |
+| 3 | Configuración global | Presidentes y mandato: inicio de mandato por presidente (T±N), preferencias guardadas en el navegador, afecta a todas las secciones | No | Sin spec |
+| 4 | Plantillas y vistas | Plantillas con buscador por palabra, hasta 4 gráficos por vista, "Otros gráficos interesantes", Curiosidades pasa a plantillas, precios medidos en salarios | No | Sin spec |
+| 5 | Inicio y búsqueda guiada | Inicio y búsqueda guiada: página de inicio, elegir tema → principales → subgrupos, página por tema, oración guiada | No | Sin spec |
+| 6 | Contexto de cada presidente | Contexto para juzgar a un presidente; Ranking de presidentes y curiosidades; Elecciones (voto estimado); vista de un presidente con variables elegidas; animación del mandato | No (datos nuevos: FMI, otros países, consumo de carne) | Sin spec |
+| 7 | Compartir y responder en redes | Compartir gráficos; Responder y verificar afirmaciones (etapa 1: "mejor dato desde X" + imagen) | No para la etapa 1 | Sin spec |
+| 8 | Cuentas y comunidad | Comunidad: posts, votos, comentarios, ratios, rankings, moderación | Sí | Sin spec |
+| 9 | Novedades, calendario y predicciones | Novedades, calendario y predicciones | Sí | Sin spec |
+
+El bloque 7 puede adelantarse si la prioridad pasa a ser que el sitio circule en redes.
 
 ## Fase 1 en detalle
 
