@@ -20,4 +20,10 @@ Argumento: la idea (o el nombre de una entrada de docs/IDEAS.md).
    - **Fuera de alcance**
    - **Cómo se verifica** (comandos, pantallas a revisar)
 5. Si salió una decisión de arquitectura, agregarla a `docs/DECISIONES.md`.
-6. Cerrar diciendo: "Spec lista. Para implementar, abrí una sesión nueva y pedí: implementá docs/specs/<nombre>.md".
+6. Commitear la spec (y los docs tocados) si el usuario lo aprueba.
+7. Ofrecer abrir la sesión que la implementa, para que el usuario solo tenga que aceptar:
+   - Usar la herramienta para abrir sesiones (`start_session`), como propuesta que el usuario acepta con un botón.
+   - Contexto **fresh**, no fork: la spec tiene todo lo necesario y arrastrar la entrevista encarece cada mensaje.
+   - Modelo según `docs/COMO-TRABAJAMOS.md`: Sonnet 5.5 para una spec clara; Opus 5.5 si toca seguridad, permisos o datos de usuarios.
+   - Pedido: "Implementá docs/specs/<nombre>.md siguiendo CLAUDE.md (verificar, revisor, después ofrecer commit)".
+   - Si esa herramienta no está disponible, cerrar diciendo: "Spec lista. Para implementar, abrí una sesión nueva y pedí: implementá docs/specs/<nombre>.md".

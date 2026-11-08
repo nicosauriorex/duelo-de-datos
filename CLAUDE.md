@@ -18,6 +18,11 @@ Todo en español: código, comentarios, nombres de variables, commits y textos d
 
 # Cómo trabajamos
 - Features nuevas: primero spec en `docs/specs/<nombre>.md` (skill `/spec`), después implementar en sesión limpia.
+- Al terminar de implementar una spec, sin esperar a que el usuario lo pida:
+  1. Correr la verificación de la sección "Cómo se verifica" que se pueda hacer localmente.
+  2. Correr el agente `revisor` contra la spec, corregir lo que marque y volver a correrlo hasta que no queden problemas.
+  3. Recién ahí ofrecer el commit y el push, con un resumen de lo que dijo el revisor.
+  4. Si la spec incluye un workflow de GitHub Actions: después del push, dispararlo con `gh workflow run`, seguirlo con `gh run watch` y reportar si terminó en verde (y el link del sitio si publica). Si falla, mostrar el error y proponer el arreglo.
 - Decisiones de arquitectura: registrarlas en `docs/DECISIONES.md`.
 - Ideas sueltas del usuario: `docs/IDEAS.md`. No implementarlas sin que se pida.
 - Detalle de modelos/agentes/flujo: `docs/COMO-TRABAJAMOS.md` (para el usuario; no hace falta leerlo en cada tarea).
