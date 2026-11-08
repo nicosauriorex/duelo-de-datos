@@ -1,18 +1,19 @@
 # Duelo de Datos
 
 Página de datos económicos de Argentina (precios, salarios, dólar, actividad, pobreza, fiscal, externo) con fuentes oficiales.
-Hoy: pipeline Python que baja series y genera una página HTML estática. Próximo: sitio público con usuarios, comentarios y votos (ver docs/ROADMAP.md).
+Hoy: pipeline Python que baja series y las escribe como JSON; sitio Next.js (export estático) en `web/`. Próximo: sitio público con usuarios, comentarios y votos (ver docs/ROADMAP.md).
 
 Todo en español: código, comentarios, nombres de variables, commits y textos de la UI. Números en formato es-AR.
 
 # Comandos
 - Bajar todo y armar la página: `python pipeline/obtener_datos.py` (tarda, usa red)
-- Solo recompilar la página tras tocar `src/` (sin red): `python pipeline/obtener_datos.py --solo-pagina`
+- Regenerar solo los JSON de la web (sin red, desde `datos/cache/compilado.json`): `python pipeline/obtener_datos.py --solo-json`
+- Sitio: `cd web && npm ci && npm run build` (genera `web/out/`); `npm run tipos` para `tsc --noEmit`
 - Python 3.14 + pandas. No hay tests todavía; la verificación es que el comando de arriba termine sin error y la página abra bien.
 
 # Estructura que no se deduce sola
-- `DueloDeDatos.html` y `datos/datos.js` son GENERADOS: nunca editarlos ni leerlos enteros (pesan >1 MB). Se edita `src/` y se recompila.
-- `src/index.html` tiene marcadores `/*ESTILOS*/`, `/*DATOS*/`, `/*APP*/` que reemplaza `compilar_pagina()`.
+- `web/public/datos/` es GENERADO por el pipeline (no versionado): nunca editarlo. `datos/cache/compilado.json` también es generado (respaldo para `--solo-json`): no leerlo entero.
+- El frontend vive en `web/`: cálculos en `web/lib/` (una sola fuente de verdad), una sección por ruta en `web/components/secciones/`, estado de filtros en la URL (`web/lib/url.ts`).
 - `datos/cache/` es el respaldo de cada fuente: si una API falla se usa la última copia. Se versiona en git, no borrar.
 - El formato de cada serie (`id, n, cat, tipo, u, dir...`) está documentado al principio de `pipeline/catalogo.py`.
 

@@ -1,7 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python pipeline/obtener_datos.py --solo-pagina)",
+      "Bash(python pipeline/obtener_datos.py --solo-json)",
       "Bash(git status*)",
       "Bash(git diff*)",
       "Bash(git log*)"
@@ -14,8 +14,6 @@
       "Read(./indec_token.txt)",
       "Read(./.env)",
       "Read(./.env.*)",
-      "Read(./DueloDeDatos.html)",
-      "Read(./datos/datos.js)",
       "Read(./datos/cache/**)"
     ]
   }

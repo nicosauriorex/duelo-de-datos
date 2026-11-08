@@ -6,9 +6,9 @@ indec_token.txt
 !.env.example
 
 # Generados por el pipeline (se rearman con python pipeline/obtener_datos.py)
-DueloDeDatos.html
-datos/datos.js
 datos/mensual.csv
+web/public/datos/
+web/out/
 
 # datos/cache/ SÍ se versiona: es el respaldo cuando una fuente oficial se cae.
 
@@ -17,7 +17,7 @@ __pycache__/
 *.pyc
 .venv/
 
-# Node (para cuando haya frontend nuevo)
+# Node (web/)
 node_modules/
 .next/
 dist/

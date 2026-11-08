@@ -42,10 +42,10 @@ button { font: inherit; }
   border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
 nav.tabs { display: flex; gap: 2px; flex: 1 1 auto; min-width: 0; overflow-x: auto; scrollbar-width: none; }
 #periodo_btn { white-space: nowrap; max-width: 46vw; overflow: hidden; text-overflow: ellipsis; }
-nav.tabs button { border: 0; background: none; padding: 10px 12px; font-size: 14px; color: var(--text-secondary); cursor: pointer; white-space: nowrap;
+nav.tabs a { border: 0; background: none; padding: 10px 12px; font-size: 14px; color: var(--text-secondary); cursor: pointer; white-space: nowrap;
   border-bottom: 2px solid transparent; margin-bottom: -1px; }
-nav.tabs button[aria-selected="true"] { color: var(--text-primary); border-bottom-color: var(--text-primary); font-weight: 600; }
-section[hidden] { display: none; }
+nav.tabs a[aria-current="page"] { color: var(--text-primary); border-bottom-color: var(--text-primary); font-weight: 600; }
+nav.tabs a { text-decoration: none; display: inline-block; }
 
 /* Controles */
 .controls { display: flex; gap: 6px 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
@@ -65,13 +65,6 @@ select, .btn, input[type=search], input[type=month] { font: inherit; font-size: 
   border-radius: 10px; background: var(--surface-1); margin-bottom: 8px; }
 input[type=range] { accent-color: var(--text-primary); width: 220px; max-width: 100%; }
 
-/* Popover */
-.pop-wrap { position: relative; display: inline-block; }
-.pop { position: absolute; z-index: 40; top: calc(100% + 6px); right: 0; background: var(--surface-1); border: 1px solid var(--border);
-  border-radius: 12px; box-shadow: var(--shadow); padding: 12px; width: min(560px, calc(100vw - 32px)); }
-.pop.izq { left: 0; right: auto; }
-.pop[hidden] { display: none; }
-.pop .controls:last-child { margin-bottom: 0; }
 
 /* Modal del selector de variables */
 .modal-fondo { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 50; display: flex; align-items: flex-start; justify-content: center; padding: 6vh 16px; }
@@ -195,6 +188,28 @@ tr.clic { cursor: pointer; } tr.clic:hover td { background: var(--surface-0); }
 .disp .d { font-size: 11px; color: var(--text-muted); }
 .disp svg { width: 100%; height: auto; display: block; margin: 4px 0; }
 .disp svg text { fill: var(--text-muted); }
-.barra { display: inline-block; height: 6px; width: 48px; border-radius: 3px; margin-right: 6px; vertical-align: middle;
+.barrita { display: inline-block; height: 6px; width: 48px; border-radius: 3px; margin-right: 6px; vertical-align: middle;
   background: linear-gradient(90deg, var(--text-secondary) var(--w), var(--grid) var(--w)); }
 .btn.on { background: var(--text-primary); color: var(--surface-1); }
+
+/* Desplegables: se abren debajo del botón y empujan el contenido (no flotan) */
+.desplegable { display: inline-block; vertical-align: top; }
+.desplegable .panel { margin-top: 6px; background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; padding: 12px; width: min(560px, calc(100vw - 32px)); }
+.desplegable .panel .controls:last-child { margin-bottom: 0; }
+.filtros { margin: 0 0 12px; }
+.filtros .desplegable { display: block; }
+.filtros .desplegable .panel { width: 100%; max-width: 720px; }
+@media (max-width: 640px) { .desplegable, .desplegable .panel { display: block; width: 100%; } .btn.drop { width: 100%; justify-content: space-between; } }
+/* Gráfico uPlot */
+.grafico { position: relative; width: 100%; }
+.grafico .u-wrap { max-width: 100%; }
+.grafico .tip { display: none; position: absolute; }
+.ayuda-zoom { text-align: right; margin: 0 0 6px; }
+.aviso-js { background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; margin: 16px 0; }
+.error { color: var(--neg); font-size: 13px; }
+.skip { position: absolute; left: -999px; } .skip:focus { left: 8px; top: 8px; z-index: 100; background: var(--surface-1); padding: 6px 10px; }
+a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, [role=button]:focus-visible { outline: 2px solid var(--series-1); outline-offset: 2px; }
+
+a.curio { display: block; text-decoration: none; }
+td.nombre a { color: inherit; text-decoration: none; }
+td.nombre a:hover { text-decoration: underline; }

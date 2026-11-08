@@ -19,5 +19,5 @@ description: Agregar una serie de datos nueva al catálogo (bajarla, cachearla, 
    - `dir`: 1 si subir es bueno, -1 si es malo, 0 neutro.
    - `desc`: una o dos frases para un lector común.
 4. **Correr** `python pipeline/obtener_datos.py` (con red). Confirmar en la salida que el total de series subió y que no hubo error de la fuente nueva.
-5. **Verificar en la página**: abrir `DueloDeDatos.html`, buscar la serie en Histórico, comprobar últimos valores contra la fuente original (dos o tres meses).
+5. **Verificar en la página**: correr `python pipeline/obtener_datos.py --solo-json`, `cd web && npm run build` y servir `web/out/` (o usar el preview); buscar la serie en Histórico, comprobar últimos valores contra la fuente original (dos o tres meses).
 6. Reportar: id, fuente, rango de fechas, último valor y mes.

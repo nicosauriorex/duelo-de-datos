@@ -70,4 +70,4 @@ Una entrada por decisión de arquitectura. Formato: contexto, decisión, por qu�
 
 **Por qué**: evita los límites de CPU del plan gratis y la complejidad del adaptador sin ganar nada visible; migrar de export estático a OpenNext después es un cambio de configuración, no de código de las páginas.
 
-**Estado**: decidido. Spec: `docs/specs/migracion-nextjs.md`.
+**Estado**: implementado y publicado (corte hecho 2026-11-08). Spec: `docs/specs/migracion-nextjs.md`.

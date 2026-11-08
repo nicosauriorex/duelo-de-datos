@@ -12,6 +12,17 @@ tipo:
   "fx"   precio del dólar en pesos
   "none" tasa, porcentaje, índice de cantidades, puntos básicos, personas (se muestra tal cual)
 dir: 1 = que suba es bueno, -1 = que suba es malo, 0 = neutro.
+
+Salida para la web nueva (web/public/datos/, la escribe obtener_datos.escribir_json_web):
+  catalogo.json  {"version", "fechas": ["1990-01", ...], "series": [metadatos + "archivo"]}
+                 metadatos = id, n, cat, tipo, u, dir, fuente, desc (+ agg, flujo = 1 si corresponde);
+                 "archivo" dice en qué JSON están los valores; "version" cambia con cada dato nuevo
+                 y la web la agrega a cada pedido (?v=) para no mezclar cachés.
+  <categoria>.json  uno por cat[0] (nombre pasado por slug): {id: {"i0", "v", "min"?, "max"?}}
+                 i0 = índice del primer mes en "fechas"; v = valores desde i0 (null = hueco);
+                 min/max = {"i0", "v"} con el mínimo/máximo diario del mes.
+  base.json      las series transversales que usan todas las secciones (IPC, CPI EEUU, dólares,
+                 población, PIB anual): ver IDS_BASE en obtener_datos.py. Se carga siempre.
 """
 import json
 import re

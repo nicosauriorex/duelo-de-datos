@@ -13,6 +13,7 @@ Fuentes:
   https://api.indec.gob.ar/v1/ipc_nacional (requiere registro en api.indec.gob.ar).
   Los salarios siguen saliendo de datos.gob.ar (la API de INDEC solo tiene el índice de salarios).
 """
+import hashlib
 import io
 import json
 import os
@@ -203,25 +204,44 @@ def main():
                                      pr[c].reindex(idx), -1, "INDEC, sh_ipc_precios_promedio.xls", f"Precio promedio del kg de {c.lower()} en GBA."))
     datos = catalogo.a_json(series, idx)
     print(f"Catálogo: {len(datos['series'])} series en total")
-    js = "window.DATOS = " + json.dumps(datos, ensure_ascii=False, separators=(",", ":")) + ";"
-    (OUT / "datos.js").write_text(js, encoding="utf-8")
-    compilar_pagina(js)
+    # Copia compilada: respaldo versionado para regenerar los JSON de la web sin red (--solo-json)
+    (OUT / "cache" / "compilado.json").write_text(json.dumps(datos, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    escribir_json_web(datos)
 
 
-def compilar_pagina(datos_js):
-    """Une src/index.html + src/estilos.css + src/app.js + datos en un único DueloDeDatos.html."""
-    base = RAIZ
-    src = base / "src"
-    html = (src / "index.html").read_text(encoding="utf-8")
-    html = html.replace("/*ESTILOS*/", (src / "estilos.css").read_text(encoding="utf-8"))
-    html = html.replace("/*DATOS*/", datos_js.replace("</", "<\\/"))
-    html = html.replace("/*APP*/", (src / "app.js").read_text(encoding="utf-8"))
-    (base / "DueloDeDatos.html").write_text(html, encoding="utf-8")
-    print(f"Página: DueloDeDatos.html ({len(html) / 1e6:.1f} MB)")
+# Series transversales que usan los cálculos de todas las secciones (se cargan siempre).
+# Se completa al portar los cálculos de src/app.js (POB, PIB_AN, deflactores).
+IDS_BASE = {"ipc_empalme", "cpi_usa", "fx_oficial", "fx_blue", "fx_mep", "fx_ccl", "poblacion", "pib_nom_anual"}
+
+
+def escribir_json_web(datos):
+    """Escribe web/public/datos/: catalogo.json (metadatos + archivo de cada serie + fechas),
+    base.json (series transversales) y un <categoria>.json por cada cat[0]."""
+    destino = RAIZ / "web" / "public" / "datos"
+    destino.mkdir(parents=True, exist_ok=True)
+    for viejo in destino.glob("*.json"):
+        viejo.unlink()
+    grupos = {}
+    meta = []
+    for s in datos["series"]:
+        archivo = "base" if s["id"] in IDS_BASE else catalogo.slug(s["cat"][0])
+        valores = {k: s[k] for k in ("i0", "v", "min", "max") if k in s}
+        grupos.setdefault(archivo, {})[s["id"]] = valores
+        meta.append({**{k: v for k, v in s.items() if k not in valores}, "archivo": archivo})
+    h = hashlib.sha1()
+    for archivo, series in sorted(grupos.items()):
+        txt = json.dumps(series, ensure_ascii=False, separators=(",", ":"))
+        (destino / f"{archivo}.json").write_text(txt, encoding="utf-8")
+        h.update(txt.encode("utf-8"))
+    # "version" cambia con cada dato nuevo: la web la agrega a cada pedido para no mezclar cachés viejos y nuevos.
+    (destino / "catalogo.json").write_text(
+        json.dumps({"version": h.hexdigest()[:10], "fechas": datos["fechas"], "series": meta}, ensure_ascii=False, separators=(",", ":")),
+        encoding="utf-8")
+    print(f"JSON web: {len(grupos)} archivos de datos, {len(meta)} series en {destino}")
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "--solo-pagina":  # recompila sin volver a bajar datos
-        compilar_pagina((OUT / "datos.js").read_text(encoding="utf-8"))
+    if len(sys.argv) > 1 and sys.argv[1] == "--solo-json":  # regenera web/public/datos/ desde datos/cache/compilado.json, sin red
+        escribir_json_web(json.loads((OUT / "cache" / "compilado.json").read_text(encoding="utf-8")))
     else:
         sys.exit(main())
