@@ -39,6 +39,7 @@ Las primeras seis → spec: docs/specs/medidas-y-opciones.md (implementadas 2026
 ## Presidentes y mandato
 - "Inicio del mandato" pasa a ser **Configurar inicio del mandato**: T-1, T, T+N (también negativo) y **por presidente** (todos en T, Milei en T+1).
 - Preferencias guardadas por usuario; mejor una **configuración global** de la página que afecte a todas las secciones.
+  (Estas dos → spec: docs/specs/configuracion-global.md)
 - En la vista de un presidente con todas las variables: poder filtrar y elegir, por ejemplo, 5 variables de distintas categorías una debajo de otra.
 - Meses de mandato: **animación** que va dibujando la evolución desde el inicio al final, descargable como video.
 

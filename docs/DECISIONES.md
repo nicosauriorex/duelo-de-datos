@@ -85,3 +85,11 @@ Una entrada por decisión de arquitectura. Formato: contexto, decisión, por qu�
 **Pendiente**
 - ~~Registrar `primerolosdatos.com.ar` y conectarlo a Cloudflare Pages~~ — hecho 2026-11-08 (registrado en nic.ar, DNS en Cloudflare, dominio personalizado del proyecto `duelo-de-datos`). Las URLs del workflow y los docs ya apuntan a él.
 - Reservar los usuarios en X e Instagram.
+
+## D-005 · Preferencias en el navegador hasta que haya cuentas — DECIDIDO (2026-11-08)
+
+**Contexto**: la configuración global (inicio de mandato por presidente, dólar y medida preferidos, período, tema) tiene que recordarse entre visitas, pero todavía no hay cuentas ni backend (bloque 8).
+
+**Decisión**: se guarda en `localStorage` (`pld:config`, JSON versionado), leída y escrita desde un solo módulo (`web/lib/config.ts`). La URL siempre gana sobre lo guardado, así los links compartidos se ven igual para todos. Cuando haya cuentas, el mismo JSON se sincroniza con el usuario.
+
+**Consecuencias**: no se comparte entre dispositivos; en navegación privada se pierde al cerrar. Spec: `docs/specs/configuracion-global.md`.
