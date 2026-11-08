@@ -61,3 +61,13 @@ Una entrada por decisión de arquitectura. Formato: contexto, decisión, por qu�
 - Comprar `duelodedatos.com.ar` (y, si se puede, `.ar` y `.com` para que nadie los use). Es un cambio respecto de D-001, que dejaba el dominio para más adelante; el costo es bajo.
 - Reservar el usuario en X e Instagram (no verificado).
 - ~~Renombrar en el código y en los docs~~ — hecho 2026-11-07 (`DueloDeDatos.html`, título y encabezado, README, CLAUDE.md, settings, skill). Queda a decisión del usuario renombrar el repo de GitHub (`datos-argentina` → `duelo-de-datos`) y la carpeta local.
+
+## D-003 · Next.js como export estático en la fase 2 — DECIDIDO (2026-11-08)
+
+**Contexto**: D-001 eligió Next.js sobre Cloudflare con OpenNext. En la fase 2 el sitio es solo lectura de JSON, sin servidor.
+
+**Decisión**: en la fase 2 se usa `output: "export"` (HTML/JS estático) y se publica en Cloudflare Pages con `wrangler`, como hoy. El código vive en `web/`, junto a `pipeline/`. OpenNext/Workers se incorpora en la fase 4, cuando haya cuentas y comunidad.
+
+**Por qué**: evita los límites de CPU del plan gratis y la complejidad del adaptador sin ganar nada visible; migrar de export estático a OpenNext después es un cambio de configuración, no de código de las páginas.
+
+**Estado**: decidido. Spec: `docs/specs/migracion-nextjs.md`.
