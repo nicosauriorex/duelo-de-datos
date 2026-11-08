@@ -54,6 +54,11 @@ export function expandir(i0: number, v: (number | null)[], N: number): Vals {
   return a;
 }
 
+/** Medida por defecto de una serie (solo depende de su metadato: sirve sin tener los datos cargados). */
+export const medDefaultDe = (s: SerieMeta): string =>
+  s.tipo === "idx" && s.dir !== 1 && s.cat[0] === "Precios" ? "via"
+    : ({ ars: "real", idx: s.dir === 1 ? "real" : "corr", fx: "corr", usd: "corr" } as Record<string, string>)[s.tipo] || "asis";
+
 export function crearMotor(F: string[]) {
   const N = F.length;
   const SER: Record<string, Serie> = {};
@@ -164,9 +169,7 @@ export function crearMotor(F: string[]) {
     }
     return out.length ? out : [["asis", "Tal cual"]];
   }
-  const medDefault = (s: SerieMeta): string =>
-    s.tipo === "idx" && s.dir !== 1 && s.cat[0] === "Precios" ? "via"
-      : ({ ars: "real", idx: s.dir === 1 ? "real" : "corr", fx: "corr", usd: "corr" } as Record<string, string>)[s.tipo] || "asis";
+  const medDefault = medDefaultDe;
 
   /** Variación sobre `arr`: mensual (contra el dato anterior, hasta 3 meses atrás en series trimestrales), interanual o mensual promedio de 12 meses. */
   function variacion(arr: Vals, med: string): Vals {

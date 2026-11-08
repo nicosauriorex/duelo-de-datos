@@ -32,9 +32,9 @@ Notas del usuario, ordenadas por tema. No son specs: antes de implementar cualqu
 
 ## Histórico: medidas y opciones
 Las primeras seis → spec: docs/specs/medidas-y-opciones.md (implementadas 2026-11-08, ver "Hecho")
-- Hasta **4 gráficos** en la misma vista, cada uno con sus filtros, y compartir la vista entera.
-- Abajo, "Otros gráficos interesantes" (dólar, soja, brecha: cosas difíciles de armar con los filtros).
-- **Plantillas**: gráficos ya configurados con los datos de más interés (lo que hoy está en Curiosidades), con **buscador por palabra** (ej. "asado"). Darle importancia: muchas plantillas, mejor que sobren.
+- ~~Hasta **4 gráficos** en la misma vista, cada uno con sus filtros, y compartir la vista entera.~~ ✅ 2026-11-08
+- ~~Abajo, "Otros gráficos interesantes" (dólar, soja, brecha: cosas difíciles de armar con los filtros).~~ ✅ 2026-11-08
+- ~~**Plantillas**~~ ✅ 2026-11-08: gráficos ya configurados con los datos de más interés (lo que hoy está en Curiosidades), con **buscador por palabra** (ej. "asado"). Darle importancia: muchas plantillas, mejor que sobren.
   (Estas tres → spec: docs/specs/plantillas-y-vistas.md. También: compartir plantillas propias por link.)
 
 ## Presidentes y mandato
@@ -133,3 +133,6 @@ Uso central: alguien escribe en redes "Milei fundió la economía" y otra person
 ### Configuración global (implementado, spec configuracion-global)
 - ~~Configurar inicio del mandato (T-1, T, T+N, por presidente).~~ ✅ 2026-11-08
 - ~~Configuración global guardada en el navegador.~~ ✅ 2026-11-08
+
+### Plantillas y vistas (implementado, spec plantillas-y-vistas)
+- ~~Hasta 4 gráficos por vista, Otros gráficos interesantes, Plantillas con buscador, plantillas propias y compartir por link.~~ ✅ 2026-11-08

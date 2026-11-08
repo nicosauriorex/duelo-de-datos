@@ -1,5 +1,7 @@
 # Plantillas y vistas
 
+Estado: implementada (2026-11-08)
+
 ## Objetivo
 Que encontrar un gráfico interesante sea tan fácil como escribir "asado". Una sección nueva, **Plantillas**, junta cientos de gráficos ya armados (curados a mano y generados solos) con un buscador por palabra. Histórico pasa a admitir hasta 4 gráficos en la misma vista, y cualquiera puede guardar sus vistas como plantillas propias y compartirlas por link.
 

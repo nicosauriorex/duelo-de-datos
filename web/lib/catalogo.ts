@@ -1,6 +1,6 @@
 // Catálogo: orden de categorías, búsqueda con sinónimos, indicadores de Curiosidades.
 import { norm } from "./formato";
-import type { Expr, Motor, Serie } from "./motor";
+import { medDefaultDe, type Expr, type Motor, type Serie, type SerieMeta } from "./motor";
 
 export const ORDEN_RAIZ = ["Salarios", "Precios", "Dólar y tipo de cambio", "Mercados", "Tasas de interés", "Dinero y bancos (BCRA)",
   "Actividad", "Empleo, pobreza e ingresos", "Sector externo", "Fiscal", "Opinión pública (UTDT)"];
@@ -38,9 +38,11 @@ export function medidaPara(s: Serie, med: string): string {
 
 export interface Indic extends Expr { grupo: string; nombre: string }
 
-export function crearIndicadores(m: Motor) {
+/** Indicadores principales. Funciona con los metadatos del catálogo (no hace falta tener los datos cargados). */
+export function crearIndicadores(m: Motor) { return crearIndicadoresDe(m.SER); }
+export function crearIndicadoresDe(SER: Record<string, SerieMeta>) {
   const X = (id: string, grupo: string, nombre?: string, extra: Partial<Expr> = {}): Indic | null =>
-    m.SER[id] ? { id, grupo, nombre: nombre || m.SER[id].n, med: extra.med || m.medDefault(m.SER[id]), rel: null, modo: "compra", esc: "", ...extra } : null;
+    SER[id] ? { id, grupo, nombre: nombre || SER[id].n, med: extra.med || medDefaultDe(SER[id]), rel: null, modo: "compra", esc: "", ...extra } : null;
   const INDIC = [
     X("sipa_med", "Salarios", "Salario SIPA mediana (real)"), X("sipa_prom", "Salarios", "Salario SIPA promedio (real)"), X("ripte", "Salarios", "RIPTE (real)"),
     X("dg_149_1_tl_indiios_octu_0_21", "Salarios", "Índice de salarios INDEC, total (real)", { med: "real" }),
@@ -68,7 +70,7 @@ export function crearIndicadores(m: Motor) {
     X("dg_379_9_resultado_017_18_38", "Fiscal", "Resultado financiero (% del PIB)", { esc: "pib" }),
     X("bcra_cuasifiscal", "Fiscal", "Déficit cuasifiscal (% del PIB)", { esc: "pib" }),
   ].filter(Boolean) as Indic[];
-  const series = Object.values(m.SER);
+  const series = Object.values(SER);
   const INDIC_IPC: Indic[] = series.filter((s) => s.cat[1] && s.cat[1].startsWith("IPC INDEC") && s.cat[2] === "Nacional" && s.cat.length === 4 && s.id !== "ipc_nacional")
     .map((s) => ({ id: s.id, grupo: "Precios del IPC (contra la inflación)", nombre: s.n.replace(/^IPC /, "").replace(" (Nacional)", "") + " (precio real)", med: "real", forzar: true, rel: null, esc: "" }));
   const INDIC_PP: Indic[] = series.filter((s) => s.id.startsWith("pp_gba_"))

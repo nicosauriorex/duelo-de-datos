@@ -1,6 +1,7 @@
 "use client";
-import { Fragment, useMemo, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useSeccion } from "../useSeccion";
+import { BarraPlantilla } from "./BarraPlantilla";
 import { Cargando, Desplegable, Selector, Seg, alternar } from "../ui";
 import { FilaVariable } from "../Variables";
 import { Grafico, hayDatos, type Fila, type Marca, type OpcionesG, type Ref, type SerieG } from "../Grafico";
@@ -23,21 +24,58 @@ const REFS_H = [
 const REFS_DEF = "ult,prom,med,mk_ult,mk_max,mk_min";
 const FIJOS_IDS = ["brecha_blue", "brecha_mep", "brecha_ccl", "soja_chi", "soja_ros", "soja_ratio_oficial", "soja_ratio_blue", "soja_ratio_mep", "soja_ratio_ccl", ...FX_KEYS.map((k) => "fx_" + k)];
 
+/** Parámetros de cada gráfico. El 1.º usa estos nombres; del 2.º al 4.º llevan el número al final (`v2`, `m2`… `t4`). */
+const PG = ["v", "m", "e", "bd", "ej", "r", "t"] as const;
+const MAX_GRAFICOS = 4;
+const sfx = (k: number) => (k === 0 ? "" : String(k + 1));
+
+type Comun = {
+  F: string[]; ult: string; desde: string; hasta: string; meses: Set<number>; freq: "M" | "T" | "A"; ag: "promedio" | "cierre";
+  br: Set<string>; fx: Set<string>; fxmed: "corr" | "real" | "realbi"; fxbanda: "no" | "si"; sojamed: "corr" | "usdr";
+  sojafx: (typeof FX_KEYS)[number]; dolarPref: Dolar; ratio: Set<string>;
+};
+type GEst = {
+  modo: "valor" | "b100"; exprs: Expr[]; todas: Expr[]; escala: "lin" | "log"; banda: "no" | "si"; eje: "propia" | "misma"; refs: Set<string>; tabla: "grafico" | "tabla";
+};
+type Estado = Comun & GEst;
+type SetFn = (c: Record<string, string | null | undefined>) => void;
+
+/** Lee un gráfico de la URL. `null` = ese gráfico no está en el link (el 1.º siempre existe: arranca con `def`). */
+function leerGrafico(p: URLSearchParams, k: number, existe: (id: string) => boolean, def: Expr): GEst | null {
+  const s = sfx(k);
+  let exprs = listaUrl(p.get("v" + s)).map((x) => decExpr(x, existe)).filter(Boolean) as Expr[];
+  if (!exprs.length) { if (k > 0) return null; exprs = [def]; }
+  const modo = unoDe(p.get("m" + s), ["valor", "b100"] as const, "valor");
+  return {
+    modo, exprs: modo === "b100" ? exprs.slice(0, 10) : exprs.slice(0, 2), todas: exprs,
+    escala: unoDe(p.get("e" + s), ["lin", "log"] as const, "lin"), banda: unoDe(p.get("bd" + s), ["no", "si"] as const, "no"), eje: unoDe(p.get("ej" + s), ["propia", "misma"] as const, "propia"),
+    refs: new Set(listaUrl(p.has("r" + s) ? p.get("r" + s) : REFS_DEF).filter((x) => [...REFS_H.map((r) => r.k), "mk_ult", "mk_max", "mk_min"].includes(x))),
+    tabla: unoDe(p.get("t" + s), ["grafico", "tabla"] as const, "grafico"),
+  };
+}
+
 export function Historico() {
   const [p, set, montado] = useParams();
   const base = useSeccion([]);
   const { config } = useConfig();
   const { listo, motor, metas, version } = base;
   const existe = (id: string) => metas.some((m) => m.id === id);
+  const [vacios, setVacios] = useState(0); // gráficos agregados que todavía no tienen variable (no están en la URL)
+
+  // Cualquier cambio del usuario hace que la vista deje de ser "la plantilla": se saca el encabezado.
+  const cambiar: SetFn = (c) => set({ ...c, pl: null, pn: null });
 
   // ------------------------------------------------------------ estado (todo viene de la URL)
-  const E = useMemo(() => {
+  const defExpr = useMemo((): Expr | null => {
+    if (!listo) return null;
+    const ex = (id: string) => metas.some((m) => m.id === id);
+    return ex("pp_gba_asado") && ex("sipa_prom") ? { id: "pp_gba_asado", med: "real", rel: "sipa_prom", modo: "compra", esc: "" } : { id: "sipa_prom", med: medidaPreferida(config), rel: null, modo: "compra", esc: "" };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listo, metas, config.medida, config.dolar]);
+
+  const E = useMemo((): Comun | null => {
     if (!listo || !motor || !montado) return null;
     const F = motor.F, ult = F[F.length - 1];
-    const def: Expr = existe("pp_gba_asado") && existe("sipa_prom") ? { id: "pp_gba_asado", med: "real", rel: "sipa_prom", modo: "compra", esc: "" } : { id: "sipa_prom", med: medidaPreferida(config), rel: null, modo: "compra", esc: "" };
-    let exprs = listaUrl(p.get("v")).map((s) => decExpr(s, existe)).filter(Boolean) as Expr[];
-    if (!exprs.length) exprs = [def];
-    const modo = unoDe(p.get("m"), ["valor", "b100"] as const, "valor");
     let desde = /^\d{4}-\d{2}$/.test(p.get("d") || "") ? (p.get("d") as string) : desdePreferido(config.desde, F);
     let hasta = /^\d{4}-\d{2}$/.test(p.get("h") || "") ? (p.get("h") as string) : ult;
     desde = desde < F[0] ? F[0] : desde > ult ? ult : desde;
@@ -45,76 +83,133 @@ export function Historico() {
     if (desde > hasta) desde = hasta; // rango inválido: se corrige al más cercano
     const ms = new Set(listaUrl(p.get("ms")).map(Number).filter((n) => n >= 1 && n <= 12));
     return {
-      F, ult, modo, exprs: modo === "b100" ? exprs.slice(0, 10) : exprs.slice(0, 2), todas: exprs, desde, hasta,
+      F, ult, desde, hasta,
       meses: ms.size ? ms : new Set(TODOS_MESES),
-      freq: unoDe(p.get("f"), ["M", "T", "A"] as const, "M"), ag: unoDe(p.get("ag"), ["promedio", "cierre"] as const, "promedio"), escala: unoDe(p.get("e"), ["lin", "log"] as const, "lin"),
-      banda: unoDe(p.get("bd"), ["no", "si"] as const, "no"), eje: unoDe(p.get("ej"), ["propia", "misma"] as const, "propia"),
-      refs: new Set(listaUrl(p.has("r") ? p.get("r") : REFS_DEF).filter((k) => [...REFS_H.map((r) => r.k), "mk_ult", "mk_max", "mk_min"].includes(k))),
+      freq: unoDe(p.get("f"), ["M", "T", "A"] as const, "M"), ag: unoDe(p.get("ag"), ["promedio", "cierre"] as const, "promedio"),
       br: new Set(listaUrl(p.has("fb") ? p.get("fb") : "blue,mep,ccl").filter((k) => ["blue", "mep", "ccl"].includes(k))),
       fx: new Set(listaUrl(p.has("fx") ? p.get("fx") : "oficial,blue,ccl").filter((k) => (FX_KEYS as readonly string[]).includes(k))),
       fxmed: unoDe(p.get("fxm"), ["corr", "real", "realbi"] as const, "real"), fxbanda: unoDe(p.get("fxbd"), ["no", "si"] as const, "no"),
       sojamed: unoDe(p.get("sm"), ["corr", "usdr"] as const, "corr"), sojafx: unoDe(p.get("sf"), FX_KEYS, config.dolar), dolarPref: config.dolar,
-      tabla: unoDe(p.get("t"), ["grafico", "tabla"] as const, "grafico"),
       ratio: new Set(listaUrl(p.has("rt") ? p.get("rt") : "oficial,ccl").filter((k) => (FX_KEYS as readonly string[]).includes(k))),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [listo, motor, montado, p, metas, config.dolar, config.desde, config.medida]);
+  }, [listo, motor, montado, p, config.dolar, config.desde]);
 
-  const ids = useMemo(() => {
-    if (!E) return [] as string[];
-    return E.exprs.flatMap((e) => (e.rel ? [e.id, e.rel] : [e.id]));
-  }, [E]);
-  const sec = useSeccion(ids);
-  const fij = useSeccion(FIJOS_IDS); // los bloques de dólar y soja cargan aparte: no demoran el gráfico principal
-  // Solo las variables ya cargadas: si una falla, las demás se siguen viendo.
-  const disp = useMemo(() => (E && motor ? E.exprs.filter((e) => motor.SER[e.id] && (!e.rel || motor.SER[e.rel])) : []),
+  // Los gráficos del link, sin huecos: si falta el 2.º y está el 3.º, el 3.º pasa a ser el 2.º.
+  const G = useMemo(() => {
+    if (!listo || !montado || !defExpr) return null;
+    const out: { g: GEst; slot: number }[] = [];
+    for (let k = 0; k < MAX_GRAFICOS; k++) { const g = leerGrafico(p, k, existe, defExpr); if (g) out.push({ g, slot: k }); }
+    return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [E, motor, version]);
-  const Ed = useMemo(() => (E ? { ...E, exprs: disp } : null), [E, disp]);
+  }, [listo, montado, p, metas, defExpr]);
+
+  /** Mueve los parámetros de un gráfico de un lugar de la URL a otro. */
+  const moverGrafico = (cambios: Record<string, string | null>, desde: number, hacia: number) => {
+    for (const k of PG) cambios[k + sfx(hacia)] = p.get(k + sfx(desde)) || null;
+  };
+  // Si el link tiene huecos (v3 sin v2) se reescribe compacto, para que cada gráfico escriba en su lugar.
+  useEffect(() => {
+    if (!G || G.every((x, i) => x.slot === i)) return;
+    const c: Record<string, string | null> = {};
+    G.forEach((x, i) => { if (x.slot !== i) moverGrafico(c, x.slot, i); });
+    for (let k = G.length; k < MAX_GRAFICOS; k++) for (const key of PG) c[key + sfx(k)] = null;
+    set(c);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [G]);
 
   if (base.errorGeneral) return <p className="error" role="alert">{base.errorGeneral}</p>;
-  if (!E || !motor) return <Cargando />;
+  if (!E || !motor || !G) return <Cargando />;
   const m: Motor = motor;
-  const guardarExprs = (xs: Expr[]) => set({ v: xs.map(encExpr).join(",") });
-  const setExpr = (k: number, e: Expr | null) => {
-    let xs = E.todas.slice();
-    if (e) xs[k] = e;
-    else if (b100) xs.splice(k, 1);
-    else xs = xs.filter((_, i) => i !== k).slice(0, 1); // en modo valor, quitar la 2ª deja solo la 1ª
-    guardarExprs(xs.length ? xs : E.exprs);
+  const nVacios = Math.min(vacios, MAX_GRAFICOS - G.length);
+  const total = G.length + nVacios;
+  const quitar = (i: number) => {
+    if (i >= G.length) { setVacios(Math.max(0, vacios - 1)); return; }
+    const c: Record<string, string | null> = {};
+    for (let j = i; j < G.length - 1; j++) moverGrafico(c, j + 1, j);
+    for (const key of PG) c[key + sfx(G.length - 1)] = null;
+    cambiar(c);
   };
-  const b100 = E.modo === "b100";
-  const hayError = Object.keys(sec.errores).length > 0;
+  const elegirEnVacio = (x: Expr) => { setVacios(Math.max(0, vacios - 1)); cambiar({ ["v" + sfx(G.length)]: encExpr(x) }); };
 
   return (
     <section>
-      <Barra E={E} set={set} F={m.F} />
-      <div>
-        {E.exprs.map((e, k) => (
-          <FilaVariable key={k} e={e} color={PALETA[k]} quitable={b100 ? E.exprs.length > 1 : k === 1} onChange={(x) => setExpr(k, x)} />
-        ))}
-        {!b100 && E.exprs.length < 2 && <FilaVariable e={null} agregable onChange={(x) => x && guardarExprs([...E.todas, x])} />}
-        {b100 && E.exprs.length < 10 && (
-          <FilaVariable e={null} agregable textoAgregar={`+ Agregar variable (${E.exprs.length} de 10)`} onChange={(x) => x && guardarExprs([...E.todas, x])} />
-        )}
-      </div>
-      {Ed && Ed.exprs.length > 0
-        ? <Principal m={m} E={Ed} set={set} version={version} />
-        : (hayError && !sec.ocupado ? <p className="error">Las variables elegidas no se pudieron cargar. Probá otra o recargá la página.</p> : <Cargando />)}
-      <Fijos m={m} E={E} set={set} listo={!fij.ocupado} version={version} />
+      <BarraPlantilla p={p} set={set} />
+      <Barra E={E} set={cambiar} F={m.F} />
+      {G.map(({ g }, i) => (
+        <BloqueGrafico key={i} i={i} total={total} g={g} E={E} m={m} set={cambiar} version={version} onQuitar={() => quitar(i)} />
+      ))}
+      {Array.from({ length: nVacios }, (_, j) => (
+        <BloqueGrafico key={"v" + j} i={G.length + j} total={total} g={null} E={E} m={m} set={cambiar} version={version}
+          onQuitar={() => quitar(G.length + j)} onElegir={elegirEnVacio} />
+      ))}
+      {total < MAX_GRAFICOS && (
+        <p><button type="button" className="btn" onClick={() => setVacios(vacios + 1)}>+ Agregar gráfico ({total} de {MAX_GRAFICOS})</button></p>
+      )}
+      <FijosCarga m={m} E={E} set={cambiar} version={version} />
     </section>
   );
 }
 
-type Estado = NonNullable<ReturnType<typeof useEstado>>;
-// (solo para tipar: el estado real se arma en Historico)
-declare function useEstado(): {
-  F: string[]; ult: string; modo: "valor" | "b100"; exprs: Expr[]; todas: Expr[]; desde: string; hasta: string; meses: Set<number>;
-  freq: "M" | "T" | "A"; ag: "promedio" | "cierre"; escala: "lin" | "log"; banda: "no" | "si"; eje: "propia" | "misma"; refs: Set<string>;
-  br: Set<string>; fx: Set<string>; fxmed: "corr" | "real" | "realbi"; fxbanda: "no" | "si"; sojamed: "corr" | "usdr";
-  sojafx: (typeof FX_KEYS)[number]; dolarPref: Dolar; ratio: Set<string>; tabla: "grafico" | "tabla";
-} | null;
-type SetFn = (c: Record<string, string | null | undefined>) => void;
+/** Un gráfico de Histórico: sus variables, su resumen y su gráfico. Carga sus propios datos: si falla, los demás se ven. */
+function BloqueGrafico({ i, total, g, E, m, set, version, onQuitar, onElegir }: {
+  i: number; total: number; g: GEst | null; E: Comun; m: Motor; set: SetFn; version: number; onQuitar: () => void; onElegir?: (x: Expr) => void;
+}) {
+  const ids = useMemo(() => (g ? g.exprs.flatMap((e) => (e.rel ? [e.id, e.rel] : [e.id])) : []), [g]);
+  const sec = useSeccion(ids);
+  // Solo las variables ya cargadas: si una falla, las demás se siguen viendo.
+  const disp = useMemo(() => (g ? g.exprs.filter((e) => m.SER[e.id] && (!e.rel || m.SER[e.rel])) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [g, m, version]);
+  const cab = (
+    <div className="cab-graf">
+      {total > 1 ? <h3>Gráfico {i + 1}</h3> : <span />}
+      {i > 0 && <button type="button" className="btn quitar" onClick={onQuitar}>Quitar gráfico</button>}
+    </div>
+  );
+  if (!g) {
+    return (
+      <div className="bloque-graf">{cab}
+        <FilaVariable e={null} agregable onChange={(x) => x && onElegir?.(x)} />
+      </div>
+    );
+  }
+  // el cambio de este gráfico se escribe con el número que le toca en la URL
+  const setG: SetFn = (c) => set(Object.fromEntries(Object.entries(c).map(([k, v]) => [(PG as readonly string[]).includes(k) ? k + sfx(i) : k, v])));
+  const b100 = g.modo === "b100";
+  const guardarExprs = (xs: Expr[]) => setG({ v: xs.map(encExpr).join(",") });
+  const setExpr = (k: number, e: Expr | null) => {
+    let xs = g.todas.slice();
+    if (e) xs[k] = e;
+    else if (b100) xs.splice(k, 1);
+    else xs = xs.filter((_, j) => j !== k).slice(0, 1); // en modo valor, quitar la 2ª deja solo la 1ª
+    guardarExprs(xs.length ? xs : g.exprs);
+  };
+  const hayError = Object.keys(sec.errores).length > 0;
+  const Ed: Estado = { ...E, ...g, exprs: disp };
+  return (
+    <div className="bloque-graf">{cab}
+      <div>
+        {g.exprs.map((e, k) => (
+          <FilaVariable key={k} e={e} color={PALETA[k]} quitable={b100 ? g.exprs.length > 1 : k === 1} onChange={(x) => setExpr(k, x)} />
+        ))}
+        {!b100 && g.exprs.length < 2 && <FilaVariable e={null} agregable onChange={(x) => x && guardarExprs([...g.todas, x])} />}
+        {b100 && g.exprs.length < 10 && (
+          <FilaVariable e={null} agregable textoAgregar={`+ Agregar variable (${g.exprs.length} de 10)`} onChange={(x) => x && guardarExprs([...g.todas, x])} />
+        )}
+      </div>
+      {disp.length > 0
+        ? <Principal m={m} E={Ed} set={setG} version={version} />
+        : (hayError && !sec.ocupado ? <p className="error">Las variables elegidas no se pudieron cargar. Probá otra o recargá la página.</p> : <Cargando />)}
+    </div>
+  );
+}
+
+/** Los gráficos de dólar y soja cargan aparte: no demoran los gráficos de arriba. */
+function FijosCarga({ m, E, set, version }: { m: Motor; E: Comun; set: SetFn; version: number }) {
+  const fij = useSeccion(FIJOS_IDS);
+  return <Fijos m={m} E={E} set={set} listo={!fij.ocupado} version={version} />;
+}
 
 // ------------------------------------------------------------ barra fija: período + Mes / Trimestre / Año
 const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -139,7 +234,7 @@ function SelFecha({ valor, min, max, etq, onElegir }: { valor: string; min: stri
   );
 }
 
-function Barra({ E, set, F }: { E: Estado; set: SetFn; F: string[] }) {
+function Barra({ E, set, F }: { E: Comun; set: SetFn; F: string[] }) {
   const N = F.length, ult = F[N - 1], hace12 = F[Math.max(0, N - 12)];
   const PRESETS: [string, string][] = [[F[0], "Todo"], ["1995-01", "1995"], ["2003-01", "2003"], ["2011-01", "2011"], ["2017-01", "2017"], ["2023-01", "2023"], [hace12, "Último año"]];
   const ms = [...E.meses].sort((a, b) => a - b).map((k) => MESES[k - 1]).join(", ");
@@ -398,7 +493,7 @@ function Principal({ m, E, set, version }: { m: Motor; E: Estado; set: SetFn; ve
 }
 
 // ------------------------------------------------------------ bloques fijos: dólar y soja
-function Fijos({ m, E, set, listo, version }: { m: Motor; E: Estado; set: SetFn; listo: boolean; version: number }) {
+function Fijos({ m, E, set, listo, version }: { m: Motor; E: Comun; set: SetFn; listo: boolean; version: number }) {
   const F = m.F;
   const kMeses = [...E.meses].join(","), kFx = [...E.fx].join(","), kBr = [...E.br].join(","), kRatio = [...E.ratio].join(",");
   const D = useMemo(() => {
@@ -451,7 +546,7 @@ function Fijos({ m, E, set, listo, version }: { m: Motor; E: Estado; set: SetFn;
   const banda = <Seg valor={E.fxbanda} opciones={[["no", "Promedio"], ["si", "Con mín/máx"]]} onElegir={(v) => set({ fxbd: v === "no" ? null : v })} />;
   return (
     <>
-      <h3>Dólar y soja: varias series a la vez</h3>
+      <h3>Otros gráficos interesantes</h3>
       {!D ? <Cargando /> : (
         <>
           <CardGrafico titulo="Dólares"

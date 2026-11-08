@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { BotonConfig } from "./ConfigProvider";
 
 export const SECCIONES: [string, string][] = [
-  ["historico", "Histórico"], ["presidentes", "Por presidente"], ["mandato", "Meses de mandato"],
+  ["historico", "Histórico"], ["plantillas", "Plantillas"],["presidentes", "Por presidente"], ["mandato", "Meses de mandato"],
   ["curiosidades", "Curiosidades"], ["elecciones", "Elecciones"], ["fuentes", "Fuentes"],
 ];
 

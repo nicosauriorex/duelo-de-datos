@@ -93,3 +93,9 @@ Una entrada por decisión de arquitectura. Formato: contexto, decisión, por qu�
 **Decisión**: se guarda en `localStorage` (`pld:config`, JSON versionado), leída y escrita desde un solo módulo (`web/lib/config.ts`). La URL siempre gana sobre lo guardado, así los links compartidos se ven igual para todos. Cuando haya cuentas, el mismo JSON se sincroniza con el usuario.
 
 **Consecuencias**: no se comparte entre dispositivos; en navegación privada se pierde al cerrar. Spec: `docs/specs/configuracion-global.md`.
+
+## D-006 · Plantillas como parámetros de Histórico
+**Decisión**: una plantilla es un conjunto de parámetros de URL de Histórico (`vista`) más texto de búsqueda (`web/lib/plantillas.ts`). Las curadas salen de `web/lib/curiosidades.ts` (`defCurios`), de los indicadores y de una lista manual; las generadas, del catálogo. Las propias van en `localStorage["pld:plantillas"]` (`web/lib/misPlantillas.ts`). Cada gráfico extra de Histórico usa los mismos parámetros con el número al final (`v2`…`t4`).
+
+**Consecuencias**: compartir es solo copiar la URL (`pl` o `pn` marcan la plantilla); las propias no viajan entre dispositivos. Las plantillas se definen con los metadatos del catálogo, sin cargar datos.
+

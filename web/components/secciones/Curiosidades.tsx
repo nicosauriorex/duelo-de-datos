@@ -4,12 +4,11 @@ import Link from "next/link";
 import { useSeccion } from "../useSeccion";
 import { Cargando, Selector, Seg, alternar } from "../ui";
 import { LineaInicio, useBase } from "./comunes";
-import { PALETA, tinte } from "../util";
+import { tinte } from "../util";
 import { fmtMes, nf0, nf1, ok } from "@/lib/formato";
 import { baseIdx, crearPres, tablaDesempeno } from "@/lib/estadisticas";
 import { crearIndicadores } from "@/lib/catalogo";
-import { crearCurios } from "@/lib/curiosidades";
-import type { Expr, Vals } from "@/lib/motor";
+import type { Expr } from "@/lib/motor";
 import { encExpr, lista, unoDe, useParams } from "@/lib/url";
 
 const CRIT_TXT: Record<string, string> = {
@@ -18,15 +17,6 @@ const CRIT_TXT: Record<string, string> = {
 };
 const hrefHist = (e: Expr) => `/historico/?v=${encodeURIComponent(encExpr({ ...e, med: e.med || undefined }))}`;
 
-function Sparkline({ v, color, desde }: { v: Vals; color: string; desde: number }) {
-  const pts: [number, number][] = [];
-  for (let i = Math.max(0, desde); i < v.length; i++) { const x = v[i]; if (ok(x)) pts.push([i, x]); }
-  if (pts.length < 2) return null;
-  const lo = Math.min(...pts.map((q) => q[1])), hi = Math.max(...pts.map((q) => q[1])), x0 = pts[0][0], x1 = pts[pts.length - 1][0];
-  const d = pts.map(([i, y], k) => `${k ? "L" : "M"}${((i - x0) / ((x1 - x0) || 1) * 240).toFixed(1)},${(34 - (y - lo) / ((hi - lo) || 1) * 32).toFixed(1)}`).join("");
-  return <svg viewBox="0 0 240 36" preserveAspectRatio="none" aria-hidden="true"><path d={d} fill="none" stroke={`var(${color})`} strokeWidth="1.5" vectorEffect="non-scaling-stroke" /></svg>;
-}
-
 export function Curiosidades() {
   const [p, set, montado] = useParams();
   const sec = useSeccion("todo");
@@ -34,7 +24,6 @@ export function Curiosidades() {
   const { motor: m, version } = sec;
   const PRES = useMemo(() => (m ? crearPres(m.F) : []), [m]);
   const I = useMemo(() => (m && !sec.ocupado ? crearIndicadores(m) : null), [m, sec.ocupado, version]);  // eslint-disable-line react-hooks/exhaustive-deps
-  const curios = useMemo(() => (m && !sec.ocupado ? crearCurios(m) : []), [m, sec.ocupado, version]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   if (sec.errorGeneral) return <p className="error" role="alert">{sec.errorGeneral}</p>;
   if (!m || !montado) return <Cargando />;
@@ -74,11 +63,11 @@ export function Curiosidades() {
     const g = Object.values(porPres[k].grupos).map((a) => a.reduce((s, y) => s + y, 0) / a.length);
     return { p: x, score: g.length ? g.reduce((s, y) => s + y, 0) / g.length : null, n: porPres[k].items.length, items: porPres[k].items.sort((a, c) => c.pct - a.pct) };
   }).filter((f) => ok(f.score)).sort((a, c) => (c.score as number) - (a.score as number));
-  const desde2003 = m.idxDe("2003-01");
 
   return (
     <section>
-      <p className="sub">Lo que más se suele preguntar, calculado con los mismos datos. Tocá cualquier tarjeta para abrirla en Histórico.</p>
+      <p className="sub">Lo que más se suele preguntar, calculado con los mismos datos. Tocá cualquier fila para abrirla en Histórico.</p>
+      <p className="aviso-link">Los datos curiosos ahora están en <Link prefetch={false} href="/plantillas/"><b>Plantillas</b></Link>.</p>
       <div className="card">
         <h2>Lo mejor y lo peor de cada gobierno</h2>
         <div className="controls">
@@ -119,15 +108,6 @@ export function Curiosidades() {
               <td className="unidad">{f.items.slice(0, 3).map((i) => i.n).join(" · ")}</td><td className="unidad">{f.items.slice(-3).reverse().map((i) => i.n).join(" · ")}</td></tr>
           ))}</tbody>
         </table></div>
-      </div>
-      <h3>Datos curiosos</h3>
-      <div className="curios">
-        {curios.map((x, k) => (
-          <Link key={x.k} prefetch={false} href={hrefHist(x.e)} className="curio">
-            <div className="k">{x.k}</div><div className="v">{x.val}</div><div className="d">{x.d}</div>
-            <Sparkline v={x.v} color={PALETA[k % 8]} desde={desde2003} />
-          </Link>
-        ))}
       </div>
     </section>
   );

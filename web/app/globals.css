@@ -314,3 +314,27 @@ th small { display: block; font-size: 11px; font-weight: 400; color: var(--text-
 .linea-inicio { font-size: 13px; color: var(--text-secondary); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
 .linea-inicio button.enlace, .aviso-link button.enlace { border: 0; background: none; color: var(--series-1); cursor: pointer; padding: 0; font: inherit; text-decoration: underline; }
 .aviso-link { font-size: 13px; background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; }
+
+/* Plantillas */
+.buscador-plantillas { margin: 0 0 12px; } .buscador-plantillas input { width: 100%; max-width: 520px; font-size: 15px; padding: 9px 12px; }
+.plantilla { position: relative; background: var(--surface-1); border: 1px solid var(--border); border-radius: 12px; min-height: 148px; display: flex; flex-direction: column; }
+.plantilla:hover { border-color: var(--axis); }
+.plantilla-link { display: block; flex: 1 1 auto; padding: 12px 40px 8px 14px; color: inherit; text-decoration: none; }
+.plantilla .k { font-size: 12px; color: var(--text-secondary); }
+.plantilla .v { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; margin: 2px 0; line-height: 1.2; }
+.plantilla .v small { font-size: 11px; font-weight: 400; color: var(--text-muted); margin-left: 6px; }
+.plantilla .d { font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+.plantilla .d.var-bueno { color: var(--bueno); } .plantilla .d.var-malo { color: var(--malo); }
+.plantilla svg { margin-top: 6px; height: 36px; width: 100%; }
+.plantilla .comp { position: absolute; top: 6px; right: 6px; padding: 2px 8px; color: var(--text-muted); }
+.acciones-plantilla { display: flex; gap: 12px; padding: 0 14px 8px; font-size: 12px; }
+.enlace { border: 0; background: none; color: var(--series-1); cursor: pointer; padding: 0; font: inherit; text-decoration: underline; }
+.encabezado-plantilla { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; margin-bottom: 10px; font-size: 13px; }
+.encabezado-plantilla p { margin: 2px 0; } .encabezado-plantilla .titulo-pl { font-weight: 600; font-size: 14px; }
+.acciones-vista { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 10px; }
+.acciones-vista a.btn { text-decoration: none; color: inherit; }
+.form-guardar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 10px; }
+.form-guardar input { flex: 1 1 200px; max-width: 320px; }
+.bloque-graf { margin-bottom: 8px; }
+.bloque-graf .cab-graf { display: flex; align-items: center; gap: 8px; margin: 14px 0 4px; }
+.bloque-graf .cab-graf h3 { margin: 0; flex: 1 1 auto; }
