@@ -1,5 +1,5 @@
 """
-Catálogo unificado de series para Duelo de Datos.
+Catálogo unificado de series para Primero los Datos.
 
 Cada serie es un dict:
   id, n (nombre), cat (lista: ruta de categorías), tipo, u (unidad), dir, fuente, desc,

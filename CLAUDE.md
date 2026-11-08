@@ -1,4 +1,4 @@
-# Duelo de Datos
+# Primero los Datos
 
 Página de datos económicos de Argentina (precios, salarios, dólar, actividad, pobreza, fiscal, externo) con fuentes oficiales.
 Hoy: pipeline Python que baja series y las escribe como JSON; sitio Next.js (export estático) en `web/`. Próximo: sitio público con usuarios, comentarios y votos (ver docs/ROADMAP.md).

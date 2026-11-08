@@ -1,4 +1,4 @@
-# Duelo de Datos
+# Primero los Datos
 
 Datos económicos de Argentina en una sola página: precios, salarios, dólar, actividad, pobreza, cuentas fiscales y sector externo. Todo sale de fuentes oficiales o públicas y se actualiza solo.
 

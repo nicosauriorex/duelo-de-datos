@@ -48,7 +48,7 @@ IPC_KEY = ("clasificador,nivel,codigo,descripcion,periodo,anio,mes,indicador,"
 
 
 def get(url, headers=None):
-    req = urllib.request.Request(url, headers={"User-Agent": "duelo-de-datos-script", **(headers or {})})
+    req = urllib.request.Request(url, headers={"User-Agent": "primero-los-datos-script", **(headers or {})})
     with urllib.request.urlopen(req, timeout=60) as r:
         return r.read()
 

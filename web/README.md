@@ -1,4 +1,4 @@
-# web/ — Duelo de Datos (Next.js + TypeScript + uPlot)
+# web/ — Primero los Datos (Next.js + TypeScript + uPlot)
 
 Sitio estático (`output: "export"`). Los datos salen de `pipeline/` y quedan en `web/public/datos/` (no se versionan).
 

@@ -39,7 +39,7 @@ Una entrada por decisión de arquitectura. Formato: contexto, decisión, por qu�
 
 **Estado**: decidido. Se revisa si cambian ingresos, tráfico o presupuesto.
 
-## D-002 · Nombre del sitio: Duelo de Datos — DECIDIDO (2026-11-08)
+## D-002 · Nombre del sitio: Duelo de Datos — REEMPLAZADA por D-004 (2026-11-08)
 
 **Contexto**: "DatosArgentina" describe de dónde salen los datos, pero no lo que hace distinto al sitio: la comunidad elige qué datos importan y otros les responden con otros datos, y gana el más votado.
 
@@ -71,3 +71,18 @@ Una entrada por decisión de arquitectura. Formato: contexto, decisión, por qu�
 **Por qué**: evita los límites de CPU del plan gratis y la complejidad del adaptador sin ganar nada visible; migrar de export estático a OpenNext después es un cambio de configuración, no de código de las páginas.
 
 **Estado**: implementado y publicado (corte hecho 2026-11-08). Spec: `docs/specs/migracion-nextjs.md`.
+
+## D-004 · Nombre del sitio: Primero los Datos — DECIDIDO (2026-11-08)
+
+**Contexto**: D-002 había elegido "Duelo de Datos". El usuario prefirió "Primero los Datos" (`primerolosdatos`).
+
+**Decisión**: el sitio se llama **Primero los Datos**; la bajada sigue siendo "Datos de Argentina, en debate". Dominio buscado: `primerolosdatos.com.ar`.
+
+**Disponibilidad (consulta del 2026-11-08, sin confirmación en NIC Argentina)**: `primerolosdatos.com` está registrado y estacionado (`dns-parking.com`); `.com.ar`, `.ar`, `.org` y `.net` no tienen registros DNS; el usuario de GitHub `primerolosdatos` figura libre. X e Instagram no se pudieron verificar.
+
+**Qué no cambia por ahora**: el proyecto de Cloudflare Pages (`duelo-de-datos`, por eso la URL actual es `duelo-de-datos.pages.dev`) y el repo de GitHub, hasta decidir renombrarlos o conectar el dominio propio.
+
+**Pendiente**
+- El usuario registra `primerolosdatos.com.ar` en nic.ar (y reserva los usuarios en X e Instagram).
+- Después: conectar el dominio a Cloudflare Pages y actualizar las URLs del workflow y los docs.
+- Decidir si se renombran el repo de GitHub y el proyecto de Pages.

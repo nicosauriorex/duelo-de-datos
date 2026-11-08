@@ -42,7 +42,7 @@ FX_A3500 = "168.1_T_CAMBI500_D_0_0_17"
 
 
 def _get(url, data=None, headers=None, timeout=90):
-    req = urllib.request.Request(url, data=data, headers={"User-Agent": "duelo-de-datos-script", **(headers or {})})
+    req = urllib.request.Request(url, data=data, headers={"User-Agent": "primero-los-datos-script", **(headers or {})})
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return r.read()
 
