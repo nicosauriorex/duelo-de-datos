@@ -20,6 +20,7 @@ Notas del usuario, ordenadas por tema. No son specs: antes de implementar cualqu
 - **Comparar con vecinos o países parecidos**: crecer 5% no es mucho si los vecinos crecen 10%.
 
 ## Histórico: celular y gráficos
+→ spec: docs/specs/historico-celular.md (implementada, commit 144fc59)
 - Barra de fechas y de vista (mes/año) **fija arriba** al bajar (ej. estás en "Rosario vs Chicago" y querés cambiar a "por año" sin subir).
 - Eje X legible en celular: hoy los años se pisan y el gráfico queda apretado.
 - Etiquetas de último dato, promedio, mediana: más chicas en celular.
@@ -30,6 +31,7 @@ Notas del usuario, ordenadas por tema. No son specs: antes de implementar cualqu
 - Ver como **gráfico o tabla**. Otros tipos de gráfico solo si suman (casi todo va bien en líneas).
 
 ## Histórico: medidas y opciones
+Las primeras seis → spec: docs/specs/medidas-y-opciones.md
 - Elegir la medida en pasos: **Pesos / Dólares / Variaciones**.
   - Pesos → corrientes o reales.
   - Dólares → corrientes o reales → cotización (blue, oficial, MEP, CCL).
