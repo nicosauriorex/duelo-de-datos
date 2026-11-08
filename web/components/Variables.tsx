@@ -2,11 +2,11 @@
 // Selector de variables (árbol + búsqueda), ventana de información y fila de controles de una variable.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDatos } from "./DatosProvider";
-import { Modal, Selector } from "./ui";
+import { Desplegable, Modal, Selector } from "./ui";
 import { fmtMes, lastIdx, norm } from "@/lib/formato";
 import { ORDEN_RAIZ, textoBusqueda } from "@/lib/catalogo";
-import { INFO_CAT } from "@/lib/info";
-import type { Expr, SerieMeta } from "@/lib/motor";
+import { INFO_CAT, INFO_CORTA } from "@/lib/info";
+import type { Expr, Motor, SerieMeta } from "@/lib/motor";
 
 interface Nodo { nombre: string; hijos: Map<string, Nodo>; items: SerieMeta[]; total: number }
 const nodoNuevo = (nombre: string): Nodo => ({ nombre, hijos: new Map(), items: [], total: 0 });
@@ -83,7 +83,36 @@ function Info({ id, onCerrar }: { id: string; onCerrar: () => void }) {
   );
 }
 
-export interface PickerPedido { cb: (id: string) => void; filtro?: (s: SerieMeta) => boolean; titulo?: string }
+/** Texto largo plegado a 2 líneas: "ver más" aparece solo si no entra. */
+function TextoPlegable({ html }: { html: string }) {
+  const [abierto, setAbierto] = useState(false);
+  const [largo, setLargo] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => { const el = ref.current; if (el) setLargo(el.scrollHeight > el.clientHeight + 2 || abierto); }, [html, abierto]);
+  return (
+    <>
+      <div ref={ref} className={abierto ? "" : "plegado"} dangerouslySetInnerHTML={{ __html: html }} />
+      {(largo || abierto) && <button type="button" className="ver-mas" aria-expanded={abierto} onClick={() => setAbierto(!abierto)}>{abierto ? "ver menos" : "ver más"}</button>}
+    </>
+  );
+}
+
+/** Arriba de la lista de una categoría de primer nivel: qué es en 1 o 2 líneas, la variable recomendada y la explicación larga plegada. */
+function IntroCategoria({ nombre, reco, onReco }: { nombre: string; reco: { id: string; nombre: string; med?: string; esc?: string } | null; onReco: (r: { id: string; med?: string; esc?: string }) => void }) {
+  const [abierto, setAbierto] = useState(false);
+  return (
+    <li className="info-cat intro-cat">
+      <p>{INFO_CORTA[nombre].texto}</p>
+      <div className="intro-acc">
+        {reco && <button type="button" className="btn reco" onClick={() => onReco(reco)}>Recomendado: {reco.nombre}</button>}
+        <button type="button" className="ver-mas" aria-expanded={abierto} onClick={() => setAbierto(!abierto)}>{abierto ? "ver menos" : "ver más"}</button>
+      </div>
+      {abierto && <div className="info-larga" dangerouslySetInnerHTML={{ __html: INFO_CAT[nombre] }} />}
+    </li>
+  );
+}
+
+export interface PickerPedido { cb: (id: string, med?: string, esc?: string) => void; filtro?: (s: SerieMeta) => boolean; titulo?: string }
 
 export function Picker({ pedido, onCerrar }: { pedido: PickerPedido; onCerrar: () => void }) {
   const { metas, motor } = useDatos();
@@ -94,7 +123,7 @@ export function Picker({ pedido, onCerrar }: { pedido: PickerPedido; onCerrar: (
   const primero = useRef<string | undefined>(undefined);
   useEffect(() => { inp.current?.focus(); }, []);
   const raiz = useMemo(() => armarArbol(metas, pedido.filtro), [metas, pedido.filtro]);
-  const elegir = (id: string) => { onCerrar(); pedido.cb(id); };
+  const elegir = (id: string, med?: string, esc?: string) => { onCerrar(); pedido.cb(id, med, esc); };
   const qn = norm(q.trim());
 
   let cuerpo: React.ReactNode;
@@ -137,7 +166,12 @@ export function Picker({ pedido, onCerrar }: { pedido: PickerPedido; onCerrar: (
     );
     cuerpo = (
       <>
-        {camino.length > 0 && INFO_CAT[ultimo] && <li className="info-cat" dangerouslySetInnerHTML={{ __html: INFO_CAT[ultimo] }} />}
+        {camino.length > 0 && INFO_CAT[ultimo] && (
+          camino.length === 1 && INFO_CORTA[ultimo]
+            ? <IntroCategoria key={ultimo} nombre={ultimo} reco={metas.some((x) => x.id === INFO_CORTA[ultimo].reco.id && (!pedido.filtro || pedido.filtro(x))) ? INFO_CORTA[ultimo].reco : null}
+                onReco={(r) => elegir(r.id, r.med, r.esc)} />
+            : <li className="info-cat"><TextoPlegable key={ultimo} html={INFO_CAT[ultimo]} /></li>
+        )}
         {[...nodo.hijos.values()].map((h) => (
           <li key={h.nombre} className="carpeta">
             <button type="button" onClick={() => { setCamino([...camino, h.nombre]); setTodo(false); setQ(""); inp.current?.focus(); }}>
@@ -173,6 +207,31 @@ export function Picker({ pedido, onCerrar }: { pedido: PickerPedido; onCerrar: (
   );
 }
 
+/** Medida en pasos: un botón con lo elegido que abre un panel con los grupos (Pesos / Dólares / Variaciones...) y, debajo, las opciones del grupo activo. */
+function SelectorMedida({ A, med, motor, onElegir }: { A: SerieMeta; med: string; motor: Motor; onElegir: (m: string) => void }) {
+  const grupos = motor.gruposMedida(A);
+  const act = motor.ubicarMedida(A, med) ?? motor.ubicarMedida(A, motor.medDefault(A)) ?? { g: grupos[0], v: grupos[0].dims.map((d) => d.opciones[0][0]) };
+  const porDefecto = (g: (typeof grupos)[number]) => g.unir(g.dims.map((d) => d.opciones[0][0]));
+  const medActual = act.g.unir(act.v);
+  return (
+    <Desplegable className="med-desp" etiqueta={motor.etiquetaMedida(A, medActual)}>
+      {grupos.length > 1 && (
+        <div className="seg" role="group" aria-label="Tipo de medida">
+          {grupos.map((g) => <button key={g.k} type="button" aria-pressed={g === act.g || g.k === act.g.k} onClick={() => { if (g.k !== act.g.k) onElegir(porDefecto(g)); }}>{g.nombre}</button>)}
+        </div>
+      )}
+      {act.g.dims.map((d, i) => (
+        <div className="seg med-fila" role="group" aria-label={act.g.nombre || "Medida"} key={act.g.k + i}>
+          {d.opciones.map(([v, t]) => (
+            <button key={v} type="button" className={d.tenue === v ? "tenue" : undefined} aria-pressed={act.v[i] === v}
+              onClick={() => { const nv = act.v.slice(); nv[i] = v; onElegir(act.g.unir(nv)); }}>{t}</button>
+          ))}
+        </div>
+      ))}
+    </Desplegable>
+  );
+}
+
 /** Fila de controles de una variable: [variable] [medida] [en términos de] [modo] [quitar] */
 export function FilaVariable({ e, onChange, color, quitable, agregable, textoAgregar, sinRel }: {
   e: Expr | null; onChange: (e: Expr | null) => void; color?: string; quitable?: boolean; agregable?: boolean; textoAgregar?: string; sinRel?: boolean;
@@ -187,7 +246,7 @@ export function FilaVariable({ e, onChange, color, quitable, agregable, textoAgr
     if (!agregable) return null;
     return (
       <div className="fila-var">
-        <button type="button" className="btn" onClick={() => abrir({ cb: (id) => onChange({ id, med: motor.medDefault(meta(id)!), rel: null, modo: "compra", esc: "" }), titulo: "Buscá o navegá" })}>
+        <button type="button" className="btn" onClick={() => abrir({ cb: (id, med, esc) => onChange({ id, med: med ?? motor.medDefault(meta(id)!), rel: null, modo: "compra", esc: esc ?? "" }), titulo: "Buscá o navegá" })}>
           {textoAgregar || "+ Agregar una segunda variable (eje derecho)"}
         </button>
         {modal}
@@ -197,7 +256,7 @@ export function FilaVariable({ e, onChange, color, quitable, agregable, textoAgr
   const A = meta(e.id);
   if (!A) return null;
   const escs = motor.escPermitidas(A), escV = escs.some((o) => o[0] === e.esc) ? (e.esc || "") : "";
-  const meds = motor.medidasDe(A);
+  const nMed = motor.cantMedidas(motor.gruposMedida(A));
   const relOk = motor.relPermitido(A) && !escV && !sinRel;
   const conRel = relOk && !!e.rel;
   const B = e.rel ? meta(e.rel) : null;
@@ -205,13 +264,13 @@ export function FilaVariable({ e, onChange, color, quitable, agregable, textoAgr
     <div className="fila-var">
       {color && <span className="punto" style={{ ["--c" as string]: `var(${color})` }} />}
       <button type="button" className="btn var" title={A.n} onClick={() => abrir({
-        cb: (id) => { const nuevo: Expr = { ...e, id, med: motor.medDefault(meta(id)!), esc: "" }; if (!motor.relPermitido(meta(id)!)) nuevo.rel = null; onChange(nuevo); },
+        cb: (id, med, esc) => { const nuevo: Expr = { ...e, id, med: med ?? motor.medDefault(meta(id)!), esc: esc ?? "" }; if (!motor.relPermitido(meta(id)!)) nuevo.rel = null; onChange(nuevo); },
       })}>{A.n}</button>
       <BotonInfo id={A.id} />
       {(errores[A.archivo] || (B && errores[B.archivo])) && <span className="error" role="alert">No se pudieron bajar los datos de esta variable.</span>}
-      {conRel || escV === "pib" ? null : meds.length < 2
+      {conRel || escV === "pib" ? null : nMed < 2
         ? <span className="lbl">{motor.esIndice(A) ? "Índice: se ve tal cual" : A.u}</span>
-        : <Selector etiqueta="Medida" valor={meds.some((m) => m[0] === e.med) ? (e.med as string) : meds[0][0]} opciones={meds.map((m) => [m[0], m[1]] as [string, string])} onElegir={(v) => onChange({ ...e, med: v })} />}
+        : <SelectorMedida A={A} med={e.med === "vac" ? "via" : e.med || motor.medDefault(A)} motor={motor} onElegir={(v) => onChange({ ...e, med: v })} />}
       {escs.length > 0 && !conRel && (
         <Selector etiqueta="Total, por habitante o como % del PIB" valor={escV} opciones={escs.map((o) => [o[0], o[1]] as [string, string])} onElegir={(v) => onChange({ ...e, esc: v, rel: v ? null : e.rel })} />
       )}

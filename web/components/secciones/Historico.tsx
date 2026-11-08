@@ -44,7 +44,7 @@ export function Historico() {
     return {
       F, ult, modo, exprs: modo === "b100" ? exprs.slice(0, 10) : exprs.slice(0, 2), todas: exprs, desde, hasta,
       meses: ms.size ? ms : new Set(TODOS_MESES),
-      freq: unoDe(p.get("f"), ["M", "T", "A"] as const, "M"), escala: unoDe(p.get("e"), ["lin", "log"] as const, "lin"),
+      freq: unoDe(p.get("f"), ["M", "T", "A"] as const, "M"), ag: unoDe(p.get("ag"), ["promedio", "cierre"] as const, "promedio"), escala: unoDe(p.get("e"), ["lin", "log"] as const, "lin"),
       banda: unoDe(p.get("bd"), ["no", "si"] as const, "no"), eje: unoDe(p.get("ej"), ["propia", "misma"] as const, "propia"),
       refs: new Set(listaUrl(p.has("r") ? p.get("r") : REFS_DEF).filter((k) => [...REFS_H.map((r) => r.k), "mk_ult", "mk_max", "mk_min"].includes(k))),
       br: new Set(listaUrl(p.has("fb") ? p.get("fb") : "blue,mep,ccl").filter((k) => ["blue", "mep", "ccl"].includes(k))),
@@ -107,7 +107,7 @@ type Estado = NonNullable<ReturnType<typeof useEstado>>;
 // (solo para tipar: el estado real se arma en Historico)
 declare function useEstado(): {
   F: string[]; ult: string; modo: "valor" | "b100"; exprs: Expr[]; todas: Expr[]; desde: string; hasta: string; meses: Set<number>;
-  freq: "M" | "T" | "A"; escala: "lin" | "log"; banda: "no" | "si"; eje: "propia" | "misma"; refs: Set<string>;
+  freq: "M" | "T" | "A"; ag: "promedio" | "cierre"; escala: "lin" | "log"; banda: "no" | "si"; eje: "propia" | "misma"; refs: Set<string>;
   br: Set<string>; fx: Set<string>; fxmed: "corr" | "real" | "realbi"; fxbanda: "no" | "si"; sojamed: "corr" | "usdr";
   sojafx: (typeof FX_KEYS)[number]; ratio: Set<string>; tabla: "grafico" | "tabla";
 } | null;
@@ -163,6 +163,11 @@ function Barra({ E, set, F }: { E: Estado; set: SetFn; F: string[] }) {
             <button type="button" aria-pressed={E.meses.size === 12} onClick={() => mesClick("todos")}>Todos</button>
             {MESES.map((n, k) => <button key={n} type="button" aria-pressed={E.meses.size < 12 && E.meses.has(k + 1)} onClick={() => mesClick(k + 1)}>{n}</button>)}
           </div></div>
+        {E.freq !== "M" && (
+          <div className="controls"><label>Al ver por {E.freq === "A" ? "año" : "trimestre"}</label>
+            <Seg valor={E.ag} opciones={[["promedio", "Promedio"], ["cierre", "Cierre"]]} onElegir={(v) => set({ ag: v === "promedio" ? null : v })} />
+            <span className="note" style={{ margin: 0 }}>{E.ag === "cierre" ? "Último mes con dato de cada período." : "Promedio de los meses del período."}</span></div>
+        )}
         <p className="note" style={{ margin: 0 }}>Con meses sueltos (p.ej. solo enero) se ve un punto por año y se unen con una línea. Escape o un clic afuera cierran este panel.</p>
       </Desplegable>
       <Seg valor={E.freq} opciones={[["M", "Mes"], ["T", "Trimestre"], ["A", "Año"]]} onElegir={(v) => set({ f: v === "M" ? null : v })} />
@@ -240,7 +245,7 @@ function Principal({ m, E, set, version }: { m: Motor; E: Estado; set: SetFn; ve
       lista.forEach((o) => { r[o.key] = o.c.v[i]; if (bd && o.c.lo && o.c.hi) { r[o.key + "_lo"] = o.c.lo[i]; r[o.key + "_hi"] = o.c.hi[i]; } });
       return r;
     }).filter(Boolean) as Fila[];
-    rows = recortar(agrupar(rows, E.freq, E.meses, new Set(lista.filter((o) => o.flujo).map((o) => o.key)), new Set(lista.filter((o) => o.ultimo).map((o) => o.key))), lista.map((o) => o.key));
+    rows = recortar(agrupar(rows, E.freq, E.meses, new Set(lista.filter((o) => o.flujo).map((o) => o.key)), new Set(lista.filter((o) => o.ultimo).map((o) => o.key)), E.ag === "cierre"), lista.map((o) => o.key));
     if (b100) lista.forEach((o) => {
       const r0 = rows.find((r) => ok(r[o.key]) && r[o.key] !== 0);
       o.base = r0 ? etiqueta(r0) : "–";
@@ -273,13 +278,14 @@ function Principal({ m, E, set, version }: { m: Motor; E: Estado; set: SetFn; ve
     };
     return { lista, dos, hayBanda, bd, rows, puedeLog, st, fmtDe, refLeg, series, opts };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [m, version, kExprs, E.modo, E.desde, E.hasta, kMeses, E.freq, E.escala, E.banda, E.eje, kRefs]);
+  }, [m, version, kExprs, E.modo, E.desde, E.hasta, kMeses, E.freq, E.ag, E.escala, E.banda, E.eje, kRefs]);
   const { lista, dos, hayBanda, bd, rows, puedeLog, st, refLeg, series, opts } = D;
 
   const porFreq = ({ M: "", T: " Valores trimestrales", A: " Valores anuales" })[E.freq];
+  const agTxt = E.ag === "cierre" ? `último mes con dato de cada ${E.freq === "A" ? "año" : "trimestre"}` : "promedio de los meses";
   const sumaTxt = E.freq !== "M" && lista.some((o) => o.flujo || o.ultimo)
-    ? " (los flujos se suman y los % del PIB toman el último mes del período; períodos incompletos de flujos quedan vacíos; el resto es promedio)."
-    : E.freq !== "M" ? " (promedio de los meses)." : "";
+    ? ` (los flujos se suman y los % del PIB toman el último mes del período; períodos incompletos de flujos quedan vacíos; el resto es ${agTxt}).`
+    : E.freq !== "M" ? ` (${agTxt}).` : "";
   const titulo = b100 ? `Comparación en base 100: ${lista.map((o) => o.c.corto).join(", ")}` : dos ? `${lista[0].c.corto} y ${lista[1].c.corto}` : lista[0].c.nombre;
   const nota = (b100 ? "Cada serie vale 100 en su primer dato del período: la línea muestra cuánto subió o bajó desde ahí."
     : lista.map((o, k) => `${dos ? (k ? "Derecha: " : "Izquierda: ") : ""}${o.c.unidad}`).join(" · ") + ".") + porFreq + sumaTxt +
@@ -403,7 +409,7 @@ function Fijos({ m, E, set, listo, version }: { m: Motor; E: Estado; set: SetFn;
         for (const k in cols) r[k] = cols[k][i];
         for (const k in bandas) { r[k + "_lo"] = bandas[k][0][i]; r[k + "_hi"] = bandas[k][1][i]; }
         return r;
-      }).filter((r) => enFiltro(r.fecha)), E.freq, E.meses);
+      }).filter((r) => enFiltro(r.fecha)), E.freq, E.meses, new Set<string>(), new Set<string>(), E.ag === "cierre");
     const sel = FX_KEYS.filter((k) => E.fx.has(k) && SER["fx_" + k]);
     const sfx = SER.fx_oficial;
     const fx = {
@@ -434,7 +440,7 @@ function Fijos({ m, E, set, listo, version }: { m: Motor; E: Estado; set: SetFn;
     };
     return { fx, brecha, soja, ratio };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [m, version, listo, E.desde, E.hasta, kMeses, E.freq, kFx, kBr, E.fxmed, E.fxbanda, E.sojamed, E.sojafx, kRatio]);
+  }, [m, version, listo, E.desde, E.hasta, kMeses, E.freq, E.ag, kFx, kBr, E.fxmed, E.fxbanda, E.sojamed, E.sojafx, kRatio]);
 
   const { refUS } = m.refs();
   const medNom = Object.fromEntries(m.medFx())[E.fxmed];
@@ -446,7 +452,7 @@ function Fijos({ m, E, set, listo, version }: { m: Motor; E: Estado; set: SetFn;
       {!D ? <Cargando /> : (
         <>
           <CardGrafico titulo="Dólares"
-            nota={<>{medNom}. Promedio mensual.{E.fxmed === "corr" ? " Escala logarítmica: la misma distancia vertical es la misma variación %." : ""}</>}
+            nota={<>{medNom}. Promedio mensual{E.freq !== "M" && E.ag === "cierre" ? `; por ${E.freq === "A" ? "año" : "trimestre"}, el último mes` : ""}.{E.fxmed === "corr" ? " Escala logarítmica: la misma distancia vertical es la misma variación %." : ""}</>}
             leyenda={<div className="legend">{D.fx.sel.map((k) => <span key={k} style={vcolor(FX_COLOR[k])}>{FX_NOM[k]}</span>)}</div>}
             visibles={<Seg valor={E.fx} opciones={FX_KEYS.map((k) => [k, FX_NOM[k]] as [string, string])} onElegir={(v) => tog("fx", E.fx, v)} />}
             config={{

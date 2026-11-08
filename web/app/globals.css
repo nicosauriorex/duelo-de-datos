@@ -288,3 +288,17 @@ th small { display: block; font-size: 11px; font-weight: 400; color: var(--text-
 .chip .ln .punto { align-self: center; width: 8px; height: 8px; }
 .desplegable .panel .seg { max-width: 100%; }
 @media (min-width: 641px) { .barra-hist .desplegable { flex: 0 1 460px; } }
+
+/* Medida en pasos (FilaVariable) */
+.fila-var .med-desp { display: inline-block; }
+.fila-var .med-desp .panel { width: min(520px, calc(100vw - 52px)); }
+.fila-var .med-desp .seg + .seg { margin-top: 8px; }
+.seg button.tenue { color: var(--text-muted); }
+@media (max-width: 640px) { .fila-var .med-desp { display: block; width: 100%; } .fila-var .med-desp .panel { width: 100%; } }
+/* Explicación corta y variable recomendada en el selector de variables */
+.info-cat .plegado { max-height: calc(1.45em * 2); overflow: hidden; }
+.intro-cat p { margin: 0 0 6px; }
+.intro-acc { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+.btn.reco { font-weight: 600; text-align: left; }
+.ver-mas { background: none; border: 0; padding: 2px 0; color: var(--text-secondary); text-decoration: underline; cursor: pointer; font: inherit; font-size: 12.5px; }
+.info-larga { margin-top: 8px; }

@@ -1,7 +1,7 @@
 // Estadísticas de Histórico, mandatos, desempeño de presidentes y correlaciones de elecciones.
 // Port de src/app.js sin cambiar resultados. Todo recibe el motor y la configuración por parámetro.
 import { ok } from "./formato";
-import type { Calculo, Expr, Motor, Vals } from "./motor";
+import { ES_VAR, type Calculo, type Expr, type Motor, type Vals } from "./motor";
 
 // ---------------------------------------------------------------- Histórico
 export type Fila = Record<string, any>;
@@ -10,7 +10,7 @@ export const MESES_PER: Record<string, (q: number) => number[]> = {
   A: () => [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
 };
 
-export function agrupar(rows: Fila[], freq: string, meses: Set<number>, sumar = new Set<string>(), ultimo = new Set<string>()): Fila[] {
+export function agrupar(rows: Fila[], freq: string, meses: Set<number>, sumar = new Set<string>(), ultimo = new Set<string>(), cierre = false): Fila[] {
   if (!freq || freq === "M" || !rows.length) return rows;
   const grupos = new Map<string, { y: string; q: number; rs: Fila[] }>();
   rows.forEach((r) => {
@@ -30,7 +30,7 @@ export function agrupar(rows: Fila[], freq: string, meses: Set<number>, sumar = 
       if (k.endsWith("_lo")) o[k] = Math.min(...vals);
       else if (k.endsWith("_hi")) o[k] = Math.max(...vals);
       else if (sumar.has(k)) o[k] = vals.length === esperado ? vals.reduce((a, b) => a + b, 0) : null;
-      else if (ultimo.has(k)) o[k] = vals[vals.length - 1];
+      else if (ultimo.has(k) || cierre) o[k] = vals[vals.length - 1]; // cierre: el último mes con dato del período
       else o[k] = vals.reduce((a, b) => a + b, 0) / vals.length;
     });
     return o;
@@ -129,7 +129,7 @@ export function ordenar<T>(items: T[], ord: { k: string | null; d: number }, val
 }
 // Comparar niveles entre presidentes solo tiene sentido en medidas reales, índices o ratios
 export const nivelComparable = (m: Motor, e: Expr): boolean =>
-  !!e.rel || ["vm", "via", "vac"].includes(e.med || "") || ["none", "tasa"].includes(m.SER[e.id].tipo) || e.esc === "pib"
+  !!e.rel || ES_VAR(e.med === "vac" ? "via" : e.med) || ["none", "tasa"].includes(m.SER[e.id].tipo) || e.esc === "pib"
   || ["real", "realbi", "usdr"].includes(e.med || "") || String(e.med).startsWith("usdr_") || String(e.med).startsWith("real_");
 
 export interface Desempeno {

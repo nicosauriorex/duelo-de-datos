@@ -1,5 +1,7 @@
 # Medidas y opciones más simples
 
+Estado: implementada (2026-11-08)
+
 ## Objetivo
 Que elegir cómo ver un dato no asuste. Hoy un salario tiene 13 medidas en un solo desplegable: pasan a elegirse en pasos (Pesos / Dólares / Variaciones). Además se ordenan las variaciones, se elige cómo agrupar por trimestre o año, y el selector de variables explica cada categoría en dos líneas con una variable recomendada.
 

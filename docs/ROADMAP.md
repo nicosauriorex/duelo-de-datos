@@ -17,7 +17,7 @@ Del 1 al 5 no necesitan backend ni datos nuevos: se pueden ir publicando de a un
 | # | Bloque | Ideas (secciones de IDEAS.md) | Backend | Estado |
 |---|---|---|---|---|
 | 1 | Histórico en el celular | Histórico: celular y gráficos | No | Hecho (2026-11-08) — [spec](specs/historico-celular.md) |
-| 2 | Medidas y opciones más simples | Histórico: medidas y opciones (las primeras seis) | No | Spec lista, falta implementar — [spec](specs/medidas-y-opciones.md) |
+| 2 | Medidas y opciones más simples | Histórico: medidas y opciones (las primeras seis) | No | Hecho (2026-11-08) — [spec](specs/medidas-y-opciones.md) |
 | 3 | Configuración global | Presidentes y mandato: inicio de mandato por presidente (T±N), preferencias guardadas en el navegador, afecta a todas las secciones | No | Sin spec |
 | 4 | Plantillas y vistas | Plantillas con buscador por palabra, hasta 4 gráficos por vista, "Otros gráficos interesantes", Curiosidades pasa a plantillas, precios medidos en salarios | No | Sin spec |
 | 5 | Inicio y búsqueda guiada | Inicio y búsqueda guiada: página de inicio, elegir tema → principales → subgrupos, página por tema, oración guiada | No | Sin spec |

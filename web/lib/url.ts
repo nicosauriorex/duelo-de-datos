@@ -9,7 +9,8 @@ export function decExpr(s: string | null | undefined, existe: (id: string) => bo
   if (!s) return null;
   const [id, med, rel, modo, esc] = s.split("~");
   if (!id || !existe(id)) return null;
-  return { id, med: med || undefined, rel: rel && existe(rel) ? rel : null, modo: modo || "compra", esc: esc || "" };
+  return { id, med: med === "vac" ? "via" : med || undefined, // `vac` (acumulada en el año) se retiró: se lee como interanual
+    rel: rel && existe(rel) ? rel : null, modo: modo || "compra", esc: esc || "" };
 }
 export const lista = (s: string | null | undefined): string[] => (s ? s.split(",").filter(Boolean) : []);
 export const enteroEn = (s: string | null | undefined, min: number, max: number, def: number): number => {

@@ -31,15 +31,7 @@ Notas del usuario, ordenadas por tema. No son specs: antes de implementar cualqu
 - Ver como **gráfico o tabla**. Otros tipos de gráfico solo si suman (casi todo va bien en líneas).
 
 ## Histórico: medidas y opciones
-Las primeras seis → spec: docs/specs/medidas-y-opciones.md
-- Elegir la medida en pasos: **Pesos / Dólares / Variaciones**.
-  - Pesos → corrientes o reales.
-  - Dólares → corrientes o reales → cotización (blue, oficial, MEP, CCL).
-  - Variaciones → mensual, interanual o **acumulada de los últimos 12 meses** (en lugar de la acumulada en el año, que confunde) → nominal o real.
-- Al agregar una variable (ej. salario): primero una explicación corta y cuál recomienda la página; un "ver más" despliega la explicación completa.
-- Índices "tal cual" (ej. IPC empalmado como índice): al fondo y en un color apagado; no son lo primero que hay que ver.
-- No ofrecer comparaciones sin sentido (IPC empalmado contra la inflación).
-- Al pasar de mes a año, elegir cómo agregar: promedio o último dato (cierre); quizás máximo y mínimo.
+Las primeras seis → spec: docs/specs/medidas-y-opciones.md (implementadas 2026-11-08, ver "Hecho")
 - Hasta **4 gráficos** en la misma vista, cada uno con sus filtros, y compartir la vista entera.
 - Abajo, "Otros gráficos interesantes" (dólar, soja, brecha: cosas difíciles de armar con los filtros).
 - **Plantillas**: gráficos ya configurados con los datos de más interés (lo que hoy está en Curiosidades), con **buscador por palabra** (ej. "asado"). Darle importancia: muchas plantillas, mejor que sobren.
@@ -122,3 +114,14 @@ Uso central: alguien escribe en redes "Milei fundió la economía" y otra person
 
 ## Hecho
 (Ideas implementadas y verificadas; se tachan acá con su fecha. Ver CLAUDE.md.)
+
+### Histórico: medidas y opciones (implementado, spec medidas-y-opciones)
+- ~~Elegir la medida en pasos: **Pesos / Dólares / Variaciones**.~~ ✅ 2026-11-08
+  - Pesos → corrientes o reales.
+  - Dólares → corrientes o reales → cotización (blue, oficial, MEP, CCL).
+  - Variaciones → mensual, interanual o **acumulada de los últimos 12 meses** (en lugar de la acumulada en el año, que confunde) → nominal o real.
+- Al agregar una variable (ej. salario): primero una explicación corta y cuál recomienda la página; un "ver más" despliega la explicación completa.
+- Índices "tal cual" (ej. IPC empalmado como índice): al fondo y en un color apagado; no son lo primero que hay que ver.
+- No ofrecer comparaciones sin sentido (IPC empalmado contra la inflación).
+- Al pasar de mes a año, elegir cómo agregar: promedio o último dato (cierre); quizás máximo y mínimo.
+(Las seis ideas anteriores: medida en pasos, explicación corta + recomendada, índices tal cual al fondo, sin comparaciones sin sentido, Promedio/Cierre.) ✅ 2026-11-08

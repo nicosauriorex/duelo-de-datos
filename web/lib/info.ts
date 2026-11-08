@@ -21,3 +21,21 @@ export const INFO_CAT: Record<string, string> = {
   "Fiscal": `Sector público nacional, base caja. <b>Resultado primario</b>: ingresos menos gastos sin contar intereses de la deuda. <b>Resultado financiero</b>: después de pagar intereses. Las cifras mensuales son muy estacionales: conviene verlas como % del PIB (suma de 12 meses) o por año.`,
   "Mercados": `<b>Riesgo país</b>: cuánta tasa extra paga Argentina sobre los bonos de EEUU (en puntos básicos: 100 = 1%). Más bajo = el mundo confía más.`,
 };
+
+/** Explicación corta (1 o 2 líneas) de cada categoría de primer nivel y la variable que se recomienda mirar primero.
+ *  Se muestran arriba de la lista del selector de variables; la explicación larga (`INFO_CAT`) queda en "ver más".
+ *  Si el id recomendado no existe en el catálogo, el botón no aparece. */
+export interface Recomendada { id: string; nombre: string; med?: string; esc?: string }
+export const INFO_CORTA: Record<string, { texto: string; reco: Recomendada }> = {
+  "Salarios": { texto: "Cuánto cobran los trabajadores: sueldos de empleados registrados, salario mínimo y jubilación mínima.", reco: { id: "sipa_med", nombre: "Salario SIPA mediana", med: "real" } },
+  "Precios": { texto: "Cuánto suben los precios: inflación, índices por rubro y región, y el precio de productos concretos.", reco: { id: "ipc_empalme", nombre: "IPC empalmado", med: "via" } },
+  "Dólar y tipo de cambio": { texto: "A cuánto está el dólar (oficial, blue, MEP, CCL) y cuánto cuesta comparado con otras monedas.", reco: { id: "fx_blue", nombre: "Dólar blue", med: "real" } },
+  "Mercados": { texto: "Cómo ve el mundo financiero a la Argentina: riesgo país, acciones y bonos.", reco: { id: "riesgo", nombre: "Riesgo país" } },
+  "Tasas de interés": { texto: "Cuánto paga un plazo fijo o cuesta un préstamo, y si le gana o no a la inflación.", reco: { id: "bcra_12", nombre: "Tasa de plazo fijo a 30 días" } },
+  "Dinero y bancos (BCRA)": { texto: "Pesos en circulación, depósitos, préstamos y reservas del Banco Central.", reco: { id: "bcra_1", nombre: "Reservas internacionales del BCRA", med: "usdr" } },
+  "Actividad": { texto: "Cuánto produce la economía: actividad mensual, PIB, industria y construcción.", reco: { id: "dg_143_3_no_pr_2004_a_31", nombre: "Actividad económica (EMAE)" } },
+  "Empleo, pobreza e ingresos": { texto: "Cuánta gente trabaja, cuánta es pobre y cuánto necesita una familia para vivir.", reco: { id: "dg_42_3_eph_puntuatal_0_m_30", nombre: "Desocupación" } },
+  "Sector externo": { texto: "Lo que Argentina vende y compra al mundo: exportaciones, importaciones y su saldo.", reco: { id: "dg_saldo_comercial", nombre: "Saldo comercial (% del PIB)", esc: "pib" } },
+  "Fiscal": { texto: "Cuánto gasta y cuánto recauda el Estado nacional, y si le sobra o le falta plata.", reco: { id: "dg_379_9_superavit_017_23_94", nombre: "Resultado primario (% del PIB)", esc: "pib" } },
+  "Opinión pública (UTDT)": { texto: "Qué opina la gente: confianza del consumidor y confianza en el gobierno (Universidad Di Tella).", reco: { id: "dg_380_3_icc_nacionnal_0_t_12", nombre: "Confianza del consumidor" } },
+};

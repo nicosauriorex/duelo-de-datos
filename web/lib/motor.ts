@@ -26,8 +26,22 @@ export const FX_COLOR: Record<string, string> = { oficial: "--series-1", blue: "
 export const FX_KEYS = ["oficial", "blue", "mep", "ccl"] as const;
 export const BASE_IDS = ["ipc_empalme", "cpi_usa", "fx_oficial", "fx_blue", "fx_mep", "fx_ccl", "poblacion", "pib_nom_anual"];
 
-const VARS: Opcion[] = [["vm", "Variación mensual (%)"], ["via", "Variación interanual (%)"], ["vac", "Acumulada en el año (%)"]];
-export const ES_VAR = (m?: string) => m === "vm" || m === "via" || m === "vac";
+/** Variaciones: mensual, interanual (12 meses) y promedio geométrico mensual de 12 meses; con sufijo `_r` son reales (descontada la inflación). */
+const VAR_BASE: Opcion[] = [["vm", "Mensual"], ["via", "Interanual (últimos 12 meses)"], ["vp12", "Mensual promedio de 12 meses"]];
+const RE_VAR = /^(vm|via|vp12)(_r)?$/;
+export const ES_VAR = (m?: string) => !!m && RE_VAR.test(m);
+/** Los links viejos usaban `vac` (acumulada en el año): hoy se leen como interanual. */
+export const normMed = (m?: string) => (m === "vac" ? "via" : m);
+/** Series de IPC general: contra la inflación general serían una línea plana, no se les ofrece "Real" ni "Precio relativo". */
+export const ES_IPC_GENERAL = (id: string) => id === "ipc_empalme" || id === "ipc_nacional_0_ipc";
+
+export interface DimMed { opciones: Opcion[]; tenue?: string }
+/** Un grupo de medidas (Pesos / Dólares / Variaciones / Índice...). Cada grupo tiene 1 o 2 filas de opciones (`dims`);
+ *  `unir` arma el código de medida y `partir` lo desarma (null = el código no es de este grupo). */
+export interface GrupoMed {
+  k: string; nombre: string; dims: DimMed[];
+  unir: (v: string[]) => string; partir: (c: string) => string[] | null; etq: (v: string[]) => string;
+}
 export const FACTOR_U = (u: string): [number, string] =>
   /^millones de /.test(u) ? [1e6, u.replace(/^millones de /, "")] : /^miles de /.test(u) ? [1e3, u.replace(/^miles de /, "")] : [1, u];
 
@@ -79,35 +93,94 @@ export function crearMotor(F: string[]) {
   const esIndice = (s: SerieMeta) => s.tipo === "idx" || /índice/i.test(s.u || "");
   const MONETARIA = (s: SerieMeta) => ["ars", "idx", "usd", "fx"].includes(s.tipo);
 
-  function medidasDe(s: SerieMeta): Opcion[] {
+  const esPct = (s: SerieMeta) => /%/.test(s.u || "") && !/\$/.test(s.u || "");
+  const grupoVar = (real: boolean): GrupoMed => ({
+    k: "var", nombre: "Variaciones",
+    dims: [{ opciones: VAR_BASE }, ...(real ? [{ opciones: [["nom", "Nominal"], ["real", "Real (descontada la inflación)"]] as Opcion[] }] : [])],
+    unir: (v) => v[0] + (v[1] === "real" ? "_r" : ""),
+    partir: (c) => { const r = RE_VAR.exec(c); return !r || (!real && r[2]) ? null : real ? [r[1], r[2] ? "real" : "nom"] : [r[1]]; },
+    etq: (v) => `Variación ${({ vm: "mensual", via: "interanual", vp12: "mensual promedio 12 meses" } as Record<string, string>)[v[0]]}${v[1] === "real" ? " real" : ""}`,
+  });
+  const simple = (k: string, nombre: string, opciones: Opcion[], tenue?: string): GrupoMed => ({
+    k, nombre, dims: [{ opciones, tenue }],
+    unir: (v) => v[0], partir: (c) => (opciones.some((o) => o[0] === c) ? [c] : null),
+    etq: (v) => {
+      const t = opciones.find((o) => o[0] === v[0])?.[1] ?? "";
+      return k === "pesos" || k === "dolares" ? `${nombre} ${t.charAt(0).toLowerCase()}${t.slice(1)}` : k === "indice" && t === "Real" ? "Índice real" : t;
+    },
+  });
+  const grupoDolares = (): GrupoMed => ({
+    k: "dolares", nombre: "Dólares",
+    dims: [{ opciones: [["usdr", "Reales"], ["usd", "Corrientes"]] }, { opciones: FX_KEYS.map((k): Opcion => [k, FX_NOM[k]]) }],
+    unir: (v) => `${v[0]}_${v[1]}`,
+    partir: (c) => { const [t, f] = c.split("_"); return (t === "usdr" || t === "usd") && FX_NOM[f] ? [t, f] : null; },
+    etq: (v) => `Dólares ${v[0] === "usdr" ? "reales" : "corrientes"} al ${FX_NOM[v[1]]}`,
+  });
+
+  /** Medidas de una serie ordenadas en grupos (pasos). Vacío o con una sola opción: no hay botón de medida. */
+  function gruposMedida(s: SerieMeta): GrupoMed[] {
     base();
-    const ars: Opcion[] = [["real", `Pesos reales (de ${refAR})`], ["corr", "Pesos corrientes"],
-      ...FX_KEYS.map((k): Opcion => [`usdr_${k}`, `Dólares reales al ${FX_NOM[k]} (de ${refUS})`]),
-      ...FX_KEYS.map((k): Opcion => [`usd_${k}`, `Dólares corrientes al ${FX_NOM[k]}`]),
-      ...VARS.map(([k, n]): Opcion => [k, n.replace(" (%)", " en pesos (%)")])];
     switch (s.tipo) {
-      case "ars": return ars;
-      case "fx": return [["corr", "Pesos corrientes"], ["real", `Pesos reales (de ${refAR})`], ["realbi", "Pesos reales, neto de inflación de EEUU"], ...VARS];
-      case "usd": return [["corr", "Dólares corrientes"], ["usdr", `Dólares reales (de ${refUS})`], ["arscorr", "Pesos corrientes (al oficial)"], ["real", `Pesos reales (de ${refAR}, al oficial)`]];
-      case "tasa": return [["asis", "Nominal (TNA)"], ["tea", "Efectiva anual (TEA)"], ["real_a", "Real anual: TEA descontada la inflación de 12 meses"], ["real_m", "Real mensual: tasa del mes descontada la inflación del mes"]];
+      case "ars": return [
+        simple("pesos", "Pesos", [["real", "Reales"], ["corr", "Corrientes"]]), grupoDolares(), grupoVar(true)];
+      case "fx": return [
+        simple("pesos", "Pesos", [["real", "Reales"], ["corr", "Corrientes"], ["realbi", "Reales netos de inflación de EE.UU."]]), grupoVar(true)];
+      case "usd": return [
+        simple("dolares", "Dólares", [["corr", "Corrientes"], ["usdr", "Reales"]]),
+        simple("pesos", "Pesos", [["arscorr", "Corrientes (al oficial)"], ["real", "Reales (al oficial)"]])];
+      case "tasa": return [simple("tasa", "", [["asis", "TNA"], ["tea", "TEA"], ["real_a", "Real anual"], ["real_m", "Real mensual"]])];
       case "idx": {
-        if (s.dir === 1) return [["corr", "Índice tal cual (nominal)"], ["real", "Real: descontada la inflación"], ...VARS];
-        if (s.cat[0] === "Precios") return [["corr", "Índice tal cual"], ["real", "Precio relativo: contra la inflación general"], ...VARS];
-        return [["corr", "Índice tal cual"], ...VARS];
+        const tal: Opcion = ["corr", "Índice tal cual (base 100)"];
+        const gral = ES_IPC_GENERAL(s.id as string);
+        if (s.dir === 1) return [simple("indice", "Índice", [["real", "Real"], tal], "corr"), grupoVar(true)];
+        if (s.cat[0] === "Precios") return [
+          grupoVar(!gral), simple("indice", "Índice", gral ? [tal] : [["real", "Precio relativo (contra la inflación general)"], tal], "corr")];
+        return [simple("indice", "Índice", [tal], "corr"), grupoVar(false)];
       }
-      default: return [["asis", "Tal cual"]];
+      default:
+        return s.tipo === "none" && !esPct(s) ? [simple("valor", "Valor", [["asis", "Tal cual"]]), grupoVar(false)] : [];
     }
   }
+  const cantMedidas = (g: GrupoMed[]) => g.reduce((n, x) => n + x.dims.reduce((m, d) => m * d.opciones.length, 1), 0);
+  /** Grupo y valores de cada fila para una medida, o null si no corresponde a la serie. */
+  function ubicarMedida(s: SerieMeta, med: string): { g: GrupoMed; v: string[] } | null {
+    for (const g of gruposMedida(s)) { const v = g.partir(med); if (v) return { g, v }; }
+    return null;
+  }
+  /** Nombre corto de la medida (texto del botón). */
+  const etiquetaMedida = (s: SerieMeta, med: string): string => {
+    const u = ubicarMedida(s, med);
+    return u ? u.g.etq(u.v) : "";
+  };
+  /** Lista plana de todas las medidas válidas (código, nombre). */
+  function medidasDe(s: SerieMeta): Opcion[] {
+    const out: Opcion[] = [];
+    for (const g of gruposMedida(s)) {
+      const rec = (i: number, v: string[]) => {
+        if (i === g.dims.length) { out.push([g.unir(v), g.etq(v)]); return; }
+        g.dims[i].opciones.forEach((o) => rec(i + 1, [...v, o[0]]));
+      };
+      rec(0, []);
+    }
+    return out.length ? out : [["asis", "Tal cual"]];
+  }
   const medDefault = (s: SerieMeta): string =>
-    ({ ars: "real", idx: s.dir === 1 ? "real" : "corr", fx: "corr", usd: "corr" } as Record<string, string>)[s.tipo] || "asis";
+    s.tipo === "idx" && s.dir !== 1 && s.cat[0] === "Precios" ? "via"
+      : ({ ars: "real", idx: s.dir === 1 ? "real" : "corr", fx: "corr", usd: "corr" } as Record<string, string>)[s.tipo] || "asis";
 
+  /** Variación sobre `arr`: mensual (contra el dato anterior, hasta 3 meses atrás en series trimestrales), interanual o mensual promedio de 12 meses. */
   function variacion(arr: Vals, med: string): Vals {
-    return arr.map((x, i) => {
+    const real = med.endsWith("_r"), tipo = med.replace("_r", "");
+    const IPC = base().IPC;
+    const a0: Vals = real ? arr.map((x, i) => ok(x) && ok(IPC[i]) ? (x as number) / (IPC[i] as number) : null) : arr;
+    return a0.map((x, i) => {
       if (!ok(x)) return null;
-      let j = med === "vm" ? i - 1 : med === "via" ? i - 12 : i - +F[i].slice(5, 7); // vac: contra diciembre del año anterior
-      if (med === "vm") { while (j >= 0 && i - j < 4 && !ok(arr[j])) j--; }          // series trimestrales
-      const a = arr[j];
-      return j >= 0 && ok(a) && a !== 0 ? (x / a - 1) * 100 : null;
+      let j = tipo === "vm" ? i - 1 : i - 12;
+      if (tipo === "vm") { while (j >= 0 && i - j < 4 && !ok(a0[j])) j--; }
+      const a = a0[j];
+      if (j < 0 || !ok(a) || a === 0) return null;
+      const r = x / a;
+      return tipo === "vp12" ? (r > 0 ? (Math.pow(r, 1 / 12) - 1) * 100 : null) : (r - 1) * 100;
     });
   }
 
@@ -142,7 +215,10 @@ export function crearMotor(F: string[]) {
     base();
     const u = s.u || "";
     if (s.tipo === "tasa") return ({ tea: "% efectiva anual (TEA)", real_a: "% real anual (TEA vs. inflación de 12 meses)", real_m: "% real mensual (vs. inflación del mes)" } as Record<string, string>)[med] || u;
-    if (ES_VAR(med)) return ({ vm: "% de variación mensual", via: "% de variación interanual", vac: "% acumulado en el año" } as Record<string, string>)[med];
+    if (ES_VAR(med)) {
+      const t = ({ vm: "% de variación mensual", via: "% de variación interanual", vp12: "% mensual promedio (últimos 12 meses)" } as Record<string, string>)[med.replace("_r", "")];
+      return med.endsWith("_r") ? t + ", real (descontada la inflación)" : t;
+    }
     if (s.tipo === "none" || med === "asis") return u;
     if (s.tipo === "idx") {
       if (med === "corr") return u;
@@ -177,7 +253,8 @@ export function crearMotor(F: string[]) {
     });
   }
 
-  function calc(e: Expr): Calculo {
+  function calc(e0: Expr): Calculo {
+    const e: Expr = e0.med === "vac" ? { ...e0, med: "via" } : e0;
     const k = JSON.stringify(e);
     const hit = cache.get(k); if (hit) return hit;
     const b = base();
@@ -230,12 +307,16 @@ export function crearMotor(F: string[]) {
   };
 
   return {
-    F, N, SER, idxDe, agregar, calc, transformar, variacion, unidadDe, medidasDe, medDefault, esIndice, MONETARIA,
+    F, N, SER, idxDe, agregar, calc, transformar, variacion, unidadDe, medidasDe, gruposMedida, cantMedidas, ubicarMedida, etiquetaMedida, medDefault, esIndice, MONETARIA,
     relPermitido, relDestino, escPermitidas, nominalPesos, fmtC, variacionTxt,
     refs: () => { base(); return { refAR, refUS, REF_AR, REF_US }; },
     base,
-    medFx: (): Opcion[] => medidasDe({ tipo: "fx", cat: [], dir: 0 } as unknown as SerieMeta),
-    medArs: (): Opcion[] => medidasDe({ tipo: "ars", cat: [], dir: 0 } as unknown as SerieMeta),
+    // Selectores propios de Por presidente y del bloque de dólares: siguen con su lista plana de siempre.
+    medFx: (): Opcion[] => [["corr", "Pesos corrientes"], ["real", `Pesos reales (de ${base() && refAR})`], ["realbi", "Pesos reales, neto de inflación de EEUU"]],
+    medArs: (): Opcion[] => [["real", `Pesos reales (de ${base() && refAR})`], ["corr", "Pesos corrientes"],
+      ...FX_KEYS.map((k): Opcion => [`usdr_${k}`, `Dólares reales al ${FX_NOM[k]} (de ${refUS})`]),
+      ...FX_KEYS.map((k): Opcion => [`usd_${k}`, `Dólares corrientes al ${FX_NOM[k]}`]),
+      ["vm", "Variación mensual en pesos (%)"], ["via", "Variación interanual en pesos (%)"]],
   };
 }
 export type Motor = ReturnType<typeof crearMotor>;
