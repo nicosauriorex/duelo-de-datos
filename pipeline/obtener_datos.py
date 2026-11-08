@@ -204,10 +204,9 @@ def main():
                                      pr[c].reindex(idx), -1, "INDEC, sh_ipc_precios_promedio.xls", f"Precio promedio del kg de {c.lower()} en GBA."))
     datos = catalogo.a_json(series, idx)
     print(f"Catálogo: {len(datos['series'])} series en total")
-    js = "window.DATOS = " + json.dumps(datos, ensure_ascii=False, separators=(",", ":")) + ";"
-    (OUT / "datos.js").write_text(js, encoding="utf-8")
+    # Copia compilada: respaldo versionado para regenerar los JSON de la web sin red (--solo-json)
+    (OUT / "cache" / "compilado.json").write_text(json.dumps(datos, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     escribir_json_web(datos)
-    compilar_pagina(js)
 
 
 # Series transversales que usan los cálculos de todas las secciones (se cargan siempre).
@@ -241,23 +240,8 @@ def escribir_json_web(datos):
     print(f"JSON web: {len(grupos)} archivos de datos, {len(meta)} series en {destino}")
 
 
-def compilar_pagina(datos_js):
-    """Une src/index.html + src/estilos.css + src/app.js + datos en un único DueloDeDatos.html."""
-    base = RAIZ
-    src = base / "src"
-    html = (src / "index.html").read_text(encoding="utf-8")
-    html = html.replace("/*ESTILOS*/", (src / "estilos.css").read_text(encoding="utf-8"))
-    html = html.replace("/*DATOS*/", datos_js.replace("</", "<\\/"))
-    html = html.replace("/*APP*/", (src / "app.js").read_text(encoding="utf-8"))
-    (base / "DueloDeDatos.html").write_text(html, encoding="utf-8")
-    print(f"Página: DueloDeDatos.html ({len(html) / 1e6:.1f} MB)")
-
-
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "--solo-json":  # regenera web/public/datos/ desde datos.js, sin red
-        _js = (OUT / "datos.js").read_text(encoding="utf-8")
-        escribir_json_web(json.loads(_js[len("window.DATOS = "):].rstrip().rstrip(";")))
-    elif len(sys.argv) > 1 and sys.argv[1] == "--solo-pagina":  # recompila sin volver a bajar datos
-        compilar_pagina((OUT / "datos.js").read_text(encoding="utf-8"))
+    if len(sys.argv) > 1 and sys.argv[1] == "--solo-json":  # regenera web/public/datos/ desde datos/cache/compilado.json, sin red
+        escribir_json_web(json.loads((OUT / "cache" / "compilado.json").read_text(encoding="utf-8")))
     else:
         sys.exit(main())

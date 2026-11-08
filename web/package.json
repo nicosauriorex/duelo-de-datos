@@ -5,8 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "tipos": "tsc --noEmit",
-    "paridad": "tsx scripts/paridad.ts"
+    "tipos": "tsc --noEmit"
   },
   "dependencies": {
     "next": "^16.4.5",

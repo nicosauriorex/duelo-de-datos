@@ -21,15 +21,16 @@ pip install -r requirements.txt
 python pipeline/obtener_datos.py
 ```
 
-Baja todas las series (tarda varios minutos) y genera `DueloDeDatos.html`, que se abre directo en el navegador.
-Para recompilar solo la página sin bajar nada: `python pipeline/obtener_datos.py --solo-pagina`.
+Baja todas las series (tarda varios minutos) y escribe los JSON de la web en `web/public/datos/`.
+Para regenerar solo los JSON sin bajar nada: `python pipeline/obtener_datos.py --solo-json`.
+Para armar el sitio: `cd web && npm ci && npm run build` (queda en `web/out/`).
 
 Opcional: con la variable de entorno `INDEC_TOKEN` (registro gratis en api.indec.gob.ar) los precios e IPC se toman de la API de INDEC en vez de los Excel.
 
 ## Estructura
 
 - `pipeline/`: descarga y arma las series (Python + pandas).
-- `src/`: la página (HTML, CSS y JS sin frameworks) que se compila con los datos.
+- `web/`: el sitio (Next.js + TypeScript + uPlot, export estático). Ver [`web/README.md`](web/README.md).
 - `datos/cache/`: respaldo de cada fuente, versionado a propósito.
 - `docs/`: hoja de ruta, decisiones de arquitectura e ideas.
 

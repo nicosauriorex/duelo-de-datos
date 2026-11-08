@@ -1,5 +1,5 @@
 """
-Compara los ids de serie de datos/datos.js con datos/series_esperadas.txt.
+Compara los ids de serie de datos/cache/compilado.json con datos/series_esperadas.txt.
 
 - Si falta algún id esperado y no se pasó --aceptar-menos: lista los faltantes y sale con código 1.
 - Si hay ids nuevos, o faltan y se pasó --aceptar-menos: reescribe el archivo con los ids actuales.
@@ -12,16 +12,12 @@ import sys
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
-DATOS_JS = RAIZ / "datos" / "datos.js"
+COMPILADO = RAIZ / "datos" / "cache" / "compilado.json"
 ESPERADAS = RAIZ / "datos" / "series_esperadas.txt"
-PREFIJO = "window.DATOS = "
 
 
 def ids_actuales():
-    texto = DATOS_JS.read_text(encoding="utf-8").strip()
-    if not texto.startswith(PREFIJO):
-        raise SystemExit("datos.js no tiene el formato esperado")
-    datos = json.loads(texto[len(PREFIJO):].rstrip(";"))
+    datos = json.loads(COMPILADO.read_text(encoding="utf-8"))
     return sorted({s["id"] for s in datos["series"]})
 
 

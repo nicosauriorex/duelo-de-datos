@@ -8,7 +8,7 @@ Basado en la documentación oficial de Claude Code (code.claude.com/docs: best-p
 |---|---|---|
 | `CLAUDE.md` | Lo mínimo: comandos, trampas, convenciones | Siempre (por eso es corto) |
 | `.claude/rules/pipeline.md` | Reglas del Python | Solo al tocar `pipeline/` |
-| `.claude/rules/frontend.md` | Reglas del JS/CSS | Solo al tocar `src/` |
+| `.claude/rules/frontend.md` | Reglas del frontend | Solo al tocar `web/` |
 | `.claude/skills/spec` | `/spec <idea>`: te entrevista y escribe la spec | Cuando lo llamás |
 | `.claude/skills/nueva-serie` | Pasos para sumar un indicador | Cuando se pide una serie nueva |
 | `.claude/agents/revisor` | Revisa lo implementado contra la spec (Sonnet, no edita) | Después de implementar |
