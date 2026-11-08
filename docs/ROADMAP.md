@@ -19,10 +19,10 @@ La fase 3 no depende de la 4 y puede ir antes o en paralelo: suma contenido sin 
 Sale de D-001 (Next.js + Cloudflare + Supabase, JSON estáticos, Actions diario, repo público, USD 0). En esta fase todavía no hay Next.js: se publica la página actual tal cual.
 
 1. ~~Decidir stack (D-001)~~ — hecho 2026-11-07.
-2. **Subir a GitHub** como repo público. Antes, revisar que no haya secretos en el historial (token de INDEC) y sumar un `README.md` corto con qué es y de dónde salen los datos.
-3. **Secret `INDEC_TOKEN`** cargado en GitHub (*Settings → Secrets*). El pipeline ya lo lee de esa variable de entorno; sin token igual funciona con los Excel de INDEC.
-4. **Proyecto en Cloudflare Pages**, en plan gratis, con subdominio `*.pages.dev`. Sin integración con Git: como el HTML no se versiona, lo sube la Action del paso 5. Publica `DatosArgentina.html` como página principal (`index.html`).
-5. **Workflow de GitHub Actions diario** (spec propia en `docs/specs/`): instala Python 3.14 + dependencias, corre `python pipeline/obtener_datos.py`, commitea `datos/cache/` solo si cambió, y despliega la página a Cloudflare con `wrangler` (token de Cloudflare como secret). También se puede disparar a mano.
+2. ~~**Subir a GitHub**~~ — hecho 2026-11-07: https://github.com/nicosauriorex/datos-argentina (público), con README y `requirements.txt`. Historial revisado, sin secretos.
+3. ~~**Secret `INDEC_TOKEN`**~~ — hecho 2026-11-08. El pipeline ya lo lee de esa variable de entorno; sin token igual funciona con los Excel de INDEC.
+4. **Proyecto en Cloudflare Pages**, en plan gratis, con subdominio `duelo-de-datos.pages.dev`. Secrets `CLOUDFLARE_API_TOKEN` (permiso Cloudflare Pages: Edit) y `CLOUDFLARE_ACCOUNT_ID` cargados el 2026-11-08. Sin integración con Git: el proyecto lo crea y lo publica la Action del paso 5, con `DatosArgentina.html` como `index.html`.
+5. **Workflow de GitHub Actions diario** (spec: [`docs/specs/actualizacion-diaria.md`](specs/actualizacion-diaria.md)): instala Python 3.14 + dependencias, corre `python pipeline/obtener_datos.py`, commitea `datos/cache/` solo si cambió, y despliega la página a Cloudflare con `wrangler` (token de Cloudflare como secret). También se puede disparar a mano.
 6. **Aviso si falla**: si una fuente se cae se usa la caché (ya funciona así), pero la Action tiene que dejar registro de qué fuente falló, y avisar por mail si falla el workflow entero.
 7. **Verificación**: el sitio abre en el subdominio, los datos de la última corrida aparecen, y una segunda corrida sin cambios no genera commit.
 
