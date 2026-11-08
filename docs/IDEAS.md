@@ -35,6 +35,7 @@ Las primeras seis → spec: docs/specs/medidas-y-opciones.md (implementadas 2026
 - Hasta **4 gráficos** en la misma vista, cada uno con sus filtros, y compartir la vista entera.
 - Abajo, "Otros gráficos interesantes" (dólar, soja, brecha: cosas difíciles de armar con los filtros).
 - **Plantillas**: gráficos ya configurados con los datos de más interés (lo que hoy está en Curiosidades), con **buscador por palabra** (ej. "asado"). Darle importancia: muchas plantillas, mejor que sobren.
+  (Estas tres → spec: docs/specs/plantillas-y-vistas.md. También: compartir plantillas propias por link.)
 
 ## Presidentes y mandato
 - ~~"Inicio del mandato" pasa a ser **Configurar inicio del mandato**: T-1, T, T+N (también negativo) y **por presidente** (todos en T, Milei en T+1).~~ ✅ 2026-11-08
@@ -89,6 +90,8 @@ Uso central: alguien escribe en redes "Milei fundió la economía" y otra person
 
 ## Precios en términos de salarios
 - Ver índices de precios medidos en salarios: cuántos bienes / servicios se compran con un salario, etc.
+  (→ spec: docs/specs/plantillas-y-vistas.md, como plantillas "cuánto compra un salario"; los índices del IPC medidos en salarios quedan pendientes.)
+- Galería pública de plantillas hechas por la gente (cuando haya cuentas).
 
 ## Bugs conocidos
 - ~~Histórico: el filtro de fecha queda flotando y se superpone con el resto~~ (arreglado en la migración; ahora se pide que quede fijo arriba sin tapar nada, ver "Histórico: celular y gráficos").
