@@ -8,6 +8,7 @@ Notas del usuario, ordenadas por tema. No son specs: antes de implementar cualqu
 - Lo visual importa ("todo entra por los ojos"): más adelante, una propuesta de diseño distinta.
 
 ## Inicio y búsqueda guiada
+→ spec: docs/specs/inicio-y-temas.md (pendiente aparte: fotos de presidentes en la portada; subgrupos agro/minería/industria por rama necesitan series nuevas)
 - Página de inicio visual (ej. los presidentes enfrentados, fotos de datos) que explique por qué existe la página y para qué sirve.
 - Arranca preguntando qué tipo de dato te interesa (ej. Actividad económica), con un **(?)** que abre una explicación corta.
 - Dentro del tema, primero los indicadores principales (PIB, EMAE…) y después los subgrupos (agro, minería, industria…). Tocás uno y ves todos sus datos.
