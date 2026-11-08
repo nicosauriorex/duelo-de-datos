@@ -1,5 +1,5 @@
 """
-Catálogo unificado de series para DatosArgentina.
+Catálogo unificado de series para Duelo de Datos.
 
 Cada serie es un dict:
   id, n (nombre), cat (lista: ruta de categorías), tipo, u (unidad), dir, fuente, desc,

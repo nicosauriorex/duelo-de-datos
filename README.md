@@ -1,4 +1,4 @@
-# DatosArgentina
+# Duelo de Datos
 
 Datos económicos de Argentina en una sola página: precios, salarios, dólar, actividad, pobreza, cuentas fiscales y sector externo. Todo sale de fuentes oficiales o públicas y se actualiza solo.
 
@@ -21,7 +21,7 @@ pip install -r requirements.txt
 python pipeline/obtener_datos.py
 ```
 
-Baja todas las series (tarda varios minutos) y genera `DatosArgentina.html`, que se abre directo en el navegador.
+Baja todas las series (tarda varios minutos) y genera `DueloDeDatos.html`, que se abre directo en el navegador.
 Para recompilar solo la página sin bajar nada: `python pipeline/obtener_datos.py --solo-pagina`.
 
 Opcional: con la variable de entorno `INDEC_TOKEN` (registro gratis en api.indec.gob.ar) los precios e IPC se toman de la API de INDEC en vez de los Excel.

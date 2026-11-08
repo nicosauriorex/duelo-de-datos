@@ -1,6 +1,6 @@
 "use strict";
 // =====================================================================
-// DatosArgentina: datos
+// Duelo de Datos: datos
 // =====================================================================
 const D = window.DATOS;
 const F = D.fechas, N = F.length;

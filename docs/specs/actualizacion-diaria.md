@@ -33,7 +33,7 @@ Que la página se actualice y se publique sola en Cloudflare Pages (`duelo-de-da
 8. **Commit de datos**: si después de correr cambió algo en `datos/cache/` o `datos/series_esperadas.txt`, se commitea a `main` con el usuario `github-actions[bot]` y el mensaje `Actualizar datos AAAA-MM-DD` (fecha argentina). Si no cambió nada, no hay commit. Antes del push se hace `git pull --rebase` por si entró otro commit mientras corría.
 9. El commit del bot no vuelve a disparar la tarea (usa el `GITHUB_TOKEN` por defecto, que no dispara workflows, y además no toca rutas del filtro de `push`).
 10. **Publicación**:
-    - Se arma una carpeta `publicar/` con `DatosArgentina.html` copiado como `index.html`.
+    - Se arma una carpeta `publicar/` con `DueloDeDatos.html` copiado como `index.html`.
     - Se despliega con `cloudflare/wrangler-action` usando `secrets.CLOUDFLARE_API_TOKEN` y `secrets.CLOUDFLARE_ACCOUNT_ID`.
     - Comando: `pages deploy publicar --project-name=duelo-de-datos --branch=main`.
     - Si el proyecto `duelo-de-datos` no existe, se crea antes con `pages project create duelo-de-datos --production-branch=main`. Este paso no falla si el proyecto ya existe.
@@ -63,7 +63,7 @@ Que la página se actualice y se publique sola en Cloudflare Pages (`duelo-de-da
 
 ## Fuera de alcance
 
-- Renombrar `DatosArgentina.html` y el resto del proyecto a "Duelo de Datos" (pendiente de D-002, tarea aparte). Acá solo se usa el nombre `duelo-de-datos` para el proyecto de Cloudflare.
+- Renombrar `DatosArgentina.html` y el resto del proyecto a "Duelo de Datos" (D-002; hecho después, el generado pasó a `DueloDeDatos.html`). Acá solo se usa el nombre `duelo-de-datos` para el proyecto de Cloudflare.
 - Dominio propio (`duelodedatos.com.ar`).
 - Partir los datos en JSON por categoría, Next.js, uPlot (fase 2).
 - Mostrar en la página qué fuentes están desactualizadas o la fecha de última actualización.

@@ -60,4 +60,4 @@ Una entrada por decisión de arquitectura. Formato: contexto, decisión, por qu�
 **Pendiente**
 - Comprar `duelodedatos.com.ar` (y, si se puede, `.ar` y `.com` para que nadie los use). Es un cambio respecto de D-001, que dejaba el dominio para más adelante; el costo es bajo.
 - Reservar el usuario en X e Instagram (no verificado).
-- Renombrar en el código y en los docs, como tarea aparte: repo de GitHub (`datos-argentina` → `duelo-de-datos`, GitHub redirige el nombre viejo), `DatosArgentina.html` y su generación en `pipeline/obtener_datos.py`, título y encabezado de `src/index.html`, `src/app.js`, `pipeline/catalogo.py`, `README.md`, `CLAUDE.md`, `.claude/settings.json` y la skill `nueva-serie`. El nombre del proyecto en Cloudflare conviene que ya sea `duelo-de-datos`.
+- ~~Renombrar en el código y en los docs~~ — hecho 2026-11-07 (`DueloDeDatos.html`, título y encabezado, README, CLAUDE.md, settings, skill). Queda a decisión del usuario renombrar el repo de GitHub (`datos-argentina` → `duelo-de-datos`) y la carpeta local.

@@ -84,7 +84,7 @@ jobs:
       - name: Armar carpeta a publicar
         run: |
           mkdir -p publicar
-          cp DatosArgentina.html publicar/index.html
+          cp DueloDeDatos.html publicar/index.html
           TAM=$(du -h publicar/index.html | cut -f1)
           {
             echo "- Tamaño de la página: $TAM"

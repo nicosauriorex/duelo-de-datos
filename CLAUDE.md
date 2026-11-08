@@ -1,4 +1,4 @@
-# DatosArgentina
+# Duelo de Datos
 
 Página de datos económicos de Argentina (precios, salarios, dólar, actividad, pobreza, fiscal, externo) con fuentes oficiales.
 Hoy: pipeline Python que baja series y genera una página HTML estática. Próximo: sitio público con usuarios, comentarios y votos (ver docs/ROADMAP.md).
@@ -11,7 +11,7 @@ Todo en español: código, comentarios, nombres de variables, commits y textos d
 - Python 3.14 + pandas. No hay tests todavía; la verificación es que el comando de arriba termine sin error y la página abra bien.
 
 # Estructura que no se deduce sola
-- `DatosArgentina.html` y `datos/datos.js` son GENERADOS: nunca editarlos ni leerlos enteros (pesan >1 MB). Se edita `src/` y se recompila.
+- `DueloDeDatos.html` y `datos/datos.js` son GENERADOS: nunca editarlos ni leerlos enteros (pesan >1 MB). Se edita `src/` y se recompila.
 - `src/index.html` tiene marcadores `/*ESTILOS*/`, `/*DATOS*/`, `/*APP*/` que reemplaza `compilar_pagina()`.
 - `datos/cache/` es el respaldo de cada fuente: si una API falla se usa la última copia. Se versiona en git, no borrar.
 - El formato de cada serie (`id, n, cat, tipo, u, dir...`) está documentado al principio de `pipeline/catalogo.py`.

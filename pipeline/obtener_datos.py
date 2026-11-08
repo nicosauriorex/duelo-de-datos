@@ -47,7 +47,7 @@ IPC_KEY = ("clasificador,nivel,codigo,descripcion,periodo,anio,mes,indicador,"
 
 
 def get(url, headers=None):
-    req = urllib.request.Request(url, headers={"User-Agent": "datos-argentina-script", **(headers or {})})
+    req = urllib.request.Request(url, headers={"User-Agent": "duelo-de-datos-script", **(headers or {})})
     with urllib.request.urlopen(req, timeout=60) as r:
         return r.read()
 
@@ -209,15 +209,15 @@ def main():
 
 
 def compilar_pagina(datos_js):
-    """Une src/index.html + src/estilos.css + src/app.js + datos en un único DatosArgentina.html."""
+    """Une src/index.html + src/estilos.css + src/app.js + datos en un único DueloDeDatos.html."""
     base = RAIZ
     src = base / "src"
     html = (src / "index.html").read_text(encoding="utf-8")
     html = html.replace("/*ESTILOS*/", (src / "estilos.css").read_text(encoding="utf-8"))
     html = html.replace("/*DATOS*/", datos_js.replace("</", "<\\/"))
     html = html.replace("/*APP*/", (src / "app.js").read_text(encoding="utf-8"))
-    (base / "DatosArgentina.html").write_text(html, encoding="utf-8")
-    print(f"Página: DatosArgentina.html ({len(html) / 1e6:.1f} MB)")
+    (base / "DueloDeDatos.html").write_text(html, encoding="utf-8")
+    print(f"Página: DueloDeDatos.html ({len(html) / 1e6:.1f} MB)")
 
 
 if __name__ == "__main__":
