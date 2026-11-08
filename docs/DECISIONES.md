@@ -80,9 +80,8 @@ Una entrada por decisión de arquitectura. Formato: contexto, decisión, por qu�
 
 **Disponibilidad (consulta del 2026-11-08, sin confirmación en NIC Argentina)**: `primerolosdatos.com` está registrado y estacionado (`dns-parking.com`); `.com.ar`, `.ar`, `.org` y `.net` no tienen registros DNS; el usuario de GitHub `primerolosdatos` figura libre. X e Instagram no se pudieron verificar.
 
-**Qué no cambia por ahora**: el proyecto de Cloudflare Pages (`duelo-de-datos`, por eso la URL actual es `duelo-de-datos.pages.dev`) y el repo de GitHub, hasta decidir renombrarlos o conectar el dominio propio.
+**Qué no cambia por ahora**: el proyecto de Cloudflare Pages (`duelo-de-datos`, por eso la URL actual es `duelo-de-datos.pages.dev`) hasta conectar el dominio propio (los proyectos de Pages no se pueden renombrar). El repo de GitHub se renombró a `primerolosdatos` (2026-11-08).
 
 **Pendiente**
 - El usuario registra `primerolosdatos.com.ar` en nic.ar (y reserva los usuarios en X e Instagram).
 - Después: conectar el dominio a Cloudflare Pages y actualizar las URLs del workflow y los docs.
-- Decidir si se renombran el repo de GitHub y el proyecto de Pages.

@@ -19,7 +19,7 @@ La fase 3 no depende de la 4 y puede ir antes o en paralelo: suma contenido sin 
 Sale de D-001 (Next.js + Cloudflare + Supabase, JSON estáticos, Actions diario, repo público, USD 0). En esta fase todavía no hay Next.js: se publica la página actual tal cual.
 
 1. ~~Decidir stack (D-001)~~ — hecho 2026-11-07.
-2. ~~**Subir a GitHub**~~ — hecho 2026-11-07: https://github.com/nicosauriorex/datos-argentina (público), con README y `requirements.txt`. Historial revisado, sin secretos.
+2. ~~**Subir a GitHub**~~ — hecho 2026-11-07: https://github.com/nicosauriorex/primerolosdatos (público), con README y `requirements.txt`. Historial revisado, sin secretos.
 3. ~~**Secret `INDEC_TOKEN`**~~ — hecho 2026-11-08. El pipeline ya lo lee de esa variable de entorno; sin token igual funciona con los Excel de INDEC.
 4. ~~**Proyecto en Cloudflare Pages**~~ — hecho 2026-11-08: https://duelo-de-datos.pages.dev, plan gratis. Secrets `CLOUDFLARE_API_TOKEN` (permiso Cloudflare Pages: Edit) y `CLOUDFLARE_ACCOUNT_ID`. Sin integración con Git: lo creó y lo publica la Action del paso 5.
 5. ~~**Workflow de GitHub Actions diario**~~ — hecho 2026-11-08 (spec: [`docs/specs/actualizacion-diaria.md`](specs/actualizacion-diaria.md)): `.github/workflows/actualizar.yml`, a las 21:00 hora argentina, al subir cambios y a mano.
