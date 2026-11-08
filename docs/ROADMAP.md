@@ -6,7 +6,7 @@ Orden propuesto. Cada fase se divide en specs chicas (`docs/specs/`), y cada spe
 |---|---|---|---|
 | 0 | Ordenar proyecto, git, config de Claude | No | Hecho (2026-11-07) |
 | 1 | Stack decidido (D-001); subir a GitHub, publicar la página actual en Cloudflare, pipeline automático diario (ver detalle abajo) | No | Hecho (2026-11-08) |
-| 2 | Migrar el frontend al stack elegido sin perder funciones; arreglar el filtro de fecha de Histórico | No | Hecho (2026-11-08); falta conectar el dominio `primerolosdatos.com.ar` |
+| 2 | Migrar el frontend al stack elegido sin perder funciones; arreglar el filtro de fecha de Histórico | No | Hecho (2026-11-08), con dominio propio https://primerolosdatos.com.ar |
 | 3 | Precios medidos en salarios; ranking de presidentes (son solo cálculos sobre datos que ya hay) | No | Pendiente |
 | 4 | Cuentas (anónimas) + botón Compartir (imagen descargable + texto) | Sí | Pendiente |
 | 5 | Comunidad: posts, votos, comentarios, respuestas con dato, moderación, rankings | Sí | Pendiente |
@@ -28,9 +28,10 @@ Sale de D-001 (Next.js + Cloudflare + Supabase, JSON estáticos, Actions diario,
 
 ## Fase 2 en detalle
 
-Hecho 2026-11-08 (spec: [`docs/specs/migracion-nextjs.md`](specs/migracion-nextjs.md), decisión D-003): `web/` con Next.js + TypeScript + uPlot en export estático, una ruta por sección, datos en JSON por categoría y filtros en la URL. El sitio nuevo ya es el que está publicado en `duelo-de-datos.pages.dev`; el nombre pasó a ser Primero los Datos (D-004).
+Hecho 2026-11-08 (spec: [`docs/specs/migracion-nextjs.md`](specs/migracion-nextjs.md), decisión D-003): `web/` con Next.js + TypeScript + uPlot en export estático, una ruta por sección, datos en JSON por categoría y filtros en la URL. El sitio nuevo ya es el que está publicado en https://primerolosdatos.com.ar (también responde `duelo-de-datos.pages.dev`); el nombre pasó a ser Primero los Datos (D-004).
 
 Pendiente de la fase:
-- Conectar `primerolosdatos.com.ar` (registrado; falta que la zona de Cloudflare figure como Active y agregar el dominio al proyecto de Pages).
+- ~~Conectar `primerolosdatos.com.ar`~~ — hecho 2026-11-08 (zona en Cloudflare, dominio personalizado del proyecto de Pages).
+- Opcional: `www.primerolosdatos.com.ar` (CNAME + redirección) y correo con el dominio.
 - Reservar `primerolosdatos` en X e Instagram.
 - Ver la primera corrida programada (21:00) con el sitio nuevo.

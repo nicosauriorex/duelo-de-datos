@@ -83,5 +83,5 @@ Una entrada por decisión de arquitectura. Formato: contexto, decisión, por qu�
 **Qué no cambia por ahora**: el proyecto de Cloudflare Pages (`duelo-de-datos`, por eso la URL actual es `duelo-de-datos.pages.dev`) hasta conectar el dominio propio (los proyectos de Pages no se pueden renombrar). El repo de GitHub se renombró a `primerolosdatos` (2026-11-08).
 
 **Pendiente**
-- El usuario registra `primerolosdatos.com.ar` en nic.ar (y reserva los usuarios en X e Instagram).
-- Después: conectar el dominio a Cloudflare Pages y actualizar las URLs del workflow y los docs.
+- ~~Registrar `primerolosdatos.com.ar` y conectarlo a Cloudflare Pages~~ — hecho 2026-11-08 (registrado en nic.ar, DNS en Cloudflare, dominio personalizado del proyecto `duelo-de-datos`). Las URLs del workflow y los docs ya apuntan a él.
+- Reservar los usuarios en X e Instagram.

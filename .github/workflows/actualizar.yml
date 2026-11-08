@@ -94,7 +94,7 @@ jobs:
           npm run build
           {
             echo "- Tamaño del sitio: $(du -sh out | cut -f1)"
-            echo "- Sitio: https://duelo-de-datos.pages.dev"
+            echo "- Sitio: https://primerolosdatos.com.ar"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Crear proyecto de Cloudflare si no existe
