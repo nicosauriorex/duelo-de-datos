@@ -225,3 +225,14 @@ export function pearson(xs: number[], ys: number[]) {
   for (let k = 0; k < n; k++) { const dx = xs[k] - mx, dy = ys[k] - my; sxy += dx * dy; sxx += dx * dx; syy += dy * dy; }
   return sxx && syy ? { r: sxy / Math.sqrt(sxx * syy), b: sxy / sxx, a: my - sxy / sxx * mx } : null;
 }
+
+// ---------------------------------------------------------------- Colores de variaciones
+/** Clasifica un cambio según `dir` (1: subir es bueno; -1: bajar es bueno; 0 o sin dato: neutro). */
+export function claseVariacion(dir: number | null | undefined, pct: boolean, desde: number | null | undefined, hasta: number | null | undefined): "bueno" | "malo" | "neutro" {
+  if (!dir || !ok(desde) || !ok(hasta)) return "neutro";
+  if (!pct && desde === 0) return "neutro";
+  let d = hasta - desde;
+  if (!pct && desde < 0) d = -d; // la variación % se calcula como cociente: con base negativa el signo se invierte
+  const s = Math.sign(d) * Math.sign(dir);
+  return s > 0 ? "bueno" : s < 0 ? "malo" : "neutro";
+}

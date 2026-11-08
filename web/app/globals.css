@@ -5,8 +5,8 @@
   --grid: #ebe9e4; --axis: #bdbbb4; --neutral: #8a8984;
   --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100;
   --series-5: #e87ba4; --series-6: #008300; --series-7: #6250d6; --series-8: #e34948;
-  --pos: #008300; --neg: #c83a39;
-  --shadow: 0 8px 28px rgba(0,0,0,.14);
+  --pos: #008300; --neg: #c83a39; --bueno: #0a7a2f; --malo: #c0302f;
+  --shadow: 0 8px 28px rgba(0,0,0,.14); --nav-h: 42px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -16,7 +16,7 @@
     --grid: #262624; --axis: #45443f; --neutral: #9a9992;
     --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
     --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
-    --pos: #3fa83f; --neg: #e66767; --shadow: 0 8px 28px rgba(0,0,0,.5);
+    --pos: #3fa83f; --neg: #e66767; --bueno: #4cc26a; --malo: #f07575; --shadow: 0 8px 28px rgba(0,0,0,.5);
   }
 }
 :root[data-theme="dark"] {
@@ -26,7 +26,7 @@
   --grid: #262624; --axis: #45443f; --neutral: #9a9992;
   --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
   --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
-  --pos: #3fa83f; --neg: #e66767; --shadow: 0 8px 28px rgba(0,0,0,.5);
+  --pos: #3fa83f; --neg: #e66767; --bueno: #4cc26a; --malo: #f07575; --shadow: 0 8px 28px rgba(0,0,0,.5);
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--surface-0); color: var(--text-primary);
@@ -38,7 +38,7 @@ h3 { font-size: 15px; margin: 24px 0 8px; }
 button { font: inherit; }
 
 /* Barra fija */
-.barra { position: sticky; top: 0; z-index: 30; background: var(--surface-0); margin: 0 -16px 16px; padding: 0 16px;
+.barra { position: sticky; top: 0; z-index: 30; height: var(--nav-h); background: var(--surface-0); margin: 0 -16px 16px; padding: 0 16px;
   border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
 nav.tabs { display: flex; gap: 2px; flex: 1 1 auto; min-width: 0; overflow-x: auto; scrollbar-width: none; }
 #periodo_btn { white-space: nowrap; max-width: 46vw; overflow: hidden; text-overflow: ellipsis; }
@@ -93,7 +93,7 @@ input[type=range] { accent-color: var(--text-primary); width: 220px; max-width: 
 .tile .mitades.dos { grid-template-columns: 1fr 1fr; }
 .tile .mitad { min-width: 0; }
 .tile .mitades.dos .mitad + .mitad { border-left: 1px solid var(--border); padding-left: 8px; }
-.tile .v { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.2; overflow-wrap: anywhere; }
+.tile .v { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.2; overflow-wrap: anywhere; }
 .tile .mitades.dos .v { font-size: 16px; }
 .tile .d { font-size: 11.5px; color: var(--text-muted); line-height: 1.35; }
 .tile .d b { font-weight: 600; color: var(--text-secondary); }
@@ -213,3 +213,78 @@ a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible
 a.curio { display: block; text-decoration: none; }
 td.nombre a { color: inherit; text-decoration: none; }
 td.nombre a:hover { text-decoration: underline; }
+
+/* Variaciones: verde si el cambio es bueno, rojo si es malo, gris si es neutro */
+.var-bueno, .tile .d b.var-bueno, td.var-bueno { color: var(--bueno); }
+.var-malo, .tile .d b.var-malo, td.var-malo { color: var(--malo); }
+.var-neutro, .tile .d b.var-neutro, td.var-neutro { color: var(--text-muted); }
+
+/* Barra fija de Histórico: período + Mes / Trimestre / Año */
+.barra-hist { position: sticky; top: var(--nav-h); z-index: 25; display: flex; align-items: center; gap: 8px; margin: 0 -16px 12px; padding: 5px 16px;
+  height: 46px; background: var(--surface-0); border-bottom: 1px solid var(--border); }
+.barra-hist .desplegable { display: block; flex: 1 1 auto; min-width: 0; position: static; }
+.barra-hist .btn.drop { width: 100%; justify-content: space-between; }
+.barra-hist .seg { flex: none; flex-wrap: nowrap; }
+.barra-hist .seg button { padding: 5px 8px; }
+.barra-hist .desplegable .panel { position: absolute; left: 16px; right: 16px; top: calc(100% + 1px); margin: 0; width: auto; max-width: 720px;
+  max-height: calc(100dvh - var(--nav-h) - 60px); overflow-y: auto; z-index: 40; box-shadow: var(--shadow); }
+.btn.drop .et { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+@media (max-width: 640px) { .solo-grande { display: none; } }
+
+/* Chips de resumen (celular) */
+.chips { display: none; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-bottom: 12px; padding-bottom: 2px; }
+.chip { flex: none; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-1); padding: 5px 10px; font-size: 13px; white-space: nowrap; }
+.chip .ln { display: flex; gap: 6px; align-items: baseline; line-height: 1.35; }
+.chip .n { color: var(--text-secondary); font-size: 12px; }
+.chip .v { font-weight: 600; font-variant-numeric: tabular-nums; }
+.chip .vr { font-size: 12px; font-variant-numeric: tabular-nums; }
+.chip .f { color: var(--text-muted); font-size: 10.5px; }
+@media (max-width: 639.98px) {
+  .chips { display: flex; }
+  .tiles.res { display: none; }
+  .refleg .rv, .refleg .ri small { display: none; }
+}
+
+/* Barra de cada gráfico: Gráfico / Tabla, Configurar, expandir */
+.barra-graf { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; margin-bottom: 8px; }
+.barra-graf .desplegable { display: contents; }
+.barra-graf .desplegable .panel { flex: 1 0 100%; order: 10; width: auto; margin: 0; }
+.barra-graf .esp { flex: 1 1 auto; }
+.btn.expandir { padding: 5px 9px; }
+@media (max-width: 640px) { .barra-graf .btn.drop { width: auto; } }
+
+/* Desplegable propio (reemplaza al select) */
+.sel { position: relative; display: inline-block; max-width: 100%; vertical-align: top; }
+.sel-btn { max-width: 100%; display: inline-flex; align-items: center; gap: 6px; text-align: left; }
+.sel-btn .et { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.sel-btn::after { content: "▾"; margin-left: 4px; color: var(--text-muted); flex: none; }
+.sel-lista { position: fixed; z-index: 80; margin: 0; padding: 4px; list-style: none; overflow-y: auto; background: var(--surface-1);
+  border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); outline: none; }
+.sel-lista li { padding: 6px 10px; border-radius: 6px; font-size: 13px; cursor: pointer; color: var(--text-primary); }
+.sel-lista li.activo { background: var(--surface-0); }
+.sel-lista li[aria-selected="true"] { font-weight: 600; }
+.sel-lista li[aria-selected="true"]::after { content: " ✓"; color: var(--text-muted); }
+.fecha-sel { display: inline-flex; gap: 6px; }
+
+/* Gráfico: selección, volver, tabla */
+.graf-caja { position: relative; }
+.grafico .u-over { overflow: hidden; touch-action: pan-y; }
+.grafico .sel-zoom { position: absolute; top: 0; bottom: 0; pointer-events: none; border-left: 1px solid var(--text-secondary); border-right: 1px solid var(--text-secondary);
+  box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--surface-1) 62%, transparent); display: none; }
+.btn.volver { position: absolute; top: 2px; right: 2px; z-index: 6; padding: 3px 9px; }
+.tabla-graf { max-height: 440px; overflow: auto; }
+
+/* Expandir */
+.exp { position: fixed; inset: 0; z-index: 60; background: var(--surface-1); display: flex; flex-direction: column; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); }
+.exp-cab { display: flex; align-items: flex-start; gap: 10px; }
+.exp-cab h2 { flex: 1; font-size: 15px; margin: 0; }
+.exp .graf-caja { flex: 1 1 auto; min-height: 0; }
+.exp .grafico { position: absolute; inset: 0; }
+.exp .aviso-giro { background: var(--surface-0); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 13px; margin: 4px 0; text-align: center; }
+body.sin-scroll { overflow: hidden; }
+th small { display: block; font-size: 11px; font-weight: 400; color: var(--text-muted); line-height: 1.2; }
+.chip { display: flex; gap: 8px; align-items: center; }
+.chip .col { display: flex; flex-direction: column; }
+.chip .ln .punto { align-self: center; width: 8px; height: 8px; }
+.desplegable .panel .seg { max-width: 100%; }
+@media (min-width: 641px) { .barra-hist .desplegable { flex: 0 1 460px; } }

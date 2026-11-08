@@ -1,8 +1,8 @@
 "use client";
 // Gráfico de líneas con uPlot: uno o dos ejes, bandas mín/máx, escala log, referencias, marcadores,
-// etiquetas al final, tooltip y zoom por arrastre (doble clic para volver).
+// etiquetas al final, tooltip, zoom por arrastre (mouse y táctil; Volver / doble clic) y vista expandida.
 import "uplot/dist/uPlot.min.css";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import uPlot from "uplot";
 import { MESES, fmtMes, mesNum, ok } from "@/lib/formato";
 
@@ -69,9 +69,111 @@ function useTema(): number {
   return t;
 }
 
-export function Grafico({ rows, series, opts }: { rows: Fila[]; series: SerieG[]; opts: OpcionesG }) {
+const MQ_ESTRECHO = "(max-width: 639.98px)";
+function useMedia(q: string): boolean {
+  const [v, setV] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(q), f = () => setV(mq.matches);
+    f(); mq.addEventListener("change", f);
+    return () => mq.removeEventListener("change", f);
+  }, [q]);
+  return v;
+}
+
+/** Etiquetas del eje X según el ancho disponible (px por etiqueta de año ≥ 40; abreviadas en celular si hace falta). */
+export function ejeX(a: number, b: number, anchoPx: number, estrecho: boolean): { splits: number[]; fmt: (v: number) => string } {
+  const span = Math.max(1e-9, b - a), nY = span / 12, splits: number[] = [];
+  if (nY < 1.5) {
+    const paso = [1, 2, 3, 6, 12].find((p) => (span / p + 1) * 56 <= anchoPx) || 12;
+    for (let n = Math.ceil(a / paso) * paso; n <= b + 1e-9; n += paso) splits.push(n);
+    return { splits, fmt: mesTxt };
+  }
+  const cand = [1, 2, 5, 10, 20, 50], px = (p: number) => anchoPx / (nY / p);
+  let paso = cand.find((p) => px(p) >= 40) || 50, abrev = false;
+  if (estrecho) { const p2 = cand.find((p) => px(p) >= 30) || 50; if (p2 < paso) { paso = p2; abrev = true; } }
+  for (let yr = Math.ceil((a - 0.5) / 12); yr * 12 <= b + 1e-9; yr++) if (yr % paso === 0 && yr * 12 >= a - 0.5) splits.push(yr * 12);
+  return { splits, fmt: (v) => (abrev ? "'" + String(Math.round(v / 12)).slice(-2) : String(Math.round(v / 12))) };
+}
+
+export function hayDatos(rows: Fila[], series: SerieG[], opts: OpcionesG): boolean {
+  const okv = (v: unknown, ax: number) => ok(v as number) && (!(ax ? opts.log2 : opts.log) || (v as number) > 0);
+  return rows.some((r) => series.some((s) => okv(r[s.key], s.axis || 0)));
+}
+
+export interface Expandir { titulo: string; leyenda?: ReactNode; abierto: boolean; onCerrar: () => void }
+
+/** Gráfico con ayuda debajo; con `expandir.abierto` muestra además la vista a pantalla completa. */
+export function Grafico({ rows, series, opts, expandir }: { rows: Fila[]; series: SerieG[]; opts: OpcionesG; expandir?: Expandir }) {
+  const tactil = useMedia("(pointer: coarse)");
+  if (!hayDatos(rows, series, opts)) return <p className="note">Sin datos para esta selección.</p>;
+  const ayuda = tactil ? "Tocá un punto para ver el valor. Arrastrá de costado para acercar." : "Arrastrá para acercar; doble clic para volver.";
+  return (
+    <>
+      <GraficoBase rows={rows} series={series} opts={opts} />
+      <p className="note ayuda-zoom">{ayuda}</p>
+      {expandir?.abierto && (
+        <Expandido expandir={expandir} ayuda={ayuda}><GraficoBase rows={rows} series={series} opts={opts} lleno /></Expandido>
+      )}
+    </>
+  );
+}
+
+function Expandido({ expandir, ayuda, children }: { expandir: Expandir; ayuda: string; children: ReactNode }) {
+  const raiz = useRef<HTMLDivElement>(null);
+  const { onCerrar } = expandir;
+  const [vertical, setVertical] = useState(false);
+  const coarse = useMedia("(pointer: coarse)");
+  useEffect(() => {
+    const cerrado = { v: false }, fs = { v: false };
+    const cerrar = () => { if (!cerrado.v) { cerrado.v = true; onCerrar(); } };
+    window.history.pushState({ pldExp: true }, "");
+    document.body.classList.add("sin-scroll");
+    const tecla = (ev: KeyboardEvent) => { if (ev.key === "Escape") { ev.preventDefault(); cerrar(); } };
+    const atras = () => cerrar();
+    const cambioFs = () => { if (fs.v && !document.fullscreenElement) cerrar(); };
+    const medir = () => setVertical(window.innerHeight > window.innerWidth);
+    document.addEventListener("keydown", tecla);
+    window.addEventListener("popstate", atras);
+    document.addEventListener("fullscreenchange", cambioFs);
+    window.addEventListener("resize", medir);
+    medir();
+    const el = raiz.current;
+    const girar = () => { if (window.matchMedia("(pointer: coarse)").matches) (screen.orientation as any)?.lock?.("landscape")?.catch?.(() => {}); };
+    if (el && el.requestFullscreen) el.requestFullscreen().then(() => { fs.v = true; girar(); }).catch(girar);
+    else girar();
+    return () => {
+      cerrado.v = true;
+      document.removeEventListener("keydown", tecla); window.removeEventListener("popstate", atras);
+      document.removeEventListener("fullscreenchange", cambioFs); window.removeEventListener("resize", medir);
+      document.body.classList.remove("sin-scroll");
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+      try { (screen.orientation as any)?.unlock?.(); } catch { /* no se puede */ }
+      if (window.history.state && window.history.state.pldExp) window.history.back();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return (
+    <div className="exp" ref={raiz} role="dialog" aria-modal="true" aria-label={expandir.titulo}>
+      <div className="exp-cab">
+        <h2>{expandir.titulo}</h2>
+        <button type="button" className="btn" aria-label="Cerrar vista ampliada" onClick={onCerrar}>✕</button>
+      </div>
+      {expandir.leyenda}
+      {coarse && vertical && <div className="aviso-giro" role="status">Girá el celular para verlo más grande</div>}
+      <div className="graf-caja">{children}</div>
+      <p className="note ayuda-zoom">{ayuda}</p>
+    </div>
+  );
+}
+
+function GraficoBase({ rows, series, opts, lleno }: { rows: Fila[]; series: SerieG[]; opts: OpcionesG; lleno?: boolean }) {
   const cont = useRef<HTMLDivElement>(null);
   const tema = useTema();
+  const estrecho = useMedia(MQ_ESTRECHO);
+  const [zoom, setZoom] = useState(false);
+  const reset = useRef<() => void>(() => {});
+  const zoomRef = useRef<[number, number] | null>(null); // rango acercado: se conserva al redibujar por tamaño, no al cambiar datos
+  useEffect(() => { zoomRef.current = null; }, [rows, series, opts]);
   const dual = series.some((s) => s.axis === 1);
   const okv = (v: unknown, ax: number): v is number => ok(v as number) && (!(ax ? opts.log2 : opts.log) || (v as number) > 0);
   const hay = rows.some((r) => series.some((s) => okv(r[s.key], s.axis || 0)));
@@ -146,28 +248,27 @@ export function Grafico({ rows, series, opts }: { rows: Fila[]; series: SerieG[]
       bands.push({ series: [iHi, iLo], fill: hexA(colorDe(se.color), 0.18) });
     });
 
-    // eje x
-    let xSplits: number[] = []; const xLab = new Map<number, string>();
-    if (opts.xLabel) {
-      rows.forEach((r, i) => { const t = opts.xLabel!(r, i); if (t !== "" && t != null) { xSplits.push(xs[i]); xLab.set(xs[i], String(t)); } });
-    } else {
-      const nYears = (x1 - x0) / 12, yStep = nYears > 24 ? 5 : nYears > 12 ? 2 : 1;
-      if (nYears < 1.5) rows.forEach((r, i) => { if (i % Math.max(1, Math.ceil(rows.length / 8)) === 0) { xSplits.push(xs[i]); xLab.set(xs[i], fmtMes(r.fecha)); } });
-      else {
-        const yr0 = Math.floor(x0 / 12), yr1 = Math.floor(x1 / 12);
-        for (let yr = yr0; yr <= yr1; yr++) if (yr % yStep === 0 && yr * 12 >= x0 - 1 && yr * 12 <= x1) { xSplits.push(yr * 12); xLab.set(yr * 12, String(yr)); }
-      }
-    }
+    // eje x: con etiquetas propias (xLabel) quedan fijas; si no, se eligen según el ancho y el rango visible
+    const xSplits: number[] = []; const xLab = new Map<number, string>();
+    if (opts.xLabel) rows.forEach((r, i) => { const t = opts.xLabel!(r, i); if (t !== "" && t != null) { xSplits.push(xs[i]); xLab.set(xs[i], String(t)); } });
+    let xFmt: (v: number) => string = mesTxt;
+    const anchoPlot = (uu: uPlot) => Math.max(60, uu.bbox.width / dpr());
+    const splitsX = (uu: uPlot, _ax: number, mn: number, mx: number) => {
+      if (opts.xLabel) return xSplits;
+      const r = ejeX(mn, mx, anchoPlot(uu), estrecho); xFmt = r.fmt; return r.splits;
+    };
     const tip = document.createElement("div");
     tip.className = "tip"; tip.style.display = "none";
     const fontAx = "11px system-ui, sans-serif";
     const w0 = Math.max(280, el.clientWidth || 600);
-    const m = { l: 74 };
+    const alto = () => (lleno ? Math.max(200, el.clientHeight) : opts.height || (estrecho ? 300 : 340));
+    const m = { l: estrecho ? 48 : 74 };
+    const padR = dual ? 8 : opts.endLabels ? (estrecho ? 70 : 110) : 16;
     const u = new uPlot({
-      width: w0, height: opts.height || 340, series: uSeries, bands,
-      padding: [14, dual ? 8 : opts.endLabels ? 110 : 16, 0, 0],
+      width: w0, height: alto(), series: uSeries, bands,
+      padding: [14, padR, 0, 0],
       legend: { show: false },
-      cursor: { drag: { x: true, y: false, setScale: true }, y: false, points: { size: 9, width: 2, stroke: surf, fill: (uu, si) => (uu.series[si].stroke as string) } },
+      cursor: { drag: { x: false, y: false, setScale: false }, y: false, bind: { dblclick: () => null }, points: { size: 9, width: 2, stroke: surf, fill: (uu, si) => (uu.series[si].stroke as string) } },
       scales: {
         x: { time: false, range: (uu, mn, mx) => [mn, mx] },
         y: { distr: opts.log ? 3 : 1, log: 10, range: rango(0) },
@@ -175,10 +276,10 @@ export function Grafico({ rows, series, opts }: { rows: Fila[]; series: SerieG[]
       },
       axes: [
         { stroke: txt, font: fontAx, grid: { show: false }, ticks: { show: false }, border: { show: true, stroke: axisC, width: 1 }, size: 28, gap: 4,
-          splits: () => xSplits, values: (_u, sp) => sp.map((v) => xLab.get(v) ?? (opts.xLabel ? "" : mesTxt(v))) },
+          splits: splitsX, values: (_u, sp) => sp.map((v) => xLab.get(v) ?? (opts.xLabel ? "" : xFmt(v))) },
         { scale: "y", stroke: txt, font: fontAx, size: m.l, gap: 4, grid: { stroke: grid, width: 1 }, ticks: { show: false }, border: { show: false },
           splits: () => (tk[0] ? tk[0].ticks : []), values: (_u, sp) => sp.map((v) => opts.fmtAxis(v)) },
-        ...(dual ? [{ scale: "y2", side: 1, stroke: txt, font: fontAx, size: 74, gap: 4, grid: { show: false }, ticks: { show: false }, border: { show: false },
+        ...(dual ? [{ scale: "y2", side: 1, stroke: txt, font: fontAx, size: m.l, gap: 4, grid: { show: false }, ticks: { show: false }, border: { show: false },
           splits: () => (tk[1] ? tk[1].ticks : []), values: (_u: uPlot, sp: number[]) => sp.map((v) => (opts.fmtAxis2 || opts.fmtAxis)(v)) } as uPlot.Axis] : []),
       ],
       hooks: {
@@ -272,7 +373,15 @@ export function Grafico({ rows, series, opts }: { rows: Fila[]; series: SerieG[]
             }).filter(Boolean).sort((a, b) => a!.y - b!.y) as { se: SerieG; i: number; y: number }[];
             for (let k = 1; k < lab.length; k++) if (lab[k].y - lab[k - 1].y < 14 * d) lab[k].y = lab[k - 1].y + 14 * d;
             ctx.textAlign = "left"; ctx.fillStyle = css("--text-secondary"); ctx.font = `${11 * d}px system-ui, sans-serif`;
-            lab.forEach((l) => ctx.fillText(l.se.short || (l.se.name.length > 18 ? l.se.name.slice(0, 17) + "…" : l.se.name), xOf(l.i) + 8 * d, l.y + 4 * d));
+            lab.forEach((l) => {
+              const x = xOf(l.i) + 8 * d, libre = Math.max(20 * d, ctx.canvas.width - x - 4 * d);
+              let t = l.se.short || (l.se.name.length > 18 ? l.se.name.slice(0, 17) + "…" : l.se.name);
+              if (ctx.measureText(t).width > libre) {
+                while (t.length > 1 && ctx.measureText(t.replace(/…$/, "") + "…").width > libre) t = t.replace(/…$/, "").slice(0, -1) + "…";
+                if (!t.endsWith("…")) t += "…";
+              }
+              ctx.fillText(t, x, l.y + 4 * d);
+            });
           }
           ctx.restore();
         }],
@@ -298,18 +407,63 @@ export function Grafico({ rows, series, opts }: { rows: Fila[]; series: SerieG[]
     }, data as uPlot.AlignedData, el);
     u.over.appendChild(tip);
     u.over.style.cursor = "crosshair";
+    // Zoom propio (mouse, lápiz y táctil): arrastre horizontal selecciona; el vertical sigue siendo scroll (touch-action: pan-y)
+    const over = u.over, selEl = document.createElement("div");
+    selEl.className = "sel-zoom"; over.appendChild(selEl);
+    let down: { x: number; y: number; id: number; tipo: string } | null = null, sel = false;
+    const pos = (e: PointerEvent) => { const r = over.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+    const ocultarTip = () => u.setCursor({ left: -10, top: -10 });
+    const alPresionar = (e: PointerEvent) => {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      const p = pos(e); down = { ...p, id: e.pointerId, tipo: e.pointerType }; sel = false;
+      if (e.pointerType !== "mouse") u.setCursor({ left: p.x, top: p.y });
+    };
+    const alMover = (e: PointerEvent) => {
+      if (!down || e.pointerId !== down.id) return;
+      const p = pos(e);
+      if (!sel) {
+        const dx = Math.abs(p.x - down.x), dy = Math.abs(p.y - down.y);
+        if (dx > 6 && (down.tipo === "mouse" || dx > dy)) { sel = true; try { over.setPointerCapture(e.pointerId); } catch { /* sin captura */ } } else return;
+      }
+      const a = Math.max(0, Math.min(down.x, p.x)), b = Math.min(over.clientWidth, Math.max(down.x, p.x));
+      selEl.style.display = "block"; selEl.style.left = a + "px"; selEl.style.width = b - a + "px";
+    };
+    const alSoltar = (e: PointerEvent, cancelado: boolean) => {
+      if (!down || e.pointerId !== down.id) return;
+      const d0 = down, era = sel; down = null; sel = false; selEl.style.display = "none";
+      if (!era || cancelado) return;
+      const p = pos(e), a = Math.max(0, Math.min(d0.x, p.x)), b = Math.min(over.clientWidth, Math.max(d0.x, p.x));
+      const va = u.posToVal(a, "x"), vb = u.posToVal(b, "x");
+      const dentro = xs.filter((v) => v >= va && v <= vb);
+      if (dentro.length < 2) return; // menos de 2 períodos: se toma como toque
+      u.setScale("x", { min: dentro[0], max: dentro[dentro.length - 1] });
+      zoomRef.current = [dentro[0], dentro[dentro.length - 1]];
+      setZoom(true);
+    };
+    const volver = () => { u.setScale("x", { min: x0, max: x1 }); zoomRef.current = null; setZoom(false); };
+    if (zoomRef.current) { u.setScale("x", { min: zoomRef.current[0], max: zoomRef.current[1] }); setZoom(true); } else setZoom(false);
+    reset.current = volver;
+    const alSoltarOk = (e: PointerEvent) => alSoltar(e, false), alCancelar = (e: PointerEvent) => alSoltar(e, true);
+    over.addEventListener("pointerdown", alPresionar); over.addEventListener("pointermove", alMover);
+    over.addEventListener("pointerup", alSoltarOk); over.addEventListener("pointercancel", alCancelar);
+    over.addEventListener("dblclick", volver);
+    const fuera = (e: PointerEvent) => { if (e.pointerType !== "mouse" && !el.contains(e.target as Node)) ocultarTip(); };
+    document.addEventListener("pointerdown", fuera);
     el.setAttribute("role", "img"); el.setAttribute("aria-label", opts.label || "Gráfico de líneas");
-    const ro = new ResizeObserver(() => { const w = Math.max(280, el.clientWidth); if (Math.abs(w - u.width) > 1) u.setSize({ width: w, height: opts.height || 340 }); });
+    const ro = new ResizeObserver(() => {
+      const w = Math.max(280, el.clientWidth), h = alto();
+      if (Math.abs(w - u.width) > 1 || Math.abs(h - u.height) > 1) u.setSize({ width: w, height: h });
+    });
     ro.observe(el);
-    return () => { ro.disconnect(); u.destroy(); el.innerHTML = ""; };
+    return () => { document.removeEventListener("pointerdown", fuera); ro.disconnect(); u.destroy(); el.innerHTML = ""; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, series, opts, tema, hay]);
+  }, [rows, series, opts, tema, hay, estrecho, lleno]);
 
   if (!hay) return <p className="note">Sin datos para esta selección.</p>;
   return (
-    <>
-      <div ref={cont} className="grafico" />
-      <p className="note ayuda-zoom">Arrastrá sobre el gráfico para acercar; doble clic para volver.</p>
-    </>
+    <div className="graf-caja" style={lleno ? { position: "absolute", inset: 0 } : undefined}>
+      <div ref={cont} className={`grafico${lleno ? " lleno" : ""}`} />
+      {zoom && <button type="button" className="btn volver" onClick={() => reset.current()}>Volver</button>}
+    </div>
   );
 }

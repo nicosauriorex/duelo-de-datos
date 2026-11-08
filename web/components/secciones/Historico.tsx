@@ -1,13 +1,13 @@
 "use client";
-import { Fragment, useMemo } from "react";
+import { Fragment, useMemo, useState, type ReactNode } from "react";
 import { useSeccion } from "../useSeccion";
-import { Cargando, Desplegable, Seg, alternar } from "../ui";
+import { Cargando, Desplegable, Selector, Seg, alternar } from "../ui";
 import { FilaVariable } from "../Variables";
-import { Grafico, type Fila, type Marca, type Ref, type SerieG } from "../Grafico";
-import { PALETA, tinte, vcolor } from "../util";
+import { Grafico, hayDatos, type Fila, type Marca, type OpcionesG, type Ref, type SerieG } from "../Grafico";
+import { PALETA, vcolor } from "../util";
 import { fmtMes, MESES, nf0, nf1, fmtNum, ok } from "@/lib/formato";
 import { FX_COLOR, FX_KEYS, FX_NOM, type Calculo, type Expr, type Motor } from "@/lib/motor";
-import { agrupar, estadisticasRows, etiqueta, recortar, type EstRows } from "@/lib/estadisticas";
+import { agrupar, claseVariacion, estadisticasRows, etiqueta, recortar, type EstRows } from "@/lib/estadisticas";
 import { decExpr, encExpr, lista as listaUrl, unoDe, useParams } from "@/lib/url";
 
 const TODOS_MESES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
@@ -51,6 +51,7 @@ export function Historico() {
       fx: new Set(listaUrl(p.has("fx") ? p.get("fx") : "oficial,blue,ccl").filter((k) => (FX_KEYS as readonly string[]).includes(k))),
       fxmed: unoDe(p.get("fxm"), ["corr", "real", "realbi"] as const, "real"), fxbanda: unoDe(p.get("fxbd"), ["no", "si"] as const, "no"),
       sojamed: unoDe(p.get("sm"), ["corr", "usdr"] as const, "corr"), sojafx: unoDe(p.get("sf"), FX_KEYS, "oficial"),
+      tabla: unoDe(p.get("t"), ["grafico", "tabla"] as const, "grafico"),
       ratio: new Set(listaUrl(p.has("rt") ? p.get("rt") : "oficial,ccl").filter((k) => (FX_KEYS as readonly string[]).includes(k))),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -84,10 +85,7 @@ export function Historico() {
 
   return (
     <section>
-      <Filtro E={E} set={set} F={m.F} />
-      <div className="controls"><label>Mostrar</label>
-        <Seg valor={E.modo} opciones={[["valor", "Valor de la serie (hasta 2 variables)"], ["b100", "Comparar en base 100 (hasta 10)"]]} onElegir={(v) => set({ m: v === "valor" ? null : v })} />
-      </div>
+      <Barra E={E} set={set} F={m.F} />
       <div>
         {E.exprs.map((e, k) => (
           <FilaVariable key={k} e={e} color={PALETA[k]} quitable={b100 ? E.exprs.length > 1 : k === 1} onChange={(x) => setExpr(k, x)} />
@@ -111,15 +109,37 @@ declare function useEstado(): {
   F: string[]; ult: string; modo: "valor" | "b100"; exprs: Expr[]; todas: Expr[]; desde: string; hasta: string; meses: Set<number>;
   freq: "M" | "T" | "A"; escala: "lin" | "log"; banda: "no" | "si"; eje: "propia" | "misma"; refs: Set<string>;
   br: Set<string>; fx: Set<string>; fxmed: "corr" | "real" | "realbi"; fxbanda: "no" | "si"; sojamed: "corr" | "usdr";
-  sojafx: (typeof FX_KEYS)[number]; ratio: Set<string>;
+  sojafx: (typeof FX_KEYS)[number]; ratio: Set<string>; tabla: "grafico" | "tabla";
 } | null;
 type SetFn = (c: Record<string, string | null | undefined>) => void;
 
-// ------------------------------------------------------------ filtro de período
-function Filtro({ E, set, F }: { E: Estado; set: SetFn; F: string[] }) {
+// ------------------------------------------------------------ barra fija: período + Mes / Trimestre / Año
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
+/** Mes y año como dos desplegables; respeta el primer y el último mes con datos. */
+function SelFecha({ valor, min, max, etq, onElegir }: { valor: string; min: string; max: string; etq: string; onElegir: (v: string) => void }) {
+  const [y, mo] = valor.split("-").map(Number), [y0, m0] = min.split("-").map(Number), [y1, m1] = max.split("-").map(Number);
+  const anios: [string, string][] = [];
+  for (let a = y0; a <= y1; a++) anios.push([String(a), String(a)]);
+  const iniM = y === y0 ? m0 : 1, finM = y === y1 ? m1 : 12;
+  const meses: [string, string][] = [];
+  for (let k = iniM; k <= finM; k++) meses.push([String(k), MESES[k - 1]]);
+  const cambiarAnio = (v: string) => {
+    const ny = +v, lo = ny === y0 ? m0 : 1, hi = ny === y1 ? m1 : 12;
+    onElegir(`${ny}-${pad2(Math.max(lo, Math.min(hi, mo)))}`);
+  };
+  return (
+    <span className="fecha-sel">
+      <Selector etiqueta={`${etq}: mes`} valor={String(mo)} opciones={meses} onElegir={(v) => onElegir(`${y}-${pad2(+v)}`)} />
+      <Selector etiqueta={`${etq}: año`} valor={String(y)} opciones={anios} onElegir={cambiarAnio} />
+    </span>
+  );
+}
+
+function Barra({ E, set, F }: { E: Estado; set: SetFn; F: string[] }) {
   const N = F.length, ult = F[N - 1], hace12 = F[Math.max(0, N - 12)];
   const PRESETS: [string, string][] = [[F[0], "Todo"], ["1995-01", "1995"], ["2003-01", "2003"], ["2011-01", "2011"], ["2017-01", "2017"], ["2023-01", "2023"], [hace12, "Último año"]];
-  const ms = E.meses.size === 12 ? "todos los meses" : [...E.meses].sort((a, b) => a - b).map((k) => MESES[k - 1]).join(", ");
+  const ms = [...E.meses].sort((a, b) => a - b).map((k) => MESES[k - 1]).join(", ");
   const cambiarDesde = (v: string) => { if (!v) return; set({ d: v, h: v > E.hasta ? v : undefined }); };
   const cambiarHasta = (v: string) => { if (!v) return; set({ h: v === ult ? null : v, d: v < E.desde ? v : undefined }); };
   const mesClick = (k: number | "todos") => {
@@ -130,10 +150,10 @@ function Filtro({ E, set, F }: { E: Estado; set: SetFn; F: string[] }) {
     set({ ms: n.size === 12 ? null : [...n].sort((a, b) => a - b).join(",") });
   };
   return (
-    <div className="filtros">
-      <Desplegable etiqueta={`Período: ${fmtMes(E.desde)} – ${fmtMes(E.hasta)} · ${ms}`}>
-        <div className="controls"><label htmlFor="f_desde">Desde</label><input id="f_desde" type="month" min={F[0]} max={ult} value={E.desde} onChange={(ev) => cambiarDesde(ev.target.value)} />
-          <label htmlFor="f_hasta">Hasta</label><input id="f_hasta" type="month" min={F[0]} max={ult} value={E.hasta} onChange={(ev) => cambiarHasta(ev.target.value)} /></div>
+    <div className="barra-hist" role="region" aria-label="Período y frecuencia">
+      <Desplegable etiqueta={<><span className="solo-grande">Período: </span>{fmtMes(E.desde)} – {fmtMes(E.hasta)}{E.meses.size < 12 ? ` · ${ms}` : ""}</>}>
+        <div className="controls"><label>Desde</label><SelFecha etq="Desde" valor={E.desde} min={F[0]} max={ult} onElegir={cambiarDesde} />
+          <label>Hasta</label><SelFecha etq="Hasta" valor={E.hasta} min={F[0]} max={ult} onElegir={cambiarHasta} /></div>
         <div className="controls"><label>Atajos</label>
           <div className="seg">{PRESETS.map(([v, t]) => (
             <button key={t} type="button" aria-pressed={E.desde === v && E.hasta === ult} onClick={() => set({ d: v, h: null })}>{t}</button>
@@ -145,14 +165,66 @@ function Filtro({ E, set, F }: { E: Estado; set: SetFn; F: string[] }) {
           </div></div>
         <p className="note" style={{ margin: 0 }}>Con meses sueltos (p.ej. solo enero) se ve un punto por año y se unen con una línea. Escape o un clic afuera cierran este panel.</p>
       </Desplegable>
+      <Seg valor={E.freq} opciones={[["M", "Mes"], ["T", "Trimestre"], ["A", "Año"]]} onElegir={(v) => set({ f: v === "M" ? null : v })} />
     </div>
   );
 }
+
+// ------------------------------------------------------------ tarjeta de gráfico: barra (Gráfico / Tabla, Configurar, expandir), gráfico o tabla
+type Vista = "grafico" | "tabla";
+function CardGrafico({ titulo, nota, leyenda, refleg, visibles, config, rows, series, opts, unidades, vista: vistaProp, onVista }: {
+  titulo: string; nota?: ReactNode; leyenda?: ReactNode; refleg?: ReactNode; visibles?: ReactNode; config?: { cuenta: number; children: ReactNode };
+  rows: Fila[]; series: SerieG[]; opts: OpcionesG; unidades?: Record<string, string>; vista?: Vista; onVista?: (v: Vista) => void;
+}) {
+  const [vistaL, setVistaL] = useState<Vista>("grafico");
+  const [exp, setExp] = useState(false);
+  const vista = vistaProp ?? vistaL;
+  const elegirVista = (v: string) => (onVista ? onVista(v as Vista) : setVistaL(v as Vista));
+  const hay = hayDatos(rows, series, opts);
+  const cab = leyenda || refleg ? <>{leyenda}{refleg}</> : null;
+  return (
+    <div className="card">
+      <h2>{titulo}</h2>{nota && <p className="note">{nota}</p>}
+      <div className="barra-graf">
+        {visibles}
+        <Seg valor={vista} opciones={[["grafico", "Gráfico"], ["tabla", "Tabla"]]} onElegir={elegirVista} />
+        {config && (
+          <Desplegable etiqueta={config.cuenta ? `Configurar gráfico (${config.cuenta})` : "Configurar gráfico"}>{config.children}</Desplegable>
+        )}
+        <span className="esp" />
+        {vista === "grafico" && hay && <button type="button" className="btn expandir" onClick={() => setExp(true)} aria-label="Expandir el gráfico a pantalla completa">⤢ Expandir</button>}
+      </div>
+      {cab}
+      {vista === "tabla"
+        ? (rows.length && hay ? (
+          <div className="tablewrap tabla-graf"><table>
+            <thead><tr><th>Período</th>{series.map((se) => <th key={se.key}>{se.name}{unidades?.[se.key] && <small>{unidades[se.key]}</small>}</th>)}</tr></thead>
+            <tbody>{rows.slice().reverse().map((r) => (
+              <tr key={r.fecha + (r.per || "")}><td>{etiqueta(r)}</td>{series.map((se) => <td key={se.key}>{ok(r[se.key]) ? (se.fmt || opts.fmtTip)(r[se.key]) : "–"}</td>)}</tr>
+            ))}</tbody>
+          </table></div>
+        ) : <p className="note">Sin datos para esta selección.</p>)
+        : <Grafico rows={rows} series={series} opts={opts} expandir={{ titulo, leyenda: cab, abierto: exp, onCerrar: () => setExp(false) }} />}
+    </div>
+  );
+}
+
+// ------------------------------------------------------------ resumen: tarjetas (≥ 640 px) y chips (celular)
+interface DefResumen { tit: string; corto: string; val: (s: EstRows) => number; fecha?: (s: EstRows) => string | undefined; desde: (s: EstRows) => number; vs: (s: EstRows) => string }
+const DEFS_RES: DefResumen[] = [
+  { tit: "Último dato", corto: "Último", val: (s) => s.ult[0], fecha: (s) => s.ult[1], desde: (s) => s.pri[0], vs: (s) => `vs. ${s.pri[1]}` },
+  { tit: "Promedio", corto: "Prom.", val: (s) => s.prom, desde: (s) => s.prom, vs: () => "último vs. este" },
+  { tit: "Mediana", corto: "Mediana", val: (s) => s.med, desde: (s) => s.med, vs: () => "último vs. este" },
+  { tit: "Máximo", corto: "Máx.", val: (s) => s.max[0], fecha: (s) => s.max[1], desde: (s) => s.max[0], vs: () => "último vs. este" },
+  { tit: "Mínimo", corto: "Mín.", val: (s) => s.min[0], fecha: (s) => s.min[1], desde: (s) => s.min[0], vs: () => "último vs. este" },
+];
 
 // ------------------------------------------------------------ gráfico principal
 function Principal({ m, E, set, version }: { m: Motor; E: Estado; set: SetFn; version: number }) {
   const { F } = m;
   const b100 = E.modo === "b100";
+  // Claves estables: el gráfico solo se rehace (y pierde el zoom) si cambia algo que lo afecta
+  const kExprs = E.exprs.map(encExpr).join(","), kMeses = [...E.meses].join(","), kRefs = [...E.refs].sort().join(",");
   const D = useMemo(() => {
     const lista = E.exprs.map((e, k) => {
       const c = m.calc(e);
@@ -201,8 +273,8 @@ function Principal({ m, E, set, version }: { m: Motor; E: Estado; set: SetFn; ve
     };
     return { lista, dos, hayBanda, bd, rows, puedeLog, st, fmtDe, refLeg, series, opts };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [m, version, E.exprs, E.modo, E.desde, E.hasta, E.meses, E.freq, E.escala, E.banda, E.eje, E.refs]);
-  const { lista, dos, hayBanda, bd, rows, puedeLog, st, fmtDe, refLeg, series, opts } = D;
+  }, [m, version, kExprs, E.modo, E.desde, E.hasta, kMeses, E.freq, E.escala, E.banda, E.eje, kRefs]);
+  const { lista, dos, hayBanda, bd, rows, puedeLog, st, refLeg, series, opts } = D;
 
   const porFreq = ({ M: "", T: " Valores trimestrales", A: " Valores anuales" })[E.freq];
   const sumaTxt = E.freq !== "M" && lista.some((o) => o.flujo || o.ultimo)
@@ -214,63 +286,104 @@ function Principal({ m, E, set, version }: { m: Motor; E: Estado; set: SetFn; ve
     (bd ? " La sombra va del mínimo al máximo." : "") + ` Fuente: ${[...new Set(lista.map((o) => o.c.serie.fuente))].join("; ")}.`;
   const grupo = (lbl: string, el: React.ReactNode) => <Fragment key={lbl}><label>{lbl}</label>{el}</Fragment>;
   const refsToggle = (k: string) => set({ r: [...alternar(E.refs, k, true)].join(",") || "-" });
-  const vsUlt = (c: Calculo, s: EstRows, x: number) => <>último vs. este: <b>{m.variacionTxt(c, x, s.ult[0])}</b></>;
-  const tarjeta = (tit: string, f: (s: EstRows, c: Calculo) => [string, React.ReactNode]) => (
-    <div className="tile" key={tit}><div className="k">{tit}</div>
-      <div className={`mitades${dos ? " dos" : ""}`}>{lista.map((o, k) => {
-        const s = st[k]; if (!s) return <div className="mitad" key={k}><div className="v">–</div></div>;
-        const [v, d] = f(s, o.c);
-        return <div className="mitad" key={k}>{dos && <><span className="punto" style={vcolor(o.color)} />{" "}</>}<span className="v">{v}</span><div className="d">{d}</div></div>;
-      })}</div></div>
-  );
-  return (
+
+  // Opciones de "Configurar gráfico" distintas de las de por defecto
+  const igualA = (set0: Set<string>, ks: string[], def: string[]) => {
+    const act = ks.filter((k) => set0.has(k)).sort().join(","), d = def.slice().sort().join(",");
+    return act === d;
+  };
+  const cuenta = (b100 ? 1 : 0) + (puedeLog && E.escala !== "lin" ? 1 : 0) + (dos && E.eje !== "propia" ? 1 : 0) + (hayBanda && E.banda !== "no" ? 1 : 0)
+    + (!b100 && !igualA(E.refs, REFS_H.map((r) => r.k), ["ult", "prom", "med"]) ? 1 : 0) + (!b100 && !igualA(E.refs, ["mk_ult", "mk_max", "mk_min"], ["mk_ult", "mk_max", "mk_min"]) ? 1 : 0);
+  const config = (
     <>
       <div className="controls" id="h_opciones">
-        {grupo("Ver por", <Seg valor={E.freq} opciones={[["M", "Mes"], ["T", "Trimestre"], ["A", "Año"]]} onElegir={(v) => set({ f: v === "M" ? null : v })} />)}
+        {grupo("Mostrar", <Seg valor={E.modo} opciones={[["valor", "Valor de la serie (hasta 2 variables)"], ["b100", "Comparar en base 100 (hasta 10)"]]} onElegir={(v) => set({ m: v === "valor" ? null : v })} />)}
+      </div>
+      <div className="controls">
         {puedeLog && grupo("Escala", <Seg valor={E.escala} opciones={[["lin", "Lineal"], ["log", "Logarítmica"]]} onElegir={(v) => set({ e: v === "lin" ? null : v })} />)}
         {dos && grupo("Eje derecho", <Seg valor={E.eje} opciones={[["propia", "Escala propia (adaptada a la serie)"], ["misma", "Misma escala que el izquierdo"]]} onElegir={(v) => set({ ej: v === "propia" ? null : v })} />)}
-        {!b100 && grupo("Líneas", <Seg valor={E.refs} opciones={REFS_H.map((r) => [r.k, r.btn] as [string, string])} onElegir={refsToggle} />)}
-        {!b100 && grupo("Marcadores", <Seg valor={E.refs} opciones={[["mk_ult", "Último"], ["mk_max", "Máximo"], ["mk_min", "Mínimo"]]} onElegir={refsToggle} />)}
-        {hayBanda && grupo("Rango", <Seg valor={E.banda} opciones={[["no", "Solo promedio"], ["si", "Con mín/máx"]]} onElegir={(v) => set({ bd: v === "no" ? null : v })} />)}
       </div>
-      <div className="tiles">
-        {b100 ? (
+      {!b100 && (
+        <div className="controls">
+          {grupo("Líneas", <Seg valor={E.refs} opciones={REFS_H.map((r) => [r.k, r.btn] as [string, string])} onElegir={refsToggle} />)}
+          {grupo("Marcadores", <Seg valor={E.refs} opciones={[["mk_ult", "Último"], ["mk_max", "Máximo"], ["mk_min", "Mínimo"]]} onElegir={refsToggle} />)}
+          {hayBanda && grupo("Rango", <Seg valor={E.banda} opciones={[["no", "Solo promedio"], ["si", "Con mín/máx"]]} onElegir={(v) => set({ bd: v === "no" ? null : v })} />)}
+        </div>
+      )}
+    </>
+  );
+  const leyenda = <div className="legend">{lista.length > 1 && lista.map((o) => <span key={o.key} style={vcolor(o.color)}>{o.c.corto}{o.axis ? " (eje der.)" : ""}</span>)}</div>;
+  const refl = (
+    <div className="refleg">{refLeg.map((g, i) => (
+      <div key={i}>{g.dos && <span className="punto" style={vcolor(g.color)} />}
+        {g.items.map((it) => (
+          <span className="ri" key={it.letra}><b style={{ color: `var(${it.color})` }}>{it.letra}</b>
+            <svg width="24" height="6" aria-hidden="true"><line x1="0" x2="24" y1="3" y2="3" stroke={`var(${it.color})`} strokeWidth="1.5" strokeDasharray={it.dash} /></svg>
+            {it.nom} <span className="rv"><b>{it.txt}</b>{it.cuando ? <> <small>{it.cuando}</small></> : null}</span></span>
+        ))}</div>
+    ))}</div>
+  );
+  const unidades = Object.fromEntries(lista.map((o) => [o.key, b100 ? "base 100" : o.c.unidad]));
+
+  // Resumen (tarjetas y chips)
+  const celda = (def: DefResumen, o: (typeof lista)[number], k: number) => {
+    const s = st[k]; if (!s) return null;
+    const hasta = s.ult[0], desde = def.desde(s);
+    return { txt: m.fmtC(o.c, def.val(s)), f: def.fecha?.(s), vs: def.vs(s), vr: m.variacionTxt(o.c, desde, hasta), cls: claseVariacion(o.c.dir, o.c.pct, desde, hasta) };
+  };
+  return (
+    <>
+      {b100 ? (
+        <div className="tiles">
           <div className="card" style={{ gridColumn: "1/-1", margin: 0 }}><h2>Resumen (de mayor a menor)</h2>
             <div className="tablewrap"><table><thead><tr><th>Variable</th><th>Base 100 en</th><th>Último</th><th>Variación</th><th>Máximo</th><th>Mínimo</th><th>Promedio</th></tr></thead><tbody>
               {lista.map((o, k) => ({ o, s: st[k] })).filter((x) => x.s).sort((a, b) => b.s!.ult[0] - a.s!.ult[0]).map(({ o, s }) => {
-                const d = s!.ult[0] - 100, sc = o.c.dir ? Math.sign(d) * o.c.dir * Math.min(1, Math.abs(d) / 50 + 0.25) : 0;
+                const d = s!.ult[0] - 100, cls = claseVariacion(o.c.dir, true, 100, s!.ult[0]);
                 return (
                   <tr key={o.key}><td className="nombre"><span className="punto" style={vcolor(o.color)} /> {o.c.corto}<small>{o.c.unidad}</small></td><td>{o.base}</td>
-                    <td>{nf1.format(s!.ult[0])}<small>{s!.ult[1]}</small></td><td style={tinte(sc)}>{d > 0 ? "+" : ""}{nf1.format(d)} %</td>
+                    <td>{nf1.format(s!.ult[0])}<small>{s!.ult[1]}</small></td><td className={`var-${cls}`}>{d > 0 ? "+" : ""}{nf1.format(d)} %</td>
                     <td>{nf1.format(s!.max[0])}<small>{s!.max[1]}</small></td><td>{nf1.format(s!.min[0])}<small>{s!.min[1]}</small></td><td>{nf1.format(s!.prom)}</td></tr>
                 );
               })}
             </tbody></table></div></div>
-        ) : [
-          tarjeta("Último dato", (s, c) => [m.fmtC(c, s.ult[0]), <>{s.ult[1]} · vs. {s.pri[1]}: <b>{m.variacionTxt(c, s.pri[0], s.ult[0])}</b></>]),
-          tarjeta("Promedio", (s, c) => [m.fmtC(c, s.prom), vsUlt(c, s, s.prom)]),
-          tarjeta("Mediana", (s, c) => [m.fmtC(c, s.med), vsUlt(c, s, s.med)]),
-          tarjeta("Máximo", (s, c) => [m.fmtC(c, s.max[0]), <>{s.max[1]} · {vsUlt(c, s, s.max[0])}</>]),
-          tarjeta("Mínimo", (s, c) => [m.fmtC(c, s.min[0]), <>{s.min[1]} · {vsUlt(c, s, s.min[0])}</>]),
-        ]}
-      </div>
-      <div className="card">
-        <h2>{titulo}</h2><p className="note">{nota}</p>
-        <div className="legend">{lista.length > 1 && lista.map((o) => <span key={o.key} style={vcolor(o.color)}>{o.c.corto}{o.axis ? " (eje der.)" : ""}</span>)}</div>
-        <div className="refleg">{refLeg.map((g, i) => (
-          <div key={i}>{g.dos && <span className="punto" style={vcolor(g.color)} />}
-            {g.items.map((it) => (
-              <span className="ri" key={it.letra}><b style={{ color: `var(${it.color})` }}>{it.letra}</b>
-                <svg width="24" height="6" aria-hidden="true"><line x1="0" x2="24" y1="3" y2="3" stroke={`var(${it.color})`} strokeWidth="1.5" strokeDasharray={it.dash} /></svg>
-                {it.nom} <b>{it.txt}</b>{it.cuando ? <> <small>{it.cuando}</small></> : null}</span>
-            ))}</div>
-        ))}</div>
-        <Grafico rows={rows} series={series} opts={opts} />
-      </div>
-      <details><summary>Ver datos en tabla</summary><div className="tablewrap alto"><table>
-        <thead><tr><th>Período</th>{lista.map((o) => <th key={o.key}>{o.c.corto}<small>{b100 ? "base 100" : o.c.unidad}</small></th>)}</tr></thead>
-        <tbody>{rows.slice().reverse().map((r) => <tr key={r.fecha + (r.per || "")}><td>{etiqueta(r)}</td>{lista.map((o) => <td key={o.key}>{ok(r[o.key]) ? fmtDe(o)(r[o.key]) : "–"}</td>)}</tr>)}</tbody>
-      </table></div></details>
+        </div>
+      ) : (
+        <>
+          <div className="tiles res">
+            {DEFS_RES.map((def) => (
+              <div className="tile" key={def.tit}><div className="k">{def.tit}</div>
+                <div className={`mitades${dos ? " dos" : ""}`}>{lista.map((o, k) => {
+                  const c = celda(def, o, k);
+                  if (!c) return <div className="mitad" key={k}><div className="v">–</div></div>;
+                  return (
+                    <div className="mitad" key={k}>{dos && <><span className="punto" style={vcolor(o.color)} />{" "}</>}<span className="v">{c.txt}</span>
+                      <div className="d">{c.f ? <>{c.f} · </> : null}{c.vs}: <b className={`var-${c.cls}`}>{c.vr}</b></div></div>
+                  );
+                })}</div></div>
+            ))}
+          </div>
+          <div className="chips" role="list" aria-label="Resumen">
+            {DEFS_RES.map((def) => (
+              <div className="chip" role="listitem" key={def.tit} title={def.tit}>
+                <span className="n">{def.corto}</span>
+                <div className="col">{lista.map((o, k) => {
+                  const c = celda(def, o, k);
+                  return (
+                    <div className="ln" key={k} title={c ? `${def.tit}${c.f ? " · " + c.f : ""} · ${c.vs}` : undefined}>
+                      {dos && <span className="punto" style={vcolor(o.color)} />}
+                      <span className="v">{c ? c.txt : "–"}</span>
+                      {c && <span className={`vr var-${c.cls}`}>{c.vr}</span>}
+                      {c?.f && <span className="f">{c.f}</span>}
+                    </div>
+                  );
+                })}</div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      <CardGrafico titulo={titulo} nota={nota} leyenda={leyenda} refleg={refl} config={{ cuenta, children: config }}
+        rows={rows} series={series} opts={opts} unidades={unidades} vista={E.tabla} onVista={(v) => set({ t: v === "tabla" ? "tabla" : null })} />
     </>
   );
 }
@@ -278,6 +391,7 @@ function Principal({ m, E, set, version }: { m: Motor; E: Estado; set: SetFn; ve
 // ------------------------------------------------------------ bloques fijos: dólar y soja
 function Fijos({ m, E, set, listo, version }: { m: Motor; E: Estado; set: SetFn; listo: boolean; version: number }) {
   const F = m.F;
+  const kMeses = [...E.meses].join(","), kFx = [...E.fx].join(","), kBr = [...E.br].join(","), kRatio = [...E.ratio].join(",");
   const D = useMemo(() => {
     if (!listo || !["fx_oficial", "soja_chi", "soja_ros"].every((id) => m.SER[id])) return null;
     const { SER, transformar } = m;
@@ -296,7 +410,7 @@ function Fijos({ m, E, set, listo, version }: { m: Motor; E: Estado; set: SetFn;
       sel, rows: recortar(filasF(Object.fromEntries(sel.map((k) => [k, transformar(SER["fx_" + k], SER["fx_" + k].vals, E.fxmed)])),
         bd ? Object.fromEntries(sel.map((k) => [k, [transformar(sfx, SER["fx_" + k].mn!, E.fxmed), transformar(sfx, SER["fx_" + k].mx!, E.fxmed)] as [(number | null)[], (number | null)[]]])) : {}), sel),
       series: sel.map((k): SerieG => ({ key: k, name: "Dólar " + FX_NOM[k], short: FX_NOM[k], color: FX_COLOR[k], band: bd })),
-      opts: { log: E.fxmed === "corr", endLabels: true, tipTitle: etiqueta, fmtAxis: (v: number) => "$ " + fmtNum(v), fmtTip: (v: number) => "$ " + fmtNum(v), label: "Dólares" },
+      opts: { log: E.fxmed === "corr", endLabels: true, tipTitle: etiqueta, fmtAxis: (v: number) => "$ " + (Math.abs(v) >= 1e4 ? nf0.format(v / 1e3) + " mil" : fmtNum(v)), fmtTip: (v: number) => "$ " + fmtNum(v), label: "Dólares" },
     };
     const br = (["blue", "mep", "ccl"] as const).filter((k) => E.br.has(k) && SER["brecha_" + k]);
     const brecha = {
@@ -320,48 +434,54 @@ function Fijos({ m, E, set, listo, version }: { m: Motor; E: Estado; set: SetFn;
     };
     return { fx, brecha, soja, ratio };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [m, version, listo, E.desde, E.hasta, E.meses, E.freq, E.fx, E.br, E.fxmed, E.fxbanda, E.sojamed, E.sojafx, E.ratio]);
+  }, [m, version, listo, E.desde, E.hasta, kMeses, E.freq, kFx, kBr, E.fxmed, E.fxbanda, E.sojamed, E.sojafx, kRatio]);
 
   const { refUS } = m.refs();
   const medNom = Object.fromEntries(m.medFx())[E.fxmed];
   const tog = (clave: string, set0: Set<string>, v: string, vacio = false) => set({ [clave]: [...alternar(set0, v, vacio)].join(",") });
+  const banda = <Seg valor={E.fxbanda} opciones={[["no", "Promedio"], ["si", "Con mín/máx"]]} onElegir={(v) => set({ fxbd: v === "no" ? null : v })} />;
   return (
     <>
       <h3>Dólar y soja: varias series a la vez</h3>
       {!D ? <Cargando /> : (
         <>
-          <div className="card">
-            <h2>Dólares</h2>
-            <p className="note">{medNom}. Promedio mensual.{E.fxmed === "corr" ? " Escala logarítmica: la misma distancia vertical es la misma variación %." : ""}</p>
-            <div className="controls">
-              <Seg valor={E.fx} opciones={FX_KEYS.map((k) => [k, FX_NOM[k]] as [string, string])} onElegir={(v) => tog("fx", E.fx, v)} />
-              <Seg valor={E.fxmed} opciones={[["corr", "Corrientes"], ["real", "Pesos de hoy"], ["realbi", "Pesos de hoy neto infl. EEUU"]]} onElegir={(v) => set({ fxm: v === "real" ? null : v })} />
-              <Seg valor={E.fxbanda} opciones={[["no", "Promedio"], ["si", "Con mín/máx"]]} onElegir={(v) => set({ fxbd: v === "no" ? null : v })} />
-            </div>
-            <div className="legend">{D.fx.sel.map((k) => <span key={k} style={vcolor(FX_COLOR[k])}>{FX_NOM[k]}</span>)}</div>
-            <Grafico rows={D.fx.rows} series={D.fx.series} opts={D.fx.opts} />
-          </div>
-          <div className="card">
-            <h2>Brecha con el dólar oficial</h2><p className="note">Cuánto más caro que el oficial mayorista (A3500).</p>
-            <div className="controls"><Seg valor={E.br} opciones={[["blue", "Blue"], ["mep", "MEP"], ["ccl", "CCL"]]} onElegir={(v) => tog("fb", E.br, v)} /></div>
-            <div className="legend">{D.brecha.br.map((k) => <span key={k} style={vcolor(FX_COLOR[k])}>{FX_NOM[k]}</span>)}</div>
-            <Grafico rows={D.brecha.rows} series={D.brecha.series} opts={D.brecha.opts} />
-          </div>
-          <div className="card">
-            <h2>Soja: Chicago vs. Rosario</h2>
-            <p className="note">US$ por tonelada{E.sojamed === "usdr" ? ` de ${refUS} (ajustado por inflación de EEUU)` : " corrientes"}. Rosario pasado al dólar {FX_NOM[E.sojafx]} de cada mes.</p>
-            <div className="controls"><Seg valor={E.sojamed} opciones={[["corr", "US$ corrientes"], ["usdr", "US$ reales"]]} onElegir={(v) => set({ sm: v === "corr" ? null : v })} />
-              <label>Rosario al dólar</label><Seg valor={E.sojafx} opciones={FX_KEYS.map((k) => [k, FX_NOM[k]] as [string, string])} onElegir={(v) => set({ sf: v === "oficial" ? null : v })} /></div>
-            <div className="legend"><span style={vcolor("--series-1")}>Chicago (CBOT)</span><span style={vcolor("--series-2")}>Rosario (pizarra, al {FX_NOM[E.sojafx]})</span></div>
-            <Grafico rows={D.soja.rows} series={D.soja.series} opts={D.soja.opts} />
-          </div>
-          <div className="card">
-            <h2>Cuánto recibe el productor: Rosario / Chicago</h2>
-            <p className="note">Precio en Rosario pasado a dólares, como % de Chicago. Al oficial muestra retenciones y costos; al blue, MEP o CCL, cuántos dólares &quot;libres&quot; consigue el productor (con cepo, bastante menos).</p>
-            <div className="controls"><label>Al dólar</label><Seg valor={E.ratio} opciones={FX_KEYS.map((k) => [k, FX_NOM[k]] as [string, string])} onElegir={(v) => tog("rt", E.ratio, v)} /></div>
-            <div className="legend">{D.ratio.rk.map((k) => <span key={k} style={vcolor(FX_COLOR[k])}>al {FX_NOM[k]}</span>)}</div>
-            <Grafico rows={D.ratio.rows} series={D.ratio.series} opts={D.ratio.opts} />
-          </div>
+          <CardGrafico titulo="Dólares"
+            nota={<>{medNom}. Promedio mensual.{E.fxmed === "corr" ? " Escala logarítmica: la misma distancia vertical es la misma variación %." : ""}</>}
+            leyenda={<div className="legend">{D.fx.sel.map((k) => <span key={k} style={vcolor(FX_COLOR[k])}>{FX_NOM[k]}</span>)}</div>}
+            visibles={<Seg valor={E.fx} opciones={FX_KEYS.map((k) => [k, FX_NOM[k]] as [string, string])} onElegir={(v) => tog("fx", E.fx, v)} />}
+            config={{
+              cuenta: (E.fxmed !== "real" ? 1 : 0) + (E.fxbanda !== "no" ? 1 : 0),
+              children: (
+                <div className="controls">
+                  <label>Medida</label><Seg valor={E.fxmed} opciones={[["corr", "Corrientes"], ["real", "Pesos de hoy"], ["realbi", "Pesos de hoy neto infl. EEUU"]]} onElegir={(v) => set({ fxm: v === "real" ? null : v })} />
+                  {banda}
+                </div>
+              ),
+            }}
+            rows={D.fx.rows} series={D.fx.series} opts={D.fx.opts} />
+          <CardGrafico titulo="Brecha con el dólar oficial" nota="Cuánto más caro que el oficial mayorista (A3500)."
+            leyenda={<div className="legend">{D.brecha.br.map((k) => <span key={k} style={vcolor(FX_COLOR[k])}>{FX_NOM[k]}</span>)}</div>}
+            visibles={<Seg valor={E.br} opciones={[["blue", "Blue"], ["mep", "MEP"], ["ccl", "CCL"]]} onElegir={(v) => tog("fb", E.br, v)} />}
+            rows={D.brecha.rows} series={D.brecha.series} opts={D.brecha.opts} />
+          <CardGrafico titulo="Soja: Chicago vs. Rosario"
+            nota={<>US$ por tonelada{E.sojamed === "usdr" ? ` de ${refUS} (ajustado por inflación de EEUU)` : " corrientes"}. Rosario pasado al dólar {FX_NOM[E.sojafx]} de cada mes.</>}
+            leyenda={<div className="legend"><span style={vcolor("--series-1")}>Chicago (CBOT)</span><span style={vcolor("--series-2")}>Rosario (pizarra, al {FX_NOM[E.sojafx]})</span></div>}
+            config={{
+              cuenta: (E.sojamed !== "corr" ? 1 : 0) + (E.sojafx !== "oficial" ? 1 : 0) + (E.fxbanda !== "no" ? 1 : 0),
+              children: (
+                <div className="controls">
+                  <label>Medida</label><Seg valor={E.sojamed} opciones={[["corr", "US$ corrientes"], ["usdr", "US$ reales"]]} onElegir={(v) => set({ sm: v === "corr" ? null : v })} />
+                  {banda}
+                  <label>Rosario al dólar</label><Seg valor={E.sojafx} opciones={FX_KEYS.map((k) => [k, FX_NOM[k]] as [string, string])} onElegir={(v) => set({ sf: v === "oficial" ? null : v })} />
+                </div>
+              ),
+            }}
+            rows={D.soja.rows} series={D.soja.series} opts={D.soja.opts} />
+          <CardGrafico titulo="Cuánto recibe el productor: Rosario / Chicago"
+            nota={<>Precio en Rosario pasado a dólares, como % de Chicago. Al oficial muestra retenciones y costos; al blue, MEP o CCL, cuántos dólares &quot;libres&quot; consigue el productor (con cepo, bastante menos).</>}
+            leyenda={<div className="legend">{D.ratio.rk.map((k) => <span key={k} style={vcolor(FX_COLOR[k])}>al {FX_NOM[k]}</span>)}</div>}
+            visibles={<><label>Al dólar</label><Seg valor={E.ratio} opciones={FX_KEYS.map((k) => [k, FX_NOM[k]] as [string, string])} onElegir={(v) => tog("rt", E.ratio, v)} /></>}
+            rows={D.ratio.rows} series={D.ratio.series} opts={D.ratio.opts} />
         </>
       )}
     </>

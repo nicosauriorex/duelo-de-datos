@@ -2,7 +2,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { useSeccion } from "../useSeccion";
-import { Cargando, Seg, alternar } from "../ui";
+import { Cargando, Selector, Seg, alternar } from "../ui";
 import { SelectorBase, useBase } from "./comunes";
 import { PALETA, tinte } from "../util";
 import { fmtMes, nf0, nf1, ok } from "@/lib/formato";
@@ -82,9 +82,7 @@ export function Curiosidades() {
       <div className="card">
         <h2>Lo mejor y lo peor de cada gobierno</h2>
         <div className="controls">
-          <select aria-label="Presidente" value={presId} onChange={(ev) => set({ cp: ev.target.value === "milei" ? null : ev.target.value })}>
-            {PRES.slice().reverse().map((x) => <option key={x.id} value={x.id}>{x.n}</option>)}
-          </select>
+          <Selector etiqueta="Presidente" valor={presId} opciones={PRES.slice().reverse().map((x) => [x.id, x.n] as [string, string])} onElegir={(v) => set({ cp: v === "milei" ? null : v })} />
           <Seg valor={lado} opciones={[["mejor", "Lo mejor"], ["peor", "Lo peor"]]} onElegir={(v) => set({ lado: v === "mejor" ? null : v })} />
           <Seg valor={conjunto} opciones={[["principales", "Indicadores principales"], ["todo", "Incluir precios del IPC y productos"]]} onElegir={(v) => set({ set: v === "principales" ? null : v })} />
           <Seg valor={crit} opciones={[["mejora", "Medir cuánto mejoró (inicio → cierre)"], ["nivel", "Medir el nivel promedio"]]} onElegir={(v) => set({ crit: v === "mejora" ? null : v })} />

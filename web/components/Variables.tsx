@@ -2,7 +2,7 @@
 // Selector de variables (árbol + búsqueda), ventana de información y fila de controles de una variable.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDatos } from "./DatosProvider";
-import { Modal } from "./ui";
+import { Modal, Selector } from "./ui";
 import { fmtMes, lastIdx, norm } from "@/lib/formato";
 import { ORDEN_RAIZ, textoBusqueda } from "@/lib/catalogo";
 import { INFO_CAT } from "@/lib/info";
@@ -211,13 +211,9 @@ export function FilaVariable({ e, onChange, color, quitable, agregable, textoAgr
       {(errores[A.archivo] || (B && errores[B.archivo])) && <span className="error" role="alert">No se pudieron bajar los datos de esta variable.</span>}
       {conRel || escV === "pib" ? null : meds.length < 2
         ? <span className="lbl">{motor.esIndice(A) ? "Índice: se ve tal cual" : A.u}</span>
-        : <select aria-label="Medida" value={meds.some((m) => m[0] === e.med) ? e.med : meds[0][0]} onChange={(ev) => onChange({ ...e, med: ev.target.value })}>
-            {meds.map((m) => <option key={m[0]} value={m[0]}>{m[1]}</option>)}
-          </select>}
+        : <Selector etiqueta="Medida" valor={meds.some((m) => m[0] === e.med) ? (e.med as string) : meds[0][0]} opciones={meds.map((m) => [m[0], m[1]] as [string, string])} onElegir={(v) => onChange({ ...e, med: v })} />}
       {escs.length > 0 && !conRel && (
-        <select aria-label="Total, por habitante o como % del PIB" value={escV} onChange={(ev) => onChange({ ...e, esc: ev.target.value, rel: ev.target.value ? null : e.rel })}>
-          {escs.map((o) => <option key={o[0]} value={o[0]}>{o[1]}</option>)}
-        </select>
+        <Selector etiqueta="Total, por habitante o como % del PIB" valor={escV} opciones={escs.map((o) => [o[0], o[1]] as [string, string])} onElegir={(v) => onChange({ ...e, esc: v, rel: v ? null : e.rel })} />
       )}
       {relOk && (
         <>
@@ -227,10 +223,8 @@ export function FilaVariable({ e, onChange, color, quitable, agregable, textoAgr
           })}>{B ? B.n : "ninguna (elegir…)"}</button>
           {B && (
             <>
-              <select aria-label="Modo" value={e.modo === "medido" ? "medido" : "compra"} onChange={(ev) => onChange({ ...e, modo: ev.target.value })}>
-                <option value="compra">¿Cuántos {A.n} compra 1 {B.n}?</option>
-                <option value="medido">{A.n} medido en {B.n}</option>
-              </select>
+              <Selector etiqueta="Modo" valor={e.modo === "medido" ? "medido" : "compra"} onElegir={(v) => onChange({ ...e, modo: v })}
+                opciones={[["compra", `¿Cuántos ${A.n} compra 1 ${B.n}?`], ["medido", `${A.n} medido en ${B.n}`]]} />
               <button type="button" className="btn quitar" title="Quitar" onClick={() => onChange({ ...e, rel: null })}>✕ quitar</button>
             </>
           )}

@@ -1,7 +1,7 @@
 "use client";
 import { Fragment, useMemo, useState } from "react";
 import { useSeccion } from "../useSeccion";
-import { Cargando, Desplegable, Seg, alternar } from "../ui";
+import { Cargando, Desplegable, Selector, Seg, alternar } from "../ui";
 import { BotonInfo, FilaVariable } from "../Variables";
 import { CeldasStats, COLS, Cabecera, SelectorBase, siguienteOrden, useBase, valorCol, type Orden } from "./comunes";
 import { fmtMes } from "@/lib/formato";
@@ -106,12 +106,8 @@ export function Presidentes() {
         <h2>Un presidente, todas las variables</h2>
         <p className="note">Tocá un grupo para abrirlo y un encabezado para ordenar. La medida se aplica a los montos en pesos; los dólares no se pasan a dólares y los índices y porcentajes quedan como son.</p>
         <div className="controls">
-          <select aria-label="Presidente" value={paPres.id} onChange={(ev) => set({ pap: ev.target.value === "milei" ? null : ev.target.value })}>
-            {PRES.slice().reverse().map((x) => <option key={x.id} value={x.id}>{x.n}</option>)}
-          </select>
-          <select aria-label="Medida" value={paMed} onChange={(ev) => set({ pam: ev.target.value === "real" ? null : ev.target.value })}>
-            {medsArs.map((o) => <option key={o[0]} value={o[0]}>{o[1]}</option>)}
-          </select>
+          <Selector etiqueta="Presidente" valor={paPres.id} opciones={PRES.slice().reverse().map((x) => [x.id, x.n] as [string, string])} onElegir={(v) => set({ pap: v === "milei" ? null : v })} />
+          <Selector etiqueta="Medida" valor={paMed} opciones={medsArs.map((o) => [o[0], o[1]] as [string, string])} onElegir={(v) => set({ pam: v === "real" ? null : v })} />
           <input type="search" aria-label="Buscar variable" placeholder="Buscar variable: asado, reservas, alquiler…" style={{ flex: 1, minWidth: 200 }} value={buscar} onChange={(ev) => setBuscar(ev.target.value)} />
           <button type="button" className="btn" onClick={() => setAbiertos(new Set(GRUPOS))}>Expandir todo</button>
           <button type="button" className="btn" onClick={() => setAbiertos(new Set())}>Contraer todo</button>
