@@ -26,6 +26,8 @@ Todo en español: código, comentarios, nombres de variables, commits y textos d
   4. Si la spec incluye un workflow de GitHub Actions: después del push, dispararlo con `gh workflow run`, seguirlo con `gh run watch` y reportar si terminó en verde (y el link del sitio si publica). Si falla, mostrar el error y proponer el arreglo.
 - Decisiones de arquitectura: registrarlas en `docs/DECISIONES.md`.
 - Ideas sueltas del usuario: `docs/IDEAS.md`. No implementarlas sin que se pida.
+  - Al bajar una idea a spec: marcarla con `→ spec: docs/specs/<nombre>.md`.
+  - Al terminar de implementar y verificar: tachar la idea con la fecha (`~~idea~~ ✅ AAAA-MM-DD`), pasarla a la sección "Hecho" al final y poner `Estado: implementada (fecha)` en la spec. No borrar.
 - Detalle de modelos/agentes/flujo: `docs/COMO-TRABAJAMOS.md` (para el usuario; no hace falta leerlo en cada tarea).
 
 # Compact instructions

@@ -11,7 +11,7 @@ Argumento: la idea (o el nombre de una entrada de docs/IDEAS.md).
 1. Leer `docs/IDEAS.md`, `docs/ROADMAP.md` y `docs/DECISIONES.md` solo en las partes que tocan esta idea.
 2. Entrevistar al usuario con preguntas de opción múltiple (AskUserQuestion), de a 2–4 por vez, sobre lo que no esté definido: qué ve el usuario, quién puede hacer qué (anónimo / registrado / admin), datos que se guardan, casos borde, moderación y abuso, qué queda afuera. Proponer siempre una opción recomendada.
 3. Parar cuando alcance para implementar sin adivinar.
-4. Escribir `docs/specs/<nombre-corto>.md` con estas secciones:
+4. Escribir `docs/specs/<nombre-corto>.md`. Debajo del título va la línea `Estado: borrador | lista para implementar | en curso | implementada (AAAA-MM-DD)` y, si sale de ideas anotadas, `Ideas: <secciones de docs/IDEAS.md>`. Secciones:
    - **Objetivo** (2–3 líneas)
    - **Qué ve y hace el usuario** (pasos)
    - **Requisitos** (lista numerada, cada uno verificable)
@@ -19,6 +19,7 @@ Argumento: la idea (o el nombre de una entrada de docs/IDEAS.md).
    - **Casos borde**
    - **Fuera de alcance**
    - **Cómo se verifica** (comandos, pantallas a revisar)
+4b. En `docs/IDEAS.md`, marcar cada idea que entró en la spec con `→ spec: docs/specs/<nombre>.md`.
 5. Si salió una decisión de arquitectura, agregarla a `docs/DECISIONES.md`.
 6. Commitear la spec (y los docs tocados) si el usuario lo aprueba.
 7. Ofrecer abrir la sesión que la implementa, para que el usuario solo tenga que aceptar:

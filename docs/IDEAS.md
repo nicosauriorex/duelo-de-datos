@@ -65,6 +65,19 @@ Notas del usuario, ordenadas por tema. No son specs: antes de implementar cualqu
 - Opción de publicarlo en la pestaña **Comunidad** con título, comentario y si el dato le parece positivo, negativo o neutro.
 - Pensado para compartir en Twitter/X y otras redes.
 
+## Responder y verificar afirmaciones en redes (2026-11-08)
+Uso central: alguien escribe en redes "Milei fundió la economía" y otra persona responde con la página.
+- **Link que lleva a la vista justa**: la respuesta apunta a un gráfico o página ya armado con los filtros del caso (ej. el mandato desde T con las variables clave).
+- **Imagen lista para pegar en la respuesta** (la gente no entra a los links): se genera sola, con los datos, marca de agua y el link. Formato a elegir (cuadrado 1:1, vertical 4:5, horizontal 16:9).
+- **Modo "Contestar un relato"** (en el inicio o sección propia): se escribe la frase ("la ley X destruyó el salario") y la página arma la info para responderla. La imagen sale así:
+  - Arriba, la cita del comentario original (con usuario y red social, opcional).
+  - Abajo, los datos que lo contrastan.
+  - Al final, un **sello**: verdadero / falso / neutral.
+- **Chequear un anuncio oficial**: se pega el tuit de un funcionario ("la economía subió tanto") y la página dice si es cierto y qué tan bueno es el dato: *"mejor dato en X meses / desde tal fecha / de toda la serie"*.
+- **Cuenta de X que responde sola** (bot): detecta tweets de funcionarios o cuentas oficiales sobre un dato (ej. Caputo: "la economía creció tanto") y responde con la imagen y el link. Ver "Sugerencias de Claude" por límites y riesgos.
+- **Posts automáticos de datos fijos** (empezar por acá): el BCRA publica todos los días a la tarde compras de divisas, reservas y tasas. La página publica o responde con el dato verificado y su contexto histórico ("mayores compras desde…").
+- **Todo configurable**: elegir qué mostrar o no (evolución por meses de mandato, si es el mejor dato de tanto tiempo, comparación contra la proyección, etc.).
+
 ## Comunidad
 - Registro anónimo.
 - Posts con votos a favor y en contra (se ven las dos cantidades) y comentarios. Al publicar se marca si el dato es positivo, negativo o neutro.
@@ -91,4 +104,19 @@ Notas del usuario, ordenadas por tema. No son specs: antes de implementar cualqu
 - Que cada post de la comunidad guarde los filtros exactos del gráfico, así cualquiera lo abre y lo puede modificar.
 - Proyecciones: el FMI publica las ediciones viejas del World Economic Outlook (abril y octubre de cada año), así que se puede reconstruir "qué se esperaba" para cada año y país sin depender de recortes de diarios.
 - Configuración global guardada primero en el navegador (sin cuentas); cuando haya cuentas, se sincroniza.
+- Verificador, por etapas (de más fácil a más difícil):
+  1. "Es el mejor dato desde X" y la imagen compartible: es cálculo puro sobre las series que ya hay, sin IA ni servidor.
+  2. Plantillas de relatos frecuentes ("fundió la economía", "el salario cayó", "la inflación…") que mapean a un conjunto fijo de indicadores. Se elige el relato de una lista.
+  3. Frase libre: requiere interpretar el texto (IA) y un backend. Es lo caro y lo riesgoso; dejarlo para el final.
+- El sello **verdadero/falso** funciona para afirmaciones medibles ("el salario real cayó") pero no para opiniones ("fundió la economía"). Para esas, mejor "Los datos muestran…" / "No concluyente", y siempre con el criterio visible (qué indicador, qué período, contra qué se compara). La credibilidad es lo más valioso del sitio.
+- Que funcione igual para cualquier presidente y para afirmaciones a favor y en contra; si se ve como herramienta de un solo lado, pierde valor como fuente.
+- Con el sitio estático hay que generar las imágenes de forma estática (plantillas prearmadas) o en el cliente (canvas); las dinámicas necesitan backend. Las vistas previas de links en X (og:image) son 16:9 aprox., así que la imagen horizontal sirve también como preview del link.
+- Bot en X:
+  - Responder solo a cuentas, y automáticamente, choca con las reglas de X: la API de pago tiene costo, y las respuestas automáticas no pedidas a terceros se consideran spam y pueden suspender la cuenta. Verificar las condiciones vigentes antes de diseñar nada.
+  - Más seguro: que **publique en su propia cuenta** datos recurrentes (el BCRA, el IPC cuando sale) y que las respuestas a tweets ajenos las dispare una persona con un clic ("Responder con esto"), o por mención (@cuenta + tweet).
+  - Los datos del BCRA diarios ya tienen fuente conocida; sumar compras de divisas y reservas como series nuevas (skill `nueva-serie`, agente `investigador-datos`) es el primer paso, y sirve también para el sitio.
+  - Un bot que publica solo necesita un proceso programado (el workflow de GitHub Actions de actualización diaria podría disparar el post). Verlo con la spec `actualizacion-diaria`.
 - Las plantillas pueden ser la base de todo: la búsqueda guiada, la página de inicio y "otros gráficos interesantes" muestran plantillas.
+
+## Hecho
+(Ideas implementadas y verificadas; se tachan acá con su fecha. Ver CLAUDE.md.)
