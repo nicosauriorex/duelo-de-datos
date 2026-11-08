@@ -5,7 +5,7 @@ Orden propuesto. Cada fase se divide en specs chicas (`docs/specs/`), y cada spe
 | Fase | Qué | Necesita backend | Estado |
 |---|---|---|---|
 | 0 | Ordenar proyecto, git, config de Claude | No | Hecho (2026-11-07) |
-| 1 | Stack decidido (D-001); subir a GitHub, publicar la página actual en Cloudflare, pipeline automático diario (ver detalle abajo) | No | En curso |
+| 1 | Stack decidido (D-001); subir a GitHub, publicar la página actual en Cloudflare, pipeline automático diario (ver detalle abajo) | No | Hecho (2026-11-08) |
 | 2 | Migrar el frontend al stack elegido sin perder funciones; arreglar el filtro de fecha de Histórico | No | Pendiente |
 | 3 | Precios medidos en salarios; ranking de presidentes (son solo cálculos sobre datos que ya hay) | No | Pendiente |
 | 4 | Cuentas (anónimas) + botón Compartir (imagen descargable + texto) | Sí | Pendiente |
@@ -21,9 +21,9 @@ Sale de D-001 (Next.js + Cloudflare + Supabase, JSON estáticos, Actions diario,
 1. ~~Decidir stack (D-001)~~ — hecho 2026-11-07.
 2. ~~**Subir a GitHub**~~ — hecho 2026-11-07: https://github.com/nicosauriorex/datos-argentina (público), con README y `requirements.txt`. Historial revisado, sin secretos.
 3. ~~**Secret `INDEC_TOKEN`**~~ — hecho 2026-11-08. El pipeline ya lo lee de esa variable de entorno; sin token igual funciona con los Excel de INDEC.
-4. **Proyecto en Cloudflare Pages**, en plan gratis, con subdominio `duelo-de-datos.pages.dev`. Secrets `CLOUDFLARE_API_TOKEN` (permiso Cloudflare Pages: Edit) y `CLOUDFLARE_ACCOUNT_ID` cargados el 2026-11-08. Sin integración con Git: el proyecto lo crea y lo publica la Action del paso 5, con `DatosArgentina.html` como `index.html`.
-5. **Workflow de GitHub Actions diario** (spec: [`docs/specs/actualizacion-diaria.md`](specs/actualizacion-diaria.md)): instala Python 3.14 + dependencias, corre `python pipeline/obtener_datos.py`, commitea `datos/cache/` solo si cambió, y despliega la página a Cloudflare con `wrangler` (token de Cloudflare como secret). También se puede disparar a mano.
-6. **Aviso si falla**: si una fuente se cae se usa la caché (ya funciona así), pero la Action tiene que dejar registro de qué fuente falló, y avisar por mail si falla el workflow entero.
-7. **Verificación**: el sitio abre en el subdominio, los datos de la última corrida aparecen, y una segunda corrida sin cambios no genera commit.
+4. ~~**Proyecto en Cloudflare Pages**~~ — hecho 2026-11-08: https://duelo-de-datos.pages.dev, plan gratis. Secrets `CLOUDFLARE_API_TOKEN` (permiso Cloudflare Pages: Edit) y `CLOUDFLARE_ACCOUNT_ID`. Sin integración con Git: lo creó y lo publica la Action del paso 5.
+5. ~~**Workflow de GitHub Actions diario**~~ — hecho 2026-11-08 (spec: [`docs/specs/actualizacion-diaria.md`](specs/actualizacion-diaria.md)): `.github/workflows/actualizar.yml`, a las 21:00 hora argentina, al subir cambios y a mano.
+6. ~~**Aviso si falla**~~ — hecho 2026-11-08: el resumen de cada corrida lista las fuentes que usaron caché; si falla la corrida, GitHub manda mail (no probado con una falla real).
+7. ~~**Verificación**~~ — hecho 2026-11-08: dos corridas en verde. La primera publicó y commiteó datos nuevos; la segunda no generó commit. Falta ver la primera corrida programada (21:00).
 
 Queda para la fase 2: partir los datos en un JSON por categoría, el proyecto Next.js y uPlot.
