@@ -1,5 +1,7 @@
 # Configuración global
 
+Estado: implementada (2026-11-08)
+
 ## Objetivo
 Que cada persona elija una vez cómo quiere ver la página y que se respete en todas las secciones: el inicio del mandato, que se puede configurar por presidente (todos en T-1, Milei en T+1), y además el dólar preferido, la medida preferida, el tema y el período por defecto. Se guarda en el navegador, sin cuentas.
 

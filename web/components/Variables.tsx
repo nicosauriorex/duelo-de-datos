@@ -2,6 +2,8 @@
 // Selector de variables (árbol + búsqueda), ventana de información y fila de controles de una variable.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDatos } from "./DatosProvider";
+import { useConfig } from "./ConfigProvider";
+import { medidaInicial } from "@/lib/config";
 import { Desplegable, Modal, Selector } from "./ui";
 import { fmtMes, lastIdx, norm } from "@/lib/formato";
 import { ORDEN_RAIZ, textoBusqueda } from "@/lib/catalogo";
@@ -211,7 +213,9 @@ export function Picker({ pedido, onCerrar }: { pedido: PickerPedido; onCerrar: (
 function SelectorMedida({ A, med, motor, onElegir }: { A: SerieMeta; med: string; motor: Motor; onElegir: (m: string) => void }) {
   const grupos = motor.gruposMedida(A);
   const act = motor.ubicarMedida(A, med) ?? motor.ubicarMedida(A, motor.medDefault(A)) ?? { g: grupos[0], v: grupos[0].dims.map((d) => d.opciones[0][0]) };
-  const porDefecto = (g: (typeof grupos)[number]) => g.unir(g.dims.map((d) => d.opciones[0][0]));
+  const { config } = useConfig();
+  // Al cambiar de grupo se arranca en la primera opción de cada fila; la cotización es el dólar preferido.
+  const porDefecto = (g: (typeof grupos)[number]) => g.unir(g.dims.map((d) => d.opciones.find((o) => o[0] === config.dolar)?.[0] ?? d.opciones[0][0]));
   const medActual = act.g.unir(act.v);
   return (
     <Desplegable className="med-desp" etiqueta={motor.etiquetaMedida(A, medActual)}>
@@ -237,6 +241,7 @@ export function FilaVariable({ e, onChange, color, quitable, agregable, textoAgr
   e: Expr | null; onChange: (e: Expr | null) => void; color?: string; quitable?: boolean; agregable?: boolean; textoAgregar?: string; sinRel?: boolean;
 }) {
   const { motor, metas, errores } = useDatos();
+  const { config } = useConfig();
   const [picker, setPicker] = useState<PickerPedido | null>(null);
   if (!motor) return null;
   const meta = (id: string) => metas.find((m) => m.id === id);
@@ -246,7 +251,7 @@ export function FilaVariable({ e, onChange, color, quitable, agregable, textoAgr
     if (!agregable) return null;
     return (
       <div className="fila-var">
-        <button type="button" className="btn" onClick={() => abrir({ cb: (id, med, esc) => onChange({ id, med: med ?? motor.medDefault(meta(id)!), rel: null, modo: "compra", esc: esc ?? "" }), titulo: "Buscá o navegá" })}>
+        <button type="button" className="btn" onClick={() => abrir({ cb: (id, med, esc) => onChange({ id, med: med ?? medidaInicial(meta(id)!.tipo, motor.medDefault(meta(id)!), config), rel: null, modo: "compra", esc: esc ?? "" }), titulo: "Buscá o navegá" })}>
           {textoAgregar || "+ Agregar una segunda variable (eje derecho)"}
         </button>
         {modal}
@@ -264,7 +269,7 @@ export function FilaVariable({ e, onChange, color, quitable, agregable, textoAgr
     <div className="fila-var">
       {color && <span className="punto" style={{ ["--c" as string]: `var(${color})` }} />}
       <button type="button" className="btn var" title={A.n} onClick={() => abrir({
-        cb: (id, med, esc) => { const nuevo: Expr = { ...e, id, med: med ?? motor.medDefault(meta(id)!), esc: esc ?? "" }; if (!motor.relPermitido(meta(id)!)) nuevo.rel = null; onChange(nuevo); },
+        cb: (id, med, esc) => { const nuevo: Expr = { ...e, id, med: med ?? medidaInicial(meta(id)!.tipo, motor.medDefault(meta(id)!), config), esc: esc ?? "" }; if (!motor.relPermitido(meta(id)!)) nuevo.rel = null; onChange(nuevo); },
       })}>{A.n}</button>
       <BotonInfo id={A.id} />
       {(errores[A.archivo] || (B && errores[B.archivo])) && <span className="error" role="alert">No se pudieron bajar los datos de esta variable.</span>}

@@ -18,7 +18,7 @@ Del 1 al 5 no necesitan backend ni datos nuevos: se pueden ir publicando de a un
 |---|---|---|---|---|
 | 1 | Histórico en el celular | Histórico: celular y gráficos | No | Hecho (2026-11-08) — [spec](specs/historico-celular.md) |
 | 2 | Medidas y opciones más simples | Histórico: medidas y opciones (las primeras seis) | No | Hecho (2026-11-08) — [spec](specs/medidas-y-opciones.md) |
-| 3 | Configuración global | Presidentes y mandato: inicio de mandato por presidente (T±N), preferencias guardadas en el navegador, afecta a todas las secciones | No | Spec lista, falta implementar — [spec](specs/configuracion-global.md) |
+| 3 | Configuración global | Presidentes y mandato: inicio de mandato por presidente (T±N), preferencias guardadas en el navegador, afecta a todas las secciones | No | Hecho (2026-11-08) — [spec](specs/configuracion-global.md) |
 | 4 | Plantillas y vistas | Plantillas con buscador por palabra, hasta 4 gráficos por vista, "Otros gráficos interesantes", Curiosidades pasa a plantillas, precios medidos en salarios | No | Sin spec |
 | 5 | Inicio y búsqueda guiada | Inicio y búsqueda guiada: página de inicio, elegir tema → principales → subgrupos, página por tema, oración guiada | No | Sin spec |
 | 6 | Contexto de cada presidente | Contexto para juzgar a un presidente; Ranking de presidentes y curiosidades; Elecciones (voto estimado); vista de un presidente con variables elegidas; animación del mandato | No (datos nuevos: FMI, otros países, consumo de carne) | Sin spec |

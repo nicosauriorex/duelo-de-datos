@@ -3,12 +3,14 @@ import { Fragment, useMemo, useState } from "react";
 import { useSeccion } from "../useSeccion";
 import { Cargando, Desplegable, Selector, Seg, alternar } from "../ui";
 import { BotonInfo, FilaVariable } from "../Variables";
-import { CeldasStats, COLS, Cabecera, SelectorBase, siguienteOrden, useBase, valorCol, type Orden } from "./comunes";
+import { CeldasStats, COLS, Cabecera, LineaInicio, siguienteOrden, useBase, valorCol, type Orden } from "./comunes";
 import { fmtMes } from "@/lib/formato";
 import { baseTxt, baseIdx, crearPres, nivelComparable, ordenar, rankScores, statsMandato, varNum, type Pres } from "@/lib/estadisticas";
 import { grupoDe, medidaPara, ordenarGrupos, textoBusqueda } from "@/lib/catalogo";
 import { norm } from "@/lib/formato";
 import type { Expr } from "@/lib/motor";
+import { useConfig } from "../ConfigProvider";
+import { medidaPreferida, paramSi } from "@/lib/config";
 import { decExpr, encExpr, lista, unoDe, useParams } from "@/lib/url";
 
 const ABIERTOS = new Set(["Salarios", "Dólar y tipo de cambio", "Precios › Indicadores de inflación", "Actividad", "Empleo, pobreza e ingresos", "Mercados", "Fiscal", "Dinero y bancos (BCRA)"]);
@@ -16,7 +18,8 @@ const ABIERTOS = new Set(["Salarios", "Dólar y tipo de cambio", "Precios › In
 export function Presidentes() {
   const [p, set, montado] = useParams();
   const sec = useSeccion("todo");
-  const b = useBase(p);
+  const { config } = useConfig();
+  const info = useBase(p, set, montado), b = info.b;
   const [ordB, setOrdB] = useState<Orden>({ k: null, d: -1 });
   const [ordA, setOrdA] = useState<Orden>({ k: null, d: -1 });
   const [abiertos, setAbiertos] = useState(() => new Set(ABIERTOS));
@@ -31,7 +34,7 @@ export function Presidentes() {
   const existe = (id: string) => !!m.SER[id];
   const presSel = new Set(lista(p.get("pr") ?? PRES.map((x) => x.id).join(",")).filter((id) => PRES.some((x) => x.id === id)));
   const cols = COLS.filter((c) => (p.has("cl") ? lista(p.get("cl")) : COLS.map((x) => x[0])).includes(c[0]));
-  const eB: Expr = decExpr(p.get("pv"), existe) || { id: m.SER.sipa_med ? "sipa_med" : "sipa_prom", med: "real", rel: null, modo: "compra", esc: "" };
+  const eB: Expr = decExpr(p.get("pv"), existe) || { id: m.SER.sipa_med ? "sipa_med" : "sipa_prom", med: medidaPreferida(config), rel: null, modo: "compra", esc: "" };
   const F = m.F;
 
   // ---- tabla B: una variable, todos los presidentes
@@ -47,7 +50,8 @@ export function Presidentes() {
   // ---- tabla A: un presidente, todas las variables
   const paPres = PRES.find((x) => x.id === p.get("pap")) || PRES[PRES.length - 1];
   const medsArs = m.medArs();
-  const paMed = medsArs.some((o) => o[0] === p.get("pam")) ? (p.get("pam") as string) : "real";
+  const medPref = medidaPreferida(config);
+  const paMed = medsArs.some((o) => o[0] === p.get("pam")) ? (p.get("pam") as string) : medPref;
   const toks = norm(buscar.trim()) ? norm(buscar.trim()).split(/\s+/) : [];
   const series = Object.values(m.SER);
   const GRUPOS = ordenarGrupos([...new Set(series.map(grupoDe))]);
@@ -77,17 +81,17 @@ export function Presidentes() {
 
   return (
     <section>
-      <div className="controls"><label>Inicio de mandato</label>
-        <SelectorBase b={b} set={set} />
+      <LineaInicio info={info} />
+      <div className="controls">
         <Desplegable etiqueta="Presidentes y columnas">
           <div className="controls"><label>Presidentes</label><Seg valor={presSel} opciones={PRES.map((x) => [x.id, x.n] as [string, string])} onElegir={(v) => set({ pr: [...alternar(presSel, v)].join(",") })} /></div>
           <div className="controls"><label>Columnas</label><Seg valor={new Set(cols.map((x) => x[0]))} opciones={COLS} onElegir={(v) => set({ cl: [...alternar(new Set(cols.map((x) => x[0])), v)].join(",") })} /></div>
         </Desplegable>
       </div>
       <div className="callout">
-        {b.base === "prev" ? <><b>Inicio</b> = último mes del presidente anterior (T-1), para que la variación incluya todo lo que pasó en el mandato (p.ej. la devaluación de dic-2023 cuenta para Milei).</>
-          : b.base === "mas" ? <><b>Inicio</b> = {baseTxt(b)}: p.ej. para Milei, {bi("milei")}.</>
-          : <><b>Inicio</b> = mes de asunción (T; promedio del mes, incluye días del antecesor).</>}
+        <b>Inicio</b> = {baseTxt(b)}: p.ej. para Milei, {bi("milei")}.
+        {b.t0 === -1 && " Con T-1 la variación incluye todo lo que pasó en el mandato (p.ej. la devaluación de dic-2023 cuenta para Milei)."}
+        {b.t0 === 0 && " El mes de asunción es un promedio que incluye días del antecesor."}
         {" "}Mínimo, máximo, promedio y mediana usan solo los meses del mandato. Verde y rojo indican si el cambio fue bueno o malo (un salario que sube es verde; precios, dólar o riesgo país que suben son rojos).
       </div>
       <div className="card">
@@ -107,7 +111,7 @@ export function Presidentes() {
         <p className="note">Tocá un grupo para abrirlo y un encabezado para ordenar. La medida se aplica a los montos en pesos; los dólares no se pasan a dólares y los índices y porcentajes quedan como son.</p>
         <div className="controls">
           <Selector etiqueta="Presidente" valor={paPres.id} opciones={PRES.slice().reverse().map((x) => [x.id, x.n] as [string, string])} onElegir={(v) => set({ pap: v === "milei" ? null : v })} />
-          <Selector etiqueta="Medida" valor={paMed} opciones={medsArs.map((o) => [o[0], o[1]] as [string, string])} onElegir={(v) => set({ pam: v === "real" ? null : v })} />
+          <Selector etiqueta="Medida" valor={paMed} opciones={medsArs.map((o) => [o[0], o[1]] as [string, string])} onElegir={(v) => set({ pam: paramSi(v, "real", medPref) })} />
           <input type="search" aria-label="Buscar variable" placeholder="Buscar variable: asado, reservas, alquiler…" style={{ flex: 1, minWidth: 200 }} value={buscar} onChange={(ev) => setBuscar(ev.target.value)} />
           <button type="button" className="btn" onClick={() => setAbiertos(new Set(GRUPOS))}>Expandir todo</button>
           <button type="button" className="btn" onClick={() => setAbiertos(new Set())}>Contraer todo</button>

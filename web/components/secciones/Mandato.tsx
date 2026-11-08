@@ -4,7 +4,7 @@ import { useSeccion } from "../useSeccion";
 import { Cargando, Desplegable, Selector, Seg, alternar } from "../ui";
 import { FilaVariable } from "../Variables";
 import { Grafico, type Fila, type SerieG } from "../Grafico";
-import { SelectorBase, useBase } from "./comunes";
+import { LineaInicio, useBase } from "./comunes";
 import { fmtNum, fmtMes, lastIdx, nf0, nf1, ok } from "@/lib/formato";
 import { baseIdx, baseTxt, crearPres } from "@/lib/estadisticas";
 import type { Expr } from "@/lib/motor";
@@ -17,7 +17,7 @@ const DEF_PRES = "nk,cfk1,cfk2,macri,af,milei";
 
 export function Mandato() {
   const [p, set, montado] = useParams();
-  const b = useBase(p);
+  const info = useBase(p, set, montado), b = info.b;
   const e0 = decExprSeguro(p.get("mv"));
   const sec = useSeccion(e0 ? [e0.id, ...(e0.rel ? [e0.rel] : [])] : ["fx_oficial"]);
   const { motor: m, metas, version } = sec;
@@ -97,13 +97,13 @@ export function Mandato() {
     <section>
       <p className="sub">Cada línea arranca en el mes 0 de un presidente. Con &quot;precio teórico&quot; se toma un valor de partida y se le aplica lo que pasó en cada mandato: si con Milei el dólar arrancó en $1.000 y en el mes 20 de CFK 2 había subido 50%, la línea de CFK 2 marca $1.500 en el mes 20.</p>
       <FilaVariable e={eB} onChange={(e) => e && set({ mv: encExpr(e) })} />
+      <LineaInicio info={info} etiqueta="Mes 0" />
       <div className="controls">
         <Selector etiqueta="Modo" valor={modo} opciones={MODOS.map((o) => [o[0], o[1]] as [string, string])} onElegir={(v) => set({ mmo: v === "teorico" ? null : v })} />
         {D && D.teo && <><label>Partiendo de</label>
           <Selector etiqueta="Partiendo de" valor={D.anc} opciones={D.ancOpc.map((o) => [o[0], o[1]] as [string, string])} onElegir={(v) => set({ anc: v === "milei" ? null : v })} /></>}
         <Desplegable etiqueta="Presidentes y opciones">
           <div className="controls"><label>Presidentes</label><Seg valor={selIds} opciones={PRES_T0.map((x) => [x.id, x.n] as [string, string])} onElegir={(v) => set({ mp: [...alternar(selIds, v)].join(",") })} /></div>
-          <div className="controls"><label>Mes 0</label><SelectorBase b={b} set={set} /></div>
           <div className="controls"><label>Rango del mes</label><Seg valor={banda} opciones={[["no", "Solo promedio"], ["si", "Promedio + mín/máx"]]} onElegir={(v) => set({ mbd: v === "no" ? null : v })} /></div>
         </Desplegable>
       </div>

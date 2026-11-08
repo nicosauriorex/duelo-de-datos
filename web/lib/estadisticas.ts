@@ -1,6 +1,7 @@
 // Estadísticas de Histórico, mandatos, desempeño de presidentes y correlaciones de elecciones.
 // Port de src/app.js sin cambiar resultados. Todo recibe el motor y la configuración por parámetro.
 import { ok } from "./formato";
+import { kDe, txtT, type BaseCfg } from "./config";
 import { ES_VAR, type Calculo, type Expr, type Motor, type Vals } from "./motor";
 
 // ---------------------------------------------------------------- Histórico
@@ -62,7 +63,7 @@ export const recortar = (rows: Fila[], keys: string[]): Fila[] => {
 
 // ---------------------------------------------------------------- Presidentes
 export interface Pres { id: string; n: string; ini: string; color: string; dash?: boolean; i0: number; i1: number }
-const PRES_DEF = [
+export const PRES_DEF = [
   { id: "menem1", n: "Menem 1", ini: "1989-07", color: "--neutral", dash: true },
   { id: "menem2", n: "Menem 2", ini: "1995-07", color: "--neutral", dash: true },
   { id: "delarua", n: "De la Rúa", ini: "1999-12", color: "--series-8" },
@@ -81,10 +82,27 @@ export function crearPres(F: string[]): Pres[] {
     return { ...p, i0: Math.max(0, F.indexOf(p.ini)), i1: sig ? F.indexOf(sig.ini) - 1 : N - 1 };
   });
 }
-export interface BaseCfg { base: string; n: number }
-export const baseIdx = (F: string[], p: Pres, b: BaseCfg): number =>
-  b.base === "prev" ? F.indexOf(p.ini) - 1 : b.base === "mas" ? Math.min(F.indexOf(p.ini) + b.n, p.i1) : F.indexOf(p.ini);
-export const baseTxt = (b: BaseCfg) => b.base === "prev" ? "último mes del antecesor (T-1)" : b.base === "mas" ? `${b.n} ${b.n === 1 ? "mes" : "meses"} después de asumir (T+${b.n})` : "mes de asunción (T)";
+export type { BaseCfg } from "./config";
+/** Mes base del presidente: asunción + k (k = su desplazamiento), sin pasar del último mes del mandato ni de antes del primer mes con datos. */
+export function baseIdx(F: string[], p: Pres, b: BaseCfg): number {
+  const asume = F.indexOf(p.ini) >= 0 ? F.indexOf(p.ini) : p.i0;
+  return Math.max(0, Math.min(asume + kDe(b, p.id), p.i1));
+}
+const mesesTxt = (k: number) => `${k} ${Math.abs(k) === 1 ? "mes" : "meses"}`;
+/** Cómo se explica la base: una frase si es igual para todos, o el resumen con las excepciones. */
+export function baseTxt(b: BaseCfg): string {
+  const hay = Object.keys(b.t0p).length > 0;
+  const k = b.t0;
+  const gral = k === -1 ? "último mes del antecesor (T-1)" : k === 0 ? "mes de asunción (T)"
+    : k > 0 ? `${mesesTxt(k)} después de asumir (T+${k})` : `${mesesTxt(-k)} antes de asumir (T${k})`;
+  return hay ? `${gral}, con excepciones: ${resumenExcepciones(b)}` : gral;
+}
+function resumenExcepciones(b: BaseCfg): string {
+  return PRES_DEF.filter((p) => b.t0p[p.id] != null).map((p) => `${p.n} ${txtT(b.t0p[p.id])}`).join(", ");
+}
+/** Resumen corto para la línea "Inicio: …" (ej. "T-1 · Milei T+1"). */
+export const baseResumen = (b: BaseCfg): string =>
+  [txtT(b.t0), ...PRES_DEF.filter((p) => b.t0p[p.id] != null).map((p) => `${p.n} ${txtT(b.t0p[p.id])}`)].join(" · ");
 
 export interface StatsM {
   n: number; total?: number; ini?: number; iniI?: number; fin?: number; finI?: number;

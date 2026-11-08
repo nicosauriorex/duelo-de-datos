@@ -1,26 +1,45 @@
 "use client";
-import { useMemo } from "react";
-import { Seg } from "../ui";
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useConfig } from "../ConfigProvider";
 import { tinte } from "../util";
 import { fmtMes, ok } from "@/lib/formato";
 import type { Calculo, Motor } from "@/lib/motor";
-import { varNum, type BaseCfg, type StatsM } from "@/lib/estadisticas";
-import { enteroEn, unoDe } from "@/lib/url";
+import { PRES_DEF, baseResumen, varNum, type StatsM } from "@/lib/estadisticas";
+import { DEFECTO, baseDeConfig, baseDeUrl, encT0p, esBaseDeFabrica, limpiarBase, mismaBase, type BaseCfg } from "@/lib/config";
 
 export const COLS: [string, string][] = [["ini", "Inicio"], ["fin", "Cierre"], ["var", "Variación"], ["min", "Mínimo"], ["max", "Máximo"], ["prom", "Promedio"], ["med", "Mediana"], ["n", "Meses"]];
-export const OPC_BASE: [string, string][] = [["prev", "Último mes del antecesor (T-1)"], ["asume", "Mes de asunción (T)"], ["mas", "T + n meses"]];
+const IDS_PRES = PRES_DEF.map((x) => x.id);
+export interface InicioMandato { b: BaseCfg; delLink: boolean; usarMio: () => void }
 
-/** Base de los mandatos (T-1 / T / T+n), guardada en la URL con los parámetros `b` y `n`. */
-export function useBase(p: URLSearchParams): BaseCfg {
-  return useMemo(() => ({ base: unoDe(p.get("b"), ["prev", "asume", "mas"] as const, "prev"), n: enteroEn(p.get("n"), 1, 47, 1) }), [p]);
+/** Inicio del mandato de la vista: el del link (`t0`, `t0p` o los viejos `b` y `n`) si lo trae; si no, el de la configuración.
+ *  Mantiene la URL en sintonía: con una configuración distinta de la de fábrica agrega `t0`/`t0p` (así el link se ve igual para cualquiera),
+ *  y si se cambia algo en el panel saca lo que traía el link. */
+export function useBase(p: URLSearchParams, set: (c: Record<string, string | null>) => void, montado: boolean): InicioMandato {
+  const { config, rev } = useConfig();
+  const cfgBase = useMemo(() => baseDeConfig(config, IDS_PRES), [config]);
+  const urlBase = useMemo(() => baseDeUrl(p), [p]);
+  const b = useMemo(() => limpiarBase(urlBase ?? cfgBase, IDS_PRES), [urlBase, cfgBase]);
+  const delLink = !!urlBase && !mismaBase(urlBase, cfgBase, IDS_PRES);
+  const revVista = useRef(rev);
+  useEffect(() => {
+    if (!montado) return;
+    const paramsDe = (x: BaseCfg) => ({ t0: x.t0 === DEFECTO.t0 ? null : String(x.t0), t0p: encT0p(x.t0p) || null });
+    if (rev !== revVista.current) { revVista.current = rev; set({ b: null, n: null, ...paramsDe(cfgBase) }); return; }
+    if (!urlBase && !esBaseDeFabrica(cfgBase, IDS_PRES)) set(paramsDe(cfgBase));
+  }, [montado, rev, cfgBase, urlBase, set]);
+  const usarMio = useCallback(() => set({ b: null, n: null, t0: null, t0p: null }), [set]);
+  return { b, delLink, usarMio };
 }
-export function SelectorBase({ b, set }: { b: BaseCfg; set: (c: Record<string, string | null>) => void }) {
+
+/** Línea "Inicio: T-1 · Milei T+1 · Configurar" y, si el link trae otro inicio, el aviso para volver al propio. */
+export function LineaInicio({ info, etiqueta = "Inicio" }: { info: InicioMandato; etiqueta?: string }) {
+  const { abrirPanel } = useConfig();
   return (
     <>
-      <Seg valor={b.base} opciones={OPC_BASE} onElegir={(v) => set({ b: v === "prev" ? null : v })} />
-      {b.base === "mas" && (
-        <input type="number" min={1} max={47} className="num-n" value={b.n} title="n: meses después de asumir" aria-label="Meses después de asumir"
-          onChange={(ev) => set({ n: String(Math.max(1, Math.min(47, Math.round(+ev.target.value || 1)))), b: "mas" })} />
+      <div className="linea-inicio"><span>{etiqueta}: <b>{baseResumen(info.b)}</b></span>
+        <button type="button" className="enlace" onClick={abrirPanel}>Configurar</button></div>
+      {info.delLink && (
+        <p className="aviso-link" role="status">Estás viendo el inicio de mandato del link · <button type="button" className="enlace" onClick={info.usarMio}>Usar el mío</button></p>
       )}
     </>
   );

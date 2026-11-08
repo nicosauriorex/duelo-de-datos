@@ -8,6 +8,8 @@ import { PALETA, vcolor } from "../util";
 import { fmtMes, MESES, nf0, nf1, fmtNum, ok } from "@/lib/formato";
 import { FX_COLOR, FX_KEYS, FX_NOM, type Calculo, type Expr, type Motor } from "@/lib/motor";
 import { agrupar, claseVariacion, estadisticasRows, etiqueta, recortar, type EstRows } from "@/lib/estadisticas";
+import { useConfig } from "../ConfigProvider";
+import { desdePreferido, medidaPreferida, paramSi, type Dolar } from "@/lib/config";
 import { decExpr, encExpr, lista as listaUrl, unoDe, useParams } from "@/lib/url";
 
 const TODOS_MESES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
@@ -24,6 +26,7 @@ const FIJOS_IDS = ["brecha_blue", "brecha_mep", "brecha_ccl", "soja_chi", "soja_
 export function Historico() {
   const [p, set, montado] = useParams();
   const base = useSeccion([]);
+  const { config } = useConfig();
   const { listo, motor, metas, version } = base;
   const existe = (id: string) => metas.some((m) => m.id === id);
 
@@ -31,11 +34,11 @@ export function Historico() {
   const E = useMemo(() => {
     if (!listo || !motor || !montado) return null;
     const F = motor.F, ult = F[F.length - 1];
-    const def: Expr = existe("pp_gba_asado") && existe("sipa_prom") ? { id: "pp_gba_asado", med: "real", rel: "sipa_prom", modo: "compra", esc: "" } : { id: "sipa_prom", med: "real", rel: null, modo: "compra", esc: "" };
+    const def: Expr = existe("pp_gba_asado") && existe("sipa_prom") ? { id: "pp_gba_asado", med: "real", rel: "sipa_prom", modo: "compra", esc: "" } : { id: "sipa_prom", med: medidaPreferida(config), rel: null, modo: "compra", esc: "" };
     let exprs = listaUrl(p.get("v")).map((s) => decExpr(s, existe)).filter(Boolean) as Expr[];
     if (!exprs.length) exprs = [def];
     const modo = unoDe(p.get("m"), ["valor", "b100"] as const, "valor");
-    let desde = /^\d{4}-\d{2}$/.test(p.get("d") || "") ? (p.get("d") as string) : "2003-01";
+    let desde = /^\d{4}-\d{2}$/.test(p.get("d") || "") ? (p.get("d") as string) : desdePreferido(config.desde, F);
     let hasta = /^\d{4}-\d{2}$/.test(p.get("h") || "") ? (p.get("h") as string) : ult;
     desde = desde < F[0] ? F[0] : desde > ult ? ult : desde;
     hasta = hasta > ult ? ult : hasta < F[0] ? F[0] : hasta;
@@ -50,12 +53,12 @@ export function Historico() {
       br: new Set(listaUrl(p.has("fb") ? p.get("fb") : "blue,mep,ccl").filter((k) => ["blue", "mep", "ccl"].includes(k))),
       fx: new Set(listaUrl(p.has("fx") ? p.get("fx") : "oficial,blue,ccl").filter((k) => (FX_KEYS as readonly string[]).includes(k))),
       fxmed: unoDe(p.get("fxm"), ["corr", "real", "realbi"] as const, "real"), fxbanda: unoDe(p.get("fxbd"), ["no", "si"] as const, "no"),
-      sojamed: unoDe(p.get("sm"), ["corr", "usdr"] as const, "corr"), sojafx: unoDe(p.get("sf"), FX_KEYS, "oficial"),
+      sojamed: unoDe(p.get("sm"), ["corr", "usdr"] as const, "corr"), sojafx: unoDe(p.get("sf"), FX_KEYS, config.dolar), dolarPref: config.dolar,
       tabla: unoDe(p.get("t"), ["grafico", "tabla"] as const, "grafico"),
       ratio: new Set(listaUrl(p.has("rt") ? p.get("rt") : "oficial,ccl").filter((k) => (FX_KEYS as readonly string[]).includes(k))),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [listo, motor, montado, p, metas]);
+  }, [listo, motor, montado, p, metas, config.dolar, config.desde, config.medida]);
 
   const ids = useMemo(() => {
     if (!E) return [] as string[];
@@ -109,7 +112,7 @@ declare function useEstado(): {
   F: string[]; ult: string; modo: "valor" | "b100"; exprs: Expr[]; todas: Expr[]; desde: string; hasta: string; meses: Set<number>;
   freq: "M" | "T" | "A"; ag: "promedio" | "cierre"; escala: "lin" | "log"; banda: "no" | "si"; eje: "propia" | "misma"; refs: Set<string>;
   br: Set<string>; fx: Set<string>; fxmed: "corr" | "real" | "realbi"; fxbanda: "no" | "si"; sojamed: "corr" | "usdr";
-  sojafx: (typeof FX_KEYS)[number]; ratio: Set<string>; tabla: "grafico" | "tabla";
+  sojafx: (typeof FX_KEYS)[number]; dolarPref: Dolar; ratio: Set<string>; tabla: "grafico" | "tabla";
 } | null;
 type SetFn = (c: Record<string, string | null | undefined>) => void;
 
@@ -473,12 +476,12 @@ function Fijos({ m, E, set, listo, version }: { m: Motor; E: Estado; set: SetFn;
             nota={<>US$ por tonelada{E.sojamed === "usdr" ? ` de ${refUS} (ajustado por inflación de EEUU)` : " corrientes"}. Rosario pasado al dólar {FX_NOM[E.sojafx]} de cada mes.</>}
             leyenda={<div className="legend"><span style={vcolor("--series-1")}>Chicago (CBOT)</span><span style={vcolor("--series-2")}>Rosario (pizarra, al {FX_NOM[E.sojafx]})</span></div>}
             config={{
-              cuenta: (E.sojamed !== "corr" ? 1 : 0) + (E.sojafx !== "oficial" ? 1 : 0) + (E.fxbanda !== "no" ? 1 : 0),
+              cuenta: (E.sojamed !== "corr" ? 1 : 0) + (E.sojafx !== E.dolarPref ? 1 : 0) + (E.fxbanda !== "no" ? 1 : 0),
               children: (
                 <div className="controls">
                   <label>Medida</label><Seg valor={E.sojamed} opciones={[["corr", "US$ corrientes"], ["usdr", "US$ reales"]]} onElegir={(v) => set({ sm: v === "corr" ? null : v })} />
                   {banda}
-                  <label>Rosario al dólar</label><Seg valor={E.sojafx} opciones={FX_KEYS.map((k) => [k, FX_NOM[k]] as [string, string])} onElegir={(v) => set({ sf: v === "oficial" ? null : v })} />
+                  <label>Rosario al dólar</label><Seg valor={E.sojafx} opciones={FX_KEYS.map((k) => [k, FX_NOM[k]] as [string, string])} onElegir={(v) => set({ sf: paramSi(v, "oficial", E.dolarPref) })} />
                 </div>
               ),
             }}

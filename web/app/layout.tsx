@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { DatosProvider, Errores } from "@/components/DatosProvider";
 import { Nav } from "@/components/Nav";
+import { ConfigProvider } from "@/components/ConfigProvider";
+import { SCRIPT_TEMA } from "@/lib/config";
 
 export const metadata: Metadata = {
   title: { default: "Primero los Datos", template: "%s · Primero los Datos" },
@@ -12,8 +14,10 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
+      <head><script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA }} /></head>
       <body>
+        <ConfigProvider>
         <a className="skip" href="#contenido">Saltar al contenido</a>
         <main>
           <h1>Primero los Datos</h1>
@@ -25,6 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <DatosProvider><Errores />{children}</DatosProvider>
           </div>
         </main>
+        </ConfigProvider>
       </body>
     </html>
   );

@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { useSeccion } from "../useSeccion";
 import { Cargando, Selector, Seg, alternar } from "../ui";
-import { SelectorBase, useBase } from "./comunes";
+import { LineaInicio, useBase } from "./comunes";
 import { PALETA, tinte } from "../util";
 import { fmtMes, nf0, nf1, ok } from "@/lib/formato";
 import { baseIdx, crearPres, tablaDesempeno } from "@/lib/estadisticas";
@@ -30,7 +30,7 @@ function Sparkline({ v, color, desde }: { v: Vals; color: string; desde: number 
 export function Curiosidades() {
   const [p, set, montado] = useParams();
   const sec = useSeccion("todo");
-  const b = useBase(p);
+  const info = useBase(p, set, montado), b = info.b;
   const { motor: m, version } = sec;
   const PRES = useMemo(() => (m ? crearPres(m.F) : []), [m]);
   const I = useMemo(() => (m && !sec.ocupado ? crearIndicadores(m) : null), [m, sec.ocupado, version]);  // eslint-disable-line react-hooks/exhaustive-deps
@@ -86,8 +86,8 @@ export function Curiosidades() {
           <Seg valor={lado} opciones={[["mejor", "Lo mejor"], ["peor", "Lo peor"]]} onElegir={(v) => set({ lado: v === "mejor" ? null : v })} />
           <Seg valor={conjunto} opciones={[["principales", "Indicadores principales"], ["todo", "Incluir precios del IPC y productos"]]} onElegir={(v) => set({ set: v === "principales" ? null : v })} />
           <Seg valor={crit} opciones={[["mejora", "Medir cuánto mejoró (inicio → cierre)"], ["nivel", "Medir el nivel promedio"]]} onElegir={(v) => set({ crit: v === "mejora" ? null : v })} />
-          <label>Inicio</label><SelectorBase b={b} set={set} />
         </div>
+        <LineaInicio info={info} />
         <p className="note">
           {lado === "mejor" ? <>Indicadores que <b>mejoraron</b></> : <>Indicadores que <b>empeoraron</b></>} durante {pr.n} (desde {fmtMes(F[baseIdx(F, pr, b)])} hasta el cierre).{" "}
           Ordenados por el puesto frente a los demás presidentes según <b>{CRIT_TXT[crit]}</b>. Se muestran los dos puestos. Tocá una fila para verla en Histórico.

@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useSeccion } from "../useSeccion";
 import { Cargando, Seg, alternar } from "../ui";
 import { BotonInfo } from "../Variables";
-import { SelectorBase, useBase } from "./comunes";
+import { LineaInicio, useBase } from "./comunes";
 import { PALETA, tinte } from "../util";
 import { fmtMes, fmtNum, nf0, nf1, nf2, norm, ok } from "@/lib/formato";
 import { crearElec, crearPres, METRICA_E, pearson, valorElec } from "@/lib/estadisticas";
@@ -59,7 +59,7 @@ function Dispersion({ o, color, metrica }: { o: Corr; color: string; metrica: st
 export function Elecciones() {
   const [p, set, montado] = useParams();
   const sec = useSeccion("todo");
-  const b = useBase(p);
+  const info = useBase(p, set, montado), b = info.b;
   const { motor: m, version } = sec;
   const [ord, setOrd] = useState<{ k: string; d: number }>({ k: "abs", d: -1 });
   const [buscar, setBuscar] = useState("");
@@ -70,7 +70,7 @@ export function Elecciones() {
   const metrica = unoDe(p.get("em"), ["var12", "nivel", "mandato"] as const, "var12");
   const minN = enteroEn(p.get("emn"), 4, 16, 6);
   const conIpc = unoDe(p.get("eipc"), ["no", "si"] as const, "no");
-  const clave = [...tipos].sort().join() + metrica + b.base + b.n;
+  const clave = [...tipos].sort().join() + metrica + JSON.stringify(b);
 
   const todas = useMemo<Corr[]>(() => {
     if (!m || sec.ocupado) return [];
@@ -113,8 +113,8 @@ export function Elecciones() {
       <div className="controls">
         <label>Elecciones</label><Seg valor={tipos} opciones={[["pres", "Presidenciales"], ["leg", "Legislativas"]]} onElegir={(v) => set({ et: [...alternar(tipos, v)].join(",") })} />
         <label>Medir</label><Seg valor={metrica} opciones={Object.entries(METRICA_E).map(([k, v]) => [k, v[0]] as [string, string])} onElegir={(v) => set({ em: v === "var12" ? null : v })} />
-        {metrica === "mandato" && <><label>Inicio</label><SelectorBase b={b} set={set} /></>}
       </div>
+      {metrica === "mandato" && <LineaInicio info={info} />}
       <div className="callout">
         Para cada variable se calcula su valor en cada elección ({METRICA_E[metrica][1]}) y se lo compara con el % que sacó el oficialismo nacional. <b>r</b> es la correlación: +1 = se mueven juntos, −1 = al revés, 0 = nada que ver. Con tan pocas elecciones ({el.length}), una correlación alta puede ser casualidad; con menos de 8 puntos, |r| por debajo de ~0,7 no dice mucho. Los montos de toda la economía se miden como % del PIB y los montos en pesos, en pesos reales.
       </div>

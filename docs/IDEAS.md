@@ -37,8 +37,8 @@ Las primeras seis → spec: docs/specs/medidas-y-opciones.md (implementadas 2026
 - **Plantillas**: gráficos ya configurados con los datos de más interés (lo que hoy está en Curiosidades), con **buscador por palabra** (ej. "asado"). Darle importancia: muchas plantillas, mejor que sobren.
 
 ## Presidentes y mandato
-- "Inicio del mandato" pasa a ser **Configurar inicio del mandato**: T-1, T, T+N (también negativo) y **por presidente** (todos en T, Milei en T+1).
-- Preferencias guardadas por usuario; mejor una **configuración global** de la página que afecte a todas las secciones.
+- ~~"Inicio del mandato" pasa a ser **Configurar inicio del mandato**: T-1, T, T+N (también negativo) y **por presidente** (todos en T, Milei en T+1).~~ ✅ 2026-11-08
+- ~~Preferencias guardadas por usuario; mejor una **configuración global** de la página que afecte a todas las secciones.~~ ✅ 2026-11-08
   (Estas dos → spec: docs/specs/configuracion-global.md)
 - En la vista de un presidente con todas las variables: poder filtrar y elegir, por ejemplo, 5 variables de distintas categorías una debajo de otra.
 - Meses de mandato: **animación** que va dibujando la evolución desde el inicio al final, descargable como video.
@@ -126,3 +126,7 @@ Uso central: alguien escribe en redes "Milei fundió la economía" y otra person
 - No ofrecer comparaciones sin sentido (IPC empalmado contra la inflación).
 - Al pasar de mes a año, elegir cómo agregar: promedio o último dato (cierre); quizás máximo y mínimo.
 (Las seis ideas anteriores: medida en pasos, explicación corta + recomendada, índices tal cual al fondo, sin comparaciones sin sentido, Promedio/Cierre.) ✅ 2026-11-08
+
+### Configuración global (implementado, spec configuracion-global)
+- ~~Configurar inicio del mandato (T-1, T, T+N, por presidente).~~ ✅ 2026-11-08
+- ~~Configuración global guardada en el navegador.~~ ✅ 2026-11-08
