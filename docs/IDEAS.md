@@ -30,11 +30,12 @@ Notas del usuario, ordenadas por tema. No son specs: antes de implementar cualqu
 - Se suma a "Comparar con vecinos o países parecidos" de más arriba: es la misma idea llevada a todas las variables.
 
 ## Capacidad de gobierno (2026-11-09)
-→ bloque 6d de la hoja de ruta, sin spec.
+→ spec: docs/specs/capacidad-de-gobierno.md (bloque 6d)
 Indicadores de cuánto pudo hacer cada presidente de lo que quería, para juzgar resultados con ese contexto.
 - Legisladores **propios y aliados** del presidente: diputados y senadores, por período.
 - **Leyes que quiso sacar vs. leyes aprobadas**.
-- Otros indicadores a evaluar (ver "Sugerencias de Claude"): decretos (DNU) usados, vetos y vetos insistidos, quórum en sesiones clave, cambios de gabinete.
+- Otros indicadores a evaluar (ver "Sugerencias de Claude"): decretos (DNU) usados, vetos y vetos insistidos (→ entran en la spec), quórum en sesiones clave, cambios de gabinete.
+- Pendiente, fuera de la spec del 6d: cambios de gabinete, quórum en sesiones clave, años sin Presupuesto aprobado, aliados según votaciones nominales.
 
 ## Histórico: celular y gráficos
 → spec: docs/specs/historico-celular.md (implementada, commit 144fc59)
