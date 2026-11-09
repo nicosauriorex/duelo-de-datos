@@ -5,6 +5,7 @@ import { Cargando, Desplegable, Selector, Seg, alternar } from "../ui";
 import { BotonInfo, FilaVariable } from "../Variables";
 import { Sparkline } from "../Sparkline";
 import { ContextoMandato } from "./ContextoMandato";
+import { GobiernoCongreso } from "./GobiernoCongreso";
 import { INFO_CORTA } from "@/lib/info";
 import { CeldasStats, COLS, Cabecera, LineaInicio, siguienteOrden, useBase, valorCol, type Orden } from "./comunes";
 import { fmtMes } from "@/lib/formato";
@@ -162,6 +163,7 @@ export function Presidentes() {
         </table></div>
         )}
       </div>
+      <GobiernoCongreso ultimo={F[F.length - 1]} p={p} set={set} />
       {metas.length === 0 && <Fragment />}
     </section>
   );

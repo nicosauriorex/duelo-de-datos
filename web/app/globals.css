@@ -421,3 +421,28 @@ tr.clic.abierto > td { font-weight: 600; }
 .pm-v { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
 .pm-v small { font-weight: 400; }
 @media (max-width: 639.98px) { .pm-fila { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 54px; gap: 8px; padding: 8px; } }
+
+/* Gobierno y Congreso (bloque 6d) */
+.cg-movil { display: none; }
+@media (max-width: 639px) { .cg-tabla { display: none; } .cg-movil { display: block; } }
+.cg-tabla th small { display: block; font-weight: 400; color: var(--text-muted); font-size: 11px; }
+.cg-tabla td small { color: var(--text-muted); }
+.th-orden { all: unset; cursor: pointer; text-align: left; font-weight: inherit; }
+.th-orden:focus-visible { outline: 2px solid var(--series-1); }
+.cg-pres { all: unset; cursor: pointer; text-decoration: underline; }
+.cg-pres:focus-visible { outline: 2px solid var(--series-1); }
+.cg-sel { background: color-mix(in srgb, var(--series-1) 12%, var(--surface-1)); }
+.cg-fila { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(70px, 1.3fr); }
+.cg-fila .pm-v { font-size: 12px; }
+.cg-apilado { position: relative; display: flex; gap: 6px; align-items: stretch; height: 180px; padding: 0 0 18px; margin-top: 8px; box-sizing: border-box; overflow-x: auto; }
+.cg-col { position: relative; flex: 1 0 28px; max-width: 64px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
+.cg-pila { width: 100%; height: 100%; display: flex; flex-direction: column-reverse; background: color-mix(in srgb, var(--text-muted) 12%, transparent); border-radius: 3px 3px 0 0; }
+.cg-col small { position: absolute; bottom: -16px; font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+.cg-lq { position: absolute; left: -3px; right: -3px; border-top: 2px dashed var(--text-primary); z-index: 1; }
+.cg-lm { position: absolute; left: 0; right: 0; border-top: 2px solid var(--text-primary); z-index: 1; pointer-events: none; }
+.cg-lm i { position: absolute; right: 0; top: -16px; font-size: 10px; font-style: normal; color: var(--text-muted); }
+.cg-ley { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: middle; }
+.cg-anual { display: flex; flex-direction: column; gap: 4px; }
+.cg-anio { display: grid; grid-template-columns: 40px minmax(30px, 1fr) 62px minmax(30px, 1fr) minmax(70px, 1.2fr); gap: 8px; align-items: center; font-size: 12px; }
+.cg-como { margin-top: 14px; }
+.cg-como summary { cursor: pointer; font-weight: 600; }

@@ -9,7 +9,7 @@ import { decExpr, encExpr, lista as listaUrl } from "./url";
 import { PM_RUBROS } from "./preciosMundo";
 
 export const GRUPOS = ["Mis plantillas", "Destacadas", "Poder de compra", "Precios contra la inflación", "Salarios", "Dólar y mercados",
-  "Actividad", "Empleo y pobreza", "Sector externo", "Fiscal", "En el mundo"] as const;
+  "Actividad", "Empleo y pobreza", "Sector externo", "Fiscal", "En el mundo", "Gobierno y Congreso"] as const;
 export type Vista = Record<string, string>;
 
 export interface Plantilla {
@@ -116,6 +116,17 @@ export function crearPlantillas(metas: SerieMeta[]): Plantilla[] {
     id: "pm-" + rid, titulo: `${nombre}: Argentina contra el mundo, en dólares`, desc: "Nivel de precios contra el promedio del mundo (= 100), medido y estimado",
     grupo: "En el mundo", etiquetas: ["mundo", "afuera", "dolares", "precios", "exterior", "caro", "barato", "icp"], vista: {}, e: null, ids: [], curada: true,
     href: `/contexto/?pmr=${rid}#precios-mundo`,
+  }));
+  // ---- Gobierno y Congreso (bloque 6d): una por indicador, abre la sección en Presidentes
+  ([
+    ["bancas", "Bancas del oficialismo por presidente", "Bancas propias y aliadas en Diputados y Senado, en % de la cámara"],
+    ["leyes", "Leyes del Ejecutivo aprobadas por presidente", "Proyectos del Ejecutivo aprobados sobre enviados"],
+    ["dnu", "DNU por presidente", "Decretos de necesidad y urgencia, total y por año de mandato"],
+    ["vetos", "Vetos por presidente", "Vetos totales y parciales, y cuántas veces el Congreso insistió"],
+  ] as const).forEach(([ind, titulo, desc]) => out.push({
+    id: "cg-" + ind, titulo, desc, grupo: "Gobierno y Congreso",
+    etiquetas: ["congreso", "diputados", "senado", "bancas", "mayoria", "leyes", "decretos", "dnu", "vetos", "oficialismo"], vista: {}, e: null, ids: [], curada: true,
+    href: `/presidentes/?cgi=${ind}#congreso`,
   }));
   return out;
 }

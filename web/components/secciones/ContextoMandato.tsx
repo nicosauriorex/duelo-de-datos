@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useContexto } from "../useContexto";
 import { usePreciosMundo } from "../usePreciosMundo";
+import { useCapacidad } from "../useCapacidad";
+import { lineaContexto, mandatos } from "@/lib/capacidad";
 import { nf0, nf1, ok } from "@/lib/formato";
 import { GRUPOS_CMP, resumenMandato, textoAnios } from "@/lib/contexto";
 import { extremosMandato } from "@/lib/preciosMundo";
@@ -16,8 +18,11 @@ const signo = (v: number) => { const r = Math.round(v * 10) / 10; return (r > 0 
 export function ContextoMandato({ m, pres }: { m: Motor; pres: Pres }) {
   const { datos } = useContexto();
   const { datos: pm } = usePreciosMundo();
+  const { datos: cap } = useCapacidad();
   if (!datos) return null;
   const ext = pm ? extremosMandato(m, pm, pres) : null;   // si no hay datos de precios o el mandato es anterior a 2017, no se muestra la línea
+  const mand = mandatos(m.F[m.F.length - 1]).find((x) => x.id === pres.id);
+  const congreso = cap && mand ? lineaContexto(cap, pres.id, mand) : null;   // sin datos del presidente, no se muestra la línea
   const grupo = GRUPOS_CMP[0];
   const r = resumenMandato(m, datos, pres, grupo[2]);
   const s = r.sorpresa;
@@ -30,6 +35,7 @@ export function ContextoMandato({ m, pres }: { m: Motor; pres: Pres }) {
           {ok(s.sArg) && ok(s.sGrp) && ok(s.dif) &&
             <li>Contra lo que proyectaba el FMI en abril: la Argentina {signo(s.sArg)} puntos por año; {grupo[1]}, {signo(s.sGrp)}. Diferencia: {signo(s.dif)} puntos.</li>}
           {ext && <li>Rubro más caro contra el mundo (dólar oficial, estimado): {ext.caro.n} ({nf0.format(ext.caro.nivel)}, {fmtMes(ext.caro.fecha)}); más barato: {ext.barato.n} ({nf0.format(ext.barato.nivel)}, {fmtMes(ext.barato.fecha)}). Mundo = 100. <Link href="/contexto/#precios-mundo" prefetch={false}>Ver precios en el mundo</Link></li>}
+          {congreso && <li>{congreso} <Link href={`/presidentes/?cgp=${pres.id}#congreso`} prefetch={false}>Ver gobierno y Congreso</Link></li>}
           {r.hayViento && <li>Viento externo: {r.favor} a favor, {r.neutro} neutros y {r.contra} en contra.</li>}
         </ul>
       )}

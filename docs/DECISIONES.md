@@ -126,3 +126,10 @@ Una entrada por decisión de arquitectura. Formato: contexto, decisión, por qu�
 **Decisión**: se cargan a mano en CSV versionados en `datos/manual/`, con la URL de la fuente en cada fila y una columna de notas. Las asignaciones de aliados se registran bloque por bloque (`congreso_bloques.csv`) para que se puedan revisar. El pipeline los valida (corta con error si algo es inconsistente), avisa en el resumen de la corrida cuando falta cargar un año y escribe `web/public/datos/capacidad.json`. Lo que sí se pueda bajar solo (los DNU desde Infoleg, si se confirma) se baja por la caché como el resto.
 
 **Consecuencias**: hay que actualizar esos archivos a mano una vez por año (después del 1 de marzo y al cerrar el año). A diferencia de `datos/cache/`, `datos/manual/` es la fuente original: no se regenera. Spec: `docs/specs/capacidad-de-gobierno.md`.
+
+**Actualización 2026-11-09 (implementación del bloque 6d)**: al confirmar las fuentes:
+- **DNU automáticos**: base Infoleg completa (ZIP de datos.jus.gob.ar; la URL de datos.gob.ar de la spec daba 404), filtro `tipo_norma=Decreto` y `clase_norma=DNU`, por fecha de sanción. Control: Milei 2024 = 47; Macri 65 contra 78 de Chequeado (nota en `notas.csv`).
+- **Leyes del Ejecutivo automáticas desde 2011-12-10**: los datos abiertos de proyectos de Diputados empiezan en marzo de 2008, así que CFK 1 y los anteriores quedan sin dato ("—") hasta cargarlos a mano en `leyes_ejecutivo.csv`. Un valor cargado a mano manda sobre el automático.
+- **Caché**: `datos/cache/capacidad_auto.json` (por origen) respalda `--solo-json`.
+- **Pendiente de carga manual** (PDF de Diputados: composición 1983-2023, revista 10/10 y leyes insistidas; Senado sin fuente descargable): `congreso_bancas.csv`, `congreso_bloques.csv`, `vetos.csv`. Los CSV están creados solo con encabezados; la sección muestra "—".
+- El "bancas" del celular usa Diputados.

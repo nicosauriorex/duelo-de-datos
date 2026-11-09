@@ -43,7 +43,7 @@ export const Tarjeta = memo(function Tarjeta({ pl, k, onAviso, onRenombrar, onBo
   const desde = motor ? motor.idxDe("2003-01") : 0;
   return (
     <div className="plantilla" ref={ref}>
-      <Link prefetch={false} href={href} className="plantilla-link" aria-label={`${pl.href ? "Abrir en Contexto" : "Abrir en Histórico"}: ${pl.titulo}`}>
+      <Link prefetch={false} href={href} className="plantilla-link" aria-label={`${pl.href ? "Abrir en la sección" : "Abrir en Histórico"}: ${pl.titulo}`}>
         <div className="k">{pl.titulo}{pl.propia && pl.fecha ? <small> · guardada el {new Date(pl.fecha).toLocaleDateString("es-AR")} {new Date(pl.fecha).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}</small> : null}</div>
         {ev ? (
           <>
