@@ -129,5 +129,5 @@ No hay datos nuevos. Cambios de configuración:
    - **Colores**: en tema claro, el mejor del Ranking en verde fuerte y el peor en rojo fuerte; el dólar blue y el salario con el mismo criterio en las tarjetas.
    - **Renglones**: ningún botón, pestaña ni título de tarjeta partido.
    - **Teclado**: se puede recorrer la portada con Tab, con foco visible, y el carrusel se pausa con el foco.
-3. Nueva crítica con Impeccable (`critique` de la portada y del Histórico), con el detector: 32/40 o más, sin P0 ni P1, con el resultado y el historial de puntajes en el resumen. Si el usuario no autorizó subagentes para la crítica, corre en modo reducido y se avisa.
+3. Nueva crítica con Impeccable (`critique` de la portada y del Histórico), con el detector: 32/40 o más, sin P0 ni P1, con el resultado y el historial de puntajes en el resumen. La crítica corre completa, con sus dos subagentes (autorizado por el usuario el 2026-11-09 para las críticas de Impeccable).
 4. Revisar que no queden colores sueltos en los componentes (`grep` de `#` hexadecimales fuera de `globals.css`).
