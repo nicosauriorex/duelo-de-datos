@@ -134,3 +134,101 @@ export function defCurios(S: Record<string, SerieMeta>): DefCurio[] {
   }, ["trabajo", "estado", "empleados publicos"], [ea.id, eb.id]);
   return lista.filter(Boolean) as DefCurio[];
 }
+
+// ---------------------------------------------------------------- Curiosidades generadas por presidente
+import { baseIdx, nivelComparable, statsMandato, type Pres } from "./estadisticas";
+import type { BaseCfg } from "./config";
+import type { Indic } from "./catalogo";
+
+export type TipoCurio = "mejor" | "peor" | "record" | "contraste";
+export interface CurioGen {
+  id: string; pres: Pres; tema: string; tipo: TipoCurio; bueno: boolean;
+  frase: string; valor: string; e: Expr; v: Vals; desde: string; hasta: string; enCurso: boolean;
+}
+export const TIPOS_CURIO: [TipoCurio, string][] = [["mejor", "Mejor nivel"], ["peor", "Peor nivel"], ["record", "Récord"], ["contraste", "Contraste"]];
+const MIN_MESES = 12;
+
+/** Curiosidades sobre los indicadores y los productos de GBA. Todos los presidentes se evalúan con las mismas reglas:
+ *  hace falta que el indicador tenga al menos 12 meses de datos en el mandato y que el nivel sea comparable entre épocas. */
+export function generarCuriosidades(m: Motor, PRES: Pres[], INDIC: Indic[], INDIC_PP: Indic[], b: BaseCfg): CurioGen[] {
+  const F = m.F, out: CurioGen[] = [];
+  const ultimo = F.length - 1;
+  const ultMes = (v: Vals) => { for (let i = ultimo; i >= 0; i--) if (ok(v[i])) return i; return ultimo; };
+  const hasta = (p: Pres, v: Vals) => fmtMes(F[Math.min(p.i1, ultMes(v))]);
+  const enCurso = (p: Pres) => p.i1 >= ultimo;
+  const suf = (p: Pres, v: Vals) => (enCurso(p) ? ` (hasta ${hasta(p, v)})` : "");
+  const mandato = (p: Pres) => ({ desde: F[baseIdx(F, p, b)], hasta: F[p.i1] });
+  const quien = (p: Pres) => (p.id === "menem1" || p.id === "menem2" || p.id === "cfk1" || p.id === "cfk2" ? p.n.replace(/ (\d)$/, " (mandato $1)") : p.n);
+
+  [...INDIC, ...INDIC_PP].forEach((ind) => {
+    if (!m.SER[ind.id] || (ind.rel && !m.SER[ind.rel])) return;
+    const c = m.calc(ind);
+    if (!c.dir) return;
+    const comparable = c.pct || nivelComparable(m, ind);
+    if (!comparable) return;
+    const sts = PRES.map((p) => statsMandato(F, c.v, p, b));
+    const con = PRES.map((p, k) => (sts[k].n >= MIN_MESES ? k : -1)).filter((k) => k >= 0);
+    if (con.length < 3) return;
+    const tema = ind.grupo, nombre = (ind.nombre || c.corto).replace(/ \(precio real\)$/, "");
+    const clave = ind.id + (ind.rel || "") + (ind.esc || "") + (ind.med || "");
+    // mejor y peor nivel
+    const prom = (k: number) => (sts[k].prom as number) * c.dir;
+    const mejor = con.reduce((a, k) => (prom(k) > prom(a) ? k : a)), peor = con.reduce((a, k) => (prom(k) < prom(a) ? k : a));
+    ([[mejor, "mejor"], [peor, "peor"]] as [number, TipoCurio][]).forEach(([k, tipo]) => {
+      const p = PRES[k];
+      out.push({
+        id: `${tipo}-${clave}`, pres: p, tema, tipo, bueno: tipo === "mejor",
+        frase: `Con ${quien(p)}, ${nombre} tuvo el ${tipo === "mejor" ? "mejor" : "peor"} promedio de todos los mandatos${suf(p, c.v)}`,
+        valor: m.fmtC(c, sts[k].prom), e: ind, v: c.v, ...mandato(p), enCurso: enCurso(p),
+      });
+    });
+    // récord histórico (máximo y mínimo de toda la serie)
+    let imx = -1, imn = -1;
+    c.v.forEach((x, i) => { if (!ok(x)) return; if (imx < 0 || x > (c.v[imx] as number)) imx = i; if (imn < 0 || x < (c.v[imn] as number)) imn = i; });
+    ([[imx, "máximo"], [imn, "mínimo"]] as [number, string][]).forEach(([i, cual]) => {
+      if (i < 0 || imx === imn) return;
+      const k = PRES.findIndex((p) => i >= p.i0 && i <= p.i1);
+      if (k < 0 || sts[k].n < MIN_MESES) return;
+      const p = PRES[k], bueno = (cual === "máximo") === (c.dir > 0);
+      out.push({
+        id: `record-${cual}-${clave}`, pres: p, tema, tipo: "record", bueno,
+        frase: `El ${cual === "máximo" ? "récord" : "mínimo"} histórico de ${nombre} (${m.fmtC(c, c.v[i])}, ${fmtMes(F[i])}) fue con ${quien(p)}, y es ${bueno ? "bueno" : "malo"}`,
+        valor: m.fmtC(c, c.v[i]), e: ind, v: c.v, ...mandato(p), enCurso: enCurso(p),
+      });
+    });
+  });
+
+  // contraste: producto más barato (precio real) con uno y mayor poder de compra por salario con otro
+  INDIC_PP.forEach((ind) => {
+    const sal = m.SER.sipa_med; if (!sal || !m.SER[ind.id]) return;
+    const eSal: Expr = { id: ind.id, med: "corr", rel: "sipa_med", modo: "compra", esc: "" };
+    const cP = m.calc(ind), cS = m.calc(eSal);
+    const stP = PRES.map((p) => statsMandato(F, cP.v, p, b)), stS = PRES.map((p) => statsMandato(F, cS.v, p, b));
+    const con = PRES.map((_, k) => (stP[k].n >= MIN_MESES && stS[k].n >= MIN_MESES ? k : -1)).filter((k) => k >= 0);
+    if (con.length < 3) return;
+    const barato = con.reduce((a, k) => ((stP[k].prom as number) < (stP[a].prom as number) ? k : a));
+    const compra = con.reduce((a, k) => ((stS[k].prom as number) > (stS[a].prom as number) ? k : a));
+    if (barato === compra) return;
+    const prod = (ind.nombre || cP.corto).replace(/ \(precio real\)$/, "");
+    const P = PRES[barato], Q = PRES[compra];
+    out.push({
+      id: `contraste-${ind.id}`, pres: P, tema: "Productos (precio real, GBA)", tipo: "contraste", bueno: true,
+      frase: `Con ${quien(P)}, ${prod} fue el más barato en pesos de hoy${suf(P, cP.v)}, pero el salario mediano compraba más con ${quien(Q)}${suf(Q, cS.v)}`,
+      valor: m.fmtC(cP, stP[barato].prom), e: ind, v: cP.v, ...mandato(P), enCurso: enCurso(P),
+    });
+  });
+  return out;
+}
+
+/** Selección pareja: de a una buena y una mala por presidente, del más reciente al más antiguo (con 0 de un lado se muestra lo que haya). */
+export function mezclarCurios(todas: CurioGen[], PRES: Pres[]): CurioGen[] {
+  const res: CurioGen[] = [];
+  PRES.slice().reverse().forEach((p) => {
+    const de = todas.filter((c) => c.pres.id === p.id);
+    const buenas = de.filter((c) => c.bueno), malas = de.filter((c) => !c.bueno);
+    const alt = (a: CurioGen[], otra?: CurioGen) => a.find((c) => !otra || c.e.id !== otra.e.id) || a[0];
+    const b1 = alt(buenas), m1 = alt(malas, b1);
+    [b1, m1].forEach((c) => { if (c) res.push(c); });
+  });
+  return res;
+}

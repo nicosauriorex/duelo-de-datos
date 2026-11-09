@@ -6,7 +6,7 @@ import { BotonInfo } from "../Variables";
 import { LineaInicio, useBase } from "./comunes";
 import { PALETA, tinte } from "../util";
 import { fmtMes, fmtNum, nf0, nf1, nf2, norm, ok } from "@/lib/formato";
-import { crearElec, crearPres, METRICA_E, pearson, valorElec } from "@/lib/estadisticas";
+import { crearElec, crearPres, estimarVoto, METRICA_E, pearson, valorElec } from "@/lib/estadisticas";
 import { textoBusqueda } from "@/lib/catalogo";
 import type { Calculo, Expr, Serie } from "@/lib/motor";
 import { enteroEn, lista, unoDe, useParams } from "@/lib/url";
@@ -105,6 +105,8 @@ export function Elecciones() {
     <th className={ord.k === k ? (ord.d > 0 ? "ord-asc" : "ord-desc") : ""} style={{ cursor: "pointer" }} tabIndex={0} role="button"
       onClick={() => setOrd(ord.k === k ? { k, d: -ord.d } : { k, d: -1 })} onKeyDown={(ev) => { if (ev.key === "Enter") setOrd(ord.k === k ? { k, d: -ord.d } : { k, d: -1 }); }}>{t}</th>
   );
+  const voto = estimarVoto(m, m.F, PRES, metrica, b, todas.filter((o) => !esDetalle(o.s)));
+  const ultima = el.length ? el[el.length - 1] : null;
   const textoRel = (o: Corr) => `Cuanto ${metrica === "nivel" ? "más alto" : "más subió"} → ${o.r > 0 ? "más" : "menos"} votos al oficialismo`;
 
   return (
@@ -117,6 +119,28 @@ export function Elecciones() {
       {metrica === "mandato" && <LineaInicio info={info} />}
       <div className="callout">
         Para cada variable se calcula su valor en cada elección ({METRICA_E[metrica][1]}) y se lo compara con el % que sacó el oficialismo nacional. <b>r</b> es la correlación: +1 = se mueven juntos, −1 = al revés, 0 = nada que ver. Con tan pocas elecciones ({el.length}), una correlación alta puede ser casualidad; con menos de 8 puntos, |r| por debajo de ~0,7 no dice mucho. Los montos de toda la economía se miden como % del PIB y los montos en pesos, en pesos reales.
+      </div>
+      <div className="card">
+        <h2>¿Qué dicen los datos sobre el voto al oficialismo hoy?</h2>
+        <p className="voto-aviso" role="note">Esto <b>no es una encuesta ni un pronóstico</b>. Son cuentas simples con pocas elecciones: muestran qué pasó en el pasado cuando la economía estaba como hoy, no qué va a pasar. Una relación fuerte puede ser casualidad.</p>
+        {!voto ? <p className="note">Con las elecciones y la medida elegidas no hay suficientes variables con relación fuerte para estimar nada.</p> : (
+          <>
+            <div className="voto-rango">Entre {nf0.format(voto.min)} % y {nf0.format(voto.max)} %, mediana {nf0.format(voto.mediana)} %</div>
+            <p className="note">Con {voto.vars.length} variables que tuvieron una relación fuerte con el voto (|r| ≥ 0,6, al menos 8 elecciones). Para cada una se ajustó una recta y se la evaluó en el valor de hoy, medido igual que en las elecciones ({METRICA_E[metrica][0].toLowerCase()}).
+              {ultima ? <> Como referencia, el último resultado real del oficialismo fue <b>{nf1.format(ultima.v)} %</b> ({ultima.of}, {fmtMes(ultima.f)}).</> : null}</p>
+            <div className="tablewrap alto"><table>
+              <thead><tr><th>Variable</th><th>r</th><th>Valor de hoy</th><th>% estimado</th></tr></thead>
+              <tbody>{voto.vars.map((v) => (
+                <tr key={v.o.s.id}>
+                  <td className="nombre">{v.o.s.n}{v.fuera && <small title="El valor de hoy está fuera del rango que tuvo esta variable en las elecciones: es una extrapolación">fuera de lo visto antes</small>}</td>
+                  <td style={tinte(v.o.r * 0.9)}>{fmtR(v.o.r)}</td>
+                  <td>{metrica === "nivel" ? v.o.c.pct ? nf1.format(v.hoy) + " %" : fmtNum(v.hoy) : (v.hoy > 0 ? "+" : "") + nf1.format(v.hoy) + (v.o.c.pct ? " pp" : " %")}</td>
+                  <td>{nf1.format(v.est)} %</td>
+                </tr>
+              ))}</tbody>
+            </table></div>
+          </>
+        )}
       </div>
       <div className="card">
         <h2>Gráficos de dispersión</h2>

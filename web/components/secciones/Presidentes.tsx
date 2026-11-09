@@ -3,6 +3,8 @@ import { Fragment, useMemo, useState } from "react";
 import { useSeccion } from "../useSeccion";
 import { Cargando, Desplegable, Selector, Seg, alternar } from "../ui";
 import { BotonInfo, FilaVariable } from "../Variables";
+import { Sparkline } from "../Sparkline";
+import { INFO_CORTA } from "@/lib/info";
 import { CeldasStats, COLS, Cabecera, LineaInicio, siguienteOrden, useBase, valorCol, type Orden } from "./comunes";
 import { fmtMes } from "@/lib/formato";
 import { baseTxt, baseIdx, crearPres, nivelComparable, ordenar, rankScores, statsMandato, varNum, type Pres } from "@/lib/estadisticas";
@@ -52,6 +54,13 @@ export function Presidentes() {
   const medsArs = m.medArs();
   const medPref = medidaPreferida(config);
   const paMed = medsArs.some((o) => o[0] === p.get("pam")) ? (p.get("pam") as string) : medPref;
+  const modoA = unoDe(p.get("pam2"), ["todas", "mis"] as const, "todas");
+  const RECO_IDS = ["Salarios", "Precios", "Empleo, pobreza e ingresos", "Dólar y tipo de cambio", "Actividad"];
+  const recomendadas: Expr[] = RECO_IDS.map((k) => INFO_CORTA[k]?.reco).filter((r) => r && m.SER[r.id]).map((r) => ({ id: r.id, med: r.med, rel: null, modo: "compra", esc: r.esc ?? "" }));
+  const misPedidas = lista(p.get("pav")).map((x) => decExpr(x, existe)).filter(Boolean).slice(0, 10) as Expr[];
+  const mis: Expr[] = misPedidas.length ? misPedidas : recomendadas;
+  const setMis = (nv: Expr[]) => set({ pav: nv.map((e) => encExpr(e)).join(",") || null, pam2: "mis" });
+  const mover = (k: number, d: number) => { const nv = mis.slice(); const j = k + d; if (j < 0 || j >= nv.length) return; [nv[k], nv[j]] = [nv[j], nv[k]]; setMis(nv); };
   const toks = norm(buscar.trim()) ? norm(buscar.trim()).split(/\s+/) : [];
   const series = Object.values(m.SER);
   const GRUPOS = ordenarGrupos([...new Set(series.map(grupoDe))]);
@@ -110,12 +119,38 @@ export function Presidentes() {
         <h2>Un presidente, todas las variables</h2>
         <p className="note">Tocá un grupo para abrirlo y un encabezado para ordenar. La medida se aplica a los montos en pesos; los dólares no se pasan a dólares y los índices y porcentajes quedan como son.</p>
         <div className="controls">
-          <Selector etiqueta="Presidente" valor={paPres.id} opciones={PRES.slice().reverse().map((x) => [x.id, x.n] as [string, string])} onElegir={(v) => set({ pap: v === "milei" ? null : v })} />
-          <Selector etiqueta="Medida" valor={paMed} opciones={medsArs.map((o) => [o[0], o[1]] as [string, string])} onElegir={(v) => set({ pam: paramSi(v, "real", medPref) })} />
-          <input type="search" aria-label="Buscar variable" placeholder="Buscar variable: asado, reservas, alquiler…" style={{ flex: 1, minWidth: 200 }} value={buscar} onChange={(ev) => setBuscar(ev.target.value)} />
-          <button type="button" className="btn" onClick={() => setAbiertos(new Set(GRUPOS))}>Expandir todo</button>
-          <button type="button" className="btn" onClick={() => setAbiertos(new Set())}>Contraer todo</button>
+          <Seg valor={modoA} opciones={[["todas", "Todas"], ["mis", "Mis variables"]]} onElegir={(v) => set({ pam2: v === "todas" ? null : v, pav: v === "mis" && !misPedidas.length ? recomendadas.map((e) => encExpr(e)).join(",") : undefined })} />
         </div>
+        <div className="controls">
+          <Selector etiqueta="Presidente" valor={paPres.id} opciones={PRES.slice().reverse().map((x) => [x.id, x.n] as [string, string])} onElegir={(v) => set({ pap: v === "milei" ? null : v })} />
+          {modoA === "todas" && <Selector etiqueta="Medida" valor={paMed} opciones={medsArs.map((o) => [o[0], o[1]] as [string, string])} onElegir={(v) => set({ pam: paramSi(v, "real", medPref) })} />}
+          {modoA === "todas" && <input type="search" aria-label="Buscar variable" placeholder="Buscar variable: asado, reservas, alquiler…" style={{ flex: 1, minWidth: 200 }} value={buscar} onChange={(ev) => setBuscar(ev.target.value)} />}
+          {modoA === "todas" && <button type="button" className="btn" onClick={() => setAbiertos(new Set(GRUPOS))}>Expandir todo</button>}
+          {modoA === "todas" && <button type="button" className="btn" onClick={() => setAbiertos(new Set())}>Contraer todo</button>}
+        </div>
+        {modoA === "mis" ? (
+          <>
+            <p className="note">Hasta 10 variables de cualquier categoría, en el orden en que las agregás. El minigráfico va desde el inicio del mandato de {paPres.n} ({fmtMes(F[baseIdx(F, paPres, b)])}) hasta el cierre.{misPedidas.length ? "" : " Arrancás con las recomendadas de cada tema; cambialas, quitalas o agregá otras."}</p>
+            <div className="tablewrap"><table>
+              <thead><tr><th>Variable</th><Cabecera cols={cols} ord={{ k: null, d: -1 }} onOrden={() => {}} /><th>Mandato</th></tr></thead>
+              <tbody>{mis.map((e, k) => {
+                const cc = m.calc(e), st = statsMandato(F, cc.v, paPres, b);
+                return (
+                  <tr key={k + e.id}>
+                    <td className="nombre">
+                      <FilaVariable e={e} sinRel quitable onChange={(ne) => setMis(ne ? mis.map((x, j) => (j === k ? ne : x)) : mis.filter((_, j) => j !== k))} />
+                      <button type="button" className="btn" aria-label="Subir" disabled={k === 0} onClick={() => mover(k, -1)}>↑</button>{" "}
+                      <button type="button" className="btn" aria-label="Bajar" disabled={k === mis.length - 1} onClick={() => mover(k, 1)}>↓</button>
+                    </td>
+                    <CeldasStats m={m} c={cc} st={st} cols={cols} />
+                    <td><div className="spark"><Sparkline v={cc.v.slice(0, paPres.i1 + 1)} color={paPres.color} desde={baseIdx(F, paPres, b)} /></div></td>
+                  </tr>
+                );
+              })}</tbody>
+            </table></div>
+            {mis.length < 10 && <FilaVariable e={null} agregable textoAgregar="+ Agregar variable" onChange={(e) => e && setMis([...mis, e])} />}
+          </>
+        ) : (
         <div className="tablewrap"><table>
           <thead><tr><th>Variable</th><th style={{ textAlign: "left" }}>Unidad</th><Cabecera cols={cols} ord={ordA} onOrden={(k) => setOrdA(siguienteOrden(ordA, k))} /></tr></thead>
           <tbody>
@@ -123,6 +158,7 @@ export function Presidentes() {
             {!total && <tr><td colSpan={nc} style={{ textAlign: "center", color: "var(--text-muted)" }}>Ninguna variable coincide con &quot;{buscar}&quot;.</td></tr>}
           </tbody>
         </table></div>
+        )}
       </div>
       {metas.length === 0 && <Fragment />}
     </section>

@@ -254,3 +254,68 @@ export function claseVariacion(dir: number | null | undefined, pct: boolean, des
   const s = Math.sign(d) * Math.sign(dir);
   return s > 0 ? "bueno" : s < 0 ? "malo" : "neutro";
 }
+
+// ---------------------------------------------------------------- Ranking de presidentes
+export type CritRk = "mejora" | "nivel" | "ambos";
+export interface IndRk { ind: Expr; grupo: string; nombre: string }
+export interface ItemRk { nombre: string; grupo: string; pct: number; puesto: number; de: number; d: Desempeno; c: Calculo; ind: Expr }
+export interface FilaRk { p: Pres; score: number | null; items: ItemRk[] }
+export interface ResRanking { filas: FilaRk[]; incompletas: boolean }
+
+/** Puntaje de 0 a 100 por indicador según el puesto, promedio dentro de cada grupo y después entre grupos.
+ *  Es el mismo cálculo para todos los presidentes; un indicador con menos de 3 presidentes con datos no cuenta. */
+export function rankingPresidentes(m: Motor, F: string[], PRES: Pres[], inds: IndRk[], crit: CritRk, b: BaseCfg): ResRanking {
+  const items: ItemRk[][] = PRES.map(() => []);
+  let incompletas = false;
+  inds.forEach((it) => {
+    const { c, des } = tablaDesempeno(m, F, PRES, it.ind, b);
+    const con = des.filter(Boolean).length;
+    if (con < PRES.length) incompletas = true;
+    if (con < 3) return;
+    des.forEach((d, k) => {
+      if (!d) return;
+      const pm = (d.puesto as NonNullable<Desempeno["puesto"]>);
+      const pct = crit === "ambos" ? (pm.mejora[2] + pm.nivel[2]) / 2 : pm[crit][2];
+      const ref = crit === "nivel" ? pm.nivel : pm.mejora;
+      items[k].push({ nombre: it.nombre, grupo: it.grupo, pct, puesto: ref[0], de: ref[1], d, c, ind: it.ind });
+    });
+  });
+  const filas = PRES.map((p, k) => {
+    const porGrupo: Record<string, number[]> = {};
+    items[k].forEach((i) => (porGrupo[i.grupo] = porGrupo[i.grupo] || []).push(i.pct));
+    const g = Object.values(porGrupo).map((a) => a.reduce((s, y) => s + y, 0) / a.length);
+    return { p, score: g.length ? g.reduce((s, y) => s + y, 0) / g.length : null, items: items[k].sort((a, c) => c.pct - a.pct) };
+  }).filter((f) => f.score != null).sort((a, c) => (c.score as number) - (a.score as number));
+  return { filas, incompletas };
+}
+
+// ---------------------------------------------------------------- Voto estimado
+export interface CorrVoto { s: { id: string; n: string }; c: Calculo; ind: Expr; pts: { e: Eleccion; x: number }[]; r: number; b: number; a: number; n: number }
+export interface VotoVar { o: CorrVoto; hoy: number; est: number; fuera: boolean }
+export interface VotoEst { vars: VotoVar[]; mediana: number; min: number; max: number }
+
+/** Valor "de hoy" de una variable, medido igual que en las elecciones: se evalúa como si hubiera una elección el mes siguiente al último dato.
+ *  Si el último dato quedó muy atrás respecto del resto (serie discontinuada), no se calcula. */
+export function valorHoy(m: Motor, F: string[], PRES: Pres[], metrica: string, b: BaseCfg, o: CorrVoto, ultimoGlobal: number): number | null {
+  const li = o.c.v.reduce((a: number, x, i) => (ok(x) ? i : a), -1);
+  if (li < 0 || li < ultimoGlobal - 6) return null;
+  const e: Eleccion = { f: "", tipo: "pres", of: "", v: 0, gano: false, i: li + 1, anio: "" };
+  return valorElec(m, F, PRES, metrica, b, o.c, e, o.ind);
+}
+
+/** Recta (mínimos cuadrados) de cada variable evaluada en el valor de hoy. Hacen falta al menos 3 variables con |r| ≥ 0,6 y 8 elecciones. */
+export function estimarVoto(m: Motor, F: string[], PRES: Pres[], metrica: string, b: BaseCfg, corrs: CorrVoto[]): VotoEst | null {
+  const fuertes = corrs.filter((o) => o.n >= 8 && Math.abs(o.r) >= 0.6);
+  const ultimoGlobal = Math.max(-1, ...fuertes.map((o) => o.c.v.reduce((a: number, x, i) => (ok(x) ? i : a), -1)));
+  const vars: VotoVar[] = [];
+  fuertes.forEach((o) => {
+    const hoy = valorHoy(m, F, PRES, metrica, b, o, ultimoGlobal);
+    if (!ok(hoy)) return;
+    const xs = o.pts.map((q) => q.x);
+    vars.push({ o, hoy, est: Math.max(0, Math.min(100, o.a + o.b * hoy)), fuera: hoy < Math.min(...xs) || hoy > Math.max(...xs) });
+  });
+  if (vars.length < 3) return null;
+  vars.sort((a, c) => Math.abs(c.o.r) - Math.abs(a.o.r));
+  const ord = vars.map((v) => v.est).sort((a, c) => a - c), h = Math.floor(ord.length / 2);
+  return { vars, mediana: ord.length % 2 ? ord[h] : (ord[h - 1] + ord[h]) / 2, min: ord[0], max: ord[ord.length - 1] };
+}

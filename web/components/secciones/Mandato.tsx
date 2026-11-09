@@ -1,5 +1,5 @@
 "use client";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSeccion } from "../useSeccion";
 import { Cargando, Desplegable, Selector, Seg, alternar } from "../ui";
 import { FilaVariable } from "../Variables";
@@ -25,6 +25,11 @@ export function Mandato() {
   const eB: Expr = (montado && decExpr(p.get("mv"), eExiste)) || { id: "fx_oficial", med: "corr", rel: null, modo: "compra" };
   const PRES = useMemo(() => (m ? crearPres(m.F) : []), [m]);
   const PRES_T0 = useMemo(() => (m ? PRES.filter((x) => m.idxDe(x.ini) > 0) : []), [m, PRES]);
+
+  // animación: mes actual y si avanza; cualquier cambio de filtro la corta
+  const [anim, setAnim] = useState<{ t: number; play: boolean } | null>(null);
+  const clave = p.toString() + JSON.stringify(b);
+  useEffect(() => { setAnim(null); }, [clave]);
 
   const modo = unoDe(p.get("mmo"), ["teorico", "var", "indice", "valor"] as const, "teorico");
   const selIds = new Set(lista(p.has("mp") ? p.get("mp") : DEF_PRES).filter((id) => PRES_T0.some((x) => x.id === id)));
@@ -88,6 +93,22 @@ export function Mandato() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [m, version, sec.ocupado, eB.id, eB.med, eB.rel, eB.modo, eB.esc, modo, banda, b, p, PRES_T0]);
 
+  const maxAnim = D ? D.rows.length - 1 : 0;
+  const ms = Math.round(Math.max(6000 / Math.max(1, maxAnim), Math.min(150, 12000 / Math.max(1, maxAnim))));
+  const play = !!anim?.play;
+  useEffect(() => {
+    if (!play) return;
+    const id = window.setInterval(() => {
+      setAnim((a) => (!a || !a.play ? a : a.t + 1 >= maxAnim ? { t: maxAnim, play: false } : { t: a.t + 1, play: true }));
+    }, ms);
+    return () => window.clearInterval(id);
+  }, [play, ms, maxAnim]);
+  const animar = () => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setAnim(null); return; }
+    setAnim({ t: 0, play: true });
+  };
+  const rowsVista = D && anim ? D.rows.map((r, i) => (i <= anim.t ? r : { t: r.t })) : D?.rows;
+
   if (sec.errorGeneral) return <p className="error" role="alert">{sec.errorGeneral}</p>;
   if (!m || !montado) return <Cargando />;
   const errs = Object.values(sec.errores);
@@ -120,8 +141,15 @@ export function Mandato() {
         <>
           <div className="card">
             <h2>{D.c.corto}: {TITULOS[modo]} por mes de mandato</h2><p className="note">{D.nota}</p>
+            <div className="anim-barra">
+              {!anim ? <button type="button" className="btn" onClick={animar}>▶ Animar</button>
+                : anim.play ? <button type="button" className="btn" onClick={() => setAnim({ ...anim, play: false })}>⏸ Pausa</button>
+                : <><button type="button" className="btn" onClick={() => setAnim(anim.t >= maxAnim ? { t: 0, play: true } : { ...anim, play: true })}>▶ Seguir</button>
+                  <button type="button" className="btn" onClick={() => setAnim({ t: 0, play: true })}>↺ Reiniciar</button></>}
+              {anim && <span className="lbl" role="status">Mes {D.rows[anim.t].t as number}</span>}
+            </div>
             <div className="legend">{D.pres.map((x) => <span key={x.id} style={vcolor(x.color)}>{x.n}</span>)}</div>
-            <Grafico rows={D.rows} series={D.series} opts={D.opts} />
+            <Grafico rows={rowsVista || D.rows} series={D.series} opts={anim ? { ...D.opts, rowsEscala: D.rows } : D.opts} />
           </div>
           <div className="card">
             <h2>Resumen por hitos</h2><p className="note">Mismo cálculo que el gráfico ({TITULOS[modo]}) en meses clave y al final de cada mandato.</p>

@@ -1,5 +1,7 @@
 # Ranking, curiosidades y voto estimado (bloque 6a)
 
+Estado: implementada (2026-11-08)
+
 ## Objetivo
 Darle a la comparación entre presidentes herramientas propias, con lo que ya hay en el catálogo (sin datos nuevos):
 - un **Ranking** armable en una sección propia;

@@ -42,19 +42,19 @@ Las primeras seis → spec: docs/specs/medidas-y-opciones.md (implementadas 2026
 - ~~"Inicio del mandato" pasa a ser **Configurar inicio del mandato**: T-1, T, T+N (también negativo) y **por presidente** (todos en T, Milei en T+1).~~ ✅ 2026-11-08
 - ~~Preferencias guardadas por usuario; mejor una **configuración global** de la página que afecte a todas las secciones.~~ ✅ 2026-11-08
   (Estas dos → spec: docs/specs/configuracion-global.md)
-- En la vista de un presidente con todas las variables: poder filtrar y elegir, por ejemplo, 5 variables de distintas categorías una debajo de otra.
-- Meses de mandato: **animación** que va dibujando la evolución desde el inicio al final, descargable como video.
+- ~~En la vista de un presidente con todas las variables: poder filtrar y elegir, por ejemplo, 5 variables de distintas categorías una debajo de otra.~~ ✅ 2026-11-08
+- Meses de mandato: **animación** que va dibujando la evolución desde el inicio al final, descargable como video. (Animación hecha 2026-11-08; falta el video, bloque 7.)
   (Estas dos → spec: docs/specs/presidentes-ranking-curiosidades.md; el video va con el bloque 7.)
 
 ## Ranking de presidentes y curiosidades
 → spec: docs/specs/presidentes-ranking-curiosidades.md (el consumo de carne va con el bloque 6b)
-- Ranking armable de distintas formas: cuánto mejoró cada indicador en su mandato (desde T, T+1, etc.), en cuál se estaba mejor en nivel, quién tuvo la mejor/peor actividad, etc.
-- Separar Curiosidades del Ranking. Curiosidades tipo: "con este presidente el asado fue el más barato, pero se compraba menos por salario", "máxima pobreza histórica", "la ropa más barata".
+- ~~Ranking armable de distintas formas: cuánto mejoró cada indicador en su mandato (desde T, T+1, etc.), en cuál se estaba mejor en nivel, quién tuvo la mejor/peor actividad, etc.~~ ✅ 2026-11-08
+- ~~Separar Curiosidades del Ranking. Curiosidades tipo: "con este presidente el asado fue el más barato, pero se compraba menos por salario", "máxima pobreza histórica", "la ropa más barata".~~ ✅ 2026-11-08
 - Sumar datos de consumo (ej. consumo de carne por habitante) si hay fuente.
 
 ## Elecciones
 → spec: docs/specs/presidentes-ranking-curiosidades.md
-- Porcentaje estimado de votos que sacaría el presidente en curso con los datos que tiene hasta hoy.
+- ~~Porcentaje estimado de votos que sacaría el presidente en curso con los datos que tiene hasta hoy.~~ ✅ 2026-11-08
 
 ## Compartir gráficos
 - Todos los gráficos, indicadores y tablas tienen un botón **Compartir** que abre un panel para descargar lo que se está viendo.
@@ -143,3 +143,6 @@ Uso central: alguien escribe en redes "Milei fundió la economía" y otra person
 
 ### Plantillas y vistas (implementado, spec plantillas-y-vistas)
 - ~~Hasta 4 gráficos por vista, Otros gráficos interesantes, Plantillas con buscador, plantillas propias y compartir por link.~~ ✅ 2026-11-08
+
+### Ranking, curiosidades y voto estimado (implementado, spec presidentes-ranking-curiosidades)
+- ~~Ranking armable, curiosidades generadas, variables elegidas por presidente, animación del mandato y voto estimado.~~ ✅ 2026-11-08
