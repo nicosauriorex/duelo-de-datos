@@ -15,6 +15,7 @@ Todo en español: código, comentarios, nombres de variables, commits y textos d
 - `web/public/datos/` es GENERADO por el pipeline (no versionado): nunca editarlo. `datos/cache/compilado.json` también es generado (respaldo para `--solo-json`): no leerlo entero.
 - El frontend vive en `web/`: cálculos en `web/lib/` (una sola fuente de verdad), una sección por ruta en `web/components/secciones/`, estado de filtros en la URL (`web/lib/url.ts`).
 - `datos/cache/` es el respaldo de cada fuente: si una API falla se usa la última copia. Se versiona en git, no borrar.
+- Diseño: skill `impeccable` en `.claude/skills/impeccable/`, instalada sin su programa (D-010): no bajarlo ni ejecutarlo.
 - El formato de cada serie (`id, n, cat, tipo, u, dir...`) está documentado al principio de `pipeline/catalogo.py`.
 
 # Cómo trabajamos

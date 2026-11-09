@@ -118,7 +118,7 @@ Uso central: alguien escribe en redes "Milei fundió la economía" y otra person
 - ~~Histórico: el filtro de fecha queda flotando y se superpone con el resto~~ (arreglado en la migración; ahora se pide que quede fijo arriba sin tapar nada, ver "Histórico: celular y gráficos").
 
 ## Diseño visual y animación (2026-11-09)
-→ bloque 5e de la hoja de ruta, sin spec.
+→ spec: docs/specs/diseno-visual.md (bloque 5e)
 Dirección: **animaciones ligadas al scroll + scrollytelling + motion design**. Sobre todo en la portada, pero coherente con toda la app. Tipografías modernas y lindas. Libertad de diseño; los textos de abajo son ejemplos.
 - **Portada contada al bajar**:
   1. Arranca con un mensaje fuerte. Ej.: "¿Cansado de ver comentarios en redes de gente que habla sin saber? *Primero los Datos* tiene la solución. Buscá el dato que te interesa y compará a lo largo del tiempo, con otros presidentes y con el contexto internacional."

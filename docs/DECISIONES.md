@@ -136,3 +136,10 @@ Una entrada por decisión de arquitectura. Formato: contexto, decisión, por qu�
 - **Vetos (2026-11-09)**: solo se cargaron los **insistidos** (43 leyes, del PDF de leyes insistidas de Diputados, por fecha del veto; incluye las insistidas parcialmente). `vetos.csv` admite `totales` y `parciales` vacíos (se guardan como null y la página muestra solo los insistidos). Nk, CFK 1, CFK 2, Macri y Alberto Fernández figuran con 0 porque ese listado es completo. Totales y parciales: la revista 10/10 cubre hasta 2002 y no se cargó.
 - **Bancas**: el PDF `Comp_Dip_1983-2023.pdf` de Diputados devolvía 503 (2026-11-09); sigue sin cargarse.
 
+## D-010 · Diseño con la skill Impeccable, instalada sin su programa — DECIDIDO (2026-11-09)
+**Contexto**: para el bloque 5e (diseño visual) el usuario propuso usar [Impeccable](https://github.com/pbakaus/impeccable), una skill de diseño de código abierto (Apache 2.0). Además de texto, trae un lanzador que la primera vez baja y ejecuta un programa externo, y hooks que corren en cada edición.
+
+**Decisión**: se copiaron al proyecto solo `SKILL.md` y `reference/` en `.claude/skills/impeccable/`, sin `scripts/`. La skill funciona en su modo "Launcher unavailable": lee `PRODUCT.md` y `DESIGN.md` directamente y sigue sus guías. No se baja ni se ejecuta su programa ni se activan sus hooks sin que el usuario lo pida. Detalle en `.claude/skills/impeccable/LEEME.md`.
+
+**Consecuencias**: no hay detector automático ni comandos `live`/`generate`, y las críticas corren en "modo reducido". El contexto de diseño vive en `PRODUCT.md` y `DESIGN.md`, en la raíz, versionados. El tono elegido es "tecnológico moderno", con el tema oscuro por defecto. El menú pasa a 5 secciones (Presidentes agrupa seis subsecciones) sin cambiar las URLs. Spec: `docs/specs/diseno-visual.md`.
+
