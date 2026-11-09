@@ -44,13 +44,16 @@ Las primeras seis → spec: docs/specs/medidas-y-opciones.md (implementadas 2026
   (Estas dos → spec: docs/specs/configuracion-global.md)
 - En la vista de un presidente con todas las variables: poder filtrar y elegir, por ejemplo, 5 variables de distintas categorías una debajo de otra.
 - Meses de mandato: **animación** que va dibujando la evolución desde el inicio al final, descargable como video.
+  (Estas dos → spec: docs/specs/presidentes-ranking-curiosidades.md; el video va con el bloque 7.)
 
 ## Ranking de presidentes y curiosidades
+→ spec: docs/specs/presidentes-ranking-curiosidades.md (el consumo de carne va con el bloque 6b)
 - Ranking armable de distintas formas: cuánto mejoró cada indicador en su mandato (desde T, T+1, etc.), en cuál se estaba mejor en nivel, quién tuvo la mejor/peor actividad, etc.
 - Separar Curiosidades del Ranking. Curiosidades tipo: "con este presidente el asado fue el más barato, pero se compraba menos por salario", "máxima pobreza histórica", "la ropa más barata".
 - Sumar datos de consumo (ej. consumo de carne por habitante) si hay fuente.
 
 ## Elecciones
+→ spec: docs/specs/presidentes-ranking-curiosidades.md
 - Porcentaje estimado de votos que sacaría el presidente en curso con los datos que tiene hasta hoy.
 
 ## Compartir gráficos

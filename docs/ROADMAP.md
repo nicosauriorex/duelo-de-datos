@@ -21,7 +21,8 @@ Del 1 al 5 no necesitan backend ni datos nuevos: se pueden ir publicando de a un
 | 3 | Configuración global | Presidentes y mandato: inicio de mandato por presidente (T±N), preferencias guardadas en el navegador, afecta a todas las secciones | No | Hecho (2026-11-08) — [spec](specs/configuracion-global.md) |
 | 4 | Plantillas y vistas | Plantillas con buscador por palabra, hasta 4 gráficos por vista, "Otros gráficos interesantes", Curiosidades pasa a plantillas, precios medidos en salarios | No | Hecho (2026-11-08) — [spec](specs/plantillas-y-vistas.md) |
 | 5 | Inicio y búsqueda guiada | Inicio y búsqueda guiada: página de inicio, elegir tema → principales → subgrupos, página por tema, oración guiada | Sí | Hecho (2026-11-08) — [spec](specs/inicio-y-temas.md) |
-| 6 | Contexto de cada presidente | Contexto para juzgar a un presidente; Ranking de presidentes y curiosidades; Elecciones (voto estimado); vista de un presidente con variables elegidas; animación del mandato | No (datos nuevos: FMI, otros países, consumo de carne) | Sin spec |
+| 6a | Ranking, curiosidades y voto estimado | Ranking de presidentes y curiosidades; Elecciones (voto estimado); vista de un presidente con variables elegidas; animación del mandato (sin video) | No | Spec lista, falta implementar — [spec](specs/presidentes-ranking-curiosidades.md) |
+| 6b | Contexto internacional | Contexto para juzgar a un presidente (proyecciones del FMI, vecinos); consumo de carne | No (datos nuevos en el pipeline) | Sin spec |
 | 7 | Compartir y responder en redes | Compartir gráficos; Responder y verificar afirmaciones (etapa 1: "mejor dato desde X" + imagen) | No para la etapa 1 | Sin spec |
 | 8 | Cuentas y comunidad | Comunidad: posts, votos, comentarios, ratios, rankings, moderación | Sí | Sin spec |
 | 9 | Novedades, calendario y predicciones | Novedades, calendario y predicciones | Sí | Sin spec |
