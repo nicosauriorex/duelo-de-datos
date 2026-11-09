@@ -2,7 +2,7 @@
 import { Fragment, useMemo, useState } from "react";
 import { useSeccion } from "../useSeccion";
 import { Cargando, Desplegable, Selector, Seg, alternar } from "../ui";
-import { BotonInfo, FilaVariable } from "../Variables";
+import { BotonInfo, FilaVariable, RenglonVariable } from "../Variables";
 import { Sparkline } from "../Sparkline";
 import { ContextoMandato } from "./ContextoMandato";
 import { GobiernoCongreso } from "./GobiernoCongreso";
@@ -141,9 +141,8 @@ export function Presidentes() {
                 return (
                   <tr key={k + e.id}>
                     <td className="nombre">
-                      <FilaVariable e={e} sinRel quitable onChange={(ne) => setMis(ne ? mis.map((x, j) => (j === k ? ne : x)) : mis.filter((_, j) => j !== k))} />
-                      <button type="button" className="btn" aria-label="Subir" disabled={k === 0} onClick={() => mover(k, -1)}>↑</button>{" "}
-                      <button type="button" className="btn" aria-label="Bajar" disabled={k === mis.length - 1} onClick={() => mover(k, 1)}>↓</button>
+                      <RenglonVariable e={e} sinRel quitable onChange={(ne) => setMis(ne ? mis.map((x, j) => (j === k ? ne : x)) : mis.filter((_, j) => j !== k))}
+                        onMover={(d) => mover(k, d)} puedeSubir={k > 0} puedeBajar={k < mis.length - 1} />
                     </td>
                     <CeldasStats m={m} c={cc} st={st} cols={cols} />
                     <td><div className="spark"><Sparkline v={cc.v.slice(0, paPres.i1 + 1)} color={paPres.color} desde={baseIdx(F, paPres, b)} /></div></td>

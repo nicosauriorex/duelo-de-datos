@@ -5,6 +5,8 @@ import "uplot/dist/uPlot.min.css";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import uPlot from "uplot";
 import { MESES, fmtMes, mesNum, ok } from "@/lib/formato";
+import { estadisticasRows } from "@/lib/estadisticas";
+import { useConfig } from "./ConfigProvider";
 
 export type Fila = Record<string, any>;
 export interface SerieG {
@@ -12,12 +14,18 @@ export interface SerieG {
   puntos?: number;   // solo círculos de este tamaño, sin línea (valores medidos aislados)
 }
 export interface Marca { key: string; axis?: number; color: string; fmt: (v: number) => string; tipos: Set<string> }
-export interface Ref { v: number; axis?: number; color: string; letra: string; dash?: string }
+export type TipoRef = "ult" | "prom" | "med" | "max" | "min";
+/** Línea de referencia. Con `key` y `tipo` se recalcula con el tramo visible al acercar; `nom`, `quien` y `fmt` arman la etiqueta al pasar el cursor. */
+export interface Ref {
+  v: number; axis?: number; color: string; letra: string; dash?: string;
+  key?: string; tipo?: TipoRef; nom?: string; quien?: string; fmt?: (v: number) => string;
+}
+export interface FranjaG { ini: number; fin: number; nombre: string; color: string }
 export interface OpcionesG {
   height?: number; log?: boolean; log2?: boolean; zero?: boolean; zero2?: boolean; refs?: Ref[]; marcas?: Marca[];
   mismaEscala?: boolean; refLine?: number | null; endLabels?: boolean; fmtAxis: (v: number) => string; fmtAxis2?: ((v: number) => string) | null;
   fmtTip: (v: number) => string; tipTitle?: (r: Fila, i: number) => string; tipSub?: (r: Fila, se: SerieG) => string;
-  rowsEscala?: Fila[]; xVals?: number[]; xLabel?: (r: Fila, i: number) => string; maxGap?: number; label?: string;
+  rowsEscala?: Fila[]; xVals?: number[]; franjas?: FranjaG[]; xLabel?: (r: Fila, i: number) => string; maxGap?: number; label?: string;
 }
 
 // ------------------------------------------------------------ escalas (mismo criterio que la página vieja)
@@ -172,6 +180,9 @@ function GraficoBase({ rows, series, opts, lleno }: { rows: Fila[]; series: Seri
   const tema = useTema();
   const estrecho = useMedia(MQ_ESTRECHO);
   const [zoom, setZoom] = useState(false);
+  const [rev, setRev] = useState(0); // Volver rehace el gráfico entero: el eje queda como al principio
+  const { config } = useConfig();
+  const kColPres = JSON.stringify(config.colPres);
   const reset = useRef<() => void>(() => {});
   const zoomRef = useRef<[number, number] | null>(null); // rango acercado: se conserva al redibujar por tamaño, no al cambiar datos
   useEffect(() => { zoomRef.current = null; }, [rows, series, opts]);
@@ -258,6 +269,8 @@ function GraficoBase({ rows, series, opts, lleno }: { rows: Fila[]; series: Seri
       if (opts.xLabel) return xSplits;
       const r = ejeX(mn, mx, anchoPlot(uu), estrecho); xFmt = r.fmt; return r.splits;
     };
+    let hoverRef: Ref | null = null;
+    let lineas: { rf: Ref; v: number; tramo: string; y: number; yd: number }[] = [];
     const tip = document.createElement("div");
     tip.className = "tip"; tip.style.display = "none";
     const fontAx = "11px system-ui, sans-serif";
@@ -284,6 +297,23 @@ function GraficoBase({ rows, series, opts, lleno }: { rows: Fila[]; series: Seri
           splits: () => (tk[1] ? tk[1].ticks : []), values: (_u: uPlot, sp: number[]) => sp.map((v) => (opts.fmtAxis2 || opts.fmtAxis)(v)) } as uPlot.Axis] : []),
       ],
       hooks: {
+        drawClear: [(uu) => {
+          const fr = opts.franjas;
+          if (!fr || !fr.length) return;
+          const ctx = uu.ctx, d = dpr(), T = uu.bbox.top, H = uu.bbox.height;
+          const mn = uu.scales.x.min ?? x0, mx = uu.scales.x.max ?? x1;
+          ctx.save();
+          fr.forEach((f) => {
+            const a = Math.max(f.ini, mn), b = Math.min(f.fin, mx);
+            if (b <= a) return;
+            const pa = uu.valToPos(a, "x", true), pb = uu.valToPos(b, "x", true), col = colorDe(f.color);
+            ctx.fillStyle = hexA(col, 0.12); ctx.fillRect(pa, T, pb - pa, H);
+            if (f.ini > mn) { ctx.strokeStyle = axisC; ctx.lineWidth = d; ctx.beginPath(); ctx.moveTo(pa, T); ctx.lineTo(pa, T + H); ctx.stroke(); }
+            ctx.font = `600 ${10 * d}px system-ui, sans-serif`;
+            if (pb - pa > ctx.measureText(f.nombre).width + 8 * d) { ctx.fillStyle = txt; ctx.textAlign = "center"; ctx.fillText(f.nombre, (pa + pb) / 2, T + 11 * d); }
+          });
+          ctx.restore();
+        }],
         draw: [(uu) => {
           const ctx = uu.ctx, d = dpr(), L = uu.bbox.left, T = uu.bbox.top, W = uu.bbox.width, H = uu.bbox.height;
           ctx.save();
@@ -305,18 +335,29 @@ function GraficoBase({ rows, series, opts, lleno }: { rows: Fila[]; series: Seri
             ctx.strokeStyle = axisC; ctx.setLineDash([4 * d, 3 * d]); ctx.lineWidth = d;
             ctx.beginPath(); ctx.moveTo(L, yOf(opts.refLine, 0)); ctx.lineTo(L + W, yOf(opts.refLine, 0)); ctx.stroke(); ctx.setLineDash([]);
           }
-          // Referencias (U, P, M, ↑, ↓): línea fina punteada y una letra en el borde
+          // Referencias (U, P, M, ↑, ↓): línea fina punteada y una letra en el borde. Al acercar se recalculan con el tramo visible.
+          lineas = [];
           if (opts.refs && opts.refs.length) {
+            const xa = uu.scales.x.min ?? x0, xb = uu.scales.x.max ?? x1, zoomed = xa > x0 + 1e-9 || xb < x1 - 1e-9;
+            const vis = zoomed ? rows.filter((_, i) => xs[i] >= xa && xs[i] <= xb) : rows;
+            const tramo = zoomed && vis.length ? (() => { const y0 = String(vis[0].fecha).slice(0, 4), y1 = String(vis[vis.length - 1].fecha).slice(0, 4); return y0 === y1 ? y0 : `${y0}–${y1}`; })() : "";
             const labs: { y: number; t: string; color: string; axis: number }[] = [];
             opts.refs.forEach((rf) => {
               const ax = rf.axis || 0;
-              if (!okv(rf.v, ax)) return;
-              const yy = yOf(rf.v, ax); if (!inY(yy)) return;
-              ctx.globalAlpha = 0.55; ctx.strokeStyle = colorDe(rf.color); ctx.lineWidth = d;
+              let v = rf.v;
+              if (zoomed && rf.key && rf.tipo) {
+                const st = estadisticasRows(vis, rf.key);
+                if (st) v = rf.tipo === "ult" ? st.ult[0] : rf.tipo === "prom" ? st.prom : rf.tipo === "med" ? st.med : rf.tipo === "max" ? st.max[0] : st.min[0];
+              }
+              if (!okv(v, ax)) return;
+              const yy = yOf(v, ax); if (!inY(yy)) return;
+              const sel = hoverRef === rf;
+              ctx.globalAlpha = sel ? 1 : 0.55; ctx.strokeStyle = colorDe(rf.color); ctx.lineWidth = (sel ? 2.5 : 1) * d;
               ctx.setLineDash((rf.dash || "2 4").split(" ").map((n) => +n * d));
               ctx.beginPath(); ctx.moveTo(L, yy); ctx.lineTo(L + W, yy); ctx.stroke();
               ctx.setLineDash([]); ctx.globalAlpha = 1;
               labs.push({ y: yy, t: rf.letra, color: rf.color, axis: ax });
+              lineas.push({ rf, v, tramo, y: uu.valToPos(v, ax ? "y2" : "y", false), yd: yy });
             });
             [0, 1].forEach((ax) => {
               const l = labs.filter((o) => o.axis === ax).sort((a, b) => a.y - b.y);
@@ -384,6 +425,17 @@ function GraficoBase({ rows, series, opts, lleno }: { rows: Fila[]; series: Seri
               ctx.fillText(t, x, l.y + 4 * d);
             });
           }
+          // Etiqueta de la referencia resaltada (cursor cerca de la línea o toque en el celular)
+          const selL = lineas.find((l) => l.rf === hoverRef);
+          if (selL) {
+            const rf = selL.rf, f = rf.fmt || opts.fmtTip;
+            const t = `${rf.nom ?? rf.letra}${selL.tramo ? " " + selL.tramo : ""}${rf.quien ? " · " + rf.quien : ""}: ${f(selL.v)}`;
+            ctx.font = `600 ${11 * d}px system-ui, sans-serif`;
+            const w = ctx.measureText(t).width, cx = uu.cursor.left != null && uu.cursor.left >= 0 ? L + uu.cursor.left * d : L + W / 2;
+            const x = Math.max(L + 4 * d + w / 2, Math.min(L + W - 4 * d - w / 2, cx));
+            const arriba = selL.yd - 8 * d > T + 12 * d;
+            halo(t, x, arriba ? selL.yd - 7 * d : selL.yd + 16 * d, css("--text-primary"), "center", 11, true);
+          }
           ctx.restore();
         }],
         setCursor: [(uu) => {
@@ -399,6 +451,8 @@ function GraficoBase({ rows, series, opts, lleno }: { rows: Fila[]; series: Seri
             const rango = se.band && okv(r[se.key + "_lo"], ax) ? ` <small style="color:var(--text-muted)">(${esc(f(r[se.key + "_lo"]))} – ${esc(f(r[se.key + "_hi"]))})</small>` : "";
             html += `<div class="row"><span><i style="--c:var(${se.color})"></i>${esc(se.name)}${sub}</span><span>${esc(f(v))}${rango}</span></div>`;
           });
+          const fr = opts.franjas?.find((f) => xs[i] >= f.ini && xs[i] < f.fin);
+          if (fr) html += `<div class="row"><span>Presidente</span><span>${esc(fr.nombre)}</span></div>`;
           tip.innerHTML = html; tip.style.display = "block";
           const ow = uu.over.clientWidth;
           let left = uu.cursor.left + 14; if (left + tip.offsetWidth > ow - 4) left = uu.cursor.left - tip.offsetWidth - 14;
@@ -417,8 +471,15 @@ function GraficoBase({ rows, series, opts, lleno }: { rows: Fila[]; series: Seri
     const alPresionar = (e: PointerEvent) => {
       if (e.pointerType === "mouse" && e.button !== 0) return;
       const p = pos(e); down = { ...p, id: e.pointerId, tipo: e.pointerType }; sel = false;
-      if (e.pointerType !== "mouse") u.setCursor({ left: p.x, top: p.y });
+      if (e.pointerType !== "mouse") { u.setCursor({ left: p.x, top: p.y }); detectar(p.y); } // tocar en otro lado cierra la etiqueta
     };
+    const detectar = (y: number) => {
+      let mejor: Ref | null = null, dmin = 6;
+      lineas.forEach((l) => { const dd = Math.abs(l.y - y); if (dd < dmin) { dmin = dd; mejor = l.rf; } });
+      if (mejor !== hoverRef) { hoverRef = mejor; u.redraw(false, false); }
+    };
+    const alPasar = (e: PointerEvent) => { if (e.pointerType === "mouse" && !down) detectar(pos(e).y); };
+    const alSalir = (e: PointerEvent) => { if (e.pointerType === "mouse" && hoverRef) { hoverRef = null; u.redraw(false, false); } };
     const alMover = (e: PointerEvent) => {
       if (!down || e.pointerId !== down.id) return;
       const p = pos(e);
@@ -441,14 +502,15 @@ function GraficoBase({ rows, series, opts, lleno }: { rows: Fila[]; series: Seri
       zoomRef.current = [dentro[0], dentro[dentro.length - 1]];
       setZoom(true);
     };
-    const volver = () => { u.setScale("x", { min: x0, max: x1 }); zoomRef.current = null; setZoom(false); };
+    const volver = () => { zoomRef.current = null; setZoom(false); setRev((n) => n + 1); };
     if (zoomRef.current) { u.setScale("x", { min: zoomRef.current[0], max: zoomRef.current[1] }); setZoom(true); } else setZoom(false);
     reset.current = volver;
     const alSoltarOk = (e: PointerEvent) => alSoltar(e, false), alCancelar = (e: PointerEvent) => alSoltar(e, true);
     over.addEventListener("pointerdown", alPresionar); over.addEventListener("pointermove", alMover);
     over.addEventListener("pointerup", alSoltarOk); over.addEventListener("pointercancel", alCancelar);
     over.addEventListener("dblclick", volver);
-    const fuera = (e: PointerEvent) => { if (e.pointerType !== "mouse" && !el.contains(e.target as Node)) ocultarTip(); };
+    over.addEventListener("pointermove", alPasar); over.addEventListener("pointerleave", alSalir);
+    const fuera = (e: PointerEvent) => { if (e.pointerType !== "mouse" && !el.contains(e.target as Node)) { ocultarTip(); if (hoverRef) { hoverRef = null; u.redraw(false, false); } } };
     document.addEventListener("pointerdown", fuera);
     el.setAttribute("role", "img"); el.setAttribute("aria-label", opts.label || "Gráfico de líneas");
     const ro = new ResizeObserver(() => {
@@ -458,7 +520,7 @@ function GraficoBase({ rows, series, opts, lleno }: { rows: Fila[]; series: Seri
     ro.observe(el);
     return () => { document.removeEventListener("pointerdown", fuera); ro.disconnect(); u.destroy(); el.innerHTML = ""; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rows, series, opts, tema, hay, estrecho, lleno]);
+  }, [rows, series, opts, tema, hay, estrecho, lleno, rev, kColPres]);
 
   if (!hay) return <p className="note">Sin datos para esta selección.</p>;
   return (

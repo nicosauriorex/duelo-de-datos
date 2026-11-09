@@ -3,14 +3,14 @@ import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useSeccion } from "../useSeccion";
 import { BarraPlantilla } from "./BarraPlantilla";
 import { Cargando, Desplegable, Selector, Seg, alternar } from "../ui";
-import { FilaVariable } from "../Variables";
-import { Grafico, hayDatos, type Fila, type Marca, type OpcionesG, type Ref, type SerieG } from "../Grafico";
+import { FilaVariable, RenglonVariable } from "../Variables";
+import { Grafico, hayDatos, type Fila, type Marca, type OpcionesG, type Ref, type SerieG, type TipoRef } from "../Grafico";
 import { PALETA, vcolor } from "../util";
 import { fmtMes, MESES, nf0, nf1, fmtNum, ok } from "@/lib/formato";
 import type { Calculo, Expr, Motor } from "@/lib/motor";
-import { agrupar, claseVariacion, estadisticasRows, etiqueta, recortar, type EstRows } from "@/lib/estadisticas";
+import { PRES_DEF, agrupar, claseVariacion, estadisticasRows, etiqueta, franjasPres, recortar, type EstRows } from "@/lib/estadisticas";
 import { useConfig } from "../ConfigProvider";
-import { desdePreferido, medidaPreferida } from "@/lib/config";
+import { baseDeConfig, desdePreferido, medidaPreferida } from "@/lib/config";
 import { decExpr, encExpr, lista as listaUrl, unoDe, useParams } from "@/lib/url";
 
 const TODOS_MESES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
@@ -25,7 +25,7 @@ const REFS_DEF = "ult,prom,med,mk_ult,mk_max,mk_min";
 const MAX_MISMA_UNIDAD = 4; // en modo valor: hasta 4 variables si todas tienen la misma unidad (si no, 2)
 
 /** Parámetros de cada gráfico. El 1.º usa estos nombres; del 2.º al 4.º llevan el número al final (`v2`, `m2`… `t4`). */
-const PG = ["v", "m", "e", "bd", "ej", "r", "t"] as const;
+const PG = ["v", "m", "e", "bd", "ej", "r", "t", "pf"] as const;
 const MAX_GRAFICOS = 4;
 const sfx = (k: number) => (k === 0 ? "" : String(k + 1));
 
@@ -33,7 +33,7 @@ type Comun = {
   F: string[]; ult: string; desde: string; hasta: string; meses: Set<number>; freq: "M" | "T" | "A"; ag: "promedio" | "cierre";
 };
 type GEst = {
-  modo: "valor" | "b100"; exprs: Expr[]; todas: Expr[]; escala: "lin" | "log"; banda: "no" | "si"; eje: "propia" | "misma"; refs: Set<string>; tabla: "grafico" | "tabla";
+  modo: "valor" | "b100"; exprs: Expr[]; todas: Expr[]; escala: "lin" | "log"; banda: "no" | "si"; eje: "propia" | "misma"; refs: Set<string>; tabla: "grafico" | "tabla"; pf: "1" | "0" | "";
 };
 type Estado = Comun & GEst;
 type SetFn = (c: Record<string, string | null | undefined>) => void;
@@ -49,6 +49,7 @@ function leerGrafico(p: URLSearchParams, k: number, existe: (id: string) => bool
     escala: unoDe(p.get("e" + s), ["lin", "log"] as const, "lin"), banda: unoDe(p.get("bd" + s), ["no", "si"] as const, "no"), eje: unoDe(p.get("ej" + s), ["propia", "misma"] as const, "propia"),
     refs: new Set(listaUrl(p.has("r" + s) ? p.get("r" + s) : REFS_DEF).filter((x) => [...REFS_H.map((r) => r.k), "mk_ult", "mk_max", "mk_min"].includes(x))),
     tabla: unoDe(p.get("t" + s), ["grafico", "tabla"] as const, "grafico"),
+    pf: unoDe(p.get("pf" + s), ["1", "0"] as const, "" as "1" | "0" | ""),
   };
 }
 
@@ -136,7 +137,7 @@ export function Historico() {
   return (
     <section>
       <BarraPlantilla p={p} set={set} />
-      <Barra E={E} set={cambiar} F={m.F} />
+      <Barra E={E} set={cambiar} F={m.F} fija={total > 1} />
       <div className={`grilla-graf${total > 1 ? " multi" : ""}`}>
         {G.map(({ g }, i) => (
           <BloqueGrafico key={i} i={i} total={total} compacto={compacto} g={g} E={E} m={m} set={cambiar} version={version} onQuitar={() => quitar(i)} />
@@ -203,7 +204,7 @@ function BloqueGrafico({ i, total, compacto, g, E, m, set, version, onQuitar, on
     <div className={clase}>{cab}
       <div className="vars-graf">
         {usadas.map((e, k) => (
-          <FilaVariable key={k} e={e} color={PALETA[k]} quitable={b100 ? g.exprs.length > 1 : k >= 1} onChange={(x) => setExpr(k, x)} />
+          <RenglonVariable key={k} e={e} color={PALETA[k]} quitable={b100 ? g.exprs.length > 1 : k >= 1} onChange={(x) => setExpr(k, x)} />
         ))}
         {!b100 && usadas.length < 2 && <FilaVariable e={null} agregable onChange={(x) => x && guardarExprs([...base, x])} />}
         {!b100 && mismaU && usadas.length < MAX_MISMA_UNIDAD && (
@@ -244,7 +245,7 @@ function SelFecha({ valor, min, max, etq, onElegir }: { valor: string; min: stri
   );
 }
 
-function Barra({ E, set, F }: { E: Comun; set: SetFn; F: string[] }) {
+function Barra({ E, set, F, fija }: { E: Comun; set: SetFn; F: string[]; fija: boolean }) {
   const N = F.length, ult = F[N - 1], hace12 = F[Math.max(0, N - 12)];
   const PRESETS: [string, string][] = [[F[0], "Todo"], ["1995-01", "1995"], ["2003-01", "2003"], ["2011-01", "2011"], ["2017-01", "2017"], ["2023-01", "2023"], [hace12, "Último año"]];
   const ms = [...E.meses].sort((a, b) => a - b).map((k) => MESES[k - 1]).join(", ");
@@ -258,7 +259,7 @@ function Barra({ E, set, F }: { E: Comun; set: SetFn; F: string[] }) {
     set({ ms: n.size === 12 ? null : [...n].sort((a, b) => a - b).join(",") });
   };
   return (
-    <div className="barra-hist" role="region" aria-label="Período y frecuencia">
+    <div className={`barra-hist${fija ? " fija" : ""}`} role="region" aria-label="Período y frecuencia">
       <Desplegable etiqueta={<><span className="solo-grande">Período: </span>{fmtMes(E.desde)} – {fmtMes(E.hasta)}{E.meses.size < 12 ? ` · ${ms}` : ""}</>}>
         <div className="controls"><label>Desde</label><SelFecha etq="Desde" valor={E.desde} min={F[0]} max={ult} onElegir={cambiarDesde} />
           <label>Hasta</label><SelFecha etq="Hasta" valor={E.hasta} min={F[0]} max={ult} onElegir={cambiarHasta} /></div>
@@ -285,8 +286,8 @@ function Barra({ E, set, F }: { E: Comun; set: SetFn; F: string[] }) {
 
 // ------------------------------------------------------------ tarjeta de gráfico: barra (Gráfico / Tabla, Configurar, expandir), gráfico o tabla
 type Vista = "grafico" | "tabla";
-function CardGrafico({ titulo, nota, leyenda, refleg, visibles, config, rows, series, opts, unidades, vista: vistaProp, onVista }: {
-  titulo: string; nota?: ReactNode; leyenda?: ReactNode; refleg?: ReactNode; visibles?: ReactNode; config?: { cuenta: number; children: ReactNode };
+function CardGrafico({ titulo, nota, leyenda, visibles, config, rows, series, opts, unidades, vista: vistaProp, onVista }: {
+  titulo: string; nota?: ReactNode; leyenda?: ReactNode; visibles?: ReactNode; config?: { cuenta: number; children: ReactNode };
   rows: Fila[]; series: SerieG[]; opts: OpcionesG; unidades?: Record<string, string>; vista?: Vista; onVista?: (v: Vista) => void;
 }) {
   const [vistaL, setVistaL] = useState<Vista>("grafico");
@@ -294,7 +295,7 @@ function CardGrafico({ titulo, nota, leyenda, refleg, visibles, config, rows, se
   const vista = vistaProp ?? vistaL;
   const elegirVista = (v: string) => (onVista ? onVista(v as Vista) : setVistaL(v as Vista));
   const hay = hayDatos(rows, series, opts);
-  const cab = leyenda || refleg ? <>{leyenda}{refleg}</> : null;
+  const cab = leyenda ?? null;
   return (
     <div className="card">
       <h2>{titulo}</h2>{nota && <p className="note">{nota}</p>}
@@ -335,7 +336,9 @@ const DEFS_RES: DefResumen[] = [
 // ------------------------------------------------------------ gráfico principal
 function Principal({ m, E, set, version, compacto }: { m: Motor; E: Estado; set: SetFn; version: number; compacto: boolean }) {
   const { F } = m;
+  const { config: cfg } = useConfig();
   const b100 = E.modo === "b100";
+  const conFranjas = E.pf === "1" ? true : E.pf === "0" ? false : cfg.franjas;
   // Claves estables: el gráfico solo se rehace (y pierde el zoom) si cambia algo que lo afecta
   const kExprs = E.exprs.map(encExpr).join(","), kMeses = [...E.meses].join(","), kRefs = [...E.refs].sort().join(",");
   const D = useMemo(() => {
@@ -366,15 +369,12 @@ function Principal({ m, E, set, version, compacto }: { m: Motor; E: Estado; set:
     const fmtDe = (o: { c: Calculo }) => b100 ? (v: number) => nf1.format(v) : (v: number) => m.fmtC(o.c, v);
     const misma = dos && E.eje === "misma";
     const refs: Ref[] = [];
-    const refLeg: { dos: boolean; color: string; items: { letra: string; dash: string; nom: string; v: number; txt: string; cuando?: string; color: string }[] }[] = [];
     if (!b100) lista.forEach((o, k) => {
       const s = st[k]; if (!s) return;
-      const items = REFS_H.filter((r) => E.refs.has(r.k)).map((r) => {
-        const [v, cuando] = r.val(s);
-        refs.push({ v, axis: misma ? 0 : o.axis, color: o.color, letra: r.letra, dash: r.dash });
-        return { letra: r.letra, dash: r.dash, nom: r.nom, v, txt: m.fmtC(o.c, v), cuando, color: o.color };
+      REFS_H.filter((r) => E.refs.has(r.k)).forEach((r) => {
+        const [v] = r.val(s);
+        refs.push({ v, axis: misma ? 0 : o.axis, color: o.color, letra: r.letra, dash: r.dash, key: o.key, tipo: r.k as TipoRef, nom: r.nom, quien: lista.length > 1 ? o.c.corto : undefined, fmt: fmtDe(o) });
       });
-      if (items.length) refLeg.push({ dos: lista.length > 1, color: o.color, items });
     });
     const tiposMk = new Set(["ult", "max", "min"].filter((k) => E.refs.has("mk_" + k)));
     const marcas: Marca[] = b100 || !tiposMk.size ? [] : lista.map((o) => ({ key: o.key, axis: misma ? 0 : o.axis, color: o.color, fmt: fmtDe(o), tipos: tiposMk }));
@@ -386,10 +386,15 @@ function Principal({ m, E, set, version, compacto }: { m: Motor; E: Estado; set:
       height: compacto ? 260 : undefined,
       label: lista.map((o) => o.c.corto).join(", "),
     };
-    return { lista, dos, hayBanda, bd, rows, puedeLog, st, fmtDe, refLeg, series, opts };
+    return { lista, dos, hayBanda, bd, rows, puedeLog, st, fmtDe, series, opts };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [m, version, kExprs, E.modo, E.desde, E.hasta, kMeses, E.freq, E.ag, E.escala, E.banda, E.eje, kRefs, compacto]);
-  const { lista, dos, hayBanda, bd, rows, puedeLog, st, refLeg, series, opts } = D;
+  const { lista, dos, hayBanda, bd, rows, puedeLog, st, series } = D;
+  const kBase = `${cfg.t0}|${JSON.stringify(cfg.t0p)}`;
+  const franjas = useMemo(() => (conFranjas ? franjasPres(F, baseDeConfig(cfg, PRES_DEF.map((x) => x.id))) : undefined),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [conFranjas, F, kBase]);
+  const opts = useMemo(() => (franjas ? { ...D.opts, franjas } : D.opts), [D.opts, franjas]);
 
   const porFreq = ({ M: "", T: " Valores trimestrales", A: " Valores anuales" })[E.freq];
   const agTxt = E.ag === "cierre" ? `último mes con dato de cada ${E.freq === "A" ? "año" : "trimestre"}` : "promedio de los meses";
@@ -409,7 +414,7 @@ function Principal({ m, E, set, version, compacto }: { m: Motor; E: Estado; set:
     const act = ks.filter((k) => set0.has(k)).sort().join(","), d = def.slice().sort().join(",");
     return act === d;
   };
-  const cuenta = (b100 ? 1 : 0) + (puedeLog && E.escala !== "lin" ? 1 : 0) + (dos && E.eje !== "propia" ? 1 : 0) + (hayBanda && E.banda !== "no" ? 1 : 0)
+  const cuenta = (conFranjas !== cfg.franjas ? 1 : 0) + (b100 ? 1 : 0) + (puedeLog && E.escala !== "lin" ? 1 : 0) + (dos && E.eje !== "propia" ? 1 : 0) + (hayBanda && E.banda !== "no" ? 1 : 0)
     + (!b100 && !igualA(E.refs, REFS_H.map((r) => r.k), ["ult", "prom", "med"]) ? 1 : 0) + (!b100 && !igualA(E.refs, ["mk_ult", "mk_max", "mk_min"], ["mk_ult", "mk_max", "mk_min"]) ? 1 : 0);
   const config = (
     <>
@@ -419,6 +424,10 @@ function Principal({ m, E, set, version, compacto }: { m: Motor; E: Estado; set:
       <div className="controls">
         {puedeLog && grupo("Escala", <Seg valor={E.escala} opciones={[["lin", "Lineal"], ["log", "Logarítmica"]]} onElegir={(v) => set({ e: v === "lin" ? null : v })} />)}
         {dos && grupo("Eje derecho", <Seg valor={E.eje} opciones={[["propia", "Escala propia (adaptada a la serie)"], ["misma", "Misma escala que el izquierdo"]]} onElegir={(v) => set({ ej: v === "propia" ? null : v })} />)}
+      </div>
+      <div className="controls">
+        {grupo("Presidentes", <Seg valor={conFranjas ? "si" : "no"} opciones={[["no", "No"], ["si", "Franjas de colores por mandato"]]}
+          onElegir={(v) => { const on = v === "si"; set({ pf: on === cfg.franjas ? null : on ? "1" : "0" }); }} />)}
       </div>
       {!b100 && (
         <div className="controls">
@@ -430,16 +439,6 @@ function Principal({ m, E, set, version, compacto }: { m: Motor; E: Estado; set:
     </>
   );
   const leyenda = <div className="legend">{lista.length > 1 && lista.map((o) => <span key={o.key} style={vcolor(o.color)}>{o.c.corto}{o.axis ? " (eje der.)" : ""}</span>)}</div>;
-  const refl = (
-    <div className="refleg">{refLeg.map((g, i) => (
-      <div key={i}>{g.dos && <span className="punto" style={vcolor(g.color)} />}
-        {g.items.map((it) => (
-          <span className="ri" key={it.letra}><b style={{ color: `var(${it.color})` }}>{it.letra}</b>
-            <svg width="24" height="6" aria-hidden="true"><line x1="0" x2="24" y1="3" y2="3" stroke={`var(${it.color})`} strokeWidth="1.5" strokeDasharray={it.dash} /></svg>
-            {it.nom} <span className="rv"><b>{it.txt}</b>{it.cuando ? <> <small>{it.cuando}</small></> : null}</span></span>
-        ))}</div>
-    ))}</div>
-  );
   const unidades = Object.fromEntries(lista.map((o) => [o.key, b100 ? "base 100" : o.c.unidad]));
 
   // Resumen (tarjetas y chips)
@@ -499,7 +498,7 @@ function Principal({ m, E, set, version, compacto }: { m: Motor; E: Estado; set:
           </div>
         </>
       )}
-      <CardGrafico titulo={titulo} nota={nota} leyenda={leyenda} refleg={refl} config={{ cuenta, children: config }}
+      <CardGrafico titulo={titulo} nota={nota} leyenda={leyenda} config={{ cuenta, children: config }}
         rows={rows} series={series} opts={opts} unidades={unidades} vista={E.tabla} onVista={(v) => set({ t: v === "tabla" ? "tabla" : null })} />
     </>
   );

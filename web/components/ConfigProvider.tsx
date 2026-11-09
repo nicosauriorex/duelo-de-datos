@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { Modal } from "./ui";
 import { PRES_DEF } from "@/lib/estadisticas";
 import {
-  CLAVE, DEFECTO, DESDES, DOLARES, MEDIDAS, TEMAS, T_MAX, T_MIN, aplicarTema, guardar, leer, txtTLargo,
+  CLAVE, DEFECTO, DESDES, aplicarColPres, DOLARES, MEDIDAS, TEMAS, T_MAX, T_MIN, aplicarTema, guardar, leer, txtTLargo,
   type Config,
 } from "@/lib/config";
 
@@ -43,6 +43,8 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("storage", alCambiar);
   }, []);
 
+  useEffect(() => { aplicarColPres(config.colPres); }, [config.colPres]);
+
   const aplicar = useCallback((n: Config) => {
     setConfig(n); aplicarTema(n.tema); setGuardado(guardar(n)); setRev((x) => x + 1);
   }, []);
@@ -63,6 +65,12 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
 export function BotonConfig() {
   const { abrirPanel } = useConfig();
   return <button type="button" className="btn config-btn" aria-label="Configuración" title="Configuración" onClick={abrirPanel}>⚙</button>;
+}
+
+/** Color de fábrica de un presidente (la variable de serie de la que sale) como #rrggbb, para el selector de color. */
+function colorBase(v: string): string {
+  const x = getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  return /^#[0-9a-f]{6}$/i.test(x) ? x : "#888888";
 }
 
 const RANGO_T = Array.from({ length: T_MAX - T_MIN + 1 }, (_, i) => T_MIN + i);
@@ -121,6 +129,18 @@ function Panel({ onCerrar, guardado }: { onCerrar: () => void; guardado: boolean
           <h3 id="cfg-desde">Período por defecto</h3>
           <p className="note">El &quot;Desde&quot; de Histórico cuando el link no trae uno.</p>
           <Opciones etiqueta="Período por defecto" valor={c.desde} opciones={DESDES} onElegir={(desde) => cambiar({ desde })} />
+        </section>
+        <section aria-labelledby="cfg-pres">
+          <h3 id="cfg-pres">Presidentes en los gráficos</h3>
+          <p className="note">Franjas de color detrás de las líneas, una por mandato. Se pueden prender o apagar en cada gráfico; acá se elige si arrancan prendidas. Los colores se usan en todo el sitio.</p>
+          <Opciones etiqueta="Mostrar presidentes en los gráficos" valor={c.franjas ? "si" : "no"} opciones={[["no", "No"], ["si", "Sí, en todos los gráficos"]]} onElegir={(v) => cambiar({ franjas: v === "si" })} />
+          <div className="cfg-pres">
+            {PRES_DEF.map((p) => (
+              <div key={p.id} className="controls"><label>{p.n}</label>
+                <input type="color" aria-label={`Color de ${p.n}`} value={c.colPres[p.id] ?? colorBase(p.base)} onChange={(ev) => cambiar({ colPres: { ...c.colPres, [p.id]: ev.target.value } })} /></div>
+            ))}
+          </div>
+          <button type="button" className="btn" disabled={!Object.keys(c.colPres).length} onClick={() => cambiar({ colPres: {} })}>Volver a los colores de fábrica</button>
         </section>
         <section aria-labelledby="cfg-tema">
           <h3 id="cfg-tema">Tema</h3>

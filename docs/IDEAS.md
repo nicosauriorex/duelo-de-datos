@@ -228,3 +228,6 @@ Son ajustes a lo ya hecho, no ideas nuevas.
 
 ### Precios en el mundo (implementado 2026-11-09, spec precios-en-el-mundo)
 - ~~Precios por categoría contra el mundo y otros países (ICP del Banco Mundial + estimación mes a mes).~~ ✅ 2026-11-09
+
+### Ajustes del Histórico (implementado 2026-11-09, spec ajustes-historico)
+- ~~Ventana "Configurar variable", referencias con hover, zoom que recalcula, precios corrientes neutros y franjas de presidentes con colores en la configuración global~~ ✅ 2026-11-09

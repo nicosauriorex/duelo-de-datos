@@ -1,6 +1,6 @@
 // Estadísticas de Histórico, mandatos, desempeño de presidentes y correlaciones de elecciones.
 // Port de src/app.js sin cambiar resultados. Todo recibe el motor y la configuración por parámetro.
-import { ok } from "./formato";
+import { ok, mesNum } from "./formato";
 import { kDe, txtT, type BaseCfg } from "./config";
 import { ES_VAR, type Calculo, type Expr, type Motor, type Vals } from "./motor";
 
@@ -64,17 +64,29 @@ export const recortar = (rows: Fila[], keys: string[]): Fila[] => {
 // ---------------------------------------------------------------- Presidentes
 export interface Pres { id: string; n: string; ini: string; color: string; dash?: boolean; i0: number; i1: number }
 export const PRES_DEF = [
-  { id: "menem1", n: "Menem 1", ini: "1989-07", color: "--neutral", dash: true },
-  { id: "menem2", n: "Menem 2", ini: "1995-07", color: "--neutral", dash: true },
-  { id: "delarua", n: "De la Rúa", ini: "1999-12", color: "--series-8" },
-  { id: "duhalde", n: "Duhalde", ini: "2002-01", color: "--series-7" },
-  { id: "nk", n: "Néstor Kirchner", ini: "2003-05", color: "--series-6" },
-  { id: "cfk1", n: "CFK 1", ini: "2007-12", color: "--series-5" },
-  { id: "cfk2", n: "CFK 2", ini: "2011-12", color: "--series-4" },
-  { id: "macri", n: "Macri", ini: "2015-12", color: "--series-3" },
-  { id: "af", n: "Alberto Fernández", ini: "2019-12", color: "--series-2" },
-  { id: "milei", n: "Milei", ini: "2023-12", color: "--series-1" },
+  { id: "menem1", n: "Menem 1", ini: "1989-07", color: "--pres-menem1", base: "--neutral", dash: true },
+  { id: "menem2", n: "Menem 2", ini: "1995-07", color: "--pres-menem2", base: "--neutral", dash: true },
+  { id: "delarua", n: "De la Rúa", ini: "1999-12", color: "--pres-delarua", base: "--series-8" },
+  { id: "duhalde", n: "Duhalde", ini: "2002-01", color: "--pres-duhalde", base: "--series-7" },
+  { id: "nk", n: "Néstor Kirchner", ini: "2003-05", color: "--pres-nk", base: "--series-6" },
+  { id: "cfk1", n: "CFK 1", ini: "2007-12", color: "--pres-cfk1", base: "--series-5" },
+  { id: "cfk2", n: "CFK 2", ini: "2011-12", color: "--pres-cfk2", base: "--series-4" },
+  { id: "macri", n: "Macri", ini: "2015-12", color: "--pres-macri", base: "--series-3" },
+  { id: "af", n: "Alberto Fernández", ini: "2019-12", color: "--pres-af", base: "--series-2" },
+  { id: "milei", n: "Milei", ini: "2023-12", color: "--pres-milei", base: "--series-1" },
 ];
+export interface Franja { ini: number; fin: number; nombre: string; color: string }
+/** Franjas de colores de los mandatos para los gráficos. Cada una empieza en el mes que la configuración toma como inicio y llega hasta el inicio de la siguiente. */
+export function franjasPres(F: string[], b: BaseCfg): Franja[] {
+  const PRES = crearPres(F);
+  const idx = PRES.map((p) => baseIdx(F, p, b));
+  const out: Franja[] = [];
+  PRES.forEach((p, k) => {
+    const ini = mesNum(F[idx[k]]), fin = k < PRES.length - 1 ? mesNum(F[idx[k + 1]]) : mesNum(F[F.length - 1]);
+    if (fin > ini) out.push({ ini, fin, nombre: p.n, color: p.color });
+  });
+  return out;
+}
 export function crearPres(F: string[]): Pres[] {
   const N = F.length;
   return PRES_DEF.map((p, k) => {

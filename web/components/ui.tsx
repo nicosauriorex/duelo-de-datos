@@ -47,12 +47,18 @@ export function Desplegable({ etiqueta, children, abiertoInicial = false, classN
 }
 
 /** Ventana modal con foco, Escape y clic en el fondo para cerrar. */
+const pilaModales: symbol[] = []; // con ventanas una sobre otra, Escape cierra solo la de arriba
 export function Modal({ titulo, onCerrar, children, ancho }: { titulo: string; onCerrar: () => void; children: ReactNode; ancho?: boolean }) {
+  const yo = useRef(Symbol("modal"));
+  const cerrar = useRef(onCerrar);
+  cerrar.current = onCerrar;
   useEffect(() => {
-    const tecla = (ev: KeyboardEvent) => { if (ev.key === "Escape") { ev.stopPropagation(); onCerrar(); } };
+    const id = yo.current;
+    pilaModales.push(id);
+    const tecla = (ev: KeyboardEvent) => { if (ev.key === "Escape" && pilaModales[pilaModales.length - 1] === id) { ev.stopPropagation(); cerrar.current(); } };
     document.addEventListener("keydown", tecla, true);
-    return () => document.removeEventListener("keydown", tecla, true);
-  }, [onCerrar]);
+    return () => { document.removeEventListener("keydown", tecla, true); const k = pilaModales.indexOf(id); if (k >= 0) pilaModales.splice(k, 1); };
+  }, []);
   return (
     <div className="modal-fondo" onMouseDown={(ev) => { if (ev.target === ev.currentTarget) onCerrar(); }}>
       <div className="modal" role="dialog" aria-modal="true" aria-label={titulo} style={ancho ? { width: "min(760px,100%)" } : undefined}>

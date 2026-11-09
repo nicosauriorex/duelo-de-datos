@@ -3,7 +3,7 @@
 import { FX_KEYS } from "./motor";
 
 export const CLAVE = "pld:config";
-export const VERSION = 1;
+export const VERSION = 2;
 export const T_MIN = -12, T_MAX = 24;
 
 export type Dolar = (typeof FX_KEYS)[number];
@@ -19,8 +19,10 @@ export interface Config {
   medida: MedidaPref;
   desde: DesdePref;
   tema: TemaPref;
+  franjas: boolean;              // franjas de presidentes en todos los gráficos
+  colPres: Record<string, string>; // color elegido por presidente (id → #rrggbb)
 }
-export const DEFECTO: Config = { v: VERSION, t0: -1, t0p: {}, dolar: "oficial", medida: "real", desde: "2003", tema: "auto" };
+export const DEFECTO: Config = { v: VERSION, t0: -1, t0p: {}, dolar: "oficial", medida: "real", desde: "2003", tema: "auto", franjas: false, colPres: {} };
 
 export const DOLARES: [Dolar, string][] = [["oficial", "Oficial"], ["blue", "Blue"], ["mep", "MEP"], ["ccl", "CCL"]];
 export const MEDIDAS: [MedidaPref, string][] = [["real", "Pesos reales"], ["corr", "Pesos corrientes"], ["usdr", "Dólares reales"], ["usd", "Dólares corrientes"]];
@@ -39,7 +41,12 @@ export function normalizar(raw: unknown): Config {
   if (r.t0p && typeof r.t0p === "object") {
     for (const [id, k] of Object.entries(r.t0p as Record<string, unknown>)) { const n = entero(k); if (n != null) t0p[id] = n; }
   }
+  const colPres: Record<string, string> = {};
+  if (r.colPres && typeof r.colPres === "object") {
+    for (const [id, c] of Object.entries(r.colPres as Record<string, unknown>)) if (/^[a-z0-9]+$/.test(id) && typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c)) colPres[id] = c.toLowerCase();
+  }
   return {
+    franjas: r.franjas === true, colPres,
     v: VERSION, t0: entero(r.t0) ?? DEFECTO.t0, t0p,
     dolar: unoDe(r.dolar, DOLARES, DEFECTO.dolar), medida: unoDe(r.medida, MEDIDAS, DEFECTO.medida),
     desde: unoDe(r.desde, DESDES, DEFECTO.desde), tema: unoDe(r.tema, TEMAS, DEFECTO.tema),
@@ -65,6 +72,12 @@ export const atributoTema = (t: TemaPref): string | null => (t === "claro" ? "li
 export function aplicarTema(t: TemaPref) {
   const a = atributoTema(t), el = document.documentElement;
   if (a) el.setAttribute("data-theme", a); else el.removeAttribute("data-theme");
+}
+/** Aplica los colores elegidos de los presidentes: pisan las variables `--pres-<id>` (el color de fábrica está en globals.css). */
+export function aplicarColPres(col: Record<string, string>) {
+  const st = document.documentElement.style;
+  for (let i = st.length - 1; i >= 0; i--) { const n = st.item(i); if (n.startsWith("--pres-")) st.removeProperty(n); }
+  for (const [id, c] of Object.entries(col)) st.setProperty(`--pres-${id}`, c);
 }
 /** Script chico para el <head>: aplica el tema guardado antes de pintar. Debe seguir en sintonía con `atributoTema`. */
 export const SCRIPT_TEMA = `try{var c=JSON.parse(localStorage.getItem("${CLAVE}")||"{}");var t=c.tema==="claro"?"light":c.tema==="oscuro"?"dark":null;if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}`;

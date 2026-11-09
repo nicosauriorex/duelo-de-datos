@@ -8,6 +8,12 @@
   --pos: #008300; --neg: #c83a39; --bueno: #0a7a2f; --malo: #c0302f;
   --shadow: 0 8px 28px rgba(0,0,0,.14); --nav-h: 42px;
 }
+/* Color de cada presidente: se puede pisar desde la configuración global (aplicarColPres) */
+:root {
+  --pres-menem1: var(--neutral); --pres-menem2: var(--neutral); --pres-delarua: var(--series-8); --pres-duhalde: var(--series-7);
+  --pres-nk: var(--series-6); --pres-cfk1: var(--series-5); --pres-cfk2: var(--series-4); --pres-macri: var(--series-3);
+  --pres-af: var(--series-2); --pres-milei: var(--series-1);
+}
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
@@ -446,3 +452,18 @@ tr.clic.abierto > td { font-weight: 600; }
 .cg-anio { display: grid; grid-template-columns: 40px minmax(30px, 1fr) 62px minmax(30px, 1fr) minmax(70px, 1.2fr); gap: 8px; align-items: center; font-size: 12px; }
 .cg-como { margin-top: 14px; }
 .cg-como summary { cursor: pointer; font-weight: 600; }
+
+/* Renglón limpio de variable + ventana Configurar variable */
+.fila-var.limpia { flex-wrap: wrap; }
+.fila-var.limpia .nombre-var { flex: 1 1 120px; min-width: 0; text-align: left; background: none; border: 0; padding: 4px 0; cursor: pointer; color: var(--text-primary);
+  font: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fila-var.limpia .nombre-var .resumen { color: var(--text-secondary); }
+.btn.chico { padding: 4px 9px; font-size: 13px; white-space: nowrap; }
+.btn.primario { background: var(--text-primary); color: var(--surface-1); border-color: var(--text-primary); }
+.grupo-cfg { border-top: 1px solid var(--border); padding: 8px 0 4px; }
+.grupo-cfg:first-of-type { border-top: 0; }
+.grupo-cfg h3 { margin: 4px 0 8px; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); }
+.grupo-cuerpo { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+@media (max-width: 480px) { .cfg-txt { display: none; } }
+/* La barra de período queda fija solo con 2 o más gráficos */
+.barra-hist:not(.fija) { position: static; }

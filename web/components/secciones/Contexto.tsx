@@ -1,12 +1,14 @@
 "use client";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useSeccion } from "../useSeccion";
 import { useContexto } from "../useContexto";
 import { Cargando, Seg, Selector, alternar } from "../ui";
-import { Grafico, type OpcionesG, type SerieG } from "../Grafico";
+import { Grafico, type Fila, type OpcionesG, type SerieG } from "../Grafico";
+import { useConfig } from "../ConfigProvider";
+import { baseDeConfig } from "@/lib/config";
 import { tinte, PALETA } from "../util";
 import { nf0, nf1, ok } from "@/lib/formato";
-import { PRES_DEF, crearPres, type Pres } from "@/lib/estadisticas";
+import { PRES_DEF, crearPres, franjasPres, type Pres } from "@/lib/estadisticas";
 import {
   ARG, COMPARAR, ESPERADO, GRUPOS_CMP, GRUPOS_EXTRA, MARCA_TXT, PAISES, VEC, VECINOS, VIENTOS,
   aniosDe, crecimientoIndice, filasEsperado, nombreEnt, promedioAnios, serieAnual, serieComparar, sorpresaPres, textoAnios, ultimoCerrado, vientosPres,
@@ -229,6 +231,24 @@ function Comparar({ datos, p, set, resalta }: { datos: DatosContexto; p: URLSear
 }
 
 // ------------------------------------------------------------------ viento de cola o de frente
+/** Gráfico mensual con la opción de pintar el período de cada presidente (arranca como diga la configuración global). */
+function GraficoMensual({ rows, series, opts, F }: { rows: Fila[]; series: SerieG[]; opts: OpcionesG; F: string[] }) {
+  const { config } = useConfig();
+  const [local, setLocal] = useState<boolean | null>(null);
+  const on = local ?? config.franjas;
+  const kBase = `${config.t0}|${JSON.stringify(config.t0p)}`;
+  const franjas = useMemo(() => (on ? franjasPres(F, baseDeConfig(config, PRES_DEF.map((x) => x.id))) : undefined),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [on, F, kBase]);
+  const o = useMemo(() => (franjas ? { ...opts, franjas } : opts), [opts, franjas]);
+  return (
+    <>
+      <div className="controls"><button type="button" className="btn chico" aria-pressed={on} onClick={() => setLocal(!on)}>Presidentes: {on ? "sí" : "no"}</button></div>
+      <Grafico rows={rows} series={series} opts={o} />
+    </>
+  );
+}
+
 const fmtV = (def: Omit<DefViento, "fmt">, v: number | null) => (ok(v) ? (def.u.includes("%") ? nf1.format(v) : nf0.format(v)) : "—");
 const colorMarca = (mk: Marca) => (mk === "favor" ? tinte(0.6) : mk === "contra" ? tinte(-0.6) : undefined);
 
@@ -251,7 +271,7 @@ function Viento({ m, datos, PRES, resalta }: { m: NonNullable<ReturnType<typeof 
         {mensuales.map((def) => (
           <div key={def.id}>
             <h3>{def.n} <small style={{ fontWeight: 400, color: "var(--text-muted)" }}>{def.u}</small></h3>
-            <Grafico rows={rowsMes(def)} series={[{ key: def.id, name: def.n, color: "--series-1" }]} opts={optsMes(def)} />
+            <GraficoMensual rows={rowsMes(def)} series={[{ key: def.id, name: def.n, color: "--series-1" }]} opts={optsMes(def)} F={m.F} />
           </div>
         ))}
         <div>

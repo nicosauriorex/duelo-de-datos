@@ -35,6 +35,16 @@ export const normMed = (m?: string) => (m === "vac" ? "via" : m);
 /** Series de IPC general: contra la inflación general serían una línea plana, no se les ofrece "Real" ni "Precio relativo". */
 export const ES_IPC_GENERAL = (id: string) => id === "ipc_empalme" || id === "ipc_nacional_0_ipc";
 
+/** Si subir es bueno (1), malo (-1) o neutro (0) para una serie vista con esta medida.
+ *  Los precios en pesos o dólares corrientes suben casi siempre: se tratan como neutros.
+ *  En precio real, en salarios ("en términos de") o como variación se mantiene el `dir` de la serie. */
+export function dirEfectiva(s: SerieMeta, med?: string | null, rel?: string | null): number {
+  const dir = s.dir || 0;
+  if (dir !== -1 || rel || s.tipo !== "ars" || s.cat[0] !== "Precios") return dir;
+  const m = med === "vac" ? "via" : med || "";
+  return m === "corr" || m.startsWith("usd_") ? 0 : dir;
+}
+
 export interface DimMed { opciones: Opcion[]; tenue?: string }
 /** Un grupo de medidas (Pesos / Dólares / Variaciones / Índice...). Cada grupo tiene 1 o 2 filas de opciones (`dims`);
  *  `unir` arma el código de medida y `partir` lo desarma (null = el código no es de este grupo). */
@@ -156,6 +166,22 @@ export function crearMotor(F: string[]) {
   const etiquetaMedida = (s: SerieMeta, med: string): string => {
     const u = ubicarMedida(s, med);
     return u ? u.g.etq(u.v) : "";
+  };
+  /** Resumen corto de la medida para el renglón de la variable ("pesos de hoy", "en US$ blue", "variación interanual"). */
+  const resumenMedida = (s: SerieMeta, med: string): string => {
+    const u = ubicarMedida(s, med);
+    if (!u) return "";
+    const { g, v } = u;
+    if (g.k === "pesos") {
+      const t = ({ real: "pesos de hoy", corr: "pesos corrientes", realbi: "pesos de hoy, neto de inflación de EE.UU.", arscorr: "pesos corrientes (al oficial)" } as Record<string, string>)[v[0]];
+      return s.tipo === "usd" && v[0] === "real" ? "pesos de hoy (al oficial)" : t ?? g.etq(v);
+    }
+    if (g.k === "dolares") {
+      if (v[1]) return `en US$ ${FX_NOM[v[1]]}${v[0] === "usdr" ? " de hoy" : ""}`;
+      return v[0] === "usdr" ? "dólares de hoy" : "dólares corrientes";
+    }
+    const t = g.etq(v);
+    return /^[A-ZÁÉÍÓÚ]{2,}/.test(t) ? t : t.charAt(0).toLowerCase() + t.slice(1);
   };
   /** Lista plana de todas las medidas válidas (código, nombre). */
   function medidasDe(s: SerieMeta): Opcion[] {
@@ -285,7 +311,7 @@ export function crearMotor(F: string[]) {
       r.corto = e.modo === "medido" ? `${A.n} / ${B2.n}` : `${A.n} por ${B2.n}`;
     } else {
       const med = e.forzar || medidasDe(A).some((m) => m[0] === e.med) ? (e.med as string) : medDefault(A);
-      r = { v: transformar(A, A.vals, med), nombre: A.n, corto: A.n, unidad: unidadDe(A, med), dir: A.dir || 0, flujo: !!A.flujo };
+      r = { v: transformar(A, A.vals, med), nombre: A.n, corto: A.n, unidad: unidadDe(A, med), dir: dirEfectiva(A, med, null), flujo: !!A.flujo };
       if (A.mn && A.mx) { r.lo = transformar(A, A.mn, med); r.hi = transformar(A, A.mx, med); }
       if (esc === "pc") {
         const [fa, uu] = FACTOR_U(r.unidad);
@@ -310,7 +336,7 @@ export function crearMotor(F: string[]) {
   };
 
   return {
-    F, N, SER, idxDe, agregar, calc, transformar, variacion, unidadDe, medidasDe, gruposMedida, cantMedidas, ubicarMedida, etiquetaMedida, medDefault, esIndice, MONETARIA,
+    F, N, SER, idxDe, agregar, calc, transformar, variacion, unidadDe, medidasDe, gruposMedida, cantMedidas, ubicarMedida, etiquetaMedida, resumenMedida, medDefault, esIndice, MONETARIA,
     relPermitido, relDestino, escPermitidas, nominalPesos, fmtC, variacionTxt,
     refs: () => { base(); return { refAR, refUS, REF_AR, REF_US }; },
     base,

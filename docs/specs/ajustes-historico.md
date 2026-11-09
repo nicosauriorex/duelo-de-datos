@@ -1,6 +1,6 @@
 # Ajustes del Histórico (bloque 5c)
 
-Estado: spec lista, falta implementar.
+Estado: implementada (2026-11-09). Nota: las páginas de tema no tienen gráficos propios (solo tarjetas y links al Histórico), así que las franjas están en Histórico y en los gráficos mensuales de Contexto.
 
 ## Objetivo
 Que el Histórico ocupe menos lugar y se lea mejor:

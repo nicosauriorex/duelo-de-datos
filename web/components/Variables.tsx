@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useDatos } from "./DatosProvider";
 import { useConfig } from "./ConfigProvider";
 import { medidaInicial } from "@/lib/config";
-import { Desplegable, Modal, Selector } from "./ui";
+import { Desplegable, Modal, Selector, Seg } from "./ui";
 import { fmtMes, lastIdx, norm } from "@/lib/formato";
 import { ORDEN_RAIZ, textoBusqueda } from "@/lib/catalogo";
 import { INFO_CAT, INFO_CORTA } from "@/lib/info";
@@ -297,5 +297,166 @@ export function FilaVariable({ e, onChange, color, quitable, agregable, textoAgr
       {quitable && <button type="button" className="btn quitar" title="Quitar esta variable" onClick={() => onChange(null)}>✕</button>}
       {modal}
     </div>
+  );
+}
+
+// ------------------------------------------------------------ renglón limpio + ventana "Configurar variable"
+/** Una variable como renglón: punto, nombre, resumen de la medida y ⚙ Configurar. Todo lo demás vive en la ventana. */
+export function RenglonVariable({ e, onChange, color, quitable, sinRel, onMover, puedeSubir, puedeBajar }: {
+  e: Expr; onChange: (e: Expr | null) => void; color?: string; quitable?: boolean; sinRel?: boolean;
+  onMover?: (d: -1 | 1) => void; puedeSubir?: boolean; puedeBajar?: boolean;
+}) {
+  const { motor, metas, errores } = useDatos();
+  const [abierta, setAbierta] = useState(false);
+  if (!motor) return null;
+  const A = metas.find((m) => m.id === e.id);
+  if (!A) return null;
+  const B = e.rel ? metas.find((m) => m.id === e.rel) : null;
+  const escs = motor.escPermitidas(A), escV = escs.some((o) => o[0] === e.esc) ? (e.esc || "") : "";
+  const conRel = !!B && motor.relPermitido(A) && !escV && !sinRel;
+  const med = e.med === "vac" ? "via" : e.med || motor.medDefault(A);
+  const resumen = conRel ? `en términos de ${B!.n}` : escV === "pib" ? "% del PIB" : escV === "pc" ? "por habitante"
+    : motor.cantMedidas(motor.gruposMedida(A)) < 2 ? (motor.esIndice(A) ? "índice" : A.u) : motor.resumenMedida(A, med);
+  const verEnSalarios = !sinRel && !conRel && !escV && motor.relPermitido(A) && A.tipo === "ars" && A.cat[0] === "Precios" && metas.some((m) => m.id === "sipa_med");
+  const error = errores[A.archivo] || (B && errores[B.archivo]);
+  return (
+    <div className="fila-var limpia">
+      {color && <span className="punto" style={{ ["--c" as string]: `var(${color})` }} />}
+      <button type="button" className="nombre-var" title={`${A.n} · ${resumen}`} onClick={() => setAbierta(true)}>
+        <b>{A.n}</b><span className="resumen"> · {resumen}</span>
+      </button>
+      {error && <span className="error" role="alert">No se pudieron bajar los datos.</span>}
+      {verEnSalarios && (
+        <button type="button" className="btn chico" title="Cuántos salarios cuesta (salario SIPA mediano)" onClick={() => onChange({ ...e, rel: "sipa_med", modo: "medido", med: "corr", esc: "" })}>Ver en salarios</button>
+      )}
+      {onMover && <>
+        <button type="button" className="btn chico" aria-label="Subir" disabled={!puedeSubir} onClick={() => onMover(-1)}>↑</button>
+        <button type="button" className="btn chico" aria-label="Bajar" disabled={!puedeBajar} onClick={() => onMover(1)}>↓</button>
+      </>}
+      <button type="button" className="btn chico" aria-label={`Configurar ${A.n}`} onClick={() => setAbierta(true)}>⚙<span className="cfg-txt"> Configurar</span></button>
+      {quitable && <button type="button" className="btn quitar" title="Quitar esta variable" aria-label="Quitar esta variable" onClick={() => onChange(null)}>✕</button>}
+      {abierta && <ConfigurarVariable e0={e} sinRel={sinRel} onAceptar={(x) => onChange(x)} onCerrar={() => setAbierta(false)} />}
+    </div>
+  );
+}
+
+function Grupo({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  return <section className="grupo-cfg"><h3>{titulo}</h3><div className="grupo-cuerpo">{children}</div></section>;
+}
+
+/** Ventana con todo lo de una variable. Los cambios se aplican con Aceptar (un solo cambio de URL); Cancelar, ✕, Esc y "Atrás" no cambian nada. */
+function ConfigurarVariable({ e0, sinRel, onAceptar, onCerrar }: { e0: Expr; sinRel?: boolean; onAceptar: (e: Expr) => void; onCerrar: () => void }) {
+  const { motor, metas } = useDatos();
+  const { config } = useConfig();
+  const [d, setD] = useState<Expr>(e0);
+  const [picker, setPicker] = useState<PickerPedido | null>(null);
+  const pendiente = useRef<Expr | null>(null);
+  const empujada = useRef(false);
+  // "Atrás" del navegador cierra la ventana sin aplicar; Aceptar vuelve atrás primero y recién después aplica.
+  useEffect(() => {
+    window.history.pushState({ pldVar: true }, ""); empujada.current = true;
+    const atras = () => { empujada.current = false; onCerrar(); if (pendiente.current) onAceptar(pendiente.current); };
+    window.addEventListener("popstate", atras);
+    return () => window.removeEventListener("popstate", atras);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const cancelar = () => { if (empujada.current) window.history.back(); else onCerrar(); };
+  const aceptar = () => { pendiente.current = d; if (empujada.current) window.history.back(); else { onCerrar(); onAceptar(d); } };
+  if (!motor) return null;
+  const meta = (id: string) => metas.find((m) => m.id === id);
+  const A = meta(d.id);
+  if (!A) return null;
+  const B = d.rel ? meta(d.rel) : null;
+  const escs = motor.escPermitidas(A), escV = escs.some((o) => o[0] === d.esc) ? (d.esc || "") : "";
+  const relOk = motor.relPermitido(A) && !escV && !sinRel;
+  const conRel = relOk && !!d.rel;
+  const grupos = motor.gruposMedida(A);
+  const medAct = d.med === "vac" ? "via" : d.med || motor.medDefault(A);
+  const act = motor.ubicarMedida(A, medAct) ?? motor.ubicarMedida(A, motor.medDefault(A)) ?? { g: grupos[0], v: grupos[0]?.dims.map((x) => x.opciones[0][0]) ?? [] };
+  const esMon = (g?: { k: string }) => !!g && (g.k === "pesos" || g.k === "dolares");
+  const monedaG = grupos.filter(esMon), varG = grupos.find((g) => g.k === "var"), otrosG = grupos.filter((g) => !esMon(g) && g !== varG);
+  const enMoneda = esMon(act.g);
+  const setMed = (m: string) => setD({ ...d, med: m });
+  const porDefecto = (g: (typeof grupos)[number]) => g.unir(g.dims.map((x) => x.opciones.find((o) => o[0] === config.dolar)?.[0] ?? x.opciones[0][0]));
+  const setDim = (i: number, v: string) => { const nv = act.v.slice(); nv[i] = v; setMed(act.g.unir(nv)); };
+
+  // "Cómo se mide": valor (en la moneda elegida), las medidas propias de la serie y las variaciones
+  const como: [string, string][] = [];
+  if (monedaG.length) como.push(["__valor", "Valor"]);
+  otrosG.forEach((g) => g.dims[0].opciones.forEach((o) => como.push([`o:${g.k}:${o[0]}`, o[1]])));
+  varG?.dims[0].opciones.forEach((o) => como.push([`v:${o[0]}`, o[1]]));
+  const comoAct = enMoneda ? "__valor" : act.g.k === "var" ? `v:${act.v[0]}` : `o:${act.g.k}:${act.v[0]}`;
+  const elegirComo = (k: string) => {
+    if (k === "__valor") return setMed(porDefecto(monedaG[0]));
+    const [t, a, b] = k.split(":");
+    if (t === "v" && varG) return setMed(varG.unir([a, ...(varG.dims.length > 1 ? [act.g.k === "var" ? act.v[1] : "nom"] : [])]));
+    const g = otrosG.find((x) => x.k === a);
+    if (g) setMed(g.unir([b, ...g.dims.slice(1).map((x) => x.opciones[0][0])]));
+  };
+  const pickVar = () => setPicker({
+    cb: (id, med, esc) => {
+      const m2 = meta(id)!;
+      const nuevo: Expr = { ...d, id, med: med ?? medidaInicial(m2.tipo, motor.medDefault(m2), config), esc: esc ?? "" };
+      if (!motor.relPermitido(m2)) nuevo.rel = null;
+      setD(nuevo);
+    },
+  });
+  const hayMedida = !conRel && escV !== "pib";
+  return (
+    <>
+      <Modal titulo="Configurar variable" onCerrar={cancelar}>
+        <div className="config-cuerpo">
+          <h2>Configurar variable</h2>
+          <Grupo titulo="Variable">
+            <button type="button" className="btn var" title={A.n} onClick={pickVar}>{A.n}</button>
+            <BotonInfo id={A.id} />
+          </Grupo>
+          {hayMedida && enMoneda && monedaG.length > 1 && (
+            <Grupo titulo="Moneda">
+              <Seg valor={act.g.k} opciones={monedaG.map((g) => [g.k, g.nombre] as [string, string])} onElegir={(k) => { if (k !== act.g.k) setMed(porDefecto(monedaG.find((g) => g.k === k)!)); }} />
+              {act.g.dims.length > 1 && <Seg valor={act.v[1]} opciones={act.g.dims[1].opciones} onElegir={(v) => setDim(1, v)} />}
+            </Grupo>
+          )}
+          {hayMedida && enMoneda && act.g.dims[0].opciones.length > 1 && (
+            <Grupo titulo="Valores">
+              <Seg valor={act.v[0]} opciones={act.g.dims[0].opciones} onElegir={(v) => setDim(0, v)} />
+            </Grupo>
+          )}
+          {hayMedida && como.length > 1 && (
+            <Grupo titulo="Cómo se mide">
+              <Seg valor={comoAct} opciones={como} onElegir={elegirComo} />
+              {act.g.k === "var" && act.g.dims.length > 1 && (
+                <Seg valor={act.v[1]} opciones={act.g.dims[1].opciones} onElegir={(v) => setDim(1, v)} />
+              )}
+            </Grupo>
+          )}
+          {hayMedida && como.length < 2 && !enMoneda && (
+            <Grupo titulo="Cómo se mide"><span className="lbl">{motor.esIndice(A) ? "Índice: se ve tal cual" : A.u}</span></Grupo>
+          )}
+          {escs.length > 0 && !conRel && (
+            <Grupo titulo="Total, por habitante o % del PIB">
+              <Seg valor={escV} opciones={escs.map((o) => [o[0], o[1]] as [string, string])} onElegir={(v) => setD({ ...d, esc: v, rel: v ? null : d.rel })} />
+            </Grupo>
+          )}
+          {relOk && (
+            <Grupo titulo="En términos de">
+              <button type="button" className="btn var" onClick={() => setPicker({ cb: (id) => setD({ ...d, rel: id, modo: d.modo || "compra" }), filtro: motor.relDestino, titulo: "En términos de: salario, dólar, canasta, otro precio…" })}>{B ? B.n : "ninguna (elegir…)"}</button>
+              {B && (
+                <>
+                  <Seg valor={d.modo === "medido" ? "medido" : "compra"} onElegir={(v) => setD({ ...d, modo: v })}
+                    opciones={[["compra", `¿Cuántos ${A.n} compra 1 ${B.n}?`], ["medido", `${A.n} medido en ${B.n}`]]} />
+                  <button type="button" className="btn quitar" onClick={() => setD({ ...d, rel: null })}>✕ quitar</button>
+                </>
+              )}
+            </Grupo>
+          )}
+        </div>
+        <footer>
+          <button type="button" className="btn" onClick={cancelar}>Cancelar</button>
+          <button type="button" className="btn primario" onClick={aceptar}>Aceptar</button>
+        </footer>
+      </Modal>
+      {picker && <Picker pedido={picker} onCerrar={() => setPicker(null)} />}
+    </>
   );
 }
