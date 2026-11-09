@@ -21,6 +21,18 @@ Notas del usuario, ordenadas por tema. No son specs: antes de implementar cualqu
 - **Proyecciones vs. resultado**: qué se proyectaba a principio de año (FMI u otros) para Argentina, EE.UU., Europa, el mundo, y cuánto se desvió cada uno. Si el mundo cayó 50% contra lo proyectado y Argentina también, no es (solo) culpa del presidente. Posible sección "proyecciones cumplidas o no" y ranking de los que más se desviaron.
 - **Comparar con vecinos o países parecidos**: crecer 5% no es mucho si los vecinos crecen 10%.
 
+## Comparación internacional (2026-11-09)
+- **Precios por categoría**: cada división del IPC del INDEC (carne, ropa, servicios, etc.) contra la misma categoría en EE.UU., Europa y los países vecinos, para ver qué tan distorsionado está cada precio en Argentina. Ej.: precio de la carne en Argentina vs. el mundo.
+- **Variables que no son precios** (PBI, empleo, etc.): traerlas también para los mismos países y poder comparar cada variable con Argentina.
+  Ej.: crecimiento del PBI en **base 100 desde el 2000**, para ver cómo creció cada país.
+- Se suma a "Comparar con vecinos o países parecidos" de más arriba: es la misma idea llevada a todas las variables.
+
+## Capacidad de gobierno (2026-11-09)
+Indicadores de cuánto pudo hacer cada presidente de lo que quería, para juzgar resultados con ese contexto.
+- Legisladores **propios y aliados** del presidente: diputados y senadores, por período.
+- **Leyes que quiso sacar vs. leyes aprobadas**.
+- Otros indicadores a evaluar (ver "Sugerencias de Claude"): decretos (DNU) usados, vetos y vetos insistidos, quórum en sesiones clave, cambios de gabinete.
+
 ## Histórico: celular y gráficos
 → spec: docs/specs/historico-celular.md (implementada, commit 144fc59)
 - Barra de fechas y de vista (mes/año) **fija arriba** al bajar (ej. estás en "Rosario vs Chicago" y querés cambiar a "por año" sin subir).
@@ -101,7 +113,15 @@ Uso central: alguien escribe en redes "Milei fundió la economía" y otra person
 ## Bugs conocidos
 - ~~Histórico: el filtro de fecha queda flotando y se superpone con el resto~~ (arreglado en la migración; ahora se pide que quede fijo arriba sin tapar nada, ver "Histórico: celular y gráficos").
 
+## Correcciones pedidas (2026-11-09)
+Son ajustes a lo ya hecho, no ideas nuevas.
+- **"Otros gráficos interesantes" del Histórico** (soja, Chicago, brecha, dólar): los datos ya están en el catálogo, así que ya no tiene sentido tenerlos como gráficos sueltos. Pasarlos a **variables elegibles** como cualquier otra (queda la plantilla si hace falta una vista armada) y sacar la sección.
+- **Hasta 4 gráficos en la vista, uno al lado del otro**, para comparar 4 cosas al mismo tiempo (en celular, apilados). Verificar cómo quedó con lo ya implementado.
+
 ## Sugerencias de Claude (a discutir)
+- Comparación internacional, fuentes a investigar (con `investigador-datos`): IPC por división COICOP de EE.UU. (BLS), Eurostat (HICP por categoría) y OECD; el Banco Mundial y el FMI para PBI y otras variables. Los vecinos (Brasil, Chile, Uruguay, Paraguay, Bolivia) a veces solo tienen el IPC general desde fuentes unificadas, así que la comparación por categoría puede quedar limitada. Las divisiones COICOP no son idénticas entre países, y para comparar **niveles** de precios (no solo variaciones) hacen falta paridad de poder adquisitivo o tipo de cambio real. Mostrar siempre en base 100 o en variación para no comparar manzanas con naranjas.
+- Capacidad de gobierno, fuentes: HCDN y Senado publican composición de bloques y leyes; Boletín Oficial para decretos y vetos. La parte difícil es "propios y aliados" (los bloques cambian y hay criterio de por medio): definir una regla clara y publicarla. "Leyes que quiso sacar" tampoco sale de una base: hay que definir qué cuenta (proyectos del Ejecutivo ingresados, por ejemplo) y es mejor mostrar el número crudo antes que un puntaje.
+- Para que sea justo, las dos comparaciones (internacional y capacidad de gobierno) se muestran para todos los presidentes con el mismo criterio.
 - Página propia por indicador con URL fija (`/dato/salario-real`): sirve para SEO y para que lo compartido tenga una vista previa linda en redes. Encaja con las "páginas de tema".
 - Moderación desde el día 1 si hay comentarios públicos: reportar, ocultar con X reportes, límite de posts por usuario/día.
 - Que cada post de la comunidad guarde los filtros exactos del gráfico, así cualquiera lo abre y lo puede modificar.
