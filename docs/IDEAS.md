@@ -133,7 +133,8 @@ Dirección: **animaciones ligadas al scroll + scrollytelling + motion design**. 
 - **Tarjetas de resumen del Histórico** (último dato, promedio, mediana…): en una sola fila; si no entran, se deslizan de costado, y pueden moverse lento por sí solas.
 
 ## Ajustes de interfaz pedidos (2026-11-09)
-→ bloques 5c (Histórico y presidentes en la línea de tiempo) y 5d (Presidentes, Ranking, Mandato y Elecciones) de la hoja de ruta, sin spec.
+→ spec 5c (Histórico, "Mis variables" y presidentes en la línea de tiempo): docs/specs/ajustes-historico.md
+→ bloque 5d (Presidentes, Ranking, Mandato y Elecciones), sin spec.
 **Histórico**
 - Con un solo gráfico, la barra de período y mes/año **ya no hace falta que quede fija** arriba (dejarla fija solo si hay varios).
 - Botón **"Configurar variable"** que abre una ventana (pop-up) para elegir medida, pesos/dólares, etc. Lo mismo para la segunda variable. Ahorra mucho lugar en pantalla. Con **Aceptar**, la variable queda como texto limpio (sin todos los botones a la vista). Ahí también va el nombre de "mis variables".
@@ -141,7 +142,7 @@ Dirección: **animaciones ligadas al scroll + scrollytelling + motion design**. 
 - **Leyenda del gráfico**: sacar las líneas de último, promedio y mediana. Mejor que al pasar el cursor sobre la línea se **resalte** y diga qué es (promedio, mediana…) y su valor.
 - **Zoom**: al acercar una zona, la escala vertical se ajusta a esa sección y las líneas (promedio, etc.) se recalculan solo con lo visible. Al tocar "Volver", la escala queda rara y hay que hacer doble clic; que vuelva bien a la primera.
 - **Precios (ej. carne)**: hoy "que suba es malo"; matizarlo, porque depende del poder de compra. Analizar también en términos de salario.
-- Promedio o cierre al pasar de mes a trimestre o año: hay un parámetro de cierre en el código (`agrupar`), pero no verifiqué que esté como opción visible en la pantalla.
+- ~~Promedio o cierre al pasar de mes a trimestre o año~~ ✅ ya estaba: botones "Promedio / Cierre" en la barra de período (revisado 2026-11-09).
 
 **Presidentes y Ranking**
 - Sumar la **variación absoluta** además del porcentaje (hoy Ranking compara solo el aumento porcentual).
