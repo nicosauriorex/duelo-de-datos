@@ -104,3 +104,10 @@ Una entrada por decisión de arquitectura. Formato: contexto, decisión, por qu�
 **Decisión**: los 9 temas (slug, categorías, principales, grupos de plantillas) viven en `web/lib/temas.ts`; las oraciones de "Preguntale a los datos" y sus links, en `web/lib/oraciones.ts`. La portada y las páginas de tema no bajan el catálogo completo: cada tarjeta pide solo el archivo de su indicador cuando entra en pantalla. "/" con parámetros de Histórico (links viejos) redirige a `/historico/` conservándolos; los de seguimiento (`utm_*`, `fbclid`, `gclid`) no.
 
 **Consecuencias**: "productos que más subieron" (plantilla dinámica) no es un indicador principal de Precios porque no es una serie del catálogo. La tabla por presidente de cada tema usa `statsMandato` (igual que la sección Por presidente).
+
+## D-008 · Datos anuales multipaís fuera del catálogo mensual — DECIDIDO (2026-11-08)
+**Contexto**: el bloque 6b suma datos del FMI (crecimiento, inflación, desempleo y PIB por habitante de 13 países y 4 grupos, más las proyecciones de abril de cada año). Son anuales, de otros países y con varias ediciones, y no encajan en el catálogo, que es mensual y de series argentinas.
+
+**Decisión**: van en un archivo aparte, `web/public/datos/contexto.json`, escrito por el pipeline con caché como el resto. Los cálculos (asignar años a presidentes, sorpresas, promedios, viento a favor o en contra) viven en `web/lib/contexto.ts`. Las series mensuales de contexto (commodities, términos de intercambio, tasa de la Fed) sí entran al catálogo, en la categoría `Contexto internacional`.
+
+**Consecuencias**: los datos de otros países no aparecen en Histórico ni en el selector de variables. Spec: `docs/specs/contexto-internacional.md`.

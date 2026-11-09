@@ -16,6 +16,7 @@ Notas del usuario, ordenadas por tema. No son specs: antes de implementar cualqu
 - Armar la búsqueda con una oración guiada o escrita: "quiero saber cuántos litros de cerveza se compran con un salario medio" → te muestra el gráfico.
 
 ## Contexto para juzgar a un presidente
+→ spec: docs/specs/contexto-internacional.md (también el consumo de carne, si hay fuente oficial)
 - El contexto internacional influye (commodities con Néstor, pandemia con Alberto, tasas y petróleo con Milei).
 - **Proyecciones vs. resultado**: qué se proyectaba a principio de año (FMI u otros) para Argentina, EE.UU., Europa, el mundo, y cuánto se desvió cada uno. Si el mundo cayó 50% contra lo proyectado y Argentina también, no es (solo) culpa del presidente. Posible sección "proyecciones cumplidas o no" y ranking de los que más se desviaron.
 - **Comparar con vecinos o países parecidos**: crecer 5% no es mucho si los vecinos crecen 10%.
