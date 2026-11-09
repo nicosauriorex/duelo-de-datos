@@ -27,7 +27,7 @@ Lo que funciona y se conserva: el contenido con contexto ("contra su récord de 
 ## Requisitos
 
 ### Proceso (skill Impeccable)
-1. La implementación usa la skill `impeccable` instalada en `.claude/skills/impeccable/` **sin lanzador** (ver `LEEME.md` ahí y D-010): no se baja ni se ejecuta su programa.
+1. La implementación usa el plugin **Impeccable** (`impeccable@impeccable`), instalado en este proyecto solo para el usuario (D-010). Antes de empezar, correr el paso de contexto de la skill (`impeccable context`), que carga `PRODUCT.md` y `DESIGN.md`. El detector automático corre solo después de cada edición de la interfaz; sus avisos se corrigen o se justifican.
 2. Pasos:
    - `init` → escribir `PRODUCT.md` (qué es el sitio, para quién, tono "tecnológico moderno", restricciones de esta spec);
    - diseñar el mundo visual siguiendo `reference/new-work.md` (es un rediseño: el aspecto actual sirve como evidencia, no como base);
@@ -117,7 +117,6 @@ No hay datos nuevos. Cambios de configuración:
 - Cambios de funciones o cálculos en cualquier sección.
 - Logo profesional o identidad de marca para redes (va con el bloque 7).
 - Ilustraciones o fotos.
-- Los comandos `live` y `generate` de Impeccable (necesitan su programa).
 
 ## Cómo se verifica
 1. `cd web && npm run tipos && npm run build` sin errores.
@@ -130,5 +129,5 @@ No hay datos nuevos. Cambios de configuración:
    - **Colores**: en tema claro, el mejor del Ranking en verde fuerte y el peor en rojo fuerte; el dólar blue y el salario con el mismo criterio en las tarjetas.
    - **Renglones**: ningún botón, pestaña ni título de tarjeta partido.
    - **Teclado**: se puede recorrer la portada con Tab, con foco visible, y el carrusel se pausa con el foco.
-3. Nueva crítica con Impeccable: 32/40 o más, sin P0 ni P1, con el resultado en el resumen.
+3. Nueva crítica con Impeccable (`critique` de la portada y del Histórico), con el detector: 32/40 o más, sin P0 ni P1, con el resultado y el historial de puntajes en el resumen. Si el usuario no autorizó subagentes para la crítica, corre en modo reducido y se avisa.
 4. Revisar que no queden colores sueltos en los componentes (`grep` de `#` hexadecimales fuera de `globals.css`).

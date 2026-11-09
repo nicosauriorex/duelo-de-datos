@@ -143,3 +143,5 @@ Una entrada por decisión de arquitectura. Formato: contexto, decisión, por qu�
 
 **Consecuencias**: no hay detector automático ni comandos `live`/`generate`, y las críticas corren en "modo reducido". El contexto de diseño vive en `PRODUCT.md` y `DESIGN.md`, en la raíz, versionados. El tono elegido es "tecnológico moderno", con el tema oscuro por defecto. El menú pasa a 5 secciones (Presidentes agrupa seis subsecciones) sin cambiar las URLs. Spec: `docs/specs/diseno-visual.md`.
 
+**Actualización 2026-11-09**: el usuario instaló el plugin completo desde la terminal (`/plugin marketplace add pbakaus/impeccable`, alcance "local": solo este proyecto y solo para él, en `.claude/settings.local.json`, sin versionar). Se borró la copia de texto de `.claude/skills/impeccable/`. Con el plugin hay detector automático, revisión después de cada edición, historial de críticas y los comandos `live` y `generate`. La crítica completa pide dos subagentes; corren solo si el usuario lo autoriza.
+
