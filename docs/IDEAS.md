@@ -23,7 +23,7 @@ Notas del usuario, ordenadas por tema. No son specs: antes de implementar cualqu
 - Pendiente de este bloque: **consumo de carne vacuna por habitante**. La única serie oficial descargable (Ministerio de Agricultura, `AGRO_0244` en datos.gob.ar) termina en 2018, así que no se agregó; hay que ver si sale una fuente más nueva. Tampoco hay descargable la proyección de abril de 2023 en adelante, el desempleo proyectado ni la proyección para América Latina (la base "Historical WEO Forecasts" del FMI llega a abril de 2022).
 
 ## Comparación internacional (2026-11-09)
-→ PBI y otras variables (base 100 desde 2000): spec docs/specs/contexto-internacional.md. Precios por categoría: bloque 6c, sin spec.
+→ PBI y otras variables (base 100 desde 2000): spec docs/specs/contexto-internacional.md. Precios por categoría (nivel en dólares contra el mundo): spec docs/specs/precios-en-el-mundo.md. Queda pendiente la comparación de precios relativos en base 100.
 - **Precios por categoría**: cada división del IPC del INDEC (carne, ropa, servicios, etc.) contra la misma categoría en EE.UU., Europa y los países vecinos, para ver qué tan distorsionado está cada precio en Argentina. Ej.: precio de la carne en Argentina vs. el mundo.
 - **Variables que no son precios** (PBI, empleo, etc.): traerlas también para los mismos países y poder comparar cada variable con Argentina.
   Ej.: crecimiento del PBI en **base 100 desde el 2000**, para ver cómo creció cada país.
