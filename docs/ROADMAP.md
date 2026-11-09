@@ -12,7 +12,7 @@ Cómo se trabaja: idea en `docs/IDEAS.md` → spec en `docs/specs/` (sesión de 
 
 ## Próximos bloques, en orden (2026-11-08)
 
-Del 1 al 5 no necesitan backend ni datos nuevos: se pueden ir publicando de a uno. El cambio de diseño visual va después del 5, cuando ya esté clara la estructura de la página.
+Del 1 al 5 no necesitan backend ni datos nuevos: se pueden ir publicando de a uno. El cambio de diseño visual (5e) va antes del 7, para que lo que se comparta en redes ya tenga el diseño nuevo. Los números con letra (5b, 5c…) se agregaron después y van en el orden de la tabla.
 
 | # | Bloque | Ideas (secciones de IDEAS.md) | Backend | Estado |
 |---|---|---|---|---|
@@ -25,7 +25,10 @@ Del 1 al 5 no necesitan backend ni datos nuevos: se pueden ir publicando de a un
 | 5b | Correcciones del Histórico | Correcciones pedidas (2026-11-09): sacar "Otros gráficos interesantes" (pasan a variables y plantillas), hasta 4 gráficos uno al lado del otro | No | Hecho (2026-11-09) — [spec](specs/correcciones-historico.md) |
 | 6b | Contexto internacional | Contexto para juzgar a un presidente (proyecciones del FMI, vecinos); Comparación internacional: PBI y otras variables del FMI, base 100 desde 2000; consumo de carne | No (datos nuevos en el pipeline) | Hecho 2026-11-09 (sin consumo de carne ni proyecciones de abril posteriores a 2022) — [spec](specs/contexto-internacional.md) |
 | 6c | Precios por categoría contra otros países | Comparación internacional: nivel en dólares de cada rubro del IPC contra el mundo y otros países (Banco Mundial ICP + estimación) | No (datos nuevos: BLS, Eurostat, institutos de los vecinos) | Hecho (2026-11-09) — [spec](specs/precios-en-el-mundo.md) |
+| 5c | Ajustes del Histórico | Ajustes de interfaz pedidos (2026-11-09): Histórico (ventana "Configurar variable", leyenda con resaltado, zoom con escala y líneas recalculadas, barra de período fija solo con varios gráficos, cierre al agrupar, precios contra salario) y Presidentes en la línea de tiempo (franjas de color por presidente, colores en la configuración global) | No | Sin spec |
+| 5d | Ajustes de Presidentes, Ranking, Mandato y Elecciones | Ajustes de interfaz pedidos (2026-11-09): variación absoluta, dos detalles abiertos a la vez, "lo mejor y lo peor" y el ranking pasan de Curiosidades a Ranking, precio teórico y mes 0 integrados, escala que acompaña la animación, valor actual en la dispersión, corte de r elegible y proyección ponderada | No | Sin spec |
 | 6d | Capacidad de gobierno | Capacidad de gobierno: legisladores propios y aliados, leyes pedidas vs. aprobadas, DNU, vetos | No (datos cargados a mano desde informes de HCDN, Senado y BCN; DNU de Infoleg) | Spec lista, falta implementar — [spec](specs/capacidad-de-gobierno.md) |
+| 5e | Diseño visual y portada | Diseño visual y animación (2026-11-09): portada contada al bajar (scrollytelling), tipografías, links como botones o tarjetas, flecha Volver, verde/rojo según bueno/malo, renglones partidos, tarjetas de resumen deslizables | No | Sin spec |
 | 7 | Compartir y responder en redes | Compartir gráficos; Responder y verificar afirmaciones (etapa 1: "mejor dato desde X" + imagen) | No para la etapa 1 | Sin spec |
 | 8 | Cuentas y comunidad | Comunidad: posts, votos, comentarios, ratios, rankings, moderación | Sí | Sin spec |
 | 9 | Novedades, calendario y predicciones | Novedades, calendario y predicciones | Sí | Sin spec |

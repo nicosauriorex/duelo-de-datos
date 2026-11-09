@@ -118,6 +118,7 @@ Uso central: alguien escribe en redes "Milei fundió la economía" y otra person
 - ~~Histórico: el filtro de fecha queda flotando y se superpone con el resto~~ (arreglado en la migración; ahora se pide que quede fijo arriba sin tapar nada, ver "Histórico: celular y gráficos").
 
 ## Diseño visual y animación (2026-11-09)
+→ bloque 5e de la hoja de ruta, sin spec.
 Dirección: **animaciones ligadas al scroll + scrollytelling + motion design**. Sobre todo en la portada, pero coherente con toda la app. Tipografías modernas y lindas. Libertad de diseño; los textos de abajo son ejemplos.
 - **Portada contada al bajar**:
   1. Arranca con un mensaje fuerte. Ej.: "¿Cansado de ver comentarios en redes de gente que habla sin saber? *Primero los Datos* tiene la solución. Buscá el dato que te interesa y compará a lo largo del tiempo, con otros presidentes y con el contexto internacional."
@@ -132,6 +133,7 @@ Dirección: **animaciones ligadas al scroll + scrollytelling + motion design**. 
 - **Tarjetas de resumen del Histórico** (último dato, promedio, mediana…): en una sola fila; si no entran, se deslizan de costado, y pueden moverse lento por sí solas.
 
 ## Ajustes de interfaz pedidos (2026-11-09)
+→ bloques 5c (Histórico y presidentes en la línea de tiempo) y 5d (Presidentes, Ranking, Mandato y Elecciones) de la hoja de ruta, sin spec.
 **Histórico**
 - Con un solo gráfico, la barra de período y mes/año **ya no hace falta que quede fija** arriba (dejarla fija solo si hay varios).
 - Botón **"Configurar variable"** que abre una ventana (pop-up) para elegir medida, pesos/dólares, etc. Lo mismo para la segunda variable. Ahorra mucho lugar en pantalla. Con **Aceptar**, la variable queda como texto limpio (sin todos los botones a la vista). Ahí también va el nombre de "mis variables".
