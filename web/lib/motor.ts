@@ -335,9 +335,26 @@ export function crearMotor(F: string[]) {
     return `${d > 0 ? "+" : ""}${Math.abs(d) >= 1000 ? nf0.format(d) : nf1.format(d)} %`;
   };
 
+  /** Diferencia absoluta en la unidad del indicador ("+$ 45.000"). Vacío si el indicador es un porcentaje, un índice o falta algún dato. */
+  const difAbsTxt = (c: { pct: boolean; unidad: string; serie: { tipo: string } }, desde: number | null, hasta: number | null) => {
+    if (c.pct || !ok(desde) || !ok(hasta) || desde === 0) return "";
+    if (c.serie.tipo === "idx" || /índice/i.test(c.unidad)) return "";
+    const d = hasta - desde, a = Math.abs(d), u = c.unidad;
+    const mon = u.match(/US\$|\$/), pre = mon ? mon[0] + " " : "";
+    const num = a >= 1e6 ? nf1.format(a / 1e6) + " M" : fmtNum(a);
+    const mag = u.match(/(miles|millones|billones) de/i), magTxt = mag ? " " + mag[1].toLowerCase() : "";
+    const suf = !pre && u.length <= 14 && !u.includes('"') ? " " + u : "";
+    return `${d > 0 ? "+" : d < 0 ? "−" : ""}${pre}${num}${magTxt}${suf}`;
+  };
+  /** Variación en % (o en puntos) y, entre paréntesis, la diferencia absoluta. */
+  const variacionAbsTxt = (c: { pct: boolean; unidad: string; serie: { tipo: string } }, desde: number | null, hasta: number | null) => {
+    const v = variacionTxt(c, desde, hasta), a = difAbsTxt(c, desde, hasta);
+    return a ? `${v} (${a})` : v;
+  };
+
   return {
     F, N, SER, idxDe, agregar, calc, transformar, variacion, unidadDe, medidasDe, gruposMedida, cantMedidas, ubicarMedida, etiquetaMedida, resumenMedida, medDefault, esIndice, MONETARIA,
-    relPermitido, relDestino, escPermitidas, nominalPesos, fmtC, variacionTxt,
+    relPermitido, relDestino, escPermitidas, nominalPesos, fmtC, variacionTxt, difAbsTxt, variacionAbsTxt,
     refs: () => { base(); return { refAR, refUS, REF_AR, REF_US }; },
     base,
     // Selectores propios de Por presidente y del bloque de dólares: siguen con su lista plana de siempre.

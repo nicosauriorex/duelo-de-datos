@@ -63,7 +63,7 @@ export function CeldasStats({ m, c, st, cols, sc }: { m: Motor; c: Calculo; st: 
   const cel: Record<string, React.ReactNode> = {
     ini: <td key="ini">{m.fmtC(c, st.ini)}{mesCorto(m, st.iniI)}</td>,
     fin: <td key="fin" style={tinte(s.fin)}>{m.fmtC(c, st.fin)}{mesCorto(m, st.finI)}</td>,
-    var: <td key="var" style={tinte(s.var)}>{m.variacionTxt(c, st.ini ?? null, st.fin ?? null)}</td>,
+    var: <td key="var" style={tinte(s.var)}>{m.variacionAbsTxt(c, st.ini ?? null, st.fin ?? null)}</td>,
     min: <td key="min" style={tinte(s.min)}>{m.fmtC(c, st.min)}{mesCorto(m, st.minI)}</td>,
     max: <td key="max" style={tinte(s.max)}>{m.fmtC(c, st.max)}{mesCorto(m, st.maxI)}</td>,
     prom: <td key="prom" style={tinte(s.prom)}>{m.fmtC(c, st.prom)}</td>,

@@ -2,22 +2,15 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSeccion } from "../useSeccion";
-import { Cargando, Selector, Seg } from "../ui";
+import { Cargando, Selector } from "../ui";
 import { LineaInicio, useBase } from "./comunes";
-import { tinte } from "../util";
-import { fmtMes, nf0, nf1, ok } from "@/lib/formato";
-import { baseIdx, crearPres, tablaDesempeno, type BaseCfg, type Pres } from "@/lib/estadisticas";
+import { ok } from "@/lib/formato";
+import { crearPres, type BaseCfg, type Pres } from "@/lib/estadisticas";
 import { generarCuriosidades, mezclarCurios, TIPOS_CURIO, type CurioGen, type TipoCurio } from "@/lib/curiosidades";
 import { hrefHistorico } from "@/lib/temas";
 import { crearIndicadores } from "@/lib/catalogo";
-import type { Expr, Motor } from "@/lib/motor";
-import { encExpr, unoDe, useParams } from "@/lib/url";
-
-const CRIT_TXT: Record<string, string> = {
-  mejora: "cuánto mejoró o empeoró desde el inicio hasta el cierre (en porcentajes, la diferencia en puntos; en el resto, la variación anualizada)",
-  nivel: "el nivel promedio del mandato (en montos en pesos corrientes, donde el nivel no se puede comparar entre épocas, se usa la mejora)",
-};
-const hrefHist = (e: Expr) => `/historico/?v=${encodeURIComponent(encExpr({ ...e, med: e.med || undefined }))}`;
+import type { Motor } from "@/lib/motor";
+import { unoDe, useParams } from "@/lib/url";
 
 /** Minigráfico de la serie completa con el mandato resaltado. */
 function MiniMandato({ v, p, color }: { v: (number | null)[]; p: Pres; color: string }) {
@@ -84,11 +77,12 @@ export function Curiosidades() {
   const I = useMemo(() => (m && !sec.ocupado ? crearIndicadores(m) : null), [m, sec.ocupado, version]);  // eslint-disable-line react-hooks/exhaustive-deps
 
   // los links viejos del ranking (`gr`, `crit`) abren Ranking con eso elegido
-  const viejo = montado && p.has("gr");
+  const viejo = montado && ["gr", "lado", "crit", "cp"].some((k) => p.has(k));
   useEffect(() => {
     if (!viejo) return;
     const q = new URLSearchParams(window.location.search), n = new URLSearchParams();
-    q.forEach((v, k) => { if (k === "gr") n.set("rk", v); else if (k === "crit") { if (v === "nivel") n.set("rkc", v); } else if (!["cp", "lado", "set"].includes(k)) n.set(k, v); });
+    q.forEach((v, k) => { if (k === "gr") n.set("rk", v); else if (k === "crit") { if (v === "nivel") n.set("rkc", v); } else if (k === "cp") n.set("rka", v); else if (!["lado", "set"].includes(k)) n.set(k, v); });
+    if (!n.has("rka") && (q.has("lado") || q.has("crit"))) n.set("rka", "milei");
     window.location.replace("/ranking/" + (n.toString() ? "?" + n.toString() : ""));
   }, [viejo]);
   if (viejo) return <Cargando texto="Abriendo Ranking…" />;
@@ -96,54 +90,10 @@ export function Curiosidades() {
   if (!m || !montado) return <Cargando />;
   if (sec.ocupado || !I) return <Cargando />;
 
-  const F = m.F;
-  const presId = PRES.some((x) => x.id === p.get("cp")) ? (p.get("cp") as string) : "milei";
-  const lado = unoDe(p.get("lado"), ["mejor", "peor"] as const, "mejor");
-  const conjunto = unoDe(p.get("set"), ["principales", "todo"] as const, "principales");
-  const crit = unoDe(p.get("crit"), ["mejora", "nivel"] as const, "mejora");
-  const pr = PRES.find((x) => x.id === presId)!;
-
-  // lo mejor y lo peor del presidente elegido
-  const base = I.INDIC.concat(conjunto === "todo" ? I.INDIC_IPC.concat(I.INDIC_PP) : []);
-  let filas = base.map((ind) => { const { c, des } = tablaDesempeno(m, F, PRES, ind, b); const d = des[PRES.indexOf(pr)]; return d ? { ind, c, d, r: d.puesto![crit] } : null; })
-    .filter(Boolean) as { ind: typeof base[number]; c: ReturnType<typeof m.calc>; d: NonNullable<ReturnType<typeof tablaDesempeno>["des"][number]>; r: number[] }[];
-  filas = filas.filter((f) => (lado === "mejor" ? f.d.bueno : f.d.malo));
-  filas.sort((a, c) => (lado === "mejor" ? c.r[2] - a.r[2] : a.r[2] - c.r[2]));
-  const mesC = (i?: number) => (i != null && i >= 0 ? <small>{fmtMes(F[i])}</small> : null);
-  const pu = (x?: number, de?: number, pct?: number) => ok(x) ? <td style={tinte(((pct as number) - 50) / 50)}>{x}º de {de}</td> : <td style={{ color: "var(--text-muted)" }} title="El nivel no se puede comparar entre épocas">–</td>;
-
   return (
     <section>
-      <p className="sub">Lo que más se suele preguntar, calculado con los mismos datos. Tocá cualquier fila para abrirla en Histórico.</p>
-      <p className="aviso-link">Los datos curiosos armados a mano están en <Link prefetch={false} href="/plantillas/"><b>Plantillas</b></Link>. El ranking de presidentes pasó a <Link prefetch={false} href="/ranking/"><b>Ranking</b></Link>.</p>
-      <div className="card">
-        <h2>Lo mejor y lo peor de cada gobierno</h2>
-        <div className="controls">
-          <Selector etiqueta="Presidente" valor={presId} opciones={PRES.slice().reverse().map((x) => [x.id, x.n] as [string, string])} onElegir={(v) => set({ cp: v === "milei" ? null : v })} />
-          <Seg valor={lado} opciones={[["mejor", "Lo mejor"], ["peor", "Lo peor"]]} onElegir={(v) => set({ lado: v === "mejor" ? null : v })} />
-          <Seg valor={conjunto} opciones={[["principales", "Indicadores principales"], ["todo", "Incluir precios del IPC y productos"]]} onElegir={(v) => set({ set: v === "principales" ? null : v })} />
-          <Seg valor={crit} opciones={[["mejora", "Medir cuánto mejoró (inicio → cierre)"], ["nivel", "Medir el nivel promedio"]]} onElegir={(v) => set({ crit: v === "mejora" ? null : v })} />
-        </div>
-        <LineaInicio info={info} />
-        <p className="note">
-          {lado === "mejor" ? <>Indicadores que <b>mejoraron</b></> : <>Indicadores que <b>empeoraron</b></>} durante {pr.n} (desde {fmtMes(F[baseIdx(F, pr, b)])} hasta el cierre).{" "}
-          Ordenados por el puesto frente a los demás presidentes según <b>{CRIT_TXT[crit]}</b>. Se muestran los dos puestos. Tocá una fila para verla en Histórico.
-        </p>
-        <div className="tablewrap alto"><table>
-          <thead><tr><th>Indicador</th><th>Inicio</th><th>Cierre</th><th>Cambio</th><th>Promedio</th><th>Puesto por mejora</th><th>Puesto por nivel</th></tr></thead>
-          <tbody>
-            {filas.length ? filas.map((f) => (
-              <tr key={f.ind.nombre + f.ind.id} className="clic">
-                <td className="nombre"><Link prefetch={false} href={hrefHist(f.ind)}>{f.ind.nombre}</Link><small>{f.ind.grupo} · {f.c.unidad}</small></td>
-                <td>{m.fmtC(f.c, f.d.st.ini)}{mesC(f.d.st.iniI)}</td><td>{m.fmtC(f.c, f.d.st.fin)}{mesC(f.d.st.finI)}</td>
-                <td style={tinte(lado === "mejor" ? 0.6 : -0.6)}>{m.variacionTxt(f.c, f.d.st.ini ?? null, f.d.st.fin ?? null)}
-                  {f.d.enPuntos ? (f.d.st.ini! > 0 && f.d.st.fin! >= 0 ? <small>{nf0.format((f.d.st.fin! / f.d.st.ini! - 1) * 100)} % relativo</small> : null) : <small>{nf1.format(f.d.mejora * 100)} % anual</small>}</td>
-                <td>{m.fmtC(f.c, f.d.st.prom)}</td>{pu(f.d.m_puesto, f.d.m_de, f.d.m_pct)}{pu(f.d.n_puesto, f.d.n_de, f.d.n_pct)}
-              </tr>
-            )) : <tr><td colSpan={7} style={{ textAlign: "center", color: "var(--text-muted)" }}>Nada para mostrar.</td></tr>}
-          </tbody>
-        </table></div>
-      </div>
+      <p className="sub">Lo que más se suele preguntar, calculado con los mismos datos.</p>
+      <p className="aviso-link">Los datos curiosos armados a mano están en <Link prefetch={false} href="/plantillas/"><b>Plantillas</b></Link>. El ranking de presidentes y &quot;Lo mejor y lo peor de cada gobierno&quot; pasaron a <Link prefetch={false} href="/ranking/"><b>Ranking</b></Link>.</p>
       <CuriosGeneradas m={m} PRES={PRES} I={I} b={b} p={p} set={set} />
     </section>
   );

@@ -1,6 +1,6 @@
 # Ajustes de Presidentes, Ranking, Meses de mandato y Elecciones (bloque 5d)
 
-Estado: spec lista, falta implementar.
+Estado: implementada (2026-11-09).
 
 ## Objetivo
 Ajustes a secciones que ya existen, sin datos nuevos:

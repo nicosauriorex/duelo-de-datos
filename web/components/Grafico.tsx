@@ -25,7 +25,7 @@ export interface OpcionesG {
   height?: number; log?: boolean; log2?: boolean; zero?: boolean; zero2?: boolean; refs?: Ref[]; marcas?: Marca[];
   mismaEscala?: boolean; refLine?: number | null; endLabels?: boolean; fmtAxis: (v: number) => string; fmtAxis2?: ((v: number) => string) | null;
   fmtTip: (v: number) => string; tipTitle?: (r: Fila, i: number) => string; tipSub?: (r: Fila, se: SerieG) => string;
-  rowsEscala?: Fila[]; xVals?: number[]; franjas?: FranjaG[]; xLabel?: (r: Fila, i: number) => string; maxGap?: number; label?: string;
+  xVals?: number[]; franjas?: FranjaG[]; xLabel?: (r: Fila, i: number) => string; maxGap?: number; label?: string;
 }
 
 // ------------------------------------------------------------ escalas (mismo criterio que la página vieja)
@@ -47,7 +47,7 @@ interface Esc { ticks: number[]; a: number; b: number; log: boolean }
 function escala(vals: number[], o: { log?: boolean; zero?: boolean }): Esc | null {
   if (!vals.length) return null;
   let lo = Math.min(...vals), hi = Math.max(...vals);
-  if (o.log && lo > 0) return { ticks: logTicks(lo, hi), a: lo, b: hi, log: true };
+  if (o.log && lo > 0) { if (lo === hi) { lo *= 0.8; hi *= 1.25; } return { ticks: logTicks(lo, hi), a: lo, b: hi, log: true }; }
   if (o.zero && lo > 0) lo = 0;
   if (o.zero && hi < 0) hi = 0;
   const pad = (hi - lo) * 0.04 || Math.abs(hi) * 0.05 || 1;
@@ -202,7 +202,7 @@ function GraficoBase({ rows, series, opts, lleno }: { rows: Fila[]; series: Seri
     const maxGap = opts.maxGap || 13;
 
     // valores por eje (en el rango x visible)
-    const valsDe = (ax: number, xa: number, xb: number) => (opts.rowsEscala || rows).flatMap((r, i) => (xs[i] < xa || xs[i] > xb) ? [] :
+    const valsDe = (ax: number, xa: number, xb: number) => rows.flatMap((r, i) => (xs[i] < xa || xs[i] > xb) ? [] :
       series.filter((s) => opts.mismaEscala || (s.axis || 0) === ax).flatMap((s) => s.band ? [r[s.key], r[s.key + "_lo"], r[s.key + "_hi"]] : [r[s.key]])).filter((v) => okv(v, ax)) as number[];
     const tk: (Esc | null)[] = [null, null];
     const rango = (ax: number) => (u: uPlot): [number, number] => {

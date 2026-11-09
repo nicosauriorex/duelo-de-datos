@@ -13,6 +13,12 @@ import { vcolor } from "../util";
 
 const MODOS: [string, string][] = [["teorico", "Precio teórico"], ["var", "Variación % desde el mes 0"], ["indice", "Índice (mes 0 = 100)"], ["valor", "Valor del período"]];
 const TITULOS: Record<string, string> = { teorico: "precio teórico", indice: "índice, mes 0 = 100", var: "variación % desde el mes 0", valor: "valor" };
+const AYUDA: Record<string, string> = {
+  teorico: "Se toma un valor de partida y se le aplica lo que pasó en cada mandato: si con Milei el dólar arrancó en $ 1.000 y en el mes 20 de CFK 2 había subido 50 %, CFK 2 marca $ 1.500 en el mes 20.",
+  var: "Variación %: cuánto subió desde el mes 0.",
+  indice: "Índice: el mes 0 vale 100 y el resto se mide contra él.",
+  valor: "Valor del período: el dato tal cual, sin transformar.",
+};
 const DEF_PRES = "nk,cfk1,cfk2,macri,af,milei";
 
 export function Mandato() {
@@ -116,13 +122,22 @@ export function Mandato() {
 
   return (
     <section>
-      <p className="sub">Cada línea arranca en el mes 0 de un presidente. Con &quot;precio teórico&quot; se toma un valor de partida y se le aplica lo que pasó en cada mandato: si con Milei el dólar arrancó en $1.000 y en el mes 20 de CFK 2 había subido 50%, la línea de CFK 2 marca $1.500 en el mes 20.</p>
+      <p className="sub">Cada línea arranca en el mes 0 de un presidente y sigue mes a mes durante su mandato.</p>
       <FilaVariable e={eB} onChange={(e) => e && set({ mv: encExpr(e) })} />
       <LineaInicio info={info} etiqueta="Mes 0" />
+      <div className="modos" role="radiogroup" aria-label="Modo">
+        {MODOS.map(([k, t]) => (
+          <div key={k} className="modo">
+            <label className="radio"><input type="radio" name="mmo" checked={modo === k} onChange={() => set({ mmo: k === "teorico" ? null : k })} /> {t}</label>
+            <p className="note">{AYUDA[k]}</p>
+            {k === "teorico" && modo === "teorico" && D && (
+              <div className="sangria"><label>Partiendo de</label>
+                <Selector etiqueta="Partiendo de" valor={D.anc} opciones={D.ancOpc.map((o) => [o[0], o[1]] as [string, string])} onElegir={(v) => set({ anc: v === "milei" ? null : v })} /></div>
+            )}
+          </div>
+        ))}
+      </div>
       <div className="controls">
-        <Selector etiqueta="Modo" valor={modo} opciones={MODOS.map((o) => [o[0], o[1]] as [string, string])} onElegir={(v) => set({ mmo: v === "teorico" ? null : v })} />
-        {D && D.teo && <><label>Partiendo de</label>
-          <Selector etiqueta="Partiendo de" valor={D.anc} opciones={D.ancOpc.map((o) => [o[0], o[1]] as [string, string])} onElegir={(v) => set({ anc: v === "milei" ? null : v })} /></>}
         <Desplegable etiqueta="Presidentes y opciones">
           <div className="controls"><label>Presidentes</label><Seg valor={selIds} opciones={PRES_T0.map((x) => [x.id, x.n] as [string, string])} onElegir={(v) => set({ mp: [...alternar(selIds, v)].join(",") })} /></div>
           <div className="controls"><label>Rango del mes</label><Seg valor={banda} opciones={[["no", "Solo promedio"], ["si", "Promedio + mín/máx"]]} onElegir={(v) => set({ mbd: v === "no" ? null : v })} /></div>
@@ -149,7 +164,7 @@ export function Mandato() {
               {anim && <span className="lbl" role="status">Mes {D.rows[anim.t].t as number}</span>}
             </div>
             <div className="legend">{D.pres.map((x) => <span key={x.id} style={vcolor(x.color)}>{x.n}</span>)}</div>
-            <Grafico rows={rowsVista || D.rows} series={D.series} opts={anim ? { ...D.opts, rowsEscala: D.rows } : D.opts} />
+            <Grafico rows={rowsVista || D.rows} series={D.series} opts={D.opts} />
           </div>
           <div className="card">
             <h2>Resumen por hitos</h2><p className="note">Mismo cálculo que el gráfico ({TITULOS[modo]}) en meses clave y al final de cada mandato.</p>

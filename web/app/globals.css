@@ -467,3 +467,13 @@ tr.clic.abierto > td { font-weight: 600; }
 @media (max-width: 480px) { .cfg-txt { display: none; } }
 /* La barra de período queda fija solo con 2 o más gráficos */
 .barra-hist:not(.fija) { position: static; }
+
+/* Meses de mandato: lista de modos con "Partiendo de" anidado */
+.modos { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; }
+.modo .radio { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; cursor: pointer; }
+.modo .note { margin: 2px 0 0 24px; }
+.modo .sangria { margin: 6px 0 0 24px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.rk-abiertos { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.mp-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 10px; }
+.voto-dos { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 8px 0; }
+.fila-fuerte td { background: color-mix(in srgb, var(--series-1) 8%, transparent); }

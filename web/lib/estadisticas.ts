@@ -301,10 +301,39 @@ export function rankingPresidentes(m: Motor, F: string[], PRES: Pres[], inds: In
   return { filas, incompletas };
 }
 
+/** Desempeño de cada indicador para todos los presidentes (se calcula una vez y sirve para varios presidentes abiertos). */
+export interface TablaInd { ind: Expr; grupo: string; nombre: string; c: Calculo; des: (Desempeno | null)[] }
+export function tablasIndicadores(m: Motor, F: string[], PRES: Pres[], inds: IndRk[], b: BaseCfg): TablaInd[] {
+  return inds.map((it) => ({ ...it, ...tablaDesempeno(m, F, PRES, it.ind, b) }));
+}
+export interface FilaMP { nombre: string; grupo: string; ind: Expr; c: Calculo; d: Desempeno; score: number }
+/** Lo mejor y lo peor de un presidente: indicadores que mejoraron / empeoraron, ordenados por el puesto frente a los demás.
+ *  Con el criterio "ambos" se usa el promedio de los dos puntajes. */
+export function mejorPeor(tablas: TablaInd[], PRES: Pres[], pres: Pres, crit: CritRk): { mejores: FilaMP[]; peores: FilaMP[] } {
+  const k = PRES.indexOf(pres);
+  const filas: FilaMP[] = [];
+  tablas.forEach((t) => {
+    const d = t.des[k]; if (!d || !d.puesto) return;
+    const score = crit === "ambos" ? (d.puesto.mejora[2] + d.puesto.nivel[2]) / 2 : d.puesto[crit][2];
+    filas.push({ nombre: t.nombre, grupo: t.grupo, ind: t.ind, c: t.c, d, score });
+  });
+  return {
+    mejores: filas.filter((f) => f.d.bueno).sort((a, c) => c.score - a.score),
+    peores: filas.filter((f) => f.d.malo).sort((a, c) => a.score - c.score),
+  };
+}
+
 // ---------------------------------------------------------------- Voto estimado
 export interface CorrVoto { s: { id: string; n: string }; c: Calculo; ind: Expr; pts: { e: Eleccion; x: number }[]; r: number; b: number; a: number; n: number }
-export interface VotoVar { o: CorrVoto; hoy: number; est: number; fuera: boolean }
-export interface VotoEst { vars: VotoVar[]; mediana: number; min: number; max: number }
+export interface VotoVar { o: CorrVoto; hoy: number; est: number; fuera: boolean; fuerte: boolean; peso: number }
+export interface VotoEst {
+  vars: VotoVar[];                                          // todas las usadas; las de relación fuerte primero
+  fuertes: number;                                          // cuántas pasan el corte de |r|
+  fuerte: { mediana: number; min: number; max: number } | null;  // null si hay menos de 3 fuertes
+  ponderada: number | null;                                 // promedio de las rectas ponderado por r²; null si no alcanza
+  corte: number;
+}
+export const CORTES_R = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8];
 
 /** Valor "de hoy" de una variable, medido igual que en las elecciones: se evalúa como si hubiera una elección el mes siguiente al último dato.
  *  Si el último dato quedó muy atrás respecto del resto (serie discontinuada), no se calcula. */
@@ -315,19 +344,33 @@ export function valorHoy(m: Motor, F: string[], PRES: Pres[], metrica: string, b
   return valorElec(m, F, PRES, metrica, b, o.c, e, o.ind);
 }
 
-/** Recta (mínimos cuadrados) de cada variable evaluada en el valor de hoy. Hacen falta al menos 3 variables con |r| ≥ 0,6 y 8 elecciones. */
-export function estimarVoto(m: Motor, F: string[], PRES: Pres[], metrica: string, b: BaseCfg, corrs: CorrVoto[]): VotoEst | null {
-  const fuertes = corrs.filter((o) => o.n >= 8 && Math.abs(o.r) >= 0.6);
-  const ultimoGlobal = Math.max(-1, ...fuertes.map((o) => o.c.v.reduce((a: number, x, i) => (ok(x) ? i : a), -1)));
+/** Último mes con dato entre las variables con 8 elecciones o más (sirve para descartar series discontinuadas). */
+export const ultimoGlobalDe = (corrs: CorrVoto[]): number =>
+  Math.max(-1, ...corrs.filter((o) => o.n >= 8).map((o) => o.c.v.reduce((a: number, x, i) => (ok(x) ? i : a), -1)));
+
+/** Recta (mínimos cuadrados) de cada variable evaluada en el valor de hoy.
+ *  - "Solo fuertes": hacen falta al menos 3 variables con |r| ≥ corte y 8 elecciones; da rango y mediana.
+ *  - "Ponderada": todas las variables con 8 elecciones, promediadas con peso r² (se acota a 0–100 %). No se calcula si Σ r² < 0,1. */
+export function estimarVoto(m: Motor, F: string[], PRES: Pres[], metrica: string, b: BaseCfg, corrs: CorrVoto[], corte = 0.6): VotoEst | null {
+  const cand = corrs.filter((o) => o.n >= 8);
+  const ultimoGlobal = ultimoGlobalDe(corrs);
   const vars: VotoVar[] = [];
-  fuertes.forEach((o) => {
+  cand.forEach((o) => {
     const hoy = valorHoy(m, F, PRES, metrica, b, o, ultimoGlobal);
     if (!ok(hoy)) return;
     const xs = o.pts.map((q) => q.x);
-    vars.push({ o, hoy, est: Math.max(0, Math.min(100, o.a + o.b * hoy)), fuera: hoy < Math.min(...xs) || hoy > Math.max(...xs) });
+    vars.push({ o, hoy, est: Math.max(0, Math.min(100, o.a + o.b * hoy)), fuera: hoy < Math.min(...xs) || hoy > Math.max(...xs), fuerte: Math.abs(o.r) >= corte - 1e-9, peso: 0 });
   });
-  if (vars.length < 3) return null;
-  vars.sort((a, c) => Math.abs(c.o.r) - Math.abs(a.o.r));
-  const ord = vars.map((v) => v.est).sort((a, c) => a - c), h = Math.floor(ord.length / 2);
-  return { vars, mediana: ord.length % 2 ? ord[h] : (ord[h - 1] + ord[h]) / 2, min: ord[0], max: ord[ord.length - 1] };
+  const sr2 = vars.reduce((a, v) => a + v.o.r * v.o.r, 0);
+  vars.forEach((v) => { v.peso = sr2 > 0 ? v.o.r * v.o.r / sr2 : 0; });
+  vars.sort((a, c) => Number(c.fuerte) - Number(a.fuerte) || Math.abs(c.o.r) - Math.abs(a.o.r));
+  const fu = vars.filter((v) => v.fuerte);
+  let fuerte: VotoEst["fuerte"] = null;
+  if (fu.length >= 3) {
+    const ord = fu.map((v) => v.est).sort((a, c) => a - c), h = Math.floor(ord.length / 2);
+    fuerte = { mediana: ord.length % 2 ? ord[h] : (ord[h - 1] + ord[h]) / 2, min: ord[0], max: ord[ord.length - 1] };
+  }
+  const ponderada = vars.length >= 3 && sr2 >= 0.1 ? Math.max(0, Math.min(100, vars.reduce((a, v) => a + v.peso * v.est, 0))) : null;
+  if (!fuerte && ponderada == null) return null;
+  return { vars, fuertes: fu.length, fuerte, ponderada, corte };
 }
