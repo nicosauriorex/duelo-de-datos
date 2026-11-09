@@ -233,8 +233,12 @@ def cargar(auto=None):
     for f in _leer(N, ["presidente", "anio", "totales", "parciales", "insistidos", "fuente"]):
         _comunes(N, f)
         anio = _entero(N, f, "anio")
-        t, p, i = (_entero(N, f, c) for c in ("totales", "parciales", "insistidos"))
-        if i > t + p:
+        i = _entero(N, f, "insistidos")
+        # totales y parciales pueden quedar vacíos (sin fuente oficial): se guardan como null y la página muestra solo los insistidos
+        t, p = (None if f[c] == "" else _entero(N, f, c) for c in ("totales", "parciales"))
+        if (t is None) != (p is None):
+            raise _error(N, f, "totales y parciales se cargan juntos o se dejan los dos vacíos")
+        if t is not None and i > t + p:
             raise _error(N, f, f"insistidos ({i}) es mayor que los vetos ({t + p})")
         vetos.setdefault(f["presidente"], {})[str(anio)] = {"t": t, "p": p, "i": i}
 

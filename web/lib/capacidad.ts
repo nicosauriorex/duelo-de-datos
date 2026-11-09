@@ -12,7 +12,7 @@ export interface DatosCap {
   bloques: Record<string, Bloque[]>;                                  // "AAAA-MM-DD|cam" -> bloques del corte
   leyes: Record<string, { enviadas: number; aprobadas: number; nota?: string }>;
   dnu: Record<string, Record<string, number>>;                        // presidente -> año -> cantidad
-  vetos: Record<string, Record<string, { t: number; p: number; i: number }>>;
+  vetos: Record<string, Record<string, { t: number | null; p: number | null; i: number }>>;   // t y p null = sin fuente de totales: solo se conocen los insistidos
   ultima_carga: string | null;
   fuentes: Record<"bancas" | "leyes" | "dnu" | "vetos", string[]>;
   notas: Record<string, string>;
@@ -65,13 +65,17 @@ export function resumenDnu(d: DatosCap, pres: string, m: Mandato): ResDnu | null
   return { total, porAnio: total / m.anios, anios: Object.keys(x).length };
 }
 
-export interface ResVetos { totales: number; parciales: number; total: number; insistidos: number; porAnio: number | null }
+export interface ResVetos { totales: number | null; parciales: number | null; total: number | null; insistidos: number; porAnio: number | null; insistidosPorAnio: number }
+/** Totales y parciales solo si hay dato de todos los años cargados; los insistidos se muestran siempre. */
 export function resumenVetos(d: DatosCap, pres: string, m: Mandato): ResVetos | null {
   const x = d.vetos[pres];
   if (!x) return null;
   const v = Object.values(x);
-  const totales = v.reduce((a, c) => a + c.t, 0), parciales = v.reduce((a, c) => a + c.p, 0), insistidos = v.reduce((a, c) => a + c.i, 0);
-  return { totales, parciales, total: totales + parciales, insistidos, porAnio: (totales + parciales) / m.anios };
+  const insistidos = v.reduce((a, c) => a + c.i, 0);
+  const completo = v.every((c) => c.t != null && c.p != null);
+  const totales = completo ? v.reduce((a, c) => a + (c.t as number), 0) : null, parciales = completo ? v.reduce((a, c) => a + (c.p as number), 0) : null;
+  const total = totales != null && parciales != null ? totales + parciales : null;
+  return { totales, parciales, total, insistidos, porAnio: total != null ? total / m.anios : null, insistidosPorAnio: insistidos / m.anios };
 }
 
 /** Valor que se dibuja en la barra del celular para cada indicador (null = sin dato). */
@@ -90,7 +94,8 @@ export function valorIndicador(d: DatosCap, pres: string, m: Mandato, ind: Indic
     return r && ok(r.porAnio) ? { v: r.porAnio, txt: `${nf(r.total)} (${nf(r.porAnio, 1)} por año)` } : null;
   }
   const r = resumenVetos(d, pres, m);
-  return r && ok(r.porAnio) ? { v: r.porAnio, txt: `${nf(r.total)} (${nf(r.porAnio, 1)} por año)` } : null;
+  if (!r) return null;
+  return ok(r.porAnio) ? { v: r.porAnio, txt: `${nf(r.total as number)} (${nf(r.porAnio, 1)} por año)` } : { v: r.insistidosPorAnio, txt: `${nf(r.insistidos)} insistidos (${nf(r.insistidosPorAnio, 1)} por año)` };
 }
 
 /** Línea del recuadro "Contexto del mandato"; null si no hay ningún dato del presidente. */
@@ -106,7 +111,7 @@ export function lineaContexto(d: DatosCap, pres: string, m: Mandato): string | n
   const n = resumenDnu(d, pres, m);
   if (n) partes.push(`${nf(n.total)} DNU`);
   const v = resumenVetos(d, pres, m);
-  if (v) partes.push(`${nf(v.total)} vetos`);
+  if (v) partes.push(v.total != null ? `${nf(v.total)} vetos` : `${nf(v.insistidos)} vetos insistidos por el Congreso`);
   return partes.length ? `En el Congreso: ${partes.join("; ")}.` : null;
 }
 

@@ -133,3 +133,6 @@ Una entrada por decisión de arquitectura. Formato: contexto, decisión, por qu�
 - **Caché**: `datos/cache/capacidad_auto.json` (por origen) respalda `--solo-json`.
 - **Pendiente de carga manual** (PDF de Diputados: composición 1983-2023, revista 10/10 y leyes insistidas; Senado sin fuente descargable): `congreso_bancas.csv`, `congreso_bloques.csv`, `vetos.csv`. Los CSV están creados solo con encabezados; la sección muestra "—".
 - El "bancas" del celular usa Diputados.
+- **Vetos (2026-11-09)**: solo se cargaron los **insistidos** (43 leyes, del PDF de leyes insistidas de Diputados, por fecha del veto; incluye las insistidas parcialmente). `vetos.csv` admite `totales` y `parciales` vacíos (se guardan como null y la página muestra solo los insistidos). Nk, CFK 1, CFK 2, Macri y Alberto Fernández figuran con 0 porque ese listado es completo. Totales y parciales: la revista 10/10 cubre hasta 2002 y no se cargó.
+- **Bancas**: el PDF `Comp_Dip_1983-2023.pdf` de Diputados devolvía 503 (2026-11-09); sigue sin cargarse.
+

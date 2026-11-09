@@ -37,7 +37,8 @@ function Cuerpo({ d, ultimo, p, set }: { d: DatosCap; ultimo: string; p: URLSear
     if (k === "dip" || k === "sen") return resumenBancas(d, m.id, k).alEmpezar;
     if (k === "leyes") return resumenLeyes(d, m.id)?.pct ?? null;
     if (k === "dnu") return resumenDnu(d, m.id, m)?.porAnio ?? null;
-    return resumenVetos(d, m.id, m)?.porAnio ?? null;
+    const rv = resumenVetos(d, m.id, m);
+    return rv ? rv.porAnio ?? rv.insistidosPorAnio : null;
   };
   const filas = ord.k ? [...M].sort((a, b) => {
     const x = valor(a, ord.k!), y = valor(b, ord.k!);
@@ -78,7 +79,7 @@ function Cuerpo({ d, ultimo, p, set }: { d: DatosCap; ultimo: string; p: URLSear
               <td>{ok(sen.alEmpezar) ? <>{pc(sen.alEmpezar)} · {pc(sen.promedio)}</> : SIN}</td>
               <td>{l ? <>{nf0.format(l.aprobadas)} de {nf0.format(l.enviadas)} ({pc(l.pct)})</> : SIN}</td>
               <td>{n ? <>{nf0.format(n.total)} · {nf1.format(n.porAnio as number)}</> : SIN}</td>
-              <td>{v ? <>{nf0.format(v.total)} ({nf0.format(v.totales)} tot. + {nf0.format(v.parciales)} parc.) · {nf1.format(v.porAnio as number)} · {nf0.format(v.insistidos)}</> : SIN}</td>
+              <td>{v ? (v.total != null ? <>{nf0.format(v.total)} ({nf0.format(v.totales as number)} tot. + {nf0.format(v.parciales as number)} parc.) · {nf1.format(v.porAnio as number)} · {nf0.format(v.insistidos)} insistidos</> : <><span title="sin dato cargado de vetos totales y parciales">{nf0.format(v.insistidos)} insistidos</span> · {nf1.format(v.insistidosPorAnio)} por año</>) : SIN}</td>
             </tr>
           );
         })}</tbody>
@@ -110,7 +111,7 @@ function Cuerpo({ d, ultimo, p, set }: { d: DatosCap; ultimo: string; p: URLSear
           <li><b>Porcentaje del total de la cámara</b> en ese corte, porque el tamaño cambió (Diputados pasó de 254 a 257 bancas; el Senado, de 48 a 72). Las bancas vacantes no se cuentan.</li>
           <li><b>Leyes del Ejecutivo:</b> enviadas = proyectos de ley con origen en el Poder Ejecutivo ingresados durante el mandato; aprobadas = las enviadas que se sancionaron antes de que terminara. El Presupuesto cuenta como cualquier otra ley.</li>
           <li><b>DNU:</b> decretos de necesidad y urgencia firmados en el mandato. Antes de la reforma de 1994 la figura no existía en la Constitución: para Menem 1 se usa el conteo de la fuente.</li>
-          <li><b>Vetos:</b> leyes vetadas en el mandato, totales y parciales. Insistidos = vetos que el Congreso superó con dos tercios en ambas cámaras, contados para el presidente que vetó.</li>
+          <li><b>Vetos:</b> leyes vetadas en el mandato, totales y parciales. Insistidos = leyes vetadas que el Congreso aprobó de nuevo con dos tercios en ambas cámaras (también las insistidas solo en parte), contadas para el presidente que vetó y por fecha del veto. Donde no hay fuente oficial de totales y parciales (desde 2003 no la encontramos) se muestran solo los insistidos.</li>
           <li><b>Por año de mandato:</b> DNU y vetos divididos por los años que duró el mandato (Duhalde duró 1,4 años); el mandato en curso se cuenta hasta el último dato.</li>
           <li>La configuración de inicio de mandato (T±N) no se aplica acá: un DNU es de quien lo firmó. Los interinatos de pocos días de diciembre de 2001 no son presidentes de la lista y lo que firmaron queda afuera.</li>
         </ol>
@@ -135,7 +136,7 @@ function Detalle({ d, m }: { d: DatosCap; m: Mandato }) {
     return [...s].sort();
   }, [d, m]);
   const maxDnu = Math.max(1, ...anios.map((a) => d.dnu[m.id]?.[a] ?? 0));
-  const maxVeto = Math.max(1, ...anios.map((a) => { const v = d.vetos[m.id]?.[a]; return v ? v.t + v.p : 0; }));
+  const maxVeto = Math.max(1, ...anios.map((a) => { const v = d.vetos[m.id]?.[a]; return v ? v.t != null ? (v.t as number) + (v.p as number) : v.i : 0; }));
   const nota = d.notas[m.id];
   return (
     <>
@@ -152,8 +153,8 @@ function Detalle({ d, m }: { d: DatosCap; m: Mandato }) {
                 <b>{a}</b>
                 <span className="pm-barra" aria-hidden>{n != null && <span className="pm-rel" style={{ left: 0, width: `${(n / maxDnu) * 100}%`, background: "var(--series-2)" }} />}</span>
                 <span>{n != null ? `${nf0.format(n)} DNU` : "— DNU"}</span>
-                <span className="pm-barra" aria-hidden>{v && <span className="pm-rel" style={{ left: 0, width: `${((v.t + v.p) / maxVeto) * 100}%`, background: "var(--series-1)" }} />}</span>
-                <span>{v ? `${nf0.format(v.t + v.p)} vetos${v.i ? `, ${nf0.format(v.i)} insistidos` : ""}` : "— vetos"}</span>
+                <span className="pm-barra" aria-hidden>{v && <span className="pm-rel" style={{ left: 0, width: `${((v.t != null ? (v.t as number) + (v.p as number) : v.i) / maxVeto) * 100}%`, background: "var(--series-1)" }} />}</span>
+                <span>{v ? (v.t != null ? `${nf0.format((v.t as number) + (v.p as number))} vetos${v.i ? `, ${nf0.format(v.i)} insistidos` : ""}` : `${nf0.format(v.i)} insistidos`) : "— vetos"}</span>
               </div>
             );
           })}
