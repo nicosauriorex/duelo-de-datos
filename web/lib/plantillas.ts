@@ -68,6 +68,12 @@ export function crearPlantillas(metas: SerieMeta[]): Plantilla[] {
     if (xs.length !== es.length) return;                  // falta alguna serie en el catálogo
     nueva({ id, titulo, desc, grupo, etiquetas, vista: { ...unaVista(...xs), ...extraVista }, e: xs[0], ids: xs.flatMap((x) => [x.id, ...(x.rel ? [x.rel] : [])]), curada: true });
   };
+  manual("cuatro-dolares", "Los cuatro dólares en pesos de hoy", "Dólar y mercados", "Oficial, blue, MEP y CCL en pesos de hoy, en un solo eje", ["dolar", "cotizacion", "cepo"],
+    FX_KEYS.map((k) => E("fx_" + k, { med: "real" })));
+  manual("brechas-blue-mep-ccl", "Brecha blue, MEP y CCL", "Dólar y mercados", "Cuánto más caros que el oficial mayorista, en un solo eje", ["dolar", "cepo", "contado con liqui"],
+    ["blue", "mep", "ccl"].map((k) => E("brecha_" + k)));
+  manual("soja-productor-cuatro-dolares", "Soja: lo que recibe el productor, a los cuatro dólares", "Sector externo", "Precio en Rosario como % de Chicago, según el dólar", ["campo", "retenciones", "productor"],
+    FX_KEYS.map((k) => E("soja_ratio_" + k)));
   manual("brecha-mep", "Brecha MEP", "Dólar y mercados", "Cuánto más caro que el oficial mayorista", ["dolar", "cepo"], [E("brecha_mep")]);
   manual("brecha-ccl", "Brecha CCL", "Dólar y mercados", "Cuánto más caro que el oficial mayorista", ["dolar", "cepo", "contado con liqui"], [E("brecha_ccl")]);
   manual("soja-rosario-chicago-oficial", "Soja: lo que recibe el productor (al dólar oficial)", "Sector externo", "Precio en Rosario como % de Chicago", ["campo", "retenciones", "productor"], [E("soja_ratio_oficial")]);

@@ -7,10 +7,10 @@ import { FilaVariable } from "../Variables";
 import { Grafico, hayDatos, type Fila, type Marca, type OpcionesG, type Ref, type SerieG } from "../Grafico";
 import { PALETA, vcolor } from "../util";
 import { fmtMes, MESES, nf0, nf1, fmtNum, ok } from "@/lib/formato";
-import { FX_COLOR, FX_KEYS, FX_NOM, type Calculo, type Expr, type Motor } from "@/lib/motor";
+import type { Calculo, Expr, Motor } from "@/lib/motor";
 import { agrupar, claseVariacion, estadisticasRows, etiqueta, recortar, type EstRows } from "@/lib/estadisticas";
 import { useConfig } from "../ConfigProvider";
-import { desdePreferido, medidaPreferida, paramSi, type Dolar } from "@/lib/config";
+import { desdePreferido, medidaPreferida } from "@/lib/config";
 import { decExpr, encExpr, lista as listaUrl, unoDe, useParams } from "@/lib/url";
 
 const TODOS_MESES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
@@ -22,7 +22,7 @@ const REFS_H = [
   { k: "min", letra: "↓", nom: "Mínimo", btn: "↓ Mínimo", dash: "4 2", val: (s: EstRows): [number, string?] => s.min },
 ];
 const REFS_DEF = "ult,prom,med,mk_ult,mk_max,mk_min";
-const FIJOS_IDS = ["brecha_blue", "brecha_mep", "brecha_ccl", "soja_chi", "soja_ros", "soja_ratio_oficial", "soja_ratio_blue", "soja_ratio_mep", "soja_ratio_ccl", ...FX_KEYS.map((k) => "fx_" + k)];
+const MAX_MISMA_UNIDAD = 4; // en modo valor: hasta 4 variables si todas tienen la misma unidad (si no, 2)
 
 /** Parámetros de cada gráfico. El 1.º usa estos nombres; del 2.º al 4.º llevan el número al final (`v2`, `m2`… `t4`). */
 const PG = ["v", "m", "e", "bd", "ej", "r", "t"] as const;
@@ -31,8 +31,6 @@ const sfx = (k: number) => (k === 0 ? "" : String(k + 1));
 
 type Comun = {
   F: string[]; ult: string; desde: string; hasta: string; meses: Set<number>; freq: "M" | "T" | "A"; ag: "promedio" | "cierre";
-  br: Set<string>; fx: Set<string>; fxmed: "corr" | "real" | "realbi"; fxbanda: "no" | "si"; sojamed: "corr" | "usdr";
-  sojafx: (typeof FX_KEYS)[number]; dolarPref: Dolar; ratio: Set<string>;
 };
 type GEst = {
   modo: "valor" | "b100"; exprs: Expr[]; todas: Expr[]; escala: "lin" | "log"; banda: "no" | "si"; eje: "propia" | "misma"; refs: Set<string>; tabla: "grafico" | "tabla";
@@ -47,7 +45,7 @@ function leerGrafico(p: URLSearchParams, k: number, existe: (id: string) => bool
   if (!exprs.length) { if (k > 0) return null; exprs = [def]; }
   const modo = unoDe(p.get("m" + s), ["valor", "b100"] as const, "valor");
   return {
-    modo, exprs: modo === "b100" ? exprs.slice(0, 10) : exprs.slice(0, 2), todas: exprs,
+    modo, exprs: modo === "b100" ? exprs.slice(0, 10) : exprs.slice(0, MAX_MISMA_UNIDAD), todas: exprs,
     escala: unoDe(p.get("e" + s), ["lin", "log"] as const, "lin"), banda: unoDe(p.get("bd" + s), ["no", "si"] as const, "no"), eje: unoDe(p.get("ej" + s), ["propia", "misma"] as const, "propia"),
     refs: new Set(listaUrl(p.has("r" + s) ? p.get("r" + s) : REFS_DEF).filter((x) => [...REFS_H.map((r) => r.k), "mk_ult", "mk_max", "mk_min"].includes(x))),
     tabla: unoDe(p.get("t" + s), ["grafico", "tabla"] as const, "grafico"),
@@ -60,6 +58,13 @@ export function Historico() {
   const { config } = useConfig();
   const { listo, motor, metas, version } = base;
   const existe = (id: string) => metas.some((m) => m.id === id);
+  const [ancha, setAncha] = useState(false); // ≥ 1024 px: los gráficos van en 2 columnas
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const f = () => setAncha(mq.matches);
+    f(); mq.addEventListener("change", f);
+    return () => mq.removeEventListener("change", f);
+  }, []);
   const [vacios, setVacios] = useState(0); // gráficos agregados que todavía no tienen variable (no están en la URL)
 
   // Cualquier cambio del usuario hace que la vista deje de ser "la plantilla": se saca el encabezado.
@@ -86,14 +91,9 @@ export function Historico() {
       F, ult, desde, hasta,
       meses: ms.size ? ms : new Set(TODOS_MESES),
       freq: unoDe(p.get("f"), ["M", "T", "A"] as const, "M"), ag: unoDe(p.get("ag"), ["promedio", "cierre"] as const, "promedio"),
-      br: new Set(listaUrl(p.has("fb") ? p.get("fb") : "blue,mep,ccl").filter((k) => ["blue", "mep", "ccl"].includes(k))),
-      fx: new Set(listaUrl(p.has("fx") ? p.get("fx") : "oficial,blue,ccl").filter((k) => (FX_KEYS as readonly string[]).includes(k))),
-      fxmed: unoDe(p.get("fxm"), ["corr", "real", "realbi"] as const, "real"), fxbanda: unoDe(p.get("fxbd"), ["no", "si"] as const, "no"),
-      sojamed: unoDe(p.get("sm"), ["corr", "usdr"] as const, "corr"), sojafx: unoDe(p.get("sf"), FX_KEYS, config.dolar), dolarPref: config.dolar,
-      ratio: new Set(listaUrl(p.has("rt") ? p.get("rt") : "oficial,ccl").filter((k) => (FX_KEYS as readonly string[]).includes(k))),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [listo, motor, montado, p, config.dolar, config.desde]);
+  }, [listo, motor, montado, p, config.desde]);
 
   // Los gráficos del link, sin huecos: si falta el 2.º y está el 3.º, el 3.º pasa a ser el 2.º.
   const G = useMemo(() => {
@@ -123,6 +123,7 @@ export function Historico() {
   const m: Motor = motor;
   const nVacios = Math.min(vacios, MAX_GRAFICOS - G.length);
   const total = G.length + nVacios;
+  const compacto = total > 1 && ancha; // 2 columnas: gráficos más bajos
   const quitar = (i: number) => {
     if (i >= G.length) { setVacios(Math.max(0, vacios - 1)); return; }
     const c: Record<string, string | null> = {};
@@ -136,40 +137,50 @@ export function Historico() {
     <section>
       <BarraPlantilla p={p} set={set} />
       <Barra E={E} set={cambiar} F={m.F} />
-      {G.map(({ g }, i) => (
-        <BloqueGrafico key={i} i={i} total={total} g={g} E={E} m={m} set={cambiar} version={version} onQuitar={() => quitar(i)} />
-      ))}
-      {Array.from({ length: nVacios }, (_, j) => (
-        <BloqueGrafico key={"v" + j} i={G.length + j} total={total} g={null} E={E} m={m} set={cambiar} version={version}
-          onQuitar={() => quitar(G.length + j)} onElegir={elegirEnVacio} />
-      ))}
+      <div className={`grilla-graf${total > 1 ? " multi" : ""}`}>
+        {G.map(({ g }, i) => (
+          <BloqueGrafico key={i} i={i} total={total} compacto={compacto} g={g} E={E} m={m} set={cambiar} version={version} onQuitar={() => quitar(i)} />
+        ))}
+        {Array.from({ length: nVacios }, (_, j) => (
+          <BloqueGrafico key={"v" + j} i={G.length + j} total={total} compacto={compacto} g={null} E={E} m={m} set={cambiar} version={version}
+            onQuitar={() => quitar(G.length + j)} onElegir={elegirEnVacio} />
+        ))}
+      </div>
       {total < MAX_GRAFICOS && (
         <p><button type="button" className="btn" onClick={() => setVacios(vacios + 1)}>+ Agregar gráfico ({total} de {MAX_GRAFICOS})</button></p>
       )}
-      <FijosCarga m={m} E={E} set={cambiar} version={version} />
     </section>
   );
 }
 
 /** Un gráfico de Histórico: sus variables, su resumen y su gráfico. Carga sus propios datos: si falla, los demás se ven. */
-function BloqueGrafico({ i, total, g, E, m, set, version, onQuitar, onElegir }: {
-  i: number; total: number; g: GEst | null; E: Comun; m: Motor; set: SetFn; version: number; onQuitar: () => void; onElegir?: (x: Expr) => void;
+function BloqueGrafico({ i, total, compacto, g, E, m, set, version, onQuitar, onElegir }: {
+  i: number; total: number; compacto: boolean; g: GEst | null; E: Comun; m: Motor; set: SetFn; version: number; onQuitar: () => void; onElegir?: (x: Expr) => void;
 }) {
   const ids = useMemo(() => (g ? g.exprs.flatMap((e) => (e.rel ? [e.id, e.rel] : [e.id])) : []), [g]);
   const sec = useSeccion(ids);
-  // Solo las variables ya cargadas: si una falla, las demás se siguen viendo.
-  const disp = useMemo(() => (g ? g.exprs.filter((e) => m.SER[e.id] && (!e.rel || m.SER[e.rel])) : []),
+  // En modo valor entran 2 variables, o hasta 4 si todas tienen la misma unidad (con la medida aplicada).
+  const usadas = useMemo(() => {
+    if (!g || g.modo === "b100" || g.exprs.length <= 2) return g ? g.exprs : [];
+    const cargadas = g.exprs.every((e) => m.SER[e.id] && (!e.rel || m.SER[e.rel]));
+    const igual = cargadas && new Set(g.exprs.map((e) => m.calc(e).unidad)).size === 1;
+    return igual ? g.exprs : g.exprs.slice(0, 2);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [g, m, version]);
+  }, [g, m, version]);
+  // Solo las variables ya cargadas: si una falla, las demás se siguen viendo.
+  const disp = useMemo(() => usadas.filter((e) => m.SER[e.id] && (!e.rel || m.SER[e.rel])),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [usadas, m, version]);
   const cab = (
     <div className="cab-graf">
       {total > 1 ? <h3>Gráfico {i + 1}</h3> : <span />}
       {i > 0 && <button type="button" className="btn quitar" onClick={onQuitar}>Quitar gráfico</button>}
     </div>
   );
+  const clase = `bloque-graf${compacto ? " compacto" : ""}`;
   if (!g) {
     return (
-      <div className="bloque-graf">{cab}
+      <div className={clase}>{cab}
         <FilaVariable e={null} agregable onChange={(x) => x && onElegir?.(x)} />
       </div>
     );
@@ -177,38 +188,37 @@ function BloqueGrafico({ i, total, g, E, m, set, version, onQuitar, onElegir }: 
   // el cambio de este gráfico se escribe con el número que le toca en la URL
   const setG: SetFn = (c) => set(Object.fromEntries(Object.entries(c).map(([k, v]) => [(PG as readonly string[]).includes(k) ? k + sfx(i) : k, v])));
   const b100 = g.modo === "b100";
+  const base = b100 ? g.todas : usadas; // en modo valor, lo que no entra se descarta al editar
   const guardarExprs = (xs: Expr[]) => setG({ v: xs.map(encExpr).join(",") });
   const setExpr = (k: number, e: Expr | null) => {
-    let xs = g.todas.slice();
-    if (e) xs[k] = e;
-    else if (b100) xs.splice(k, 1);
-    else xs = xs.filter((_, j) => j !== k).slice(0, 1); // en modo valor, quitar la 2ª deja solo la 1ª
+    const xs = base.slice();
+    if (e) xs[k] = e; else xs.splice(k, 1);
     guardarExprs(xs.length ? xs : g.exprs);
   };
   const hayError = Object.keys(sec.errores).length > 0;
   const Ed: Estado = { ...E, ...g, exprs: disp };
+  const mismaU = !b100 && usadas.length >= 2 && (usadas.length > 2 || (g.exprs.length === 2 && disp.length === 2 && m.calc(disp[0]).unidad === m.calc(disp[1]).unidad));
+  const aviso = !b100 && g.exprs.length > usadas.length && g.exprs.every((e) => m.SER[e.id] && (!e.rel || m.SER[e.rel])); // sin aviso mientras cargan
   return (
-    <div className="bloque-graf">{cab}
-      <div>
-        {g.exprs.map((e, k) => (
-          <FilaVariable key={k} e={e} color={PALETA[k]} quitable={b100 ? g.exprs.length > 1 : k === 1} onChange={(x) => setExpr(k, x)} />
+    <div className={clase}>{cab}
+      <div className="vars-graf">
+        {usadas.map((e, k) => (
+          <FilaVariable key={k} e={e} color={PALETA[k]} quitable={b100 ? g.exprs.length > 1 : k >= 1} onChange={(x) => setExpr(k, x)} />
         ))}
-        {!b100 && g.exprs.length < 2 && <FilaVariable e={null} agregable onChange={(x) => x && guardarExprs([...g.todas, x])} />}
+        {!b100 && usadas.length < 2 && <FilaVariable e={null} agregable onChange={(x) => x && guardarExprs([...base, x])} />}
+        {!b100 && mismaU && usadas.length < MAX_MISMA_UNIDAD && (
+          <FilaVariable e={null} agregable textoAgregar={`+ Agregar variable (misma unidad, ${usadas.length} de ${MAX_MISMA_UNIDAD})`} onChange={(x) => x && guardarExprs([...base, x])} />
+        )}
         {b100 && g.exprs.length < 10 && (
           <FilaVariable e={null} agregable textoAgregar={`+ Agregar variable (${g.exprs.length} de 10)`} onChange={(x) => x && guardarExprs([...g.todas, x])} />
         )}
+        {aviso && <p className="note" role="status">Con unidades distintas entran 2 variables.</p>}
       </div>
       {disp.length > 0
-        ? <Principal m={m} E={Ed} set={setG} version={version} />
+        ? <Principal m={m} E={Ed} set={setG} version={version} compacto={compacto} />
         : (hayError && !sec.ocupado ? <p className="error">Las variables elegidas no se pudieron cargar. Probá otra o recargá la página.</p> : <Cargando />)}
     </div>
   );
-}
-
-/** Los gráficos de dólar y soja cargan aparte: no demoran los gráficos de arriba. */
-function FijosCarga({ m, E, set, version }: { m: Motor; E: Comun; set: SetFn; version: number }) {
-  const fij = useSeccion(FIJOS_IDS);
-  return <Fijos m={m} E={E} set={set} listo={!fij.ocupado} version={version} />;
 }
 
 // ------------------------------------------------------------ barra fija: período + Mes / Trimestre / Año
@@ -323,15 +333,16 @@ const DEFS_RES: DefResumen[] = [
 ];
 
 // ------------------------------------------------------------ gráfico principal
-function Principal({ m, E, set, version }: { m: Motor; E: Estado; set: SetFn; version: number }) {
+function Principal({ m, E, set, version, compacto }: { m: Motor; E: Estado; set: SetFn; version: number; compacto: boolean }) {
   const { F } = m;
   const b100 = E.modo === "b100";
   // Claves estables: el gráfico solo se rehace (y pierde el zoom) si cambia algo que lo afecta
   const kExprs = E.exprs.map(encExpr).join(","), kMeses = [...E.meses].join(","), kRefs = [...E.refs].sort().join(",");
   const D = useMemo(() => {
-    const lista = E.exprs.map((e, k) => {
-      const c = m.calc(e);
-      return { c, key: "s" + k, color: PALETA[k], axis: !b100 && k === 1 ? 1 : 0, flujo: !!c.flujo, ultimo: !!c.ultimo, base: "–" };
+    const calcs = E.exprs.map((e) => m.calc(e));
+    const unEje = calcs.length > 2; // 3 o 4 variables de la misma unidad: todas en el eje izquierdo
+    const lista = calcs.map((c, k) => {
+      return { c, key: "s" + k, color: PALETA[k], axis: !b100 && !unEje && k === 1 ? 1 : 0, flujo: !!c.flujo, ultimo: !!c.ultimo, base: "–" };
     });
     const dos = !b100 && lista.length === 2;
     const hayBanda = !b100 && lista.some((o) => o.c.lo);
@@ -363,7 +374,7 @@ function Principal({ m, E, set, version }: { m: Motor; E: Estado; set: SetFn; ve
         refs.push({ v, axis: misma ? 0 : o.axis, color: o.color, letra: r.letra, dash: r.dash });
         return { letra: r.letra, dash: r.dash, nom: r.nom, v, txt: m.fmtC(o.c, v), cuando, color: o.color };
       });
-      if (items.length) refLeg.push({ dos, color: o.color, items });
+      if (items.length) refLeg.push({ dos: lista.length > 1, color: o.color, items });
     });
     const tiposMk = new Set(["ult", "max", "min"].filter((k) => E.refs.has("mk_" + k)));
     const marcas: Marca[] = b100 || !tiposMk.size ? [] : lista.map((o) => ({ key: o.key, axis: misma ? 0 : o.axis, color: o.color, fmt: fmtDe(o), tipos: tiposMk }));
@@ -372,11 +383,12 @@ function Principal({ m, E, set, version }: { m: Motor; E: Estado; set: SetFn; ve
     const opts = {
       log: E.escala === "log" && puedeLog, log2: E.escala === "log" && puedeLog, refs, marcas, mismaEscala: misma, refLine: b100 ? 100 : null, endLabels: b100 && lista.length > 1,
       fmtAxis: b100 ? (v: number) => nf0.format(v) : ejeFmt(lista[0].c), fmtAxis2: dos ? ejeFmt(lista[1].c) : null, fmtTip: fmtDe(lista[0]), tipTitle: etiqueta,
+      height: compacto ? 260 : undefined,
       label: lista.map((o) => o.c.corto).join(", "),
     };
     return { lista, dos, hayBanda, bd, rows, puedeLog, st, fmtDe, refLeg, series, opts };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [m, version, kExprs, E.modo, E.desde, E.hasta, kMeses, E.freq, E.ag, E.escala, E.banda, E.eje, kRefs]);
+  }, [m, version, kExprs, E.modo, E.desde, E.hasta, kMeses, E.freq, E.ag, E.escala, E.banda, E.eje, kRefs, compacto]);
   const { lista, dos, hayBanda, bd, rows, puedeLog, st, refLeg, series, opts } = D;
 
   const porFreq = ({ M: "", T: " Valores trimestrales", A: " Valores anuales" })[E.freq];
@@ -384,9 +396,10 @@ function Principal({ m, E, set, version }: { m: Motor; E: Estado; set: SetFn; ve
   const sumaTxt = E.freq !== "M" && lista.some((o) => o.flujo || o.ultimo)
     ? ` (los flujos se suman y los % del PIB toman el último mes del período; períodos incompletos de flujos quedan vacíos; el resto es ${agTxt}).`
     : E.freq !== "M" ? ` (${agTxt}).` : "";
-  const titulo = b100 ? `Comparación en base 100: ${lista.map((o) => o.c.corto).join(", ")}` : dos ? `${lista[0].c.corto} y ${lista[1].c.corto}` : lista[0].c.nombre;
+  const multi = lista.length > 1;
+  const titulo = b100 ? `Comparación en base 100: ${lista.map((o) => o.c.corto).join(", ")}` : lista.length > 2 ? lista.map((o) => o.c.corto).join(", ") : dos ? `${lista[0].c.corto} y ${lista[1].c.corto}` : lista[0].c.nombre;
   const nota = (b100 ? "Cada serie vale 100 en su primer dato del período: la línea muestra cuánto subió o bajó desde ahí."
-    : lista.map((o, k) => `${dos ? (k ? "Derecha: " : "Izquierda: ") : ""}${o.c.unidad}`).join(" · ") + ".") + porFreq + sumaTxt +
+    : (lista.length > 2 ? lista[0].c.unidad : lista.map((o, k) => `${dos ? (k ? "Derecha: " : "Izquierda: ") : ""}${o.c.unidad}`).join(" · ")) + ".") + porFreq + sumaTxt +
     (bd ? " La sombra va del mínimo al máximo." : "") + ` Fuente: ${[...new Set(lista.map((o) => o.c.serie.fuente))].join("; ")}.`;
   const grupo = (lbl: string, el: React.ReactNode) => <Fragment key={lbl}><label>{lbl}</label>{el}</Fragment>;
   const refsToggle = (k: string) => set({ r: [...alternar(E.refs, k, true)].join(",") || "-" });
@@ -401,7 +414,7 @@ function Principal({ m, E, set, version }: { m: Motor; E: Estado; set: SetFn; ve
   const config = (
     <>
       <div className="controls" id="h_opciones">
-        {grupo("Mostrar", <Seg valor={E.modo} opciones={[["valor", "Valor de la serie (hasta 2 variables)"], ["b100", "Comparar en base 100 (hasta 10)"]]} onElegir={(v) => set({ m: v === "valor" ? null : v })} />)}
+        {grupo("Mostrar", <Seg valor={E.modo} opciones={[["valor", "Valor de la serie (hasta 2 variables; hasta 4 si tienen la misma unidad)"], ["b100", "Comparar en base 100 (hasta 10)"]]} onElegir={(v) => set({ m: v === "valor" ? null : v })} />)}
       </div>
       <div className="controls">
         {puedeLog && grupo("Escala", <Seg valor={E.escala} opciones={[["lin", "Lineal"], ["log", "Logarítmica"]]} onElegir={(v) => set({ e: v === "lin" ? null : v })} />)}
@@ -456,11 +469,11 @@ function Principal({ m, E, set, version }: { m: Motor; E: Estado; set: SetFn; ve
           <div className="tiles res">
             {DEFS_RES.map((def) => (
               <div className="tile" key={def.tit}><div className="k">{def.tit}</div>
-                <div className={`mitades${dos ? " dos" : ""}`}>{lista.map((o, k) => {
+                <div className={`mitades${dos ? " dos" : ""}${lista.length > 2 ? " varias" : ""}`}>{lista.map((o, k) => {
                   const c = celda(def, o, k);
                   if (!c) return <div className="mitad" key={k}><div className="v">–</div></div>;
                   return (
-                    <div className="mitad" key={k}>{dos && <><span className="punto" style={vcolor(o.color)} />{" "}</>}<span className="v">{c.txt}</span>
+                    <div className="mitad" key={k}>{multi && <><span className="punto" style={vcolor(o.color)} />{" "}</>}<span className="v">{c.txt}</span>
                       <div className="d">{c.f ? <>{c.f} · </> : null}{c.vs}: <b className={`var-${c.cls}`}>{c.vr}</b></div></div>
                   );
                 })}</div></div>
@@ -474,7 +487,7 @@ function Principal({ m, E, set, version }: { m: Motor; E: Estado; set: SetFn; ve
                   const c = celda(def, o, k);
                   return (
                     <div className="ln" key={k} title={c ? `${def.tit}${c.f ? " · " + c.f : ""} · ${c.vs}` : undefined}>
-                      {dos && <span className="punto" style={vcolor(o.color)} />}
+                      {multi && <span className="punto" style={vcolor(o.color)} />}
                       <span className="v">{c ? c.txt : "–"}</span>
                       {c && <span className={`vr var-${c.cls}`}>{c.vr}</span>}
                       {c?.f && <span className="f">{c.f}</span>}
@@ -492,102 +505,3 @@ function Principal({ m, E, set, version }: { m: Motor; E: Estado; set: SetFn; ve
   );
 }
 
-// ------------------------------------------------------------ bloques fijos: dólar y soja
-function Fijos({ m, E, set, listo, version }: { m: Motor; E: Comun; set: SetFn; listo: boolean; version: number }) {
-  const F = m.F;
-  const kMeses = [...E.meses].join(","), kFx = [...E.fx].join(","), kBr = [...E.br].join(","), kRatio = [...E.ratio].join(",");
-  const D = useMemo(() => {
-    if (!listo || !["fx_oficial", "soja_chi", "soja_ros"].every((id) => m.SER[id])) return null;
-    const { SER, transformar } = m;
-    const bd = E.fxbanda === "si";
-    const enFiltro = (f: string) => f >= E.desde && f <= E.hasta && E.meses.has(+f.slice(5, 7));
-    const filasF = (cols: Record<string, (number | null)[]>, bandas: Record<string, [(number | null)[], (number | null)[]]> = {}) =>
-      agrupar(F.map((f, i) => {
-        const r: Fila = { fecha: f };
-        for (const k in cols) r[k] = cols[k][i];
-        for (const k in bandas) { r[k + "_lo"] = bandas[k][0][i]; r[k + "_hi"] = bandas[k][1][i]; }
-        return r;
-      }).filter((r) => enFiltro(r.fecha)), E.freq, E.meses, new Set<string>(), new Set<string>(), E.ag === "cierre");
-    const sel = FX_KEYS.filter((k) => E.fx.has(k) && SER["fx_" + k]);
-    const sfx = SER.fx_oficial;
-    const fx = {
-      sel, rows: recortar(filasF(Object.fromEntries(sel.map((k) => [k, transformar(SER["fx_" + k], SER["fx_" + k].vals, E.fxmed)])),
-        bd ? Object.fromEntries(sel.map((k) => [k, [transformar(sfx, SER["fx_" + k].mn!, E.fxmed), transformar(sfx, SER["fx_" + k].mx!, E.fxmed)] as [(number | null)[], (number | null)[]]])) : {}), sel),
-      series: sel.map((k): SerieG => ({ key: k, name: "Dólar " + FX_NOM[k], short: FX_NOM[k], color: FX_COLOR[k], band: bd })),
-      opts: { log: E.fxmed === "corr", endLabels: true, tipTitle: etiqueta, fmtAxis: (v: number) => "$ " + (Math.abs(v) >= 1e4 ? nf0.format(v / 1e3) + " mil" : fmtNum(v)), fmtTip: (v: number) => "$ " + fmtNum(v), label: "Dólares" },
-    };
-    const br = (["blue", "mep", "ccl"] as const).filter((k) => E.br.has(k) && SER["brecha_" + k]);
-    const brecha = {
-      br, rows: recortar(filasF(Object.fromEntries(br.map((k) => [k, SER["brecha_" + k].vals]))), br),
-      series: br.map((k): SerieG => ({ key: k, name: FX_NOM[k], color: FX_COLOR[k] })),
-      opts: { zero: true, refLine: 0, endLabels: true, tipTitle: etiqueta, fmtAxis: (v: number) => nf0.format(v) + " %", fmtTip: (v: number) => nf1.format(v) + " %", label: "Brecha" },
-    };
-    const real = E.sojamed === "usdr", medRos = (real ? "usdr_" : "usd_") + E.sojafx, chi = SER.soja_chi, ros = SER.soja_ros;
-    const tc = real ? "usdr" : "corr";
-    const soja = {
-      rows: recortar(filasF({ chi: transformar(chi, chi.vals, tc), ros: transformar(ros, ros.vals, medRos) },
-        bd ? { chi: [transformar(chi, chi.mn!, tc), transformar(chi, chi.mx!, tc)], ros: [transformar(ros, ros.mn!, medRos), transformar(ros, ros.mx!, medRos)] } : {}), ["chi", "ros"]),
-      series: [{ key: "chi", name: "Chicago", color: "--series-1", band: bd }, { key: "ros", name: "Rosario", color: "--series-2", band: bd }] as SerieG[],
-      opts: { zero: true, endLabels: true, tipTitle: etiqueta, fmtAxis: (v: number) => "US$ " + nf0.format(v), fmtTip: (v: number) => "US$ " + nf0.format(v), label: "Soja" },
-    };
-    const rk = FX_KEYS.filter((k) => E.ratio.has(k) && SER["soja_ratio_" + k]);
-    const ratio = {
-      rk, rows: recortar(filasF(Object.fromEntries(rk.map((k) => [k, SER["soja_ratio_" + k].vals]))), rk),
-      series: rk.map((k): SerieG => ({ key: k, name: "Al " + FX_NOM[k], short: FX_NOM[k], color: FX_COLOR[k] })),
-      opts: { refLine: 100, endLabels: true, tipTitle: etiqueta, fmtAxis: (v: number) => nf0.format(v) + " %", fmtTip: (v: number) => nf1.format(v) + " %", label: "Rosario sobre Chicago" },
-    };
-    return { fx, brecha, soja, ratio };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [m, version, listo, E.desde, E.hasta, kMeses, E.freq, E.ag, kFx, kBr, E.fxmed, E.fxbanda, E.sojamed, E.sojafx, kRatio]);
-
-  const { refUS } = m.refs();
-  const medNom = Object.fromEntries(m.medFx())[E.fxmed];
-  const tog = (clave: string, set0: Set<string>, v: string, vacio = false) => set({ [clave]: [...alternar(set0, v, vacio)].join(",") });
-  const banda = <Seg valor={E.fxbanda} opciones={[["no", "Promedio"], ["si", "Con mín/máx"]]} onElegir={(v) => set({ fxbd: v === "no" ? null : v })} />;
-  return (
-    <>
-      <h3>Otros gráficos interesantes</h3>
-      {!D ? <Cargando /> : (
-        <>
-          <CardGrafico titulo="Dólares"
-            nota={<>{medNom}. Promedio mensual{E.freq !== "M" && E.ag === "cierre" ? `; por ${E.freq === "A" ? "año" : "trimestre"}, el último mes` : ""}.{E.fxmed === "corr" ? " Escala logarítmica: la misma distancia vertical es la misma variación %." : ""}</>}
-            leyenda={<div className="legend">{D.fx.sel.map((k) => <span key={k} style={vcolor(FX_COLOR[k])}>{FX_NOM[k]}</span>)}</div>}
-            visibles={<Seg valor={E.fx} opciones={FX_KEYS.map((k) => [k, FX_NOM[k]] as [string, string])} onElegir={(v) => tog("fx", E.fx, v)} />}
-            config={{
-              cuenta: (E.fxmed !== "real" ? 1 : 0) + (E.fxbanda !== "no" ? 1 : 0),
-              children: (
-                <div className="controls">
-                  <label>Medida</label><Seg valor={E.fxmed} opciones={[["corr", "Corrientes"], ["real", "Pesos de hoy"], ["realbi", "Pesos de hoy neto infl. EEUU"]]} onElegir={(v) => set({ fxm: v === "real" ? null : v })} />
-                  {banda}
-                </div>
-              ),
-            }}
-            rows={D.fx.rows} series={D.fx.series} opts={D.fx.opts} />
-          <CardGrafico titulo="Brecha con el dólar oficial" nota="Cuánto más caro que el oficial mayorista (A3500)."
-            leyenda={<div className="legend">{D.brecha.br.map((k) => <span key={k} style={vcolor(FX_COLOR[k])}>{FX_NOM[k]}</span>)}</div>}
-            visibles={<Seg valor={E.br} opciones={[["blue", "Blue"], ["mep", "MEP"], ["ccl", "CCL"]]} onElegir={(v) => tog("fb", E.br, v)} />}
-            rows={D.brecha.rows} series={D.brecha.series} opts={D.brecha.opts} />
-          <CardGrafico titulo="Soja: Chicago vs. Rosario"
-            nota={<>US$ por tonelada{E.sojamed === "usdr" ? ` de ${refUS} (ajustado por inflación de EEUU)` : " corrientes"}. Rosario pasado al dólar {FX_NOM[E.sojafx]} de cada mes.</>}
-            leyenda={<div className="legend"><span style={vcolor("--series-1")}>Chicago (CBOT)</span><span style={vcolor("--series-2")}>Rosario (pizarra, al {FX_NOM[E.sojafx]})</span></div>}
-            config={{
-              cuenta: (E.sojamed !== "corr" ? 1 : 0) + (E.sojafx !== E.dolarPref ? 1 : 0) + (E.fxbanda !== "no" ? 1 : 0),
-              children: (
-                <div className="controls">
-                  <label>Medida</label><Seg valor={E.sojamed} opciones={[["corr", "US$ corrientes"], ["usdr", "US$ reales"]]} onElegir={(v) => set({ sm: v === "corr" ? null : v })} />
-                  {banda}
-                  <label>Rosario al dólar</label><Seg valor={E.sojafx} opciones={FX_KEYS.map((k) => [k, FX_NOM[k]] as [string, string])} onElegir={(v) => set({ sf: paramSi(v, "oficial", E.dolarPref) })} />
-                </div>
-              ),
-            }}
-            rows={D.soja.rows} series={D.soja.series} opts={D.soja.opts} />
-          <CardGrafico titulo="Cuánto recibe el productor: Rosario / Chicago"
-            nota={<>Precio en Rosario pasado a dólares, como % de Chicago. Al oficial muestra retenciones y costos; al blue, MEP o CCL, cuántos dólares &quot;libres&quot; consigue el productor (con cepo, bastante menos).</>}
-            leyenda={<div className="legend">{D.ratio.rk.map((k) => <span key={k} style={vcolor(FX_COLOR[k])}>al {FX_NOM[k]}</span>)}</div>}
-            visibles={<><label>Al dólar</label><Seg valor={E.ratio} opciones={FX_KEYS.map((k) => [k, FX_NOM[k]] as [string, string])} onElegir={(v) => tog("rt", E.ratio, v)} /></>}
-            rows={D.ratio.rows} series={D.ratio.series} opts={D.ratio.opts} />
-        </>
-      )}
-    </>
-  );
-}

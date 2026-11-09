@@ -1,5 +1,7 @@
 # Correcciones del Histórico
 
+Estado: implementada (2026-11-09)
+
 ## Objetivo
 Dos ajustes a lo que ya está hecho en Histórico:
 - **Sacar "Otros gráficos interesantes".** Dólares, brecha, soja y Rosario/Chicago son series del catálogo y se pueden elegir como cualquier variable, así que esos cuatro gráficos sueltos sobran.

@@ -118,8 +118,8 @@ Uso central: alguien escribe en redes "Milei fundió la economía" y otra person
 ## Correcciones pedidas (2026-11-09)
 → spec: docs/specs/correcciones-historico.md
 Son ajustes a lo ya hecho, no ideas nuevas.
-- **"Otros gráficos interesantes" del Histórico** (soja, Chicago, brecha, dólar): los datos ya están en el catálogo, así que ya no tiene sentido tenerlos como gráficos sueltos. Pasarlos a **variables elegibles** como cualquier otra (queda la plantilla si hace falta una vista armada) y sacar la sección.
-- **Hasta 4 gráficos en la vista, uno al lado del otro**, para comparar 4 cosas al mismo tiempo (en celular, apilados). Verificar cómo quedó con lo ya implementado.
+- ~~**"Otros gráficos interesantes" del Histórico** (soja, Chicago, brecha, dólar): los datos ya están en el catálogo, así que ya no tiene sentido tenerlos como gráficos sueltos. Pasarlos a **variables elegibles** como cualquier otra (queda la plantilla si hace falta una vista armada) y sacar la sección.~~ ✅ 2026-11-09
+- ~~**Hasta 4 gráficos en la vista, uno al lado del otro**, para comparar 4 cosas al mismo tiempo (en celular, apilados). Verificar cómo quedó con lo ya implementado.~~ ✅ 2026-11-09
 
 ## Sugerencias de Claude (a discutir)
 - Comparación internacional, fuentes a investigar (con `investigador-datos`): IPC por división COICOP de EE.UU. (BLS), Eurostat (HICP por categoría) y OECD; el Banco Mundial y el FMI para PBI y otras variables. Los vecinos (Brasil, Chile, Uruguay, Paraguay, Bolivia) a veces solo tienen el IPC general desde fuentes unificadas, así que la comparación por categoría puede quedar limitada. Las divisiones COICOP no son idénticas entre países, y para comparar **niveles** de precios (no solo variaciones) hacen falta paridad de poder adquisitivo o tipo de cambio real. Mostrar siempre en base 100 o en variación para no comparar manzanas con naranjas.
@@ -170,3 +170,7 @@ Son ajustes a lo ya hecho, no ideas nuevas.
 
 ### Ranking, curiosidades y voto estimado (implementado, spec presidentes-ranking-curiosidades)
 - ~~Ranking armable, curiosidades generadas, variables elegidas por presidente, animación del mandato y voto estimado.~~ ✅ 2026-11-08
+
+### Correcciones del Histórico (implementado 2026-11-09, spec correcciones-historico)
+- ~~Sacar "Otros gráficos interesantes"~~ ✅ 2026-11-09 (hasta 4 variables de la misma unidad en un eje; 3 plantillas nuevas)
+- ~~Hasta 4 gráficos uno al lado del otro~~ ✅ 2026-11-09 (grilla de 2 columnas desde 1024 px)

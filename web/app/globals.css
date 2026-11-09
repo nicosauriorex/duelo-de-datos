@@ -339,6 +339,19 @@ th small { display: block; font-size: 11px; font-weight: 400; color: var(--text-
 .bloque-graf .cab-graf { display: flex; align-items: center; gap: 8px; margin: 14px 0 4px; }
 .bloque-graf .cab-graf h3 { margin: 0; flex: 1 1 auto; }
 
+/* Gráficos uno al lado del otro: 2 columnas desde 1024 px (en menos, apilados) */
+.grilla-graf .bloque-graf { min-width: 0; }
+.tile .mitades.varias { grid-template-columns: 1fr; }
+@media (min-width: 1024px) {
+  .grilla-graf.multi { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; align-items: start; }
+  .grilla-graf.multi .tiles.res { display: none; }
+  .grilla-graf.multi .chips { display: flex; }
+  .grilla-graf.multi .refleg .rv, .grilla-graf.multi .refleg .ri small { display: none; }
+  .bloque-graf.compacto .vars-graf { display: flex; flex-direction: column; }
+  .bloque-graf.compacto .fila-var { padding: 6px 8px; } /* sin scroll horizontal: el panel de medida se abre dentro de la fila */
+  .bloque-graf.compacto .card { padding: 10px 12px; }
+}
+
 /* Portada y temas */
 .nombre-sitio { color: inherit; text-decoration: none; }
 .inicio h2, .tema-pagina h2 { font-size: 17px; margin: 22px 0 8px; }
