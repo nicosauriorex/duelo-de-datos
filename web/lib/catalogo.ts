@@ -3,7 +3,7 @@ import { norm } from "./formato";
 import { medDefaultDe, type Expr, type Motor, type Serie, type SerieMeta } from "./motor";
 
 export const ORDEN_RAIZ = ["Salarios", "Precios", "Dólar y tipo de cambio", "Mercados", "Tasas de interés", "Dinero y bancos (BCRA)",
-  "Actividad", "Empleo, pobreza e ingresos", "Sector externo", "Fiscal", "Opinión pública (UTDT)"];
+  "Actividad", "Empleo, pobreza e ingresos", "Sector externo", "Fiscal", "Opinión pública (UTDT)", "Contexto internacional"];
 
 // Sinónimos coloquiales para la búsqueda
 const ALIAS: [RegExp, string][] = [

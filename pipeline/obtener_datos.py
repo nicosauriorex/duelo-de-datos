@@ -25,6 +25,7 @@ from pathlib import Path
 import pandas as pd
 
 import catalogo
+import contexto
 import macro
 import salarios
 
@@ -195,6 +196,7 @@ def main():
     sal.to_csv(OUT / "mensual.csv", float_format="%.4f")
 
     series = catalogo.construir(sal, token)
+    series += contexto.series_mensuales(idx)  # categoría "Contexto internacional" (D-008)
     # Sin token (o si la API falla) los precios de carne de GBA salen del Excel de INDEC
     ids = {s["id"] for s in series}
     for c in CORTES:
@@ -206,7 +208,7 @@ def main():
     print(f"Catálogo: {len(datos['series'])} series en total")
     # Copia compilada: respaldo versionado para regenerar los JSON de la web sin red (--solo-json)
     (OUT / "cache" / "compilado.json").write_text(json.dumps(datos, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    escribir_json_web(datos)
+    escribir_json_web(datos, contexto.construir_json())
 
 
 # Series transversales que usan los cálculos de todas las secciones (se cargan siempre).
@@ -214,9 +216,9 @@ def main():
 IDS_BASE = {"ipc_empalme", "cpi_usa", "fx_oficial", "fx_blue", "fx_mep", "fx_ccl", "poblacion", "pib_nom_anual"}
 
 
-def escribir_json_web(datos):
+def escribir_json_web(datos, ctx=None):
     """Escribe web/public/datos/: catalogo.json (metadatos + archivo de cada serie + fechas),
-    base.json (series transversales) y un <categoria>.json por cada cat[0]."""
+    base.json (series transversales) y un <categoria>.json por cada cat[0]. `ctx` (datos anuales del FMI) va aparte en contexto.json."""
     destino = RAIZ / "web" / "public" / "datos"
     destino.mkdir(parents=True, exist_ok=True)
     for viejo in destino.glob("*.json"):
@@ -233,6 +235,10 @@ def escribir_json_web(datos):
         txt = json.dumps(series, ensure_ascii=False, separators=(",", ":"))
         (destino / f"{archivo}.json").write_text(txt, encoding="utf-8")
         h.update(txt.encode("utf-8"))
+    if ctx:
+        txt = json.dumps(ctx, ensure_ascii=False, separators=(",", ":"))
+        (destino / "contexto.json").write_text(txt, encoding="utf-8")
+        h.update(txt.encode("utf-8"))
     # "version" cambia con cada dato nuevo: la web la agrega a cada pedido para no mezclar cachés viejos y nuevos.
     (destino / "catalogo.json").write_text(
         json.dumps({"version": h.hexdigest()[:10], "fechas": datos["fechas"], "series": meta}, ensure_ascii=False, separators=(",", ":")),
@@ -242,6 +248,6 @@ def escribir_json_web(datos):
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "--solo-json":  # regenera web/public/datos/ desde datos/cache/compilado.json, sin red
-        escribir_json_web(json.loads((OUT / "cache" / "compilado.json").read_text(encoding="utf-8")))
+        escribir_json_web(json.loads((OUT / "cache" / "compilado.json").read_text(encoding="utf-8")), contexto.cargar_cache())
     else:
         sys.exit(main())

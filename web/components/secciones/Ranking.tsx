@@ -3,6 +3,7 @@ import { Fragment, useMemo, useState } from "react";
 import { useSeccion } from "../useSeccion";
 import { Cargando, Seg, alternar } from "../ui";
 import { FilaVariable } from "../Variables";
+import { ContextoMandato } from "./ContextoMandato";
 import { LineaInicio, useBase } from "./comunes";
 import { tinte } from "../util";
 import { fmtMes, nf0 } from "@/lib/formato";
@@ -90,6 +91,7 @@ export function Ranking() {
                   </tr>
                   {ab && (
                     <tr><td colSpan={6}>
+                      <ContextoMandato m={m} pres={PRES.find((x) => x.id === f.p.id) ?? f.p} />
                       <div className="tablewrap"><table>
                         <thead><tr><th style={{ textAlign: "left" }}>Indicador</th><th>Inicio</th><th>Cierre</th><th>Cambio</th><th>Puesto</th></tr></thead>
                         <tbody>{f.items.map((i) => (

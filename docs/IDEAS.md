@@ -15,11 +15,12 @@ Notas del usuario, ordenadas por tema. No son specs: antes de implementar cualqu
 - Podés cortar la búsqueda en el tema: te lleva a una **página del tema** (título, explicación y distintas formas de verlo: histórico, por presidente, contexto, etc.).
 - Armar la búsqueda con una oración guiada o escrita: "quiero saber cuántos litros de cerveza se compran con un salario medio" → te muestra el gráfico.
 
-## Contexto para juzgar a un presidente
+## ~~Contexto para juzgar a un presidente~~ ✅ 2026-11-09
 → spec: docs/specs/contexto-internacional.md (también el consumo de carne, si hay fuente oficial)
 - El contexto internacional influye (commodities con Néstor, pandemia con Alberto, tasas y petróleo con Milei).
 - **Proyecciones vs. resultado**: qué se proyectaba a principio de año (FMI u otros) para Argentina, EE.UU., Europa, el mundo, y cuánto se desvió cada uno. Si el mundo cayó 50% contra lo proyectado y Argentina también, no es (solo) culpa del presidente. Posible sección "proyecciones cumplidas o no" y ranking de los que más se desviaron.
 - **Comparar con vecinos o países parecidos**: crecer 5% no es mucho si los vecinos crecen 10%.
+- Pendiente de este bloque: **consumo de carne vacuna por habitante**. La única serie oficial descargable (Ministerio de Agricultura, `AGRO_0244` en datos.gob.ar) termina en 2018, así que no se agregó; hay que ver si sale una fuente más nueva. Tampoco hay descargable la proyección de abril de 2023 en adelante, el desempleo proyectado ni la proyección para América Latina (la base "Historical WEO Forecasts" del FMI llega a abril de 2022).
 
 ## Comparación internacional (2026-11-09)
 → PBI y otras variables (base 100 desde 2000): spec docs/specs/contexto-internacional.md. Precios por categoría: bloque 6c, sin spec.
@@ -174,3 +175,7 @@ Son ajustes a lo ya hecho, no ideas nuevas.
 ### Correcciones del Histórico (implementado 2026-11-09, spec correcciones-historico)
 - ~~Sacar "Otros gráficos interesantes"~~ ✅ 2026-11-09 (hasta 4 variables de la misma unidad en un eje; 3 plantillas nuevas)
 - ~~Hasta 4 gráficos uno al lado del otro~~ ✅ 2026-11-09 (grilla de 2 columnas desde 1024 px)
+
+### Contexto internacional (implementado 2026-11-09, spec contexto-internacional)
+- ~~Contexto para juzgar a un presidente: proyecciones del FMI vs. resultado, vecinos y viento de cola o de frente~~ ✅ 2026-11-09 (sección Contexto y recuadro "Contexto del mandato")
+- ~~Comparación internacional: PBI y otras variables del FMI, base 100 desde 2000~~ ✅ 2026-11-09 (el consumo de carne quedó pendiente, ver arriba)

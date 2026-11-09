@@ -1,5 +1,7 @@
 ﻿# Contexto internacional (bloque 6b)
 
+Estado: implementada (2026-11-09), con las diferencias anotadas en D-008 (docs/DECISIONES.md).
+
 ## Objetivo
 Que al juzgar a un presidente se vea también lo que no controlaba:
 - qué se esperaba para cada año y qué pasó, en Argentina y en el mundo;

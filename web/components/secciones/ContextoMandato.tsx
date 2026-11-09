@@ -1,0 +1,33 @@
+"use client";
+// Recuadro "Contexto del mandato": resumen corto para un presidente (Por presidente y detalle de Ranking).
+import Link from "next/link";
+import { useContexto } from "../useContexto";
+import { nf1, ok } from "@/lib/formato";
+import { GRUPOS_CMP, resumenMandato, textoAnios } from "@/lib/contexto";
+import type { Motor } from "@/lib/motor";
+import type { Pres } from "@/lib/estadisticas";
+
+const signo = (v: number) => { const r = Math.round(v * 10) / 10; return (r > 0 ? "+" : r < 0 ? "−" : "") + nf1.format(Math.abs(r)); };
+
+/** Si los datos de contexto no se pueden bajar, no se muestra nada (el resto de la página sigue andando). */
+export function ContextoMandato({ m, pres }: { m: Motor; pres: Pres }) {
+  const { datos } = useContexto();
+  if (!datos) return null;
+  const grupo = GRUPOS_CMP[0];
+  const r = resumenMandato(m, datos, pres, grupo[2]);
+  const s = r.sorpresa;
+  return (
+    <div className="callout">
+      <b>Contexto del mandato</b> <span style={{ color: "var(--text-muted)" }}>({pres.n}, {textoAnios(r.anios)}; comparado con {grupo[1].toLowerCase() === "mundo" ? "el mundo" : grupo[1]})</span>
+      {!r.anios.length ? <p className="note">Sin años completos en el mandato.</p> : (
+        <ul style={{ margin: "6px 0", paddingLeft: 18 }}>
+          <li>Crecimiento promedio: Argentina {ok(r.crecArg.v) ? `${nf1.format(r.crecArg.v)} %` : "—"}; {grupo[1]} {ok(r.crecGrp.v) ? `${nf1.format(r.crecGrp.v)} %` : "—"}.</li>
+          {ok(s.sArg) && ok(s.sGrp) && ok(s.dif) &&
+            <li>Contra lo que proyectaba el FMI en abril: la Argentina {signo(s.sArg)} puntos por año; {grupo[1]}, {signo(s.sGrp)}. Diferencia: {signo(s.dif)} puntos.</li>}
+          {r.hayViento && <li>Viento externo: {r.favor} a favor, {r.neutro} neutros y {r.contra} en contra.</li>}
+        </ul>
+      )}
+      <Link href={`/contexto/?cpr=${pres.id}`} prefetch={false}>Ver el contexto completo</Link>
+    </div>
+  );
+}

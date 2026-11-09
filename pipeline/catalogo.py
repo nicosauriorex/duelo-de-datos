@@ -303,7 +303,6 @@ def datos_gob(idx, ipc=None):
          "Asalariados en negro. Ojo: INDEC lo publica con 5 meses de rezago (el dato de un mes refleja salarios de 5 meses antes)."),
         ("74.3_IET_0_M_16", "Exportaciones de bienes", EX, "usd", "millones de US$", 1, dict(agg=True, flujo=True), "Exportaciones de bienes (INDEC, intercambio comercial argentino)."),
         ("74.3_IIT_0_M_25", "Importaciones de bienes", EX, "usd", "millones de US$", 0, dict(agg=True, flujo=True), "Importaciones de bienes (INDEC)."),
-        ("82.2_ITI_2004_T_27", "Términos del intercambio", EX, "none", "índice 2004=100", 1, {}, "Precio de lo que exportamos dividido el precio de lo que importamos. Más alto = el mundo nos paga mejor."),
         ("160.2_TL_CUENNTE_0_T_22", "Cuenta corriente del balance de pagos", EX, "usd", "millones de US$", 1, dict(agg=True, flujo=True, trim_flujo=True),
          "Resultado de todo lo que entra y sale con el exterior por bienes, servicios, intereses y utilidades. Trimestral (repartido en los 3 meses)."),
         ("74.2_IECE_0_T_35", "Exportaciones de combustibles y energía", EN, "usd", "millones de US$", 1, dict(agg=True, flujo=True, trim_flujo=True), "Trimestral (repartido en los 3 meses)."),

@@ -19,6 +19,7 @@ export const INFO_CAT: Record<string, string> = {
   "Empleo, pobreza e ingresos": `<b>Desocupación, empleo e informalidad</b>: EPH, trimestral, 31 aglomerados urbanos. <b>Trabajadores registrados</b>: SIPA, mensual (personas con aportes). <b>Pobreza e indigencia</b>: EPH, semestral (se ubica en enero y julio). <b>Canastas</b>: lo que una familia necesita para no ser pobre (CBT) o indigente (CBA).`,
   "Sector externo": `Exportaciones e importaciones de bienes (INDEC, en dólares), saldo comercial, términos del intercambio (precio de lo que vendemos vs. lo que compramos) y soja.`,
   "Fiscal": `Sector público nacional, base caja. <b>Resultado primario</b>: ingresos menos gastos sin contar intereses de la deuda. <b>Resultado financiero</b>: después de pagar intereses. Las cifras mensuales son muy estacionales: conviene verlas como % del PIB (suma de 12 meses) o por año.`,
+  "Contexto internacional": `Lo que pasa afuera y la Argentina no controla. <b>Precios de la soja, el maíz, el trigo y el petróleo</b> (Banco Mundial vía FRED, en dólares): se pueden ver en dólares de hoy. <b>Términos de intercambio</b> (INDEC): precio de lo que exportamos contra el de lo que importamos. <b>Tasa de la Fed</b>: lo que rinden los bonos del Tesoro de EE.UU. a muy corto plazo; si sube, el crédito para países como el nuestro se encarece. La comparación con otros países está en la sección Contexto.`,
   "Mercados": `<b>Riesgo país</b>: cuánta tasa extra paga Argentina sobre los bonos de EEUU (en puntos básicos: 100 = 1%). Más bajo = el mundo confía más.`,
 };
 
@@ -37,5 +38,6 @@ export const INFO_CORTA: Record<string, { texto: string; reco: Recomendada }> = 
   "Empleo, pobreza e ingresos": { texto: "Cuánta gente trabaja, cuánta es pobre y cuánto necesita una familia para vivir.", reco: { id: "dg_42_3_eph_puntuatal_0_m_30", nombre: "Desocupación" } },
   "Sector externo": { texto: "Lo que Argentina vende y compra al mundo: exportaciones, importaciones y su saldo.", reco: { id: "dg_saldo_comercial", nombre: "Saldo comercial (% del PIB)", esc: "pib" } },
   "Fiscal": { texto: "Cuánto gasta y cuánto recauda el Estado nacional, y si le sobra o le falta plata.", reco: { id: "dg_379_9_superavit_017_23_94", nombre: "Resultado primario (% del PIB)", esc: "pib" } },
+  "Contexto internacional": { texto: "Precios de la soja, el maíz, el trigo y el petróleo, términos de intercambio y tasa de la Fed.", reco: { id: "ctx_soja", nombre: "Soja (Banco Mundial)", med: "usdr" } },
   "Opinión pública (UTDT)": { texto: "Qué opina la gente: confianza del consumidor y confianza en el gobierno (Universidad Di Tella).", reco: { id: "dg_380_3_icc_nacionnal_0_t_12", nombre: "Confianza del consumidor" } },
 };

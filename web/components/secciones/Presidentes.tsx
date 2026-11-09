@@ -4,6 +4,7 @@ import { useSeccion } from "../useSeccion";
 import { Cargando, Desplegable, Selector, Seg, alternar } from "../ui";
 import { BotonInfo, FilaVariable } from "../Variables";
 import { Sparkline } from "../Sparkline";
+import { ContextoMandato } from "./ContextoMandato";
 import { INFO_CORTA } from "@/lib/info";
 import { CeldasStats, COLS, Cabecera, LineaInicio, siguienteOrden, useBase, valorCol, type Orden } from "./comunes";
 import { fmtMes } from "@/lib/formato";
@@ -128,6 +129,7 @@ export function Presidentes() {
           {modoA === "todas" && <button type="button" className="btn" onClick={() => setAbiertos(new Set(GRUPOS))}>Expandir todo</button>}
           {modoA === "todas" && <button type="button" className="btn" onClick={() => setAbiertos(new Set())}>Contraer todo</button>}
         </div>
+        <ContextoMandato m={m} pres={paPres} />
         {modoA === "mis" ? (
           <>
             <p className="note">Hasta 10 variables de cualquier categoría, en el orden en que las agregás. El minigráfico va desde el inicio del mandato de {paPres.n} ({fmtMes(F[baseIdx(F, paPres, b)])}) hasta el cierre.{misPedidas.length ? "" : " Arrancás con las recomendadas de cada tema; cambialas, quitalas o agregá otras."}</p>
