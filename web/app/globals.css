@@ -405,3 +405,19 @@ tr.clic.abierto > td { font-weight: 600; }
 .anim-barra { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
 .voto-rango { font-size: 20px; font-weight: 600; margin: 4px 0; }
 .voto-aviso { border-left: 4px solid var(--malo); background: var(--surface-1); padding: 8px 12px; font-size: 13px; margin: 8px 0; }
+
+/* Precios en el mundo (bloque 6c) */
+.seg button:disabled { opacity: .45; cursor: not-allowed; }
+.pm-lista { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-top: 8px; }
+.pm-fila { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.4fr) 62px; gap: 10px; align-items: center; text-align: left; width: 100%;
+  border: 0; border-bottom: 1px solid var(--border); background: var(--surface-1); color: var(--text-primary); padding: 8px 10px; font-size: 13px; cursor: pointer; }
+.pm-fila:last-child { border-bottom: 0; }
+.pm-fila[aria-pressed="true"] { background: color-mix(in srgb, var(--series-1) 12%, var(--surface-1)); }
+.pm-fila small { display: block; color: var(--text-muted); font-size: 11px; }
+.pm-n { min-width: 0; overflow-wrap: anywhere; }
+.pm-barra { position: relative; height: 14px; background: color-mix(in srgb, var(--text-muted) 12%, transparent); border-radius: 3px; }
+.pm-rel { position: absolute; top: 2px; bottom: 2px; border-radius: 2px; }
+.pm-medio { position: absolute; left: 50%; top: -2px; bottom: -2px; border-left: 2px solid var(--text-primary); z-index: 1; }
+.pm-v { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.pm-v small { font-weight: 400; }
+@media (max-width: 639.98px) { .pm-fila { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 54px; gap: 8px; padding: 8px; } }

@@ -6,9 +6,10 @@ import { defCurios, type DefCurio } from "./curiosidades";
 import { claseVariacion } from "./estadisticas";
 import { FX_KEYS, FX_NOM, type Expr, type Motor, type SerieMeta, type Vals } from "./motor";
 import { decExpr, encExpr, lista as listaUrl } from "./url";
+import { PM_RUBROS } from "./preciosMundo";
 
 export const GRUPOS = ["Mis plantillas", "Destacadas", "Poder de compra", "Precios contra la inflación", "Salarios", "Dólar y mercados",
-  "Actividad", "Empleo y pobreza", "Sector externo", "Fiscal"] as const;
+  "Actividad", "Empleo y pobreza", "Sector externo", "Fiscal", "En el mundo"] as const;
 export type Vista = Record<string, string>;
 
 export interface Plantilla {
@@ -17,6 +18,7 @@ export interface Plantilla {
   e: Expr | null;          // el primer gráfico: de ahí salen el valor, el minigráfico y los datos que hay que bajar
   ids: string[];           // series cuyos datos hacen falta para la tarjeta
   def?: DefCurio;          // dato curioso: arma su propio texto
+  href?: string;           // si abre otra sección en vez de Histórico (ej. Precios en el mundo)
   propia?: boolean; fecha?: string;
 }
 
@@ -109,6 +111,12 @@ export function crearPlantillas(metas: SerieMeta[]): Plantilla[] {
       if (e) nueva({ id: "g-dolares-" + k, titulo: `Cuántos dólares ${FX_NOM[k]} compra un salario mediano`, desc: "Salario SIPA mediano sobre la cotización", grupo: "Poder de compra", etiquetas: ["dolar", "sueldo"], vista: unaVista(e), e, curada: false });
     });
   }
+  // ---- Precios en el mundo (bloque 6c): una por rubro, abre el detalle en Contexto
+  PM_RUBROS.forEach(([rid, nombre]) => out.push({
+    id: "pm-" + rid, titulo: `${nombre}: Argentina contra el mundo, en dólares`, desc: "Nivel de precios contra el promedio del mundo (= 100), medido y estimado",
+    grupo: "En el mundo", etiquetas: ["mundo", "afuera", "dolares", "precios", "exterior", "caro", "barato", "icp"], vista: {}, e: null, ids: [], curada: true,
+    href: `/contexto/?pmr=${rid}#precios-mundo`,
+  }));
   return out;
 }
 
@@ -150,6 +158,7 @@ export function filtrar(lista: Plantilla[], q: string, S: Record<string, SerieMe
 
 // ------------------------------------------------------------ links a Histórico
 export function hrefPlantilla(p: Plantilla, vista?: Vista): string {
+  if (p.href) return p.href;
   const q = new URLSearchParams(vista ?? p.vista);
   if (p.propia) q.set("pn", p.titulo); else q.set("pl", p.id);
   return `/historico/?${q.toString()}`;

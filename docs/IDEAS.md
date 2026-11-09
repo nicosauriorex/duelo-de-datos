@@ -24,7 +24,7 @@ Notas del usuario, ordenadas por tema. No son specs: antes de implementar cualqu
 
 ## Comparación internacional (2026-11-09)
 → PBI y otras variables (base 100 desde 2000): spec docs/specs/contexto-internacional.md. Precios por categoría (nivel en dólares contra el mundo): spec docs/specs/precios-en-el-mundo.md. Queda pendiente la comparación de precios relativos en base 100.
-- **Precios por categoría**: cada división del IPC del INDEC (carne, ropa, servicios, etc.) contra la misma categoría en EE.UU., Europa y los países vecinos, para ver qué tan distorsionado está cada precio en Argentina. Ej.: precio de la carne en Argentina vs. el mundo.
+- ~~**Precios por categoría**: cada división del IPC del INDEC (carne, ropa, servicios, etc.) contra la misma categoría en EE.UU., Europa y los países vecinos, para ver qué tan distorsionado está cada precio en Argentina. Ej.: precio de la carne en Argentina vs. el mundo.~~ ✅ 2026-11-09
 - **Variables que no son precios** (PBI, empleo, etc.): traerlas también para los mismos países y poder comparar cada variable con Argentina.
   Ej.: crecimiento del PBI en **base 100 desde el 2000**, para ver cómo creció cada país.
 - Se suma a "Comparar con vecinos o países parecidos" de más arriba: es la misma idea llevada a todas las variables.
@@ -179,3 +179,6 @@ Son ajustes a lo ya hecho, no ideas nuevas.
 ### Contexto internacional (implementado 2026-11-09, spec contexto-internacional)
 - ~~Contexto para juzgar a un presidente: proyecciones del FMI vs. resultado, vecinos y viento de cola o de frente~~ ✅ 2026-11-09 (sección Contexto y recuadro "Contexto del mandato")
 - ~~Comparación internacional: PBI y otras variables del FMI, base 100 desde 2000~~ ✅ 2026-11-09 (el consumo de carne quedó pendiente, ver arriba)
+
+### Precios en el mundo (implementado 2026-11-09, spec precios-en-el-mundo)
+- ~~Precios por categoría contra el mundo y otros países (ICP del Banco Mundial + estimación mes a mes).~~ ✅ 2026-11-09

@@ -1,5 +1,7 @@
 # Precios en el mundo (bloque 6c)
 
+Estado: implementada (2026-11-09), con las diferencias anotadas en D-008 (docs/DECISIONES.md).
+
 ## Objetivo
 Responder "¿la carne (o la ropa, o los servicios) en Argentina es más cara o más barata que afuera, en dólares?". Para cada rubro del IPC se muestra cuánto cuesta en Argentina comparado con el promedio del mundo y con otros países:
 - **medido** en los años que el Banco Mundial lo midió (Programa de Comparación Internacional, ICP: 2017 y 2021, y 2024 si ya está publicado);

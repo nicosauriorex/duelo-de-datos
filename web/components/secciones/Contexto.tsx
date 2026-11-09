@@ -13,6 +13,8 @@ import {
   type DatosContexto, type DefInd, type DefViento, type Marca,
 } from "@/lib/contexto";
 import { lista, unoDe, useParams } from "@/lib/url";
+import { IDS_PM } from "@/lib/preciosMundo";
+import { PreciosMundo } from "./PreciosMundo";
 
 const f1 = (v: number | null | undefined) => (ok(v) ? nf1.format(v) : "—");
 const signo = (v: number) => { const r = Math.round(v * 10) / 10; return (r > 0 ? "+" : r < 0 ? "−" : "") + nf1.format(Math.abs(r)); };
@@ -21,7 +23,7 @@ const nDe = (p: { n: number; de: number }) => (p.n < p.de ? <small>{p.n} de {p.d
 
 export function Contexto() {
   const [p, set, montado] = useParams();
-  const sec = useSeccion(["ctx_soja", "ctx_maiz", "ctx_trigo", "ctx_petroleo", "ctx_fed", "ctx_terminos"]);
+  const sec = useSeccion(["ctx_soja", "ctx_maiz", "ctx_trigo", "ctx_petroleo", "ctx_fed", "ctx_terminos", ...IDS_PM]);
   const { datos, error } = useContexto();
   const m = sec.motor;
   const PRES = useMemo(() => (m ? crearPres(m.F) : []), [m]);
@@ -49,6 +51,7 @@ export function Contexto() {
       </div>
       <Esperado datos={datos} grupo={grupo[2]} nombreGrupo={grupo[1]} p={p} set={set} resalta={resalta} />
       <Comparar datos={datos} p={p} set={set} resalta={resalta} />
+      <PreciosMundo m={m} p={p} set={set} />
       <Viento m={m} datos={datos} PRES={PRES} resalta={resalta} />
       <p className="note">Fuente: {datos.fuente}.</p>
     </section>

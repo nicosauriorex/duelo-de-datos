@@ -43,7 +43,7 @@ export const Tarjeta = memo(function Tarjeta({ pl, k, onAviso, onRenombrar, onBo
   const desde = motor ? motor.idxDe("2003-01") : 0;
   return (
     <div className="plantilla" ref={ref}>
-      <Link prefetch={false} href={href} className="plantilla-link" aria-label={`Abrir en Histórico: ${pl.titulo}`}>
+      <Link prefetch={false} href={href} className="plantilla-link" aria-label={`${pl.href ? "Abrir en Contexto" : "Abrir en Histórico"}: ${pl.titulo}`}>
         <div className="k">{pl.titulo}{pl.propia && pl.fecha ? <small> · guardada el {new Date(pl.fecha).toLocaleDateString("es-AR")} {new Date(pl.fecha).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}</small> : null}</div>
         {ev ? (
           <>
@@ -52,7 +52,7 @@ export const Tarjeta = memo(function Tarjeta({ pl, k, onAviso, onRenombrar, onBo
             <Sparkline v={ev.v} color={PALETA[k % 8]} desde={desde} />
           </>
         ) : (
-          <div className="d">{visible && terminado ? "Sin vista previa" : " "}</div>
+          <div className="d">{pl.href ? pl.desc : visible && terminado ? "Sin vista previa" : " "}</div>
         )}
       </Link>
       <button type="button" className="btn comp" title="Compartir esta plantilla" aria-label={`Compartir: ${pl.titulo}`}
@@ -134,7 +134,7 @@ export function Plantillas() {
   }
   return (
     <section>
-      <p className="sub">Gráficos ya armados: tocá uno para abrirlo en Histórico y seguir desde ahí.</p>
+      <p className="sub">Gráficos ya armados: tocá uno para abrirlo en Histórico (o en Contexto, los de «En el mundo») y seguir desde ahí.</p>
       <div className="buscador-plantillas">
         <input type="search" value={texto} aria-label="Buscar plantillas" placeholder="Buscá: asado, dólar, salario, alquiler…"
           onChange={(ev) => { setTexto(ev.target.value); set({ q: ev.target.value || null }); }} />

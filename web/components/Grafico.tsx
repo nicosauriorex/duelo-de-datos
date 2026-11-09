@@ -9,6 +9,7 @@ import { MESES, fmtMes, mesNum, ok } from "@/lib/formato";
 export type Fila = Record<string, any>;
 export interface SerieG {
   key: string; name: string; short?: string; color: string; axis?: number; band?: boolean; fmt?: (v: number) => string; dash?: boolean;
+  puntos?: number;   // solo círculos de este tamaño, sin línea (valores medidos aislados)
 }
 export interface Marca { key: string; axis?: number; color: string; fmt: (v: number) => string; tipos: Set<string> }
 export interface Ref { v: number; axis?: number; color: string; letra: string; dash?: string }
@@ -229,9 +230,9 @@ function GraficoBase({ rows, series, opts, lleno }: { rows: Fila[]; series: Seri
       data.push(plot);
       raw.push({});
       uSeries.push({
-        label: se.name, scale: ax ? "y2" : "y", stroke: col, width: 2, spanGaps: false, dash: se.dash ? [5, 4] : undefined,
+        label: se.name, scale: ax ? "y2" : "y", stroke: col, width: se.puntos ? 0 : 2, spanGaps: false, dash: se.dash ? [5, 4] : undefined,
         points: {
-          show: pocos || ralo, size: 5, fill: col, stroke: col,
+          show: pocos || ralo || !!se.puntos, size: se.puntos ?? 5, fill: col, stroke: col,
           filter: (_u: uPlot, _si: number, _show: boolean) => vals.map((v, i) => (v != null ? i : -1)).filter((i) => i >= 0),
         },
       });
