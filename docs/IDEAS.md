@@ -134,7 +134,7 @@ Dirección: **animaciones ligadas al scroll + scrollytelling + motion design**. 
 
 ## Ajustes de interfaz pedidos (2026-11-09)
 → spec 5c (Histórico, "Mis variables" y presidentes en la línea de tiempo): docs/specs/ajustes-historico.md
-→ bloque 5d (Presidentes, Ranking, Mandato y Elecciones), sin spec.
+→ spec 5d (Presidentes, Ranking, Mandato y Elecciones): docs/specs/ajustes-presidentes.md
 **Histórico**
 - Con un solo gráfico, la barra de período y mes/año **ya no hace falta que quede fija** arriba (dejarla fija solo si hay varios).
 - Botón **"Configurar variable"** que abre una ventana (pop-up) para elegir medida, pesos/dólares, etc. Lo mismo para la segunda variable. Ahorra mucho lugar en pantalla. Con **Aceptar**, la variable queda como texto limpio (sin todos los botones a la vista). Ahí también va el nombre de "mis variables".
@@ -148,7 +148,7 @@ Dirección: **animaciones ligadas al scroll + scrollytelling + motion design**. 
 - Sumar la **variación absoluta** además del porcentaje (hoy Ranking compara solo el aumento porcentual).
 - En Ranking, poder **abrir el detalle de dos presidentes a la vez** (ej. filtrar el grupo Salarios y ver Cristina y Milei desplegados juntos). Hoy abrir uno cierra el otro.
 - Mover "lo mejor y lo peor de cada gobierno" de Curiosidades a **Ranking** (o a Presidentes). No es una curiosidad.
-- Curiosidades: sacar los datos curiosos armados a mano (ya están en Plantillas) y pasar el "ranking de presidentes" que quedó ahí a la sección Ranking.
+- ~~Curiosidades: sacar los datos curiosos armados a mano (ya están en Plantillas) y pasar el "ranking de presidentes" que quedó ahí a la sección Ranking.~~ ✅ ya estaba hecho (revisado 2026-11-09: Curiosidades tiene el aviso y los links viejos redirigen).
 
 **Meses de mandato**
 - "Precio teórico" y "partiendo del mes 0 de mi ley" se leen como cosas sueltas: integrar mejor que lo segundo depende de haber elegido lo primero.
