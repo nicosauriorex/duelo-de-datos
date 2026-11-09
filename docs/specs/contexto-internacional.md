@@ -11,7 +11,7 @@ Todo con datos del FMI y de fuentes oficiales, con la misma vara para todos los 
 ## Qué ve y hace el usuario
 1. En la navegación aparece **Contexto**, después de Ranking. Arriba elige el **grupo de comparación**: Mundo, Emergentes, América Latina y el Caribe, o Vecinos.
 2. **Lo esperado vs. lo que pasó**: para cada año, lo que el FMI proyectaba en abril para la Argentina y para el grupo, y lo que pasó al final. Abajo, una tabla por presidente: "Con Macri, la Argentina creció en promedio 1,8 puntos menos de lo esperado por año; el mundo, 0,3 menos. Diferencia: −1,5 puntos". Se puede ver crecimiento, inflación o desempleo.
-3. **La Argentina y otros países**: elige el dato (crecimiento, inflación, desempleo o PIB por habitante) y los países. Ve un gráfico anual con las líneas de cada uno y una tabla por presidente con el promedio de la Argentina, el de cada país y el puesto de la Argentina entre los elegidos.
+3. **La Argentina y otros países**: elige el dato (crecimiento, inflación, desempleo, PIB por habitante, PIB real, deuda, resultado fiscal o cuenta corriente) y los países. El PIB real y el PIB por habitante real se pueden ver en **base 100 desde el 2000** (o el año que elija), para ver cuánto creció cada país. Ve un gráfico anual con las líneas de cada uno y una tabla por presidente con el promedio de la Argentina, el de cada país y el puesto de la Argentina entre los elegidos.
 4. **Viento de cola o de frente**: gráficos de soja, maíz, trigo y petróleo en dólares de hoy, términos de intercambio, tasa de la Fed y crecimiento de Brasil y China. Una tabla por presidente marca cada uno como **a favor**, **neutro** o **en contra**, comparado con el promedio de toda la serie.
 5. En **Por presidente** y en el detalle de **Ranking**, un recuadro corto **Contexto del mandato** muestra para el presidente elegido: crecimiento propio vs. el del grupo, la sorpresa contra lo proyectado y cuántos vientos fueron a favor o en contra. Un link lleva a Contexto.
 6. Si hay una fuente oficial descargable, **Consumo de carne vacuna por habitante** aparece como serie nueva en Precios o en Actividad › Consumo, y entra en curiosidades y plantillas como cualquier otra.
@@ -22,7 +22,7 @@ Todo con datos del FMI y de fuentes oficiales, con la misma vara para todos los 
 1. Antes de programar, confirmar cada fuente con el agente `investigador-datos`: URL exacta, códigos, desde cuándo hay datos y frecuencia. Si una fuente no existe o no se puede bajar sin clave, se deja afuera y se anota en el resumen final.
 2. Todas las descargas pasan por la caché (`_cacheado` / `_cache_df`), como el resto del pipeline: si la fuente falla, se usa la última copia de `datos/cache/`.
 3. **Datos anuales por país (FMI, World Economic Outlook)**, vía la API de DataMapper (`https://www.imf.org/external/datamapper/api/v1/<indicador>/<países>`, sin clave):
-   - Indicadores: crecimiento del PIB real (`NGDP_RPCH`), inflación promedio (`PCPIPCH`), desempleo (`LUR`), PIB por habitante en dólares PPA (`PPPPC`).
+   - Indicadores: crecimiento del PIB real (`NGDP_RPCH`), inflación promedio (`PCPIPCH`), desempleo (`LUR`), PIB por habitante en dólares PPA (`PPPPC`), PIB por habitante real a PPA constante (`NGDPRPPPPC`), deuda pública bruta % del PIB (`GGXWDG_NGDP`, `dir: -1`), resultado fiscal % del PIB (`GGXCNL_NGDP`, `dir: 1`), cuenta corriente % del PIB (`BCA_NGDPD`, `dir: 1`). Si algún código no existe en DataMapper, se usa el equivalente que el FMI tenga y se anota.
    - Países: Argentina, Brasil, Chile, Uruguay, Paraguay, Bolivia, Perú, Colombia, México, Ecuador, Estados Unidos, zona euro, China.
    - Grupos: Mundo, Emergentes y en desarrollo, América Latina y el Caribe, Economías avanzadas. Los códigos de los grupos se confirman en `/api/v1/countries` y `/api/v1/regions`.
    - "Vecinos" = promedio simple de Brasil, Chile, Uruguay, Paraguay y Bolivia (lo calcula la web).
@@ -48,7 +48,8 @@ Todo con datos del FMI y de fuentes oficiales, con la misma vara para todos los 
     - El texto usa siempre la forma neutra: "rindió X puntos mejor/peor de lo esperado; el grupo, Y". No se usan "culpa" ni "mérito".
     - El año en curso no entra en las sorpresas (todavía no hay dato real). Se muestra la última proyección marcada como "estimado".
 13. **La Argentina y otros países**:
-    - Selector de dato: crecimiento, inflación, desempleo o PIB por habitante (`cpd`).
+    - Selector de dato (`cpd`): crecimiento, inflación, desempleo, PIB por habitante (PPA), **PIB real**, **PIB por habitante real**, deuda pública, resultado fiscal y cuenta corriente (los tres últimos en % del PIB).
+    - **Base 100**: para PIB real y PIB por habitante real, la opción "Ver como: Valor | Base 100 desde [año]" (`cpb`, por defecto base 100 desde **2000**; el año se elige entre 1990 y el último año cerrado). El PIB real de cada país se arma como índice encadenando su crecimiento anual (`NGDP_RPCH`); así se ve cuánto creció cada país desde ese año sin importar su tamaño. En base 100 el puesto por presidente se calcula con el crecimiento del índice durante el mandato.
     - Selector de países (chips): por defecto Vecinos (los 5) y Mundo; se pueden sumar los demás países y grupos (`cpp`).
     - Gráfico anual con una línea por país (Argentina destacada) y la tabla por presidente: promedio de la Argentina, promedio de cada país elegido y puesto de la Argentina entre los elegidos (1 = el mejor según `dir`). En PIB por habitante se muestra además la Argentina como % del promedio de los elegidos, al inicio y al final del mandato.
     - Las inflaciones muy altas (ej. Argentina 2023–2024) no deben aplastar el gráfico: escala logarítmica automática para inflación cuando el máximo supera 10 veces la mediana, con la nota correspondiente.
@@ -97,7 +98,8 @@ Decisión de arquitectura: datos anuales multipaís en un archivo aparte, fuera 
 - Explicar las causas de cada desvío (pandemia, guerras, sequías) con texto escrito a mano.
 - Proyecciones de consultoras privadas o del REM del BCRA.
 - Datos de otros países en Histórico mezclados con las series argentinas.
-- Comparar otras variables entre países (deuda, déficit, salarios).
+- Comparar precios por categoría del IPC con otros países (bloque 6c) y salarios entre países.
+- Capacidad de gobierno: legisladores propios, leyes, decretos, vetos (bloque 6d).
 
 ## Cómo se verifica
 1. `python pipeline/obtener_datos.py` termina sin error y genera `contexto.json` y la categoría nueva. `python pipeline/obtener_datos.py --solo-json` también, sin red.
@@ -107,6 +109,8 @@ Decisión de arquitectura: datos anuales multipaís en un archivo aparte, fuera 
    - Contexto en la navegación; cambiar el grupo de comparación cambia las tablas.
    - Lo esperado vs. lo que pasó: 2020 con sorpresa negativa en Argentina y en el mundo; la diferencia se calcula bien (comprobar un año a mano).
    - Otros países: elegir inflación con Argentina y Vecinos se ve legible (escala log); PIB por habitante muestra el % del promedio.
+   - PIB real en base 100 desde 2000: todas las líneas arrancan en 100 en 2000; comprobar a mano el valor de Argentina en 2002 (100 × (1 + crecimiento 2001) × (1 + crecimiento 2002)). Cambiar el año base a 2010 rearma el gráfico.
+   - Deuda, resultado fiscal y cuenta corriente se ven para los países elegidos.
    - Viento: la soja del período de Néstor Kirchner y CFK 1 sale "a favor"; la tasa de la Fed de 2023–2024, "en contra".
    - Recuadro en Por presidente y en el detalle de Ranking, con link que resalta al presidente en Contexto.
    - Asignación de años: 2003 es de Néstor Kirchner y 2015 de CFK 2.

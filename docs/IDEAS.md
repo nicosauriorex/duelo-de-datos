@@ -22,12 +22,14 @@ Notas del usuario, ordenadas por tema. No son specs: antes de implementar cualqu
 - **Comparar con vecinos o países parecidos**: crecer 5% no es mucho si los vecinos crecen 10%.
 
 ## Comparación internacional (2026-11-09)
+→ PBI y otras variables (base 100 desde 2000): spec docs/specs/contexto-internacional.md. Precios por categoría: bloque 6c, sin spec.
 - **Precios por categoría**: cada división del IPC del INDEC (carne, ropa, servicios, etc.) contra la misma categoría en EE.UU., Europa y los países vecinos, para ver qué tan distorsionado está cada precio en Argentina. Ej.: precio de la carne en Argentina vs. el mundo.
 - **Variables que no son precios** (PBI, empleo, etc.): traerlas también para los mismos países y poder comparar cada variable con Argentina.
   Ej.: crecimiento del PBI en **base 100 desde el 2000**, para ver cómo creció cada país.
 - Se suma a "Comparar con vecinos o países parecidos" de más arriba: es la misma idea llevada a todas las variables.
 
 ## Capacidad de gobierno (2026-11-09)
+→ bloque 6d de la hoja de ruta, sin spec.
 Indicadores de cuánto pudo hacer cada presidente de lo que quería, para juzgar resultados con ese contexto.
 - Legisladores **propios y aliados** del presidente: diputados y senadores, por período.
 - **Leyes que quiso sacar vs. leyes aprobadas**.
@@ -114,6 +116,7 @@ Uso central: alguien escribe en redes "Milei fundió la economía" y otra person
 - ~~Histórico: el filtro de fecha queda flotando y se superpone con el resto~~ (arreglado en la migración; ahora se pide que quede fijo arriba sin tapar nada, ver "Histórico: celular y gráficos").
 
 ## Correcciones pedidas (2026-11-09)
+→ spec: docs/specs/correcciones-historico.md
 Son ajustes a lo ya hecho, no ideas nuevas.
 - **"Otros gráficos interesantes" del Histórico** (soja, Chicago, brecha, dólar): los datos ya están en el catálogo, así que ya no tiene sentido tenerlos como gráficos sueltos. Pasarlos a **variables elegibles** como cualquier otra (queda la plantilla si hace falta una vista armada) y sacar la sección.
 - **Hasta 4 gráficos en la vista, uno al lado del otro**, para comparar 4 cosas al mismo tiempo (en celular, apilados). Verificar cómo quedó con lo ya implementado.
