@@ -117,6 +117,48 @@ Uso central: alguien escribe en redes "Milei fundió la economía" y otra person
 ## Bugs conocidos
 - ~~Histórico: el filtro de fecha queda flotando y se superpone con el resto~~ (arreglado en la migración; ahora se pide que quede fijo arriba sin tapar nada, ver "Histórico: celular y gráficos").
 
+## Diseño visual y animación (2026-11-09)
+Dirección: **animaciones ligadas al scroll + scrollytelling + motion design**. Sobre todo en la portada, pero coherente con toda la app. Tipografías modernas y lindas. Libertad de diseño; los textos de abajo son ejemplos.
+- **Portada contada al bajar**:
+  1. Arranca con un mensaje fuerte. Ej.: "¿Cansado de ver comentarios en redes de gente que habla sin saber? *Primero los Datos* tiene la solución. Buscá el dato que te interesa y compará a lo largo del tiempo, con otros presidentes y con el contexto internacional."
+  2. Al bajar, **los datos más buscados** como tarjetas con diseño más atractivo, que se mueven de a poco de izquierda a derecha; el usuario puede volver a una anterior.
+  3. Más abajo, "¿Qué datos te interesan?" (los temas).
+  4. Después "Preguntale a los datos" y las **plantillas destacadas**.
+  5. Remarcar que **todo tiene fuente**.
+- **Links de la portada** (¿Qué querés ver?): hoy se ven simples, azules y subrayados, y queda feo. Pasarlos a botones o tarjetas.
+- **Volver atrás**: al tocar un dato en la portada se llega al Histórico, y falta una flecha "Volver" intuitiva.
+- **Colores de lo bueno y lo malo**: en tema claro, que el verde más fuerte sea lo mejor y el rojo más fuerte lo peor (hoy el claro/oscuro confunde). En tema oscuro puede no tener solución limpia; si es así, dejarlo como está.
+- **Renglones de más**: hay textos que se parten en dos líneas cuando entran en una (ej. la barra de arriba: Precios, Salarios, Dólar, Reservas). Revisar si es a propósito.
+- **Tarjetas de resumen del Histórico** (último dato, promedio, mediana…): en una sola fila; si no entran, se deslizan de costado, y pueden moverse lento por sí solas.
+
+## Ajustes de interfaz pedidos (2026-11-09)
+**Histórico**
+- Con un solo gráfico, la barra de período y mes/año **ya no hace falta que quede fija** arriba (dejarla fija solo si hay varios).
+- Botón **"Configurar variable"** que abre una ventana (pop-up) para elegir medida, pesos/dólares, etc. Lo mismo para la segunda variable. Ahorra mucho lugar en pantalla. Con **Aceptar**, la variable queda como texto limpio (sin todos los botones a la vista). Ahí también va el nombre de "mis variables".
+- En esa ventana, separar más "reales / corrientes" de "pesos / dólares / variaciones": hoy se ve todo muy junto y parece lo mismo.
+- **Leyenda del gráfico**: sacar las líneas de último, promedio y mediana. Mejor que al pasar el cursor sobre la línea se **resalte** y diga qué es (promedio, mediana…) y su valor.
+- **Zoom**: al acercar una zona, la escala vertical se ajusta a esa sección y las líneas (promedio, etc.) se recalculan solo con lo visible. Al tocar "Volver", la escala queda rara y hay que hacer doble clic; que vuelva bien a la primera.
+- **Precios (ej. carne)**: hoy "que suba es malo"; matizarlo, porque depende del poder de compra. Analizar también en términos de salario.
+- Promedio o cierre al pasar de mes a trimestre o año: hay un parámetro de cierre en el código (`agrupar`), pero no verifiqué que esté como opción visible en la pantalla.
+
+**Presidentes y Ranking**
+- Sumar la **variación absoluta** además del porcentaje (hoy Ranking compara solo el aumento porcentual).
+- En Ranking, poder **abrir el detalle de dos presidentes a la vez** (ej. filtrar el grupo Salarios y ver Cristina y Milei desplegados juntos). Hoy abrir uno cierra el otro.
+- Mover "lo mejor y lo peor de cada gobierno" de Curiosidades a **Ranking** (o a Presidentes). No es una curiosidad.
+- Curiosidades: sacar los datos curiosos armados a mano (ya están en Plantillas) y pasar el "ranking de presidentes" que quedó ahí a la sección Ranking.
+
+**Meses de mandato**
+- "Precio teórico" y "partiendo del mes 0 de mi ley" se leen como cosas sueltas: integrar mejor que lo segundo depende de haber elegido lo primero.
+- Mantener separado "presidentes y opciones" (está bien, pero que no se mezcle).
+- **Animación**: que la escala del gráfico acompañe. Ej. con dólar blue, el máximo es 20.000, pero al principio los valores son ~1.200, así que no tiene sentido arrancar con una escala de 20.000. La escala crece a medida que cambian los valores.
+
+**Elecciones (voto estimado)**
+- En los gráficos de dispersión, **pintar aparte el valor actual** (último dato) para ver dónde caería hoy según esa recta.
+- Hoy el cálculo usa solo las variables con relación fuerte (|r| ≥ 0,6, al menos 3 variables y 8 elecciones; el valor absoluto ya incluye las relaciones inversas). Ese 0,6 es un corte arbitrario. Opciones pedidas: poder **elegir el corte de r**, y una **proyección ponderada con todas las variables**, donde pesen más las de mayor coeficiente (ej. el empleo público pesa más que el precio del pan). Mostrar las dos proyecciones.
+
+**Presidentes en la línea de tiempo**
+- En la mayoría de los gráficos, una opción para **pintar el período de cada presidente** como un área de color (o marcarlo). Por defecto con los colores de cada partido (Macri amarillo, Cristina celeste, Milei violeta), y que los colores se puedan cambiar desde la **configuración global**.
+
 ## Correcciones pedidas (2026-11-09)
 → spec: docs/specs/correcciones-historico.md
 Son ajustes a lo ya hecho, no ideas nuevas.
