@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { BotonConfig } from "./ConfigProvider";
 
 export const SECCIONES: [string, string][] = [
-  ["historico", "Histórico"], ["plantillas", "Plantillas"],["presidentes", "Por presidente"], ["mandato", "Meses de mandato"],
+  ["", "Inicio"], ["historico", "Histórico"], ["plantillas", "Plantillas"],["presidentes", "Por presidente"], ["mandato", "Meses de mandato"],
   ["curiosidades", "Curiosidades"], ["elecciones", "Elecciones"], ["fuentes", "Fuentes"],
 ];
 
@@ -13,9 +13,11 @@ export function Nav() {
   return (
     <div className="barra">
       <nav className="tabs" aria-label="Secciones">
-        {SECCIONES.map(([id, t]) => (
-          <Link key={id} prefetch={false} href={`/${id}/`} onClick={(ev) => { if (ruta.replace(/\/$/, "") === `/${id}`) ev.preventDefault(); }} aria-current={ruta.replace(/\/$/, "") === `/${id}` ? "page" : undefined}>{t}</Link>
-        ))}
+        {SECCIONES.map(([id, t]) => {
+          const actual = ruta.replace(/\/$/, "") === (id ? `/${id}` : "");
+          return <Link key={id || "inicio"} prefetch={false} href={id ? `/${id}/` : "/"} onClick={(ev) => { if (actual) ev.preventDefault(); }}
+            aria-current={actual || (!id && ruta.startsWith("/tema/")) ? "page" : undefined}>{t}</Link>;
+        })}
       </nav>
       <BotonConfig />
     </div>

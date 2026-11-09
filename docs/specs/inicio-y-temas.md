@@ -1,5 +1,7 @@
 # Inicio y búsqueda guiada
 
+Estado: implementada (2026-11-08)
+
 ## Objetivo
 Que alguien que entra por primera vez entienda en segundos qué es la página y llegue al dato que busca sin conocer los nombres técnicos. "/" deja de mandar a Histórico y pasa a ser una portada con cifras en vivo, los temas y una búsqueda guiada con oraciones para completar. Cada tema tiene su página con la explicación, los indicadores principales, todos sus datos, cómo le fue a cada presidente y sus plantillas.
 

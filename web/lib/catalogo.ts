@@ -77,3 +77,17 @@ export function crearIndicadoresDe(SER: Record<string, SerieMeta>) {
     .map((s) => ({ id: s.id, grupo: "Productos (precio real, GBA)", nombre: s.n.replace(" (GBA)", "") + " (precio real)", med: "real", rel: null, esc: "" }));
   return { X, INDIC, INDIC_IPC, INDIC_PP, GRUPOS_IND: [...new Set(INDIC.map((i) => i.grupo))] };
 }
+
+/** Busca series por texto (sin tildes, con sinónimos): todas las palabras tienen que estar. Primero las que tienen la palabra en el nombre. */
+export function buscarSeries(metas: SerieMeta[], q: string, max: number): SerieMeta[] {
+  const toks = norm(q.trim()).split(/\s+/).filter(Boolean);
+  if (!toks.length) return [];
+  const res: [number, SerieMeta][] = [];
+  metas.forEach((s) => {
+    const t = textoBusqueda(s as SerieMeta & { busca?: string });
+    if (!toks.every((k) => t.includes(k))) return;
+    const nombre = norm(s.n);
+    res.push([toks.reduce((a, k) => a + (nombre.includes(k) ? 2 : 0) + (nombre.startsWith(k) ? 1 : 0), 0), s]);
+  });
+  return res.sort((a, b) => b[0] - a[0] || a[1].n.length - b[1].n.length).slice(0, max).map((x) => x[1]);
+}

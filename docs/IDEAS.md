@@ -7,7 +7,7 @@ Notas del usuario, ordenadas por tema. No son specs: antes de implementar cualqu
 - Simple para el que quiere ver un dato, configurable al detalle para el que quiere. Que la pantalla no se sature de botones: las opciones avanzadas van escondidas (ej. un botón "Configurar gráfico").
 - Lo visual importa ("todo entra por los ojos"): más adelante, una propuesta de diseño distinta.
 
-## Inicio y búsqueda guiada
+## ~~Inicio y búsqueda guiada~~ ✅ 2026-11-08
 → spec: docs/specs/inicio-y-temas.md (pendiente aparte: fotos de presidentes en la portada; subgrupos agro/minería/industria por rama necesitan series nuevas)
 - Página de inicio visual (ej. los presidentes enfrentados, fotos de datos) que explique por qué existe la página y para qué sirve.
 - Arranca preguntando qué tipo de dato te interesa (ej. Actividad económica), con un **(?)** que abre una explicación corta.
@@ -119,6 +119,9 @@ Uso central: alguien escribe en redes "Milei fundió la economía" y otra person
 
 ## Hecho
 (Ideas implementadas y verificadas; se tachan acá con su fecha. Ver CLAUDE.md.)
+
+### Inicio y búsqueda guiada (implementado, spec inicio-y-temas)
+- ~~Portada con cifras en vivo, temas con (?), página por tema (principales → subgrupos) y oraciones guiadas.~~ ✅ 2026-11-08
 
 ### Histórico: medidas y opciones (implementado, spec medidas-y-opciones)
 - ~~Elegir la medida en pasos: **Pesos / Dólares / Variaciones**.~~ ✅ 2026-11-08

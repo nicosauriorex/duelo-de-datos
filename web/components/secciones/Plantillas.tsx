@@ -14,7 +14,7 @@ const POR_GRUPO = 12;
 
 interface PropsTarjeta { pl: Plantilla; k: number; onAviso: (t: string | null) => void; onRenombrar?: (pl: Plantilla) => void; onBorrar?: (pl: Plantilla) => void }
 /** Los datos se piden recién cuando la tarjeta entra en pantalla; mientras tanto ocupa el mismo alto. */
-const Tarjeta = memo(function Tarjeta({ pl, k, onAviso, onRenombrar, onBorrar }: PropsTarjeta) {
+export const Tarjeta = memo(function Tarjeta({ pl, k, onAviso, onRenombrar, onBorrar }: PropsTarjeta) {
   const { motor, cargar, archivosDe, version } = useDatos();
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);

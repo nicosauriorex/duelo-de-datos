@@ -99,3 +99,8 @@ Una entrada por decisión de arquitectura. Formato: contexto, decisión, por qu�
 
 **Consecuencias**: compartir es solo copiar la URL (`pl` o `pn` marcan la plantilla); las propias no viajan entre dispositivos. Las plantillas se definen con los metadatos del catálogo, sin cargar datos.
 
+
+## D-007 · Temas definidos en un solo módulo y portada con datos bajo demanda
+**Decisión**: los 9 temas (slug, categorías, principales, grupos de plantillas) viven en `web/lib/temas.ts`; las oraciones de "Preguntale a los datos" y sus links, en `web/lib/oraciones.ts`. La portada y las páginas de tema no bajan el catálogo completo: cada tarjeta pide solo el archivo de su indicador cuando entra en pantalla. "/" con parámetros de Histórico (links viejos) redirige a `/historico/` conservándolos; los de seguimiento (`utm_*`, `fbclid`, `gclid`) no.
+
+**Consecuencias**: "productos que más subieron" (plantilla dinámica) no es un indicador principal de Precios porque no es una serie del catálogo. La tabla por presidente de cada tema usa `statsMandato` (igual que la sección Por presidente).

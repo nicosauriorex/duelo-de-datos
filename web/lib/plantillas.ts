@@ -172,3 +172,30 @@ export function evaluar(m: Motor, p: Plantilla): Evaluada | null {
     };
   } catch { return null; }
 }
+
+// ------------------------------------------------------------ para la portada y los temas
+/** La plantilla cuyo primer gráfico es exactamente esta expresión. */
+export const plantillaDeExpr = (pls: Plantilla[], e: Expr): Plantilla | undefined =>
+  pls.find((p) => p.e && p.e.id === e.id && (e.med == null || (p.e.med ?? "") === e.med) && (p.e.rel ?? null) === (e.rel ?? null) && (p.e.esc ?? "") === (e.esc ?? ""));
+/** Plantilla suelta para una expresión (cuando ninguna curada coincide): sirve para calcular la tarjeta. */
+export const plantillaSuelta = (id: string, titulo: string, e: Expr): Plantilla => ({
+  id, titulo, desc: "", grupo: "", etiquetas: [], vista: unaVista(e), curada: true, e, ids: [e.id, ...(e.rel ? [e.rel] : [])],
+});
+/** Plantillas de un tema: las de sus grupos y, si `porCat`, solo las de una categoría del tema. Primero las curadas. */
+export function plantillasDeTema(pls: Plantilla[], S: Record<string, SerieMeta>, t: { cats: string[]; grupos: string[]; porCat?: boolean }): Plantilla[] {
+  const deCat = (p: Plantilla) => !!p.e && !!S[p.e.id] && t.cats.includes(S[p.e.id].cat[0]);
+  return pls.filter((p) => !p.propia && (t.porCat ? deCat(p) && (!t.grupos.length || t.grupos.includes(p.grupo)) : t.grupos.includes(p.grupo)))
+    .sort((a, b) => Number(b.curada) - Number(a.curada));
+}
+
+// ------------------------------------------------------------ líneas de contexto de las cifras de la portada
+/** Inflación interanual (último dato), como texto. */
+export function interanualTxt(m: Motor): string | null {
+  const c = m.calc({ id: "ipc_empalme", med: "via", rel: null, modo: "compra", esc: "" }), u = lastIdx(c.v);
+  return u >= 0 && ok(c.v[u]) ? m.fmtC(c, c.v[u]) : null;
+}
+/** Qué tan lejos está el último dato de su récord (fracción negativa o 0), o null si no se puede calcular. */
+export function distanciaRecord(m: Motor, e: Expr): number | null {
+  const c = m.calc(e), u = lastIdx(c.v), vals = c.v.filter(ok) as number[];
+  return u < 0 || !vals.length ? null : (c.v[u] as number) / Math.max(...vals) - 1;
+}
