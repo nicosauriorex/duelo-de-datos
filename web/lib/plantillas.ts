@@ -1,7 +1,7 @@
 // Plantillas: gráficos ya armados de Histórico. Las curadas se escriben a mano (o vienen de Datos curiosos y de los indicadores);
 // las generadas salen solas del catálogo. Una plantilla es un conjunto de parámetros de Histórico (`vista`) más texto para buscarla.
 import { fmtMes, lastIdx, norm, ok } from "./formato";
-import { crearIndicadoresDe, textoBusqueda } from "./catalogo";
+import { crearIndicadoresDe, palabrasBusqueda, textoBusqueda } from "./catalogo";
 import { defCurios, type DefCurio } from "./curiosidades";
 import { claseVariacion } from "./estadisticas";
 import { FX_KEYS, FX_NOM, type Expr, type Motor, type SerieMeta, type Vals } from "./motor";
@@ -158,13 +158,17 @@ function textoDe(p: Plantilla, S: Record<string, SerieMeta>): string {
   }
   return t;
 }
-/** Sin importar mayúsculas ni tildes; con varias palabras, la plantilla tiene que tener todas. Con menos de 2 caracteres no filtra. */
+/** Sin importar mayúsculas ni tildes ni palabras de relleno ("los peores salarios de la historia" busca "salarios"). Con varias palabras, la
+ *  plantilla tiene que tener todas; si ninguna las tiene, las que tengan al menos una (más coincidencias primero). Con menos de 2 caracteres no filtra. */
 export function filtrar(lista: Plantilla[], q: string, S: Record<string, SerieMeta>): Plantilla[] {
-  const palabras = norm(q).split(/\s+/).filter(Boolean);
+  const palabras = palabrasBusqueda(q);
   if (norm(q).trim().length < MIN_BUSQUEDA || !palabras.length) return lista;
   // cada palabra tiene que empezar una palabra del texto ("asado" no encuentra "pasado")
   const res = palabras.map((w) => new RegExp("(^|[^a-z0-9])" + w.replace(/[^a-z0-9]/g, (c) => "\\" + c)));
-  return lista.filter((p) => { const t = textoDe(p, S); return res.every((re) => re.test(t)); });
+  const filas = lista.map((p) => { const t = textoDe(p, S); return { p, n: res.filter((re) => re.test(t)).length }; });
+  let sel = filas.filter((f) => f.n === palabras.length);
+  if (!sel.length && palabras.length > 1) sel = filas.filter((f) => f.n > 0).sort((a, b) => b.n - a.n);   // sort estable: conserva el orden de la lista
+  return sel.map((f) => f.p);
 }
 
 // ------------------------------------------------------------ links a Histórico

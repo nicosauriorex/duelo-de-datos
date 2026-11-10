@@ -373,7 +373,9 @@ function ConfigurarVariable({ e0, sinRel, onAceptar, onCerrar }: { e0: Expr; sin
   const conRel = relOk && !!d.rel;
   const grupos = motor.gruposMedida(A);
   const medAct = d.med === "vac" ? "via" : d.med || motor.medDefault(A);
-  const act = motor.ubicarMedida(A, medAct) ?? motor.ubicarMedida(A, motor.medDefault(A)) ?? { g: grupos[0], v: grupos[0]?.dims.map((x) => x.opciones[0][0]) ?? [] };
+  // Las series que ya son un porcentaje (inflación, desocupación, pobreza…) no tienen medidas: `grupos` viene vacío y se ven tal cual.
+  const SIN_MEDIDA = { k: "", nombre: "", dims: [], unir: () => "asis", partir: () => null, etq: () => "" } as (typeof grupos)[number];
+  const act = motor.ubicarMedida(A, medAct) ?? motor.ubicarMedida(A, motor.medDefault(A)) ?? { g: grupos[0] ?? SIN_MEDIDA, v: grupos[0]?.dims.map((x) => x.opciones[0][0]) ?? [] };
   const esMon = (g?: { k: string }) => !!g && (g.k === "pesos" || g.k === "dolares");
   const monedaG = grupos.filter(esMon), varG = grupos.find((g) => g.k === "var"), otrosG = grupos.filter((g) => !esMon(g) && g !== varG);
   const enMoneda = esMon(act.g);
@@ -418,7 +420,7 @@ function ConfigurarVariable({ e0, sinRel, onAceptar, onCerrar }: { e0: Expr; sin
               {act.g.dims.length > 1 && <Seg valor={act.v[1]} opciones={act.g.dims[1].opciones} onElegir={(v) => setDim(1, v)} />}
             </Grupo>
           )}
-          {hayMedida && enMoneda && act.g.dims[0].opciones.length > 1 && (
+          {hayMedida && enMoneda && act.g.dims[0]?.opciones.length > 1 && (
             <Grupo titulo="Valores">
               <Seg valor={act.v[0]} opciones={act.g.dims[0].opciones} onElegir={(v) => setDim(0, v)} />
             </Grupo>

@@ -16,7 +16,7 @@ import {
   MEDIDAS_DOLAR, PRESIDENTES, SALARIOS, anios, hrefCompra, hrefDesde, hrefMedida, hrefPresidente, hrefSubio,
   idsCompra, idsMontos, idsPrecios, rotulo, todosLosPrincipales, type Opcion,
 } from "@/lib/oraciones";
-import { hrefHistorico } from "@/lib/temas";
+import { TEMAS, hrefHistorico } from "@/lib/temas";
 
 /** Un hueco de la oración: botón con el valor subrayado. Listas cortas: desplegable propio; listas largas: selector de variables filtrado. */
 function Hueco({ valor, opciones, onElegir, etiqueta, ids, S }: {
@@ -121,7 +121,10 @@ export function Buscar({ plantillas, S, listo = true }: { plantillas: Plantilla[
           {vars.length > 0 && <><h3>Variables</h3><ul>{vars.map((s) => <li key={s.id}><Link prefetch={false} href={hrefVar(s)}>{s.n}</Link><small>{s.cat.join(" › ")}</small></li>)}</ul></>}
         </div>
       ) : (
-        <p className="resultados-busqueda" role="status">No encontramos &quot;{q.trim()}&quot;. Probá con otra palabra o mirá los <a href="#temas">temas</a>.</p>
+        <div className="resultados-busqueda" role="status">
+          <p className="sin-resultados">No encontramos &quot;{q.trim()}&quot;. Probá con otra palabra o elegí un tema:</p>
+          <ul>{TEMAS.map((t) => <li key={t.slug}><Link prefetch={false} href={`/tema/${t.slug}/`}>{t.nombre}</Link></li>)}</ul>
+        </div>
       ))}
     </div>
   );

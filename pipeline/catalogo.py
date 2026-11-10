@@ -43,6 +43,10 @@ def slug(s):
     return re.sub(r"[^a-z0-9]+", "_", s.lower()).strip("_")
 
 
+# Fuente del IPC empalmado y de la inflación: se nombra al organismo de cada tramo (ver salarios.ipc_empalmado).
+FUENTE_IPC = "INDEC (IPC); de 2007 a 2016, IPC de San Luis y de la Ciudad de Buenos Aires"
+
+
 def S(id, n, cat, tipo, u, v, dir=0, fuente="", desc="", mn=None, mx=None, agg=False, flujo=False):
     """agg: monto agregado de toda la economía (admite por habitante y % del PIB). flujo: se suma en el tiempo (no es stock)."""
     d = {"id": id, "n": n, "cat": cat, "tipo": tipo, "u": u, "dir": dir, "fuente": fuente, "desc": desc, "v": v, "agg": agg, "flujo": flujo}
@@ -478,11 +482,11 @@ def propias(m):
           "Bonos: $5.000 dic-19/ene-20, $3.000 abr-20, $1.500 abr/may-21, $5.000 ago-21, mensuales desde sep-22 ($7.000 a $55.000) y $70.000 fijos desde mar-24. "
           "Puede faltar algún bono suelto de 2020-2022."),
         S("ipc_empalme", "IPC empalmado (nivel)", ["Precios", "Indicadores de inflación"], "idx", "índice", m["ipc_ar"], -1,
-          "INDEC / San Luis / CABA / INDEC", "Índice de precios de largo plazo usado para pasar a pesos reales (ver Fuentes)."),
+          FUENTE_IPC, "Índice de precios de largo plazo usado para pasar a pesos reales (ver Fuentes)."),
         S("inflacion", "Inflación mensual", ["Precios", "Indicadores de inflación"], "none", "%", (m["ipc_ar"] / m["ipc_ar"].shift(1) - 1) * 100, -1,
-          "IPC empalmado", "Variación mensual del IPC empalmado."),
+          FUENTE_IPC, "Variación mensual del IPC empalmado."),
         S("inflacion_ia", "Inflación interanual", ["Precios", "Indicadores de inflación"], "none", "%", (m["ipc_ar"] / m["ipc_ar"].shift(12) - 1) * 100, -1,
-          "IPC empalmado", "Variación contra el mismo mes del año anterior."),
+          FUENTE_IPC, "Variación contra el mismo mes del año anterior."),
         S("cpi_usa", "Inflación de EEUU (CPI-U, nivel)", ["Precios", "Indicadores de inflación"], "none", "índice 1982-84=100", m["cpi_us"], -1,
           "Bureau of Labor Statistics", "Índice de precios al consumidor de EEUU."),
         S("riesgo", "Riesgo país (EMBI)", ["Mercados"], "none", "puntos básicos", m["riesgo"], -1, "argentinadatos.com",

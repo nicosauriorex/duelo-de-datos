@@ -532,6 +532,7 @@ svg.mini-bueno { color: var(--bueno); } svg.mini-malo { color: var(--malo); }
 .resultados-busqueda li { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0 var(--e-3); border-bottom: 1px solid var(--grid); }
 .resultados-busqueda small { color: var(--text-muted); }
 .resultados-busqueda h3 { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .03em; color: var(--text-secondary); margin: var(--e-2) 0 2px; }
+.resultados-busqueda .sin-resultados { margin: 0 0 var(--e-2); color: var(--text-secondary); }
 .lema { font-size: var(--t-sm); color: var(--text-muted); max-width: 58ch; margin: var(--e-4) 0 0; }
 .lema strong { color: var(--text-secondary); }
 
@@ -570,6 +571,19 @@ svg.mini-bueno { color: var(--bueno); } svg.mini-malo { color: var(--malo); }
 .placa svg.mini path { stroke-width: 3; }
 @media (hover: hover) { .placa-link:hover .placa-titulo { text-decoration: underline; text-underline-offset: .2em; } }
 @media (max-width: 767.98px) { .carrusel-ctrl .btn-icono:not(.pausa) { display: none; } }
+/* En pantallas anchas las placas entran todas: grilla fija dentro de la columna, sin avance automático ni controles. */
+@media (min-width: 1024px) {
+  .carrusel-ctrl, .segmentos { display: none; }
+  .carrusel-cab { margin-bottom: var(--e-4); }
+  .pista { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: visible; scroll-snap-type: none;
+    max-width: var(--ancho-pagina); margin: 0 auto; padding: 0 var(--e-4); }
+  .pista::after { content: none; }
+  .placa { height: 340px; }
+  .placa[aria-current] { box-shadow: none; }
+  .placa-titulo { white-space: normal; min-height: 2.4em; padding-right: var(--corte-placa); }
+  .placa-pie { flex-direction: column; gap: 2px; }
+  .placa-fuente { text-align: left; }
+}
 
 /* Temas: una tabla de posiciones, no tarjetas */
 .temas { display: grid; grid-template-columns: 1fr; column-gap: var(--e-6); border-top: var(--linea) solid var(--text-primary); }

@@ -413,7 +413,10 @@ function Principal({ m, E, set, version, compacto }: { m: Motor; E: Estado; set:
   const titulo = b100 ? `Comparación en base 100: ${lista.map((o) => o.c.corto).join(", ")}` : lista.length > 2 ? lista.map((o) => o.c.corto).join(", ") : dos ? `${lista[0].c.corto} y ${lista[1].c.corto}` : lista[0].c.nombre;
   const nota = (b100 ? "Cada serie vale 100 en su primer dato del período: la línea muestra cuánto subió o bajó desde ahí."
     : (lista.length > 2 ? lista[0].c.unidad : lista.map((o, k) => `${dos ? (k ? "Derecha: " : "Izquierda: ") : ""}${o.c.unidad}`).join(" · ")) + ".") + porFreq + sumaTxt +
-    (bd ? " La sombra va del mínimo al máximo." : "") + ` Fuente: ${[...new Set(lista.map((o) => o.c.serie.fuente))].join("; ")}.`;
+    (bd ? " La sombra va del mínimo al máximo." : "") +
+    // Los valores reales dependen del IPC empalmado: se avisa con qué índice se descontó la inflación.
+    (!b100 && lista.some((o) => o.c.serie.id !== "ipc_empalme" && /\$ de [a-z]{3}-\d\d|descontada la inflación|relativo al IPC|% real/.test(o.c.unidad))
+      ? " Inflación descontada con el IPC de INDEC (de 2007 a 2016, con los de San Luis y la Ciudad de Buenos Aires)." : "") + ` Fuente:${[...new Set(lista.map((o) => o.c.serie.fuente))].join("; ")}.`;
   const grupo = (lbl: string, el: React.ReactNode) => <Fragment key={lbl}><label>{lbl}</label>{el}</Fragment>;
   const refsToggle = (k: string) => set({ r: [...alternar(E.refs, k, true)].join(",") || "-" });
 

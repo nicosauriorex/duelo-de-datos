@@ -207,7 +207,7 @@ export function crearMotor(F: string[]) {
       let j = tipo === "vm" ? i - 1 : i - 12;
       if (tipo === "vm") { while (j >= 0 && i - j < 4 && !ok(a0[j])) j--; }
       const a = a0[j];
-      if (j < 0 || !ok(a) || a === 0) return null;
+      if (j < 0 || !ok(a) || a <= 0) return null;   // contra un valor cero o negativo (un déficit) el porcentaje no dice nada
       const r = x / a;
       return tipo === "vp12" ? (r > 0 ? (Math.pow(r, 1 / 12) - 1) * 100 : null) : (r - 1) * 100;
     });

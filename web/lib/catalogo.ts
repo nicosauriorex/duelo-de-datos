@@ -78,16 +78,44 @@ export function crearIndicadoresDe(SER: Record<string, SerieMeta>) {
   return { X, INDIC, INDIC_IPC, INDIC_PP, GRUPOS_IND: [...new Set(INDIC.map((i) => i.grupo))] };
 }
 
-/** Busca series por texto (sin tildes, con sinónimos): todas las palabras tienen que estar. Primero las que tienen la palabra en el nombre. */
+// Palabras que no nombran un dato: vacías del español, valoraciones y relleno de las frases que se copian de las redes.
+const PALABRAS_VACIAS = new Set((
+  "el la los las lo un una unos unas de del al en con sin sobre entre por para a y e o u ni que cual cuales quien cuanto cuanta cuantos cuantas " +
+  "como cuando donde porque se me te nos su sus mi mis tu tus este esta estos estas ese esa eso esto mas menos muy tan tanto ya aun todo toda todos todas " +
+  "fue fueron es son era eran ser sera hay hubo ha han he esta estan estuvo tiene tienen tuvo sigue desde hasta durante segun " +
+  "peor peores mejor mejores mayor mayores menor menores alto alta altos altas bajo baja bajos bajas historia historico historica historicos record " +
+  "gobierno presidente pais argentina argentino argentinos hoy ahora actual actualmente subio subieron sube suben bajaron aumento aumentaron aumenta " +
+  "cayo cayeron cae caen nunca siempre veces vez algo mucho poco demasiado verdad dicen"
+).split(" "));
+
+/** Plurales simples: "salarios" → "salario", "jubilaciones" → "jubilacion", "dolares" → "dolar". Solo con 5 letras o más y siempre se
+ *  queda un prefijo de la palabra original (con "es" solo tras l, n, r, d), así que nunca encuentra menos que la palabra escrita. */
+const singular = (w: string): string => {
+  if (w.length < 5 || !w.endsWith("s")) return w;
+  if (/[lnrd]es$/.test(w) && w.length >= 6) return w.slice(0, -2);
+  return /[aeiou]s$/.test(w) ? w.slice(0, -1) : w;
+};
+
+/** Palabras que cuentan al buscar: normalizadas, sin vacías ni valoraciones, con plurales reducidos. Si no queda ninguna, las originales. */
+export function palabrasBusqueda(q: string): string[] {
+  const todas = norm(q).split(/[^a-z0-9ñ]+/).filter(Boolean);
+  const utiles = todas.filter((w) => !PALABRAS_VACIAS.has(w));
+  return [...new Set((utiles.length ? utiles : todas).map(singular))];
+}
+
+/** Busca series por texto (sin tildes, con sinónimos, ignorando palabras de relleno): primero las que tienen todas las palabras;
+ *  si no hay ninguna y se escribieron varias, las que tienen al menos una (más palabras primero). Primero las que tienen la palabra en el nombre. */
 export function buscarSeries(metas: SerieMeta[], q: string, max: number): SerieMeta[] {
-  const toks = norm(q.trim()).split(/\s+/).filter(Boolean);
+  const toks = palabrasBusqueda(q);
   if (!toks.length) return [];
-  const res: [number, SerieMeta][] = [];
-  metas.forEach((s) => {
-    const t = textoBusqueda(s as SerieMeta & { busca?: string });
-    if (!toks.every((k) => t.includes(k))) return;
-    const nombre = norm(s.n);
-    res.push([toks.reduce((a, k) => a + (nombre.includes(k) ? 2 : 0) + (nombre.startsWith(k) ? 1 : 0), 0), s]);
+  const filas = metas.map((s) => {
+    const t = textoBusqueda(s as SerieMeta & { busca?: string }), nombre = norm(s.n);
+    return {
+      s, n: toks.filter((k) => t.includes(k)).length,
+      puntaje: toks.reduce((a, k) => a + (nombre.includes(k) ? 2 : 0) + (nombre.startsWith(k) ? 1 : 0), 0),
+    };
   });
-  return res.sort((a, b) => b[0] - a[0] || a[1].n.length - b[1].n.length).slice(0, max).map((x) => x[1]);
+  let res = filas.filter((f) => f.n === toks.length);
+  if (!res.length && toks.length > 1) res = filas.filter((f) => f.n > 0);
+  return res.sort((a, b) => b.n - a.n || b.puntaje - a.puntaje || a.s.n.length - b.s.n.length).slice(0, max).map((f) => f.s);
 }
