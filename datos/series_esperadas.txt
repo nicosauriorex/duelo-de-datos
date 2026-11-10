@@ -33,6 +33,12 @@ can_cba_h2
 can_cbt
 can_cbt_h2
 cpi_usa
+ctx_fed
+ctx_maiz
+ctx_petroleo
+ctx_soja
+ctx_terminos
+ctx_trigo
 dg_143_3_no_pr_2004_a_31
 dg_149_1_sor_priado_octu_0_25
 dg_149_1_sor_priado_octu_0_28
@@ -85,7 +91,6 @@ dg_74_2_iece_0_t_35
 dg_74_2_iicl_0_t_42
 dg_74_3_iet_0_m_16
 dg_74_3_iit_0_m_25
-dg_82_2_iti_2004_t_27
 dg_balanza_energetica
 dg_gasto_total
 dg_saldo_comercial
