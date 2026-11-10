@@ -52,7 +52,7 @@ export function BarraPlantilla({ p, set }: { p: URLSearchParams; set: SetFn }) {
       )}
       <div className="acciones-vista">
         <button type="button" className="btn" onClick={() => setNombre(nombre == null ? "" : null)} aria-expanded={nombre != null}>Guardar como plantilla</button>
-        <button type="button" className="btn" onClick={abrirCompartir}>Compartir</button>
+        <button type="button" className="btn primario" onClick={abrirCompartir} title="El link muestra exactamente esta vista">Compartir</button>
         <Link prefetch={false} href="/plantillas/" className="btn">Ver plantillas</Link>
       </div>
       {nombre != null && (

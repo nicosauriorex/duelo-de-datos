@@ -1,11 +1,12 @@
 "use client";
-import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useSeccion } from "../useSeccion";
 import { BarraPlantilla } from "./BarraPlantilla";
 import { Cargando, Desplegable, Selector, Seg, alternar } from "../ui";
 import { FilaVariable, RenglonVariable } from "../Variables";
 import { Grafico, hayDatos, type Fila, type Marca, type OpcionesG, type Ref, type SerieG, type TipoRef } from "../Grafico";
 import { PALETA, vcolor } from "../util";
+import { useDeslizable } from "../Movimiento";
 import { fmtMes, MESES, nf0, nf1, fmtNum, ok } from "@/lib/formato";
 import type { Calculo, Expr, Motor } from "@/lib/motor";
 import { PRES_DEF, agrupar, claseVariacion, estadisticasRows, etiqueta, franjasPres, recortar, type EstRows } from "@/lib/estadisticas";
@@ -303,10 +304,10 @@ function CardGrafico({ titulo, nota, leyenda, visibles, config, rows, series, op
         {visibles}
         <Seg valor={vista} opciones={[["grafico", "Gráfico"], ["tabla", "Tabla"]]} onElegir={elegirVista} />
         {config && (
-          <Desplegable etiqueta={config.cuenta ? `Configurar gráfico (${config.cuenta})` : "Configurar gráfico"}>{config.children}</Desplegable>
+          <Desplegable etiqueta={config.cuenta ? `Opciones del gráfico (${config.cuenta})` : "Opciones del gráfico"}>{config.children}</Desplegable>
         )}
         <span className="esp" />
-        {vista === "grafico" && hay && <button type="button" className="btn expandir" onClick={() => setExp(true)} aria-label="Expandir el gráfico a pantalla completa">⤢ Expandir</button>}
+        {vista === "grafico" && hay && <button type="button" className="btn expandir" onClick={() => setExp(true)} aria-label="Expandir el gráfico a pantalla completa">Expandir</button>}
       </div>
       {cab}
       {vista === "tabla"
@@ -324,6 +325,13 @@ function CardGrafico({ titulo, nota, leyenda, visibles, config, rows, series, op
 }
 
 // ------------------------------------------------------------ resumen: tarjetas (≥ 640 px) y chips (celular)
+/** Fila de resumen en un solo renglón: si no entra se desliza de costado (con sombra en el borde) y hace un paseo lento de ida y vuelta la primera vez que se ve. */
+function FilaResumen({ className, children, lista }: { className: string; children: ReactNode; lista?: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useDeslizable(ref, true);
+  return <div className={className} ref={ref} role={lista ? "list" : "group"} aria-label="Resumen" tabIndex={0}>{children}</div>;
+}
+
 interface DefResumen { tit: string; corto: string; val: (s: EstRows) => number; fecha?: (s: EstRows) => string | undefined; desde: (s: EstRows) => number; vs: (s: EstRows) => string }
 const DEFS_RES: DefResumen[] = [
   { tit: "Último dato", corto: "Último", val: (s) => s.ult[0], fecha: (s) => s.ult[1], desde: (s) => s.pri[0], vs: (s) => `vs. ${s.pri[1]}` },
@@ -409,7 +417,7 @@ function Principal({ m, E, set, version, compacto }: { m: Motor; E: Estado; set:
   const grupo = (lbl: string, el: React.ReactNode) => <Fragment key={lbl}><label>{lbl}</label>{el}</Fragment>;
   const refsToggle = (k: string) => set({ r: [...alternar(E.refs, k, true)].join(",") || "-" });
 
-  // Opciones de "Configurar gráfico" distintas de las de por defecto
+  // Opciones de "Opciones del gráfico" distintas de las de por defecto
   const igualA = (set0: Set<string>, ks: string[], def: string[]) => {
     const act = ks.filter((k) => set0.has(k)).sort().join(","), d = def.slice().sort().join(",");
     return act === d;
@@ -465,7 +473,7 @@ function Principal({ m, E, set, version, compacto }: { m: Motor; E: Estado; set:
         </div>
       ) : (
         <>
-          <div className="tiles res">
+          <FilaResumen className="tiles res">
             {DEFS_RES.map((def) => (
               <div className="tile" key={def.tit}><div className="k">{def.tit}</div>
                 <div className={`mitades${dos ? " dos" : ""}${lista.length > 2 ? " varias" : ""}`}>{lista.map((o, k) => {
@@ -477,8 +485,8 @@ function Principal({ m, E, set, version, compacto }: { m: Motor; E: Estado; set:
                   );
                 })}</div></div>
             ))}
-          </div>
-          <div className="chips" role="list" aria-label="Resumen">
+          </FilaResumen>
+          <FilaResumen className="chips" lista>
             {DEFS_RES.map((def) => (
               <div className="chip" role="listitem" key={def.tit} title={def.tit}>
                 <span className="n">{def.corto}</span>
@@ -495,7 +503,7 @@ function Principal({ m, E, set, version, compacto }: { m: Motor; E: Estado; set:
                 })}</div>
               </div>
             ))}
-          </div>
+          </FilaResumen>
         </>
       )}
       <CardGrafico titulo={titulo} nota={nota} leyenda={leyenda} config={{ cuenta, children: config }}

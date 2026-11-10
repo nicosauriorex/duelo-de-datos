@@ -117,8 +117,8 @@ Uso central: alguien escribe en redes "Milei fundió la economía" y otra person
 ## Bugs conocidos
 - ~~Histórico: el filtro de fecha queda flotando y se superpone con el resto~~ (arreglado en la migración; ahora se pide que quede fijo arriba sin tapar nada, ver "Histórico: celular y gráficos").
 
-## Diseño visual y animación (2026-11-09)
-→ spec: docs/specs/diseno-visual.md (bloque 5e)
+## ~~Diseño visual y animación (2026-11-09)~~ ✅ 2026-11-10
+→ spec: docs/specs/diseno-visual.md (bloque 5e). Implementado; resumen en "Hecho".
 Dirección: **animaciones ligadas al scroll + scrollytelling + motion design**. Sobre todo en la portada, pero coherente con toda la app. Tipografías modernas y lindas. Libertad de diseño; los textos de abajo son ejemplos.
 - **Portada contada al bajar**:
   1. Arranca con un mensaje fuerte. Ej.: "¿Cansado de ver comentarios en redes de gente que habla sin saber? *Primero los Datos* tiene la solución. Buscá el dato que te interesa y compará a lo largo del tiempo, con otros presidentes y con el contexto internacional."
@@ -193,6 +193,9 @@ Son ajustes a lo ya hecho, no ideas nuevas.
 
 ## Hecho
 (Ideas implementadas y verificadas; se tachan acá con su fecha. Ver CLAUDE.md.)
+
+### Diseño visual y animación (implementado, spec diseno-visual)
+- ~~Portada contada al bajar, tipografía nueva, links como botones, flecha Volver, verde/rojo según bueno/malo, renglones sin partir y tarjetas de resumen deslizables.~~ ✅ 2026-11-10
 
 ### Inicio y búsqueda guiada (implementado, spec inicio-y-temas)
 - ~~Portada con cifras en vivo, temas con (?), página por tema (principales → subgrupos) y oraciones guiadas.~~ ✅ 2026-11-08

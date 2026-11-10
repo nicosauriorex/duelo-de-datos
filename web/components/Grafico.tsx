@@ -55,7 +55,7 @@ function escala(vals: number[], o: { log?: boolean; zero?: boolean }): Esc | nul
   return { ticks, a: ticks[0], b: ticks[ticks.length - 1], log: false };
 }
 
-const css = (n: string) => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || "#888";
+const css = (n: string) => getComputedStyle(document.documentElement).getPropertyValue(n).trim() || "gray";
 function hexA(c: string, a: number): string {
   const m = /^#([0-9a-f]{6})$/i.exec(c);
   if (!m) return c;

@@ -7,6 +7,7 @@ import { useDatos } from "../DatosProvider";
 import { useConfig } from "../ConfigProvider";
 import { Picker } from "../Variables";
 import { Selector } from "../ui";
+import { IconoIr } from "../Iconos";
 import { buscarSeries } from "@/lib/catalogo";
 import { medidaInicial } from "@/lib/config";
 import { medDefaultDe, type SerieMeta } from "@/lib/motor";
@@ -41,7 +42,7 @@ function Oracion({ children, href }: { children: React.ReactNode; href: string }
   return (
     <li className="oracion">
       <span className="texto-oracion">{children}</span>
-      <button type="button" className="btn on" onClick={() => router.push(href)}>Ver</button>
+      <button type="button" className="btn" onClick={() => router.push(href)}>Ver<IconoIr /></button>
     </li>
   );
 }
@@ -96,8 +97,9 @@ export function Oraciones({ S }: { S: Record<string, SerieMeta> }) {
 }
 
 const MAX = 5;
-/** Caja Buscar: plantillas (título, descripción, etiquetas) y variables del catálogo. Enter abre la primera. */
-export function Buscar({ plantillas, S }: { plantillas: Plantilla[]; S: Record<string, SerieMeta> }) {
+/** Caja Buscar: plantillas (título, descripción, etiquetas) y variables del catálogo. Enter (o el botón) abre la primera.
+ *  Los resultados se abren encima del contenido: no lo mueven. Con `listo` en false se ve la caja, deshabilitada, mientras llegan los datos. */
+export function Buscar({ plantillas, S, listo = true }: { plantillas: Plantilla[]; S: Record<string, SerieMeta>; listo?: boolean }) {
   const router = useRouter();
   const { metas } = useDatos();
   const { config } = useConfig();
@@ -109,15 +111,17 @@ export function Buscar({ plantillas, S }: { plantillas: Plantilla[]; S: Record<s
   const primero = pls[0] ? hrefPlantilla(pls[0]) : vars[0] ? hrefVar(vars[0]) : null;
   return (
     <div className="buscar-guiado">
-      <input type="search" value={q} aria-label="Buscar" placeholder="Buscá: alquiler, dólar blue, carne…" onChange={(ev) => setQ(ev.target.value)}
-        onKeyDown={(ev) => { if (ev.key === "Enter" && primero) router.push(primero); }} />
+      <form role="search" onSubmit={(ev) => { ev.preventDefault(); if (primero) router.push(primero); }}>
+        <input type="search" value={q} disabled={!listo} aria-label="Buscar un dato" placeholder="Buscá: alquiler, dólar blue, carne…" onChange={(ev) => setQ(ev.target.value)} />
+        <button type="submit" className="btn primario" disabled={!listo} aria-label="Abrir el primer resultado"><IconoIr /></button>
+      </form>
       {largo && (pls.length || vars.length ? (
         <div className="resultados-busqueda" role="status">
           {pls.length > 0 && <><h3>Plantillas</h3><ul>{pls.map((p) => <li key={p.id}><Link prefetch={false} href={hrefPlantilla(p)}>{p.titulo}</Link><small>{p.grupo}</small></li>)}</ul></>}
           {vars.length > 0 && <><h3>Variables</h3><ul>{vars.map((s) => <li key={s.id}><Link prefetch={false} href={hrefVar(s)}>{s.n}</Link><small>{s.cat.join(" › ")}</small></li>)}</ul></>}
         </div>
       ) : (
-        <p className="note" role="status">No encontramos &quot;{q.trim()}&quot;. Probá con otra palabra o mirá los <a href="#temas">temas</a>.</p>
+        <p className="resultados-busqueda" role="status">No encontramos &quot;{q.trim()}&quot;. Probá con otra palabra o mirá los <a href="#temas">temas</a>.</p>
       ))}
     </div>
   );

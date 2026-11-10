@@ -5,6 +5,7 @@ import { useDatos } from "./DatosProvider";
 import { useConfig } from "./ConfigProvider";
 import { medidaInicial } from "@/lib/config";
 import { Desplegable, Modal, Selector, Seg } from "./ui";
+import { IconoEditar } from "./Iconos";
 import { fmtMes, lastIdx, norm } from "@/lib/formato";
 import { ORDEN_RAIZ, textoBusqueda } from "@/lib/catalogo";
 import { INFO_CAT, INFO_CORTA } from "@/lib/info";
@@ -333,7 +334,7 @@ export function RenglonVariable({ e, onChange, color, quitable, sinRel, onMover,
         <button type="button" className="btn chico" aria-label="Subir" disabled={!puedeSubir} onClick={() => onMover(-1)}>↑</button>
         <button type="button" className="btn chico" aria-label="Bajar" disabled={!puedeBajar} onClick={() => onMover(1)}>↓</button>
       </>}
-      <button type="button" className="btn chico" aria-label={`Configurar ${A.n}`} onClick={() => setAbierta(true)}>⚙<span className="cfg-txt"> Configurar</span></button>
+      <button type="button" className="btn chico" aria-label={`Configurar ${A.n}`} onClick={() => setAbierta(true)}><IconoEditar /><span className="cfg-txt"> Editar</span></button>
       {quitable && <button type="button" className="btn quitar" title="Quitar esta variable" aria-label="Quitar esta variable" onClick={() => onChange(null)}>✕</button>}
       {abierta && <ConfigurarVariable e0={e} sinRel={sinRel} onAceptar={(x) => onChange(x)} onCerrar={() => setAbierta(false)} />}
     </div>

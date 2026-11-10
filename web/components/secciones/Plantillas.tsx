@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useDatos } from "../DatosProvider";
 import { Cargando } from "../ui";
 import { Sparkline } from "../Sparkline";
-import { PALETA } from "../util";
+import { IconoCompartir } from "../Iconos";
 import { avisoCompartir, compartir } from "@/lib/compartir";
 import { useMisPlantillas } from "@/lib/misPlantillas";
 import { GRUPOS, crearPlantillas, evaluar, filtrar, hrefPlantilla, plantillaPropia, type Plantilla } from "@/lib/plantillas";
@@ -12,9 +12,9 @@ import { useParams } from "@/lib/url";
 
 const POR_GRUPO = 12;
 
-interface PropsTarjeta { pl: Plantilla; k: number; onAviso: (t: string | null) => void; onRenombrar?: (pl: Plantilla) => void; onBorrar?: (pl: Plantilla) => void }
+interface PropsTarjeta { pl: Plantilla; onAviso: (t: string | null) => void; onRenombrar?: (pl: Plantilla) => void; onBorrar?: (pl: Plantilla) => void }
 /** Los datos se piden recién cuando la tarjeta entra en pantalla; mientras tanto ocupa el mismo alto. */
-export const Tarjeta = memo(function Tarjeta({ pl, k, onAviso, onRenombrar, onBorrar }: PropsTarjeta) {
+export const Tarjeta = memo(function Tarjeta({ pl, onAviso, onRenombrar, onBorrar }: PropsTarjeta) {
   const { motor, cargar, archivosDe, version } = useDatos();
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
@@ -44,19 +44,19 @@ export const Tarjeta = memo(function Tarjeta({ pl, k, onAviso, onRenombrar, onBo
   return (
     <div className="plantilla" ref={ref}>
       <Link prefetch={false} href={href} className="plantilla-link" aria-label={`${pl.href ? "Abrir en la sección" : "Abrir en Histórico"}: ${pl.titulo}`}>
-        <div className="k">{pl.titulo}{pl.propia && pl.fecha ? <small> · guardada el {new Date(pl.fecha).toLocaleDateString("es-AR")} {new Date(pl.fecha).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}</small> : null}</div>
+        <div className="k" title={pl.titulo}>{pl.titulo}{pl.propia && pl.fecha ? <small> · guardada el {new Date(pl.fecha).toLocaleDateString("es-AR")} {new Date(pl.fecha).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}</small> : null}</div>
         {ev ? (
           <>
             <div className="v">{ev.val}<small>{ev.fecha}</small></div>
             <div className={`d${ev.cls ? " var-" + ev.cls : ""}`}>{ev.texto}</div>
-            <Sparkline v={ev.v} color={PALETA[k % 8]} desde={desde} />
+            <Sparkline v={ev.v} desde={desde} cls={ev.cls} />
           </>
         ) : (
           <div className="d">{pl.href ? pl.desc : visible && terminado ? "Sin vista previa" : " "}</div>
         )}
       </Link>
       <button type="button" className="btn comp" title="Compartir esta plantilla" aria-label={`Compartir: ${pl.titulo}`}
-        onClick={async () => onAviso(avisoCompartir(await compartir(href, pl.titulo)))}>↗</button>
+        onClick={async () => onAviso(avisoCompartir(await compartir(href, pl.titulo)))}><IconoCompartir /></button>
       {pl.propia && (
         <div className="acciones-plantilla">
           <button type="button" className="enlace" onClick={() => onRenombrar?.(pl)}>Renombrar</button>
@@ -95,8 +95,8 @@ export function Plantillas() {
     if (!window.confirm(`¿Borrar la plantilla "${pl.titulo}"? No se puede deshacer.`)) return;
     mostrar(mis.borrar(pl.id).aviso ?? null);
   };
-  const tarjeta = (pl: Plantilla, k: number) => (
-    <Tarjeta key={pl.id} pl={pl} k={k} onAviso={mostrar} onRenombrar={renombrar} onBorrar={borrar} />
+  const tarjeta = (pl: Plantilla) => (
+    <Tarjeta key={pl.id} pl={pl} onAviso={mostrar} onRenombrar={renombrar} onBorrar={borrar} />
   );
 
   let cuerpo: React.ReactNode;

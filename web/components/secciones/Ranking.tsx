@@ -6,7 +6,7 @@ import { Cargando, Seg, alternar } from "../ui";
 import { FilaVariable } from "../Variables";
 import { ContextoMandato } from "./ContextoMandato";
 import { LineaInicio, useBase } from "./comunes";
-import { tinte } from "../util";
+import { tinte, tinteRelativo } from "../util";
 import { fmtMes, nf0, nf1, ok } from "@/lib/formato";
 import { crearPres, mejorPeor, rankingPresidentes, tablasIndicadores, type CritRk, type FilaMP, type IndRk, type Pres, type TablaInd } from "@/lib/estadisticas";
 import { crearIndicadores } from "@/lib/catalogo";
@@ -82,6 +82,9 @@ export function Ranking() {
   const valido = !usaVars || vars.length >= MIN_V;
   const res = valido ? rankingPresidentes(m, F, PRES, inds, crit, b) : null;
 
+  // El color del puntaje es relativo a la tabla: el mejor en el verde más fuerte y el peor en el rojo más fuerte.
+  const puntajes = (res?.filas ?? []).map((f) => f.score as number).filter(ok);
+  const minP = Math.min(...puntajes), maxP = Math.max(...puntajes);
   const abiertos = lista(p.get("rka")).filter((id) => res?.filas.some((f) => f.p.id === id));
   const alternarAb = (id: string) => set({ rka: (abiertos.includes(id) ? abiertos.filter((x) => x !== id) : [...abiertos, id]).join(",") || null });
   const porDefecto = ["sipa_med", "inflacion", "pob_tasa_pobreza_personas"].map((id) => I.INDIC.find((i) => i.id === id)).filter(Boolean) as Expr[];
@@ -129,7 +132,7 @@ export function Ranking() {
                 <Fragment key={f.p.id}>
                   <tr className={`clic${ab ? " abierto" : ""}`} tabIndex={0} aria-expanded={ab} onClick={() => alternarAb(f.p.id)}
                     onKeyDown={(ev) => { if (ev.key === "Enter") alternarAb(f.p.id); }}>
-                    <td>{k + 1}</td><td>{f.p.n}</td><td style={tinte(((f.score as number) - 50) / 40)}>{nf0.format(f.score as number)}</td><td>{f.items.length}</td>
+                    <td>{k + 1}</td><td>{f.p.n}</td><td style={tinteRelativo(f.score as number, minP, maxP)}>{nf0.format(f.score as number)}</td><td>{f.items.length}</td>
                     <td className="unidad">{f.items.slice(0, 3).map((i) => i.nombre).join(" · ")}</td>
                     <td className="unidad">{f.items.slice(-3).reverse().map((i) => i.nombre).join(" · ")}</td>
                   </tr>

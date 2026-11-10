@@ -112,21 +112,20 @@ export function TemaPagina({ t }: { t: Tema }) {
             ))}</tbody>
           </table></div>
         ) : <p className="note">Sin datos de este indicador en los mandatos.</p>}
-        <p><Link prefetch={false} href={`/presidentes/?${new URLSearchParams({ pv: encExpr(primero) }).toString()}`}>Ver todos los indicadores por presidente</Link></p>
+        <p className="acciones-vista"><Link prefetch={false} className="btn" href={`/presidentes/?${new URLSearchParams({ pv: encExpr(primero) }).toString()}`}>Ver todos los indicadores por presidente</Link></p>
       </section>
     );
   }
 
   return (
     <section className="tema-pagina">
-      <p className="migas-tema"><Link prefetch={false} href="/">Inicio</Link> › Temas</p>
-      <h2 className="titulo-tema">{t.nombre}</h2>
+      <h1 className="titulo-tema">{t.nombre}</h1>
       <Texto t={t} />
 
       {tarjetas.length > 0 && (
         <section aria-label="Principales">
           <h2>Principales</h2>
-          <div className="curios">{tarjetas.map(({ pr, ev }, k) => <CardValor key={pr.nombre} titulo={pr.nombre} ev={ev} href={hrefHistorico(pr)} k={k} motor={m} />)}</div>
+          <div className="curios">{tarjetas.map(({ pr, ev }) => <CardValor key={pr.nombre} titulo={pr.nombre} ev={ev} href={hrefHistorico(pr)} motor={m} />)}</div>
         </section>
       )}
 
@@ -144,10 +143,10 @@ export function TemaPagina({ t }: { t: Tema }) {
         <section aria-label="Plantillas del tema">
           <h2>Plantillas del tema</h2>
           {aviso && <p className="aviso-link" role="status">{aviso}</p>}
-          <div className="curios">{delTema.slice(0, MAX_PLANTILLAS).map((pl, k) => (
-            <Tarjeta key={pl.id} pl={pl} k={k} onAviso={(a) => { setAviso(a); if (a) setTimeout(() => setAviso(null), 4000); }} />
+          <div className="curios">{delTema.slice(0, MAX_PLANTILLAS).map((pl) => (
+            <Tarjeta key={pl.id} pl={pl} onAviso={(a) => { setAviso(a); if (a) setTimeout(() => setAviso(null), 4000); }} />
           ))}</div>
-          <p><Link prefetch={false} href={`/plantillas/?${new URLSearchParams({ q: t.q }).toString()}`}>Ver todas las plantillas</Link></p>
+          <p className="acciones-vista"><Link prefetch={false} className="btn" href={`/plantillas/?${new URLSearchParams({ q: t.q }).toString()}`}>Ver todas las plantillas</Link></p>
         </section>
       )}
     </section>

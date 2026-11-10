@@ -145,3 +145,15 @@ Una entrada por decisión de arquitectura. Formato: contexto, decisión, por qu�
 
 **Actualización 2026-11-09**: el usuario instaló el plugin completo desde la terminal (`/plugin marketplace add pbakaus/impeccable`, alcance "local": solo este proyecto y solo para él, en `.claude/settings.local.json`, sin versionar). Se borró la copia de texto de `.claude/skills/impeccable/`. Con el plugin hay detector automático, revisión después de cada edición, historial de críticas y los comandos `live` y `generate`. La crítica completa pide dos subagentes; corren solo si el usuario lo autoriza.
 
+## D-011 · Sistema visual "La Transmisión" — DECIDIDO (2026-11-10)
+**Contexto**: el bloque 5e pedía una identidad propia, de tono tecnológico moderno, siguiendo el flujo de Impeccable (sorteo de direcciones y elección del usuario).
+
+**Decisión**: el usuario eligió "La Transmisión": gráfica de transmisión deportiva. Azul noche de fondo, placas celestes con un corte en diagonal, ámbar solo para la acción principal, verde y rojo solo para mejor y peor, y una sola familia tipográfica (Archivo, servida con `next/font`). No se sumó ninguna librería: el movimiento es CSS, `IntersectionObserver` y `requestAnimationFrame`. Los tokens están en `web/app/globals.css` y las reglas en `DESIGN.md`.
+
+**Consecuencias y desvíos de la spec**:
+- El tema se marca siempre con `data-theme` en `<html>` ("dark", "light" o "auto"); sin nada guardado queda "dark".
+- Los títulos de tarjeta que no entran en un renglón se cortan con puntos suspensivos (el nombre completo va en `title`): las plantillas no tienen nombre corto.
+- Las tarjetas de resumen de Histórico hacen un solo paseo de ida y vuelta al entrar en pantalla, no un bucle.
+- El carrusel avanza cada 6 s (la spec decía ~5 s) y el indicio de bajar son las placas que asoman en la primera pantalla.
+- La placa del salario se rotula "Salario mediano contra su récord" y la fuente de una placa solo se muestra si nombra un organismo.
+- Crítica de Impeccable: 26/40 y después 29/40, sin P0 ni P1. No llegó al objetivo de 32/40. Los cinco P2 de la segunda pasada se corrigieron sin volver a puntuar. Queda pendiente mostrar la comparación entre presidentes en la portada, que pide un bloque nuevo. Historial en `.impeccable/critique/`.

@@ -1,10 +1,15 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
+import { Archivo } from "next/font/google";
 import "./globals.css";
 import { DatosProvider, Errores } from "@/components/DatosProvider";
-import { Nav } from "@/components/Nav";
+import { Barra, CabeceraPagina } from "@/components/Nav";
 import { ConfigProvider } from "@/components/ConfigProvider";
 import { SCRIPT_TEMA } from "@/lib/config";
+import { ORGANISMOS } from "@/lib/fuentes";
+
+// Una sola familia para todo el sitio (se sirve desde el propio sitio): Archivo, con eje de ancho para los títulos y números condensados.
+const fuente = Archivo({ subsets: ["latin"], axes: ["wdth"], variable: "--fuente", display: "swap" });
 
 export const metadata: Metadata = {
   title: { default: "Primero los Datos", template: "%s · Primero los Datos" },
@@ -15,21 +20,22 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="es" className={fuente.variable} data-theme="dark" suppressHydrationWarning>
       <head><script dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA }} /></head>
       <body>
         <ConfigProvider>
-        <a className="skip" href="#contenido">Saltar al contenido</a>
-        <main>
-          <h1><Link href="/" prefetch={false} className="nombre-sitio">Primero los Datos</Link></h1>
-          <p className="sub"><strong>Datos de Argentina, en debate.</strong></p>
-          <p className="sub">Precios, salarios, dólar, actividad, empleo, pobreza, dinero, fiscal y sector externo con datos oficiales (INDEC, BCRA, Secretaría de Trabajo, Bolsa de Comercio de Rosario y otros), mes a mes.</p>
-          <Nav />
-          <noscript><p className="aviso-js">Esta página necesita JavaScript para mostrar los gráficos y las tablas.</p></noscript>
-          <div id="contenido">
-            <DatosProvider><Errores />{children}</DatosProvider>
-          </div>
-        </main>
+          <a className="skip" href="#contenido">Saltar al contenido</a>
+          <Barra />
+          <main id="contenido">
+            <noscript><p className="aviso-js">Esta página necesita JavaScript para mostrar los gráficos y las tablas.</p></noscript>
+            <DatosProvider><Errores /><CabeceraPagina />{children}</DatosProvider>
+          </main>
+          <footer className="pie">
+            <div className="ancho">
+              <p className="pie-fuentes"><b>Fuentes principales:</b> {ORGANISMOS.join(" · ")} y otras.</p>
+              <Link prefetch={false} href="/fuentes/" className="btn">Ver las fuentes</Link>
+            </div>
+          </footer>
         </ConfigProvider>
       </body>
     </html>

@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-09T00:00:00Z",
+  "title": "Design System: Primero los Datos",
+  "extensions": {
+    "colorMeta": {
+      "azul-noche": { "role": "neutral", "displayName": "Azul noche", "canonical": "#0a1230" },
+      "celeste": { "role": "primary", "displayName": "Celeste", "canonical": "#6cc4ff" },
+      "ambar-sol": { "role": "secondary", "displayName": "Ámbar sol", "canonical": "#ffb81c" },
+      "verde-mejor": { "role": "tertiary", "displayName": "Verde mejor", "canonical": "#3ddc84", "tonalRamp": ["#10302d", "#17573f", "#2bb673", "#5ff0a0"] },
+      "rojo-peor": { "role": "tertiary", "displayName": "Rojo peor", "canonical": "#ff7b7b", "tonalRamp": ["#3a1a2c", "#6b2230", "#e05a5a", "#ff8f8a"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Titular", "purpose": "Mensaje de la apertura de la portada." },
+      "headline": { "displayName": "Sección", "purpose": "Títulos de sección de la portada." },
+      "title": { "displayName": "Página", "purpose": "Título de cada página interna." },
+      "body": { "displayName": "Texto", "purpose": "Lectura y controles." },
+      "label": { "displayName": "Rótulo", "purpose": "Encabezados de tabla y rótulos de tarjetas." }
+    },
+    "shadows": [
+      { "name": "sombra-1", "value": "0 4px 16px rgba(2, 5, 18, .45)", "purpose": "Cartel del gráfico." },
+      { "name": "sombra-2", "value": "0 12px 32px rgba(2, 5, 18, .6)", "purpose": "Ventanas, menú desplegable y listas de opciones." }
+    ],
+    "motion": [
+      { "name": "d-1", "value": "120ms", "purpose": "Cambios de color al pasar el mouse." },
+      { "name": "d-3", "value": "360ms", "purpose": "Entrada de las secciones de la portada." },
+      { "name": "d-dibujo", "value": "900ms", "purpose": "Dibujo de las miniaturas y conteo de números." },
+      { "name": "d-avance", "value": "6s", "purpose": "Tiempo de cada placa del carrusel." },
+      { "name": "curva", "value": "cubic-bezier(.16, 1, .3, 1)", "purpose": "Salida exponencial para todo el movimiento." }
+    ],
+    "breakpoints": [
+      { "name": "chips", "value": "640px" },
+      { "name": "barra", "value": "768px" },
+      { "name": "graficos", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Placa",
+      "kind": "card",
+      "refersTo": "placa",
+      "description": "Un dato al aire: título, cifra gigante, contexto, fecha y fuente.",
+      "html": "<div class=\"ds-placa\"><h3>Inflación del último mes</h3><div class=\"ds-num\">1,9 %</div><p>Interanual: 33,4 %</p><p class=\"ds-pie\"><span>sep-26</span><span>INDEC</span></p></div>",
+      "css": ".ds-placa { width: 320px; padding: 24px; background: #6cc4ff; color: #0a1230; font-family: Archivo, Arial, sans-serif; clip-path: polygon(0 0, calc(100% - 28px) 0, 100% 28px, 100% 100%, 0 100%); } .ds-placa h3 { margin: 0; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .02em; } .ds-num { font-size: 88px; font-weight: 900; font-stretch: 68%; line-height: 1; letter-spacing: -.03em; } .ds-placa p { margin: 8px 0 0; font-weight: 600; } .ds-pie { display: flex; justify-content: space-between; font-size: 12px; text-transform: uppercase; }"
+    },
+    {
+      "name": "Botón primario",
+      "kind": "button",
+      "refersTo": "boton-primario",
+      "description": "La acción principal de la pantalla. Uno por vista.",
+      "html": "<button class=\"ds-btn-primario\">Buscar</button>",
+      "css": ".ds-btn-primario { background: #ffb81c; color: #0a1230; border: 1px solid #ffb81c; border-radius: 4px; padding: 5px 10px; font: 800 13px Archivo, Arial, sans-serif; cursor: pointer; } .ds-btn-primario:focus-visible { outline: 2px solid #ffb81c; outline-offset: 2px; }"
+    },
+    {
+      "name": "Botón",
+      "kind": "button",
+      "refersTo": "boton",
+      "description": "Acción secundaria; con .on queda celeste (elegido).",
+      "html": "<button class=\"ds-btn\">Ver todas las plantillas</button>",
+      "css": ".ds-btn { background: #121c44; color: #f3f6fb; border: 1px solid #4a5a94; border-radius: 4px; padding: 5px 10px; font: 600 13px Archivo, Arial, sans-serif; cursor: pointer; } .ds-btn:hover { border-color: #f3f6fb; }"
+    },
+    {
+      "name": "Barra",
+      "kind": "nav",
+      "refersTo": "barra",
+      "description": "Marcador: logo en pestaña celeste cortada y 5 secciones.",
+      "html": "<div class=\"ds-barra\"><b>PRIMERO LOS DATOS</b><span class=\"ds-act\">Inicio</span><span>Histórico</span><span>Presidentes</span></div>",
+      "css": ".ds-barra { display: flex; align-items: center; gap: 20px; height: 48px; background: #060b20; color: #b9c4dd; border-bottom: 2px solid #6cc4ff; font: 600 15px Archivo, Arial, sans-serif; } .ds-barra b { display: flex; align-items: center; height: 100%; padding: 0 28px 0 16px; background: #6cc4ff; color: #0a1230; font-weight: 900; font-stretch: 75%; clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%); } .ds-act { color: #f3f6fb; font-weight: 800; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "La Transmisión",
+    "overview": "Cada dato sale al aire como una placa de transmisión deportiva, y los presidentes se comparan como en una tabla de posiciones. Tono tecnológico moderno, con energía; no un banco ni un ministerio. Tema oscuro principal y claro igual de cuidado.",
+    "keyCharacteristics": ["Celeste y ámbar sobre azul noche", "Planos, cortes en diagonal y líneas de 2 px", "Una sola familia: Archivo", "Un dato por placa", "Todo número muestra su tendencia"],
+    "rules": [
+      { "name": "La ley de colores", "body": "Verde y rojo solo significan mejor y peor. El ámbar solo marca la acción principal.", "section": "colors" },
+      { "name": "Nunca solo color", "body": "Lo bueno o malo siempre lleva signo o texto.", "section": "colors" },
+      { "name": "Cifras tabulares", "body": "Todos los números usan tabular-nums.", "section": "typography" },
+      { "name": "Un renglón", "body": "Menú, botones, pestañas y títulos de tarjeta no se parten.", "section": "typography" }
+    ],
+    "dos": ["Usar los tokens de globals.css", "Un dato por placa; listas con líneas para lo repetido", "Acompañar verde o rojo con signo o texto"],
+    "donts": ["Ámbar, verde o rojo como decoración", "Segunda familia tipográfica o símbolos de texto como íconos", "Sombras blandas, esquinas muy redondeadas, degradados o brillos", "El corte en diagonal fuera del logo, las placas y el bloque de fuentes"]
+  }
+}

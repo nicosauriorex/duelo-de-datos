@@ -22,12 +22,12 @@ export interface Config {
   franjas: boolean;              // franjas de presidentes en todos los gráficos
   colPres: Record<string, string>; // color elegido por presidente (id → #rrggbb)
 }
-export const DEFECTO: Config = { v: VERSION, t0: -1, t0p: {}, dolar: "oficial", medida: "real", desde: "2003", tema: "auto", franjas: false, colPres: {} };
+export const DEFECTO: Config = { v: VERSION, t0: -1, t0p: {}, dolar: "oficial", medida: "real", desde: "2003", tema: "oscuro", franjas: false, colPres: {} };
 
 export const DOLARES: [Dolar, string][] = [["oficial", "Oficial"], ["blue", "Blue"], ["mep", "MEP"], ["ccl", "CCL"]];
 export const MEDIDAS: [MedidaPref, string][] = [["real", "Pesos reales"], ["corr", "Pesos corrientes"], ["usdr", "Dólares reales"], ["usd", "Dólares corrientes"]];
 export const DESDES: [DesdePref, string][] = [["todo", "Todo"], ["1995", "1995"], ["2003", "2003"], ["2011", "2011"], ["2017", "2017"], ["2023", "2023"], ["ultimo", "Último año"]];
-export const TEMAS: [TemaPref, string][] = [["auto", "Automático"], ["claro", "Claro"], ["oscuro", "Oscuro"]];
+export const TEMAS: [TemaPref, string][] = [["oscuro", "Oscuro"], ["claro", "Claro"], ["auto", "Automático"]];
 
 const unoDe = <T extends string>(x: unknown, validos: readonly [T, string][], def: T): T =>
   validos.some((v) => v[0] === x) ? (x as T) : def;
@@ -67,11 +67,10 @@ export function guardar(c: Config): boolean {
   try { window.localStorage.setItem(CLAVE, JSON.stringify(c)); return true; } catch { return false; }
 }
 
-/** Atributo `data-theme` de <html> para un tema (null = sin atributo, sigue al dispositivo). */
-export const atributoTema = (t: TemaPref): string | null => (t === "claro" ? "light" : t === "oscuro" ? "dark" : null);
+/** Atributo `data-theme` de <html> para un tema: "dark" (el de fábrica), "light" o "auto" (sigue al dispositivo). */
+export const atributoTema = (t: TemaPref): string => (t === "claro" ? "light" : t === "auto" ? "auto" : "dark");
 export function aplicarTema(t: TemaPref) {
-  const a = atributoTema(t), el = document.documentElement;
-  if (a) el.setAttribute("data-theme", a); else el.removeAttribute("data-theme");
+  document.documentElement.setAttribute("data-theme", atributoTema(t));
 }
 /** Aplica los colores elegidos de los presidentes: pisan las variables `--pres-<id>` (el color de fábrica está en globals.css). */
 export function aplicarColPres(col: Record<string, string>) {
@@ -79,8 +78,8 @@ export function aplicarColPres(col: Record<string, string>) {
   for (let i = st.length - 1; i >= 0; i--) { const n = st.item(i); if (n.startsWith("--pres-")) st.removeProperty(n); }
   for (const [id, c] of Object.entries(col)) st.setProperty(`--pres-${id}`, c);
 }
-/** Script chico para el <head>: aplica el tema guardado antes de pintar. Debe seguir en sintonía con `atributoTema`. */
-export const SCRIPT_TEMA = `try{var c=JSON.parse(localStorage.getItem("${CLAVE}")||"{}");var t=c.tema==="claro"?"light":c.tema==="oscuro"?"dark":null;if(t)document.documentElement.setAttribute("data-theme",t)}catch(e){}`;
+/** Script chico para el <head>: aplica el tema guardado antes de pintar (sin nada guardado queda el oscuro que ya trae el HTML). Debe seguir en sintonía con `atributoTema`. */
+export const SCRIPT_TEMA = `try{var c=JSON.parse(localStorage.getItem("${CLAVE}")||"{}");var t=c.tema==="claro"?"light":c.tema==="auto"?"auto":"dark";document.documentElement.setAttribute("data-theme",t)}catch(e){}`;
 
 // ---------------------------------------------------------------- Inicio del mandato
 /** Cómo se cuenta el inicio de cada mandato: `t0` para todos y excepciones por presidente. */

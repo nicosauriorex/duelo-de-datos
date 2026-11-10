@@ -1,6 +1,6 @@
 # Diseño visual y portada (bloque 5e)
 
-Estado: spec lista, falta implementar.
+Estado: implementada (2026-11-10). Crítica de Impeccable: 26/40 → 29/40, sin P0 ni P1; el objetivo de 32/40 no se alcanzó (ver D-011).
 
 ## Objetivo
 Darle a Primero los Datos una identidad propia, con un tono **tecnológico moderno**, en todo el sitio, y una portada que se cuente al bajar.

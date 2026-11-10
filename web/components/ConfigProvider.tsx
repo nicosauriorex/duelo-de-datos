@@ -2,6 +2,7 @@
 // Contexto de la configuración global + panel (botón ⚙ y ventana). Ver docs/specs/configuracion-global.md.
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Modal } from "./ui";
+import { IconoAjustes } from "./Iconos";
 import { PRES_DEF } from "@/lib/estadisticas";
 import {
   CLAVE, DEFECTO, DESDES, aplicarColPres, DOLARES, MEDIDAS, TEMAS, T_MAX, T_MIN, aplicarTema, guardar, leer, txtTLargo,
@@ -61,16 +62,17 @@ export function ConfigProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Botón ⚙ del encabezado. */
+/** Botón de configuración del encabezado: con texto en computadora y solo el ícono (con `aria-label`) en celular. */
 export function BotonConfig() {
   const { abrirPanel } = useConfig();
-  return <button type="button" className="btn config-btn" aria-label="Configuración" title="Configuración" onClick={abrirPanel}>⚙</button>;
+  return <button type="button" className="config-btn" aria-label="Configuración" onClick={abrirPanel}><IconoAjustes /><span className="solo-grande">Configurar</span></button>;
 }
 
 /** Color de fábrica de un presidente (la variable de serie de la que sale) como #rrggbb, para el selector de color. */
 function colorBase(v: string): string {
   const x = getComputedStyle(document.documentElement).getPropertyValue(v).trim();
-  return /^#[0-9a-f]{6}$/i.test(x) ? x : "#888888";
+  if (/^#[0-9a-f]{6}$/i.test(x)) return x;
+  return v === "--neutral" ? "" : colorBase("--neutral");   // sin color suelto: cae al gris del tema
 }
 
 const RANGO_T = Array.from({ length: T_MAX - T_MIN + 1 }, (_, i) => T_MIN + i);

@@ -18,3 +18,6 @@ export const FUENTES_HTML = `
       <li><b>Tasas reales:</b> real anual = (1 + TNA/12)^12 dividido la inflación de los 12 meses previos; real mensual = (1 + TNA/12) dividido la inflación del mes. Es una medida "ex post" (con la inflación que efectivamente hubo).</li>
       <li><b>No conseguido:</b> deuda pública bruta y consolidada (Finanzas solo publica PDFs trimestrales), venta de autos (patentamientos), ventas minoristas de CAME, tarifas de luz, gas, agua y colectivo en pesos (se pueden ver los rubros del IPC: "Regulados" y "Vivienda, agua, electricidad, gas") y empleo público separado por nación y provincias.</li>
 `;
+
+/** Organismos principales de los que salen los datos (portada y pie de página). El detalle está en FUENTES_HTML. */
+export const ORGANISMOS = ["INDEC", "BCRA", "Secretaría de Trabajo", "Bolsa de Comercio de Rosario", "datos.gob.ar"];
