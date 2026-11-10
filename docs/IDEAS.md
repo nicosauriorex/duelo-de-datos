@@ -74,6 +74,7 @@ Las primeras seis → spec: docs/specs/medidas-y-opciones.md (implementadas 2026
 - ~~Porcentaje estimado de votos que sacaría el presidente en curso con los datos que tiene hasta hoy.~~ ✅ 2026-11-08
 
 ## Compartir gráficos
+→ spec: docs/specs/responder-con-imagen.md (bloque 7a: botón Compartir con imagen, título, texto de contexto automático, marca del sitio) y docs/specs/imagen-presidentes.md (bloque 7b: Por presidente, Ranking y Meses de mandato). Quedan afuera: el pedido de donación, publicar en Comunidad y el video.
 - Todos los gráficos, indicadores y tablas tienen un botón **Compartir** que abre un panel para descargar lo que se está viendo.
 - Título que explique lo que se ve + subtítulo con los filtros aplicados.
 - Texto explicativo sugerido automáticamente (ej. "viene mejorando un x%"), que se puede ocultar o reemplazar por uno propio.
@@ -83,6 +84,7 @@ Las primeras seis → spec: docs/specs/medidas-y-opciones.md (implementadas 2026
 - Pensado para compartir en Twitter/X y otras redes.
 
 ## Responder y verificar afirmaciones en redes (2026-11-08)
+→ spec: docs/specs/responder-con-imagen.md (solo "imagen lista para pegar" y "mejor dato desde…"; sin sello ni cita del tuit). El resto sigue pendiente (bloque 7c).
 Uso central: alguien escribe en redes "Milei fundió la economía" y otra persona responde con la página.
 - **Link que lleva a la vista justa**: la respuesta apunta a un gráfico o página ya armado con los filtros del caso (ej. el mandato desde T con las variables clave).
 - **Imagen lista para pegar en la respuesta** (la gente no entra a los links): se genera sola, con los datos, marca de agua y el link. Formato a elegir (cuadrado 1:1, vertical 4:5, horizontal 16:9).

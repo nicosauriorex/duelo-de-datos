@@ -157,3 +157,15 @@ Una entrada por decisión de arquitectura. Formato: contexto, decisión, por qu�
 - El carrusel avanza cada 6 s (la spec decía ~5 s) y el indicio de bajar son las placas que asoman en la primera pantalla.
 - La placa del salario se rotula "Salario mediano contra su récord" y la fuente de una placa solo se muestra si nombra un organismo.
 - Crítica de Impeccable: 26/40 y después 29/40, sin P0 ni P1. No llegó al objetivo de 32/40. Los cinco P2 de la segunda pasada se corrigieron sin volver a puntuar. Queda pendiente mostrar la comparación entre presidentes en la portada, que pide un bloque nuevo. Historial en `.impeccable/critique/`.
+
+## D-012 · La imagen compartible se arma en el navegador, sin veredicto — DECIDIDO (2026-11-10)
+**Contexto**: la auditoría del 2026-11-10 mostró que el sitio no generaba ninguna imagen, que es lo que circula en redes. El sitio es estático (D-001), sin servidor.
+
+**Decisión** (specs `responder-con-imagen.md` e `imagen-presidentes.md`):
+- La imagen se dibuja en el navegador con `canvas`, sin servidor y sin librerías nuevas. La lógica vive en `web/lib/imagen.ts`.
+- Sale siempre con el aspecto oscuro de la marca (D-011), sea cual sea el tema del usuario. Formato por defecto: cuadrada 1:1; también vertical 4:5 y horizontal 16:9.
+- **Sin sello de verdadero o falso.** La imagen dice qué muestran los datos con palabras neutras ("más alto", "más bajo", "por debajo de su récord"); la conclusión la saca quien comparte.
+- El título, la cifra y el contexto los calcula el sitio y no se editan. El usuario puede sumar un comentario, que sale marcado como suyo. La fuente y la dirección del sitio no se pueden quitar.
+- En Histórico, con un solo gráfico, se ve primero una vista simple (dato, contexto, gráfico, fuente, Compartir); los controles quedan bajo "Personalizar".
+
+**Consecuencias**: la vista previa de los links en redes no se resuelve con esto (necesita páginas fijas por dato generadas en cada actualización; bloque 7c). El contexto automático pasa a ser una sola función en `web/lib/` que usan la portada, las plantillas, la vista del dato y la imagen.
