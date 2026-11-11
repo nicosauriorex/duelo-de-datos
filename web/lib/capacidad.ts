@@ -120,3 +120,24 @@ export const hayDatos = (d: DatosCap, pres: string) =>
 
 /** Quórum = mitad más uno del total de la cámara, en porcentaje. */
 export const quorumPct = (total: number) => (Math.floor(total / 2) + 1) / total * 100;
+
+// ---- Qué indicadores tienen datos cargados (página de Congreso)
+/** ¿Algún presidente tiene dato de este indicador? Los vetos con solo insistidos cuentan como dato. */
+export const presConDato = (d: DatosCap, ind: Indicador, M: Mandato[]): Mandato[] => M.filter((m) => valorIndicador(d, m.id, m, ind) != null);
+export const indicadorTieneDatos = (d: DatosCap, ind: Indicador, M: Mandato[]) => presConDato(d, ind, M).length > 0;
+/** Primer indicador con datos cargados (si no hay ninguno, "bancas"). */
+export const primerIndicadorConDatos = (d: DatosCap, M: Mandato[]): Indicador =>
+  INDICADORES.map((x) => x[0]).find((i) => indicadorTieneDatos(d, i, M)) ?? "bancas";
+/** "Qué hay cargado": una oración con los indicadores y presidentes que tienen datos. */
+export function queHayCargado(d: DatosCap, M: Mandato[]): string {
+  const nombres: Record<Indicador, string> = { bancas: "bancas", leyes: "leyes del Ejecutivo", dnu: "DNU", vetos: "vetos" };
+  const con: string[] = [], sin: string[] = [];
+  INDICADORES.forEach(([i]) => {
+    const ps = presConDato(d, i, M);
+    if (!ps.length) { sin.push(nombres[i]); return; }
+    const de = ps.length === M.length ? "todos los presidentes" : ps.length <= 4 ? ps.map((x) => x.n).join(", ") : `${ps.length} de ${M.length} presidentes`;
+    const parcial = i === "vetos" && ps.some((x) => resumenVetos(d, x.id, x)?.total == null);
+    con.push(`${i === "vetos" && parcial ? "vetos insistidos" : nombres[i]} (${de})`);
+  });
+  return `Hay cargado: ${con.length ? con.join("; ") : "nada todavía"}.${sin.length ? ` Todavía sin datos: ${sin.join(" y ")}.` : ""}`;
+}

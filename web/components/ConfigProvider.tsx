@@ -1,7 +1,7 @@
 "use client";
 // Contexto de la configuración global + panel (botón ⚙ y ventana). Ver docs/specs/configuracion-global.md.
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { Modal } from "./ui";
+import { Modal, Selector } from "./ui";
 import { IconoAjustes } from "./Iconos";
 import { PRES_DEF } from "@/lib/estadisticas";
 import {
@@ -79,11 +79,9 @@ const RANGO_T = Array.from({ length: T_MAX - T_MIN + 1 }, (_, i) => T_MIN + i);
 
 function SelectT({ valor, onElegir, etiqueta, igual }: { valor: number | undefined; onElegir: (k: number | undefined) => void; etiqueta: string; igual?: string }) {
   return (
-    <select aria-label={etiqueta} value={valor === undefined ? "" : String(valor)}
-      onChange={(ev) => onElegir(ev.target.value === "" ? undefined : Number(ev.target.value))}>
-      {igual && <option value="">{igual}</option>}
-      {RANGO_T.map((k) => <option key={k} value={k}>{txtTLargo(k)}</option>)}
-    </select>
+    <Selector etiqueta={etiqueta} valor={valor === undefined ? "" : String(valor)}
+      opciones={[...(igual ? [["", igual] as [string, string]] : []), ...RANGO_T.map((k) => [String(k), txtTLargo(k)] as [string, string])]}
+      onElegir={(v) => onElegir(v === "" ? undefined : Number(v))} />
   );
 }
 function Opciones<T extends string>({ etiqueta, valor, opciones, onElegir }: { etiqueta: string; valor: T; opciones: [T, string][]; onElegir: (v: T) => void }) {

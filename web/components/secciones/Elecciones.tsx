@@ -3,8 +3,8 @@ import { useMemo, useState } from "react";
 import { useSeccion } from "../useSeccion";
 import { Cargando, Seg, alternar } from "../ui";
 import { BotonInfo } from "../Variables";
-import { LineaInicio, useBase } from "./comunes";
-import { PALETA, tinte } from "../util";
+import { CeldaVar, LineaInicio, Valor, useBase } from "./comunes";
+import { PALETA } from "../util";
 import { fmtMes, fmtNum, nf0, nf1, nf2, norm, ok } from "@/lib/formato";
 import { CORTES_R, crearElec, crearPres, estimarVoto, METRICA_E, pearson, ultimoGlobalDe, valorElec, valorHoy } from "@/lib/estadisticas";
 import { textoBusqueda } from "@/lib/catalogo";
@@ -136,7 +136,7 @@ export function Elecciones() {
         <label>Elecciones</label><Seg valor={tipos} opciones={[["pres", "Presidenciales"], ["leg", "Legislativas"]]} onElegir={(v) => set({ et: [...alternar(tipos, v)].join(",") })} />
         <label>Medir</label><Seg valor={metrica} opciones={Object.entries(METRICA_E).map(([k, v]) => [k, v[0]] as [string, string])} onElegir={(v) => set({ em: v === "var12" ? null : v })} />
       </div>
-      {metrica === "mandato" && <LineaInicio info={info} />}
+      {metrica === "mandato" && <LineaInicio info={info} F={m.F} />}
       <div className="callout">
         Para cada variable se calcula su valor en cada elección ({METRICA_E[metrica][1]}) y se lo compara con el % que sacó el oficialismo nacional. <b>r</b> es la correlación: +1 = se mueven juntos, −1 = al revés, 0 = nada que ver. Con tan pocas elecciones ({el.length}), una correlación alta puede ser casualidad; con menos de 8 puntos, |r| por debajo de ~0,7 no dice mucho. Los montos de toda la economía se miden como % del PIB y los montos en pesos, en pesos reales.
       </div>
@@ -158,12 +158,12 @@ export function Elecciones() {
             <p className="note">Para cada variable se ajustó una recta y se la evaluó en el valor de hoy, medido igual que en las elecciones ({METRICA_E[metrica][0].toLowerCase()}). Se usan las variables con al menos 8 elecciones; las de relación fuerte van primero y resaltadas.
               {ultima ? <> Como referencia, el último resultado real del oficialismo fue <b>{nf1.format(ultima.v)} %</b> ({ultima.of}, {fmtMes(ultima.f)}).</> : null}</p>
             <p className="note"><b>Cómo se pondera:</b> el número ponderado promedia las estimaciones de todas las variables, y cada una pesa según su r² (&quot;cuánto del voto acompaña a la variable&quot;: 0 % = nada, 100 % = todo). Ojo: muchas variables miden casi lo mismo (varios salarios, por ejemplo), y eso hace que ese tema pese más de lo que correspondería. Sigue sin ser una encuesta ni un pronóstico.</p>
-            <div className="tablewrap alto"><table>
+            <div className="tablewrap alto fija"><table>
               <thead><tr><th>Variable</th><th>r</th><th>Peso</th><th>Valor de hoy</th><th>% estimado</th></tr></thead>
               <tbody>{voto.vars.map((v) => (
                 <tr key={v.o.s.id} className={v.fuerte ? "fila-fuerte" : ""}>
-                  <td className="nombre">{v.o.s.n}{v.fuera && <small title="El valor de hoy está fuera del rango que tuvo esta variable en las elecciones: es una extrapolación">fuera de lo visto antes</small>}</td>
-                  <td style={tinte(v.o.r * 0.9)}>{fmtR(v.o.r)}</td>
+                  <CeldaVar nombre={v.o.s.n} unidad={v.o.c.unidad} extra={v.fuera ? <small title="El valor de hoy está fuera del rango que tuvo esta variable en las elecciones: es una extrapolación">fuera de lo visto antes</small> : null} />
+                  <Valor tono={null}>{fmtR(v.o.r)}</Valor>
                   <td>{nf1.format(v.peso * 100)} %</td>
                   <td>{metrica === "nivel" ? v.o.c.pct ? nf1.format(v.hoy) + " %" : fmtNum(v.hoy) : (v.hoy > 0 ? "+" : "") + nf1.format(v.hoy) + (v.o.c.pct ? " pp" : " %")}</td>
                   <td>{nf1.format(v.est)} %</td>
@@ -194,14 +194,14 @@ export function Elecciones() {
           <Seg valor={conIpc} opciones={[["no", "Sin detalle regional de precios"], ["si", "Con todo"]]} onElegir={(v) => set({ eipc: v === "no" ? null : v })} />
         </div>
         <p className="note">{filas.length} variables{filas.length > 300 ? " (se muestran las primeras 300)" : ""}. Tocá un encabezado para ordenar.</p>
-        <div className="tablewrap alto"><table>
+        <div className="tablewrap alto fija"><table>
           <thead><tr><th>Variable</th>{th("r", "r")}{th("abs", "Fuerza |r|")}{th("n", "Elecciones")}<th style={{ textAlign: "left" }}>Qué dice</th><th>Gráfico</th></tr></thead>
           <tbody>
             {filas.slice(0, 300).map((o) => {
               const on = sel.includes(o.s.id);
               return (
-                <tr key={o.s.id}><td className="nombre">{o.s.n} <BotonInfo id={o.s.id} /><small>{o.s.cat.slice(0, 2).join(" › ")} · {o.c.unidad}</small></td>
-                  <td style={tinte(o.r * 0.9)}>{fmtR(o.r)}</td>
+                <tr key={o.s.id}><CeldaVar nombre={o.s.n} unidad={`${o.s.cat.slice(0, 2).join(" › ")} · ${o.c.unidad}`} info={<BotonInfo id={o.s.id} />} />
+                  <Valor tono={null}>{fmtR(o.r)}</Valor>
                   <td><span className="barrita" style={{ ["--w" as string]: `${Math.round(Math.abs(o.r) * 100)}%` }} />{nf0.format(o.r * o.r * 100)} %<small>r²</small></td>
                   <td>{o.n}</td><td className="unidad">{textoRel(o)}</td>
                   <td><button type="button" className={`btn${on ? " on" : ""}`} onClick={() => setSel(on ? sel.filter((x) => x !== o.s.id) : [...sel, o.s.id])}>{on ? "✓ en gráficos" : "+ graficar"}</button></td></tr>
@@ -213,7 +213,7 @@ export function Elecciones() {
       </div>
       <details><summary>Ver las elecciones usadas</summary>
         <p className="note">Presidenciales: primera vuelta. Legislativas: diputados nacionales, total del país; son aproximadas porque las alianzas cambian de nombre entre provincias. En 2003 el &quot;oficialismo&quot; es Kirchner, el candidato que apoyó Duhalde.</p>
-        <div className="tablewrap"><table>
+        <div className="tablewrap fija"><table>
           <thead><tr><th>Fecha</th><th>Tipo</th><th style={{ textAlign: "left" }}>Oficialismo</th><th>% de votos</th><th>Resultado</th></tr></thead>
           <tbody>{ELEC.map((e) => <tr key={e.f}><td>{fmtMes(e.f)}</td><td>{e.tipo === "pres" ? "Presidencial (1ª vuelta)" : "Legislativa (diputados, aprox.)"}</td><td className="unidad">{e.of}</td><td>{nf1.format(e.v)} %</td><td>{e.gano ? "Ganó" : "Perdió"}</td></tr>)}</tbody>
         </table></div></details>

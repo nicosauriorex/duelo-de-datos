@@ -6,7 +6,7 @@ import { FilaVariable } from "../Variables";
 import { BotonCompartir } from "../PanelCompartir";
 import { IconoCompartir } from "../Iconos";
 import { Grafico, type Fila, type SerieG } from "../Grafico";
-import { LineaInicio, useBase } from "./comunes";
+import { CeldaPresMandato, LineaInicio, useBase } from "./comunes";
 import { fmtMes } from "@/lib/formato";
 import { baseIdx, calcularMandato, crearPres, nombreCorto, TITULOS_MANDATO as TITULOS } from "@/lib/estadisticas";
 import type { Expr } from "@/lib/motor";
@@ -82,7 +82,7 @@ export function Mandato() {
     <section>
       <p className="sub">Cada línea arranca en el mes 0 de un presidente y sigue mes a mes durante su mandato.</p>
       <FilaVariable e={eB} onChange={(e) => e && set({ mv: encExpr(e) })} />
-      <LineaInicio info={info} etiqueta="Mes 0" />
+      <LineaInicio info={info} F={m.F} />
       <div className="modos" role="radiogroup" aria-label="Modo">
         {MODOS.map(([k, t]) => (
           <div key={k} className="modo">
@@ -131,11 +131,11 @@ export function Mandato() {
           </div>
           <div className="card">
             <h2>Resumen por hitos</h2><p className="note">Mismo cálculo que el gráfico ({TITULOS[modo]}) en meses clave y al final de cada mandato.</p>
-            <div className="tablewrap"><table>
+            <div className="tablewrap fija"><table>
               <thead><tr><th>Presidente</th><th>Mes 0</th>{HITOS.map((x) => <th key={x}>Mes {x}</th>)}<th>Final</th></tr></thead>
               <tbody>{D.pres.map((x) => {
                 const fin = x.i1 - baseIdx(m.F, x, b);
-                return <tr key={x.id}><td>{x.n}</td><td>{D.cel(x, 0)}</td>{HITOS.map((h) => <td key={h}>{h <= fin ? D.cel(x, h) : ""}</td>)}<td>{D.cel(x, fin)}<small>mes {fin}</small></td></tr>;
+                return <tr key={x.id}><CeldaPresMandato x={x} F={m.F} /><td>{D.cel(x, 0)}</td>{HITOS.map((h) => <td key={h}>{h <= fin ? D.cel(x, h) : ""}</td>)}<td>{D.cel(x, fin)}<small>mes {fin}</small></td></tr>;
               })}</tbody>
             </table></div>
           </div>

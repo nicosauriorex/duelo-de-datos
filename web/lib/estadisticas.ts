@@ -87,17 +87,18 @@ export function aBase100(rows: Fila[], keys: string[]): Record<string, string> {
 }
 
 // ---------------------------------------------------------------- Presidentes
-export interface Pres { id: string; n: string; ini: string; color: string; dash?: boolean; i0: number; i1: number }
+/** `corto`: nombre abreviado para columnas angostas y para la imagen (si no se indica, es el mismo nombre). */
+export interface Pres { id: string; n: string; corto: string; ini: string; color: string; dash?: boolean; i0: number; i1: number }
 export const PRES_DEF = [
   { id: "menem1", n: "Menem 1", ini: "1989-07", color: "--pres-menem1", base: "--neutral", dash: true },
   { id: "menem2", n: "Menem 2", ini: "1995-07", color: "--pres-menem2", base: "--neutral", dash: true },
   { id: "delarua", n: "De la Rúa", ini: "1999-12", color: "--pres-delarua", base: "--series-8" },
   { id: "duhalde", n: "Duhalde", ini: "2002-01", color: "--pres-duhalde", base: "--series-7" },
-  { id: "nk", n: "Néstor Kirchner", ini: "2003-05", color: "--pres-nk", base: "--series-6" },
+  { id: "nk", n: "Néstor Kirchner", corto: "Néstor K.", ini: "2003-05", color: "--pres-nk", base: "--series-6" },
   { id: "cfk1", n: "CFK 1", ini: "2007-12", color: "--pres-cfk1", base: "--series-5" },
   { id: "cfk2", n: "CFK 2", ini: "2011-12", color: "--pres-cfk2", base: "--series-4" },
   { id: "macri", n: "Macri", ini: "2015-12", color: "--pres-macri", base: "--series-3" },
-  { id: "af", n: "Alberto Fernández", ini: "2019-12", color: "--pres-af", base: "--series-2" },
+  { id: "af", n: "Alberto Fernández", corto: "Alberto F.", ini: "2019-12", color: "--pres-af", base: "--series-2" },
   { id: "milei", n: "Milei", ini: "2023-12", color: "--pres-milei", base: "--series-1" },
 ];
 export interface Franja { ini: number; fin: number; nombre: string; color: string }
@@ -116,7 +117,7 @@ export function crearPres(F: string[]): Pres[] {
   const N = F.length;
   return PRES_DEF.map((p, k) => {
     const sig = PRES_DEF[k + 1];
-    return { ...p, i0: Math.max(0, F.indexOf(p.ini)), i1: sig ? F.indexOf(sig.ini) - 1 : N - 1 };
+    return { ...p, corto: (p as { corto?: string }).corto ?? p.n, i0: Math.max(0, F.indexOf(p.ini)), i1: sig ? F.indexOf(sig.ini) - 1 : N - 1 };
   });
 }
 export type { BaseCfg } from "./config";
@@ -138,6 +139,14 @@ function resumenExcepciones(b: BaseCfg): string {
   return PRES_DEF.filter((p) => b.t0p[p.id] != null).map((p) => `${p.n} ${txtT(b.t0p[p.id])}`).join(", ");
 }
 /** Resumen corto para la línea "Inicio: …" (ej. "T-1 · Milei T+1"). */
+/** El inicio del mandato en una oración: "Mes inicial de cada presidente: T-1, excepto Milei (T+1)." Con más de tres excepciones, "con excepciones". */
+export function oracionInicio(b: BaseCfg): string {
+  const exc = PRES_DEF.filter((p) => b.t0p[p.id] != null && b.t0p[p.id] !== b.t0).map((p) => `${p.n} (${txtT(b.t0p[p.id])})`);
+  const cola = !exc.length ? "" : exc.length > 3 ? ", con excepciones" : `, excepto ${exc.length === 1 ? exc[0] : exc.slice(0, -1).join(", ") + " y " + exc[exc.length - 1]}`;
+  return `Mes inicial de cada presidente: ${txtT(b.t0)}${cola}.`;
+}
+/** Qué significa T, para acompañar a `oracionInicio`. */
+export const AYUDA_T = "T = mes de asunción. T-1 = último mes del antecesor. T+1 = un mes después de asumir.";
 export const baseResumen = (b: BaseCfg): string =>
   [txtT(b.t0), ...PRES_DEF.filter((p) => b.t0p[p.id] != null).map((p) => `${p.n} ${txtT(b.t0p[p.id])}`)].join(" · ");
 
@@ -463,5 +472,5 @@ export function calcularMandato(m: Motor, PRES: Pres[], PRES_T0: Pres[], q: Para
 }
 
 export const TITULOS_MANDATO: Record<ModoMandato, string> = { teorico: "precio teórico", indice: "índice, mes 0 = 100", var: "variación % desde el mes 0", valor: "valor" };
-/** Nombre abreviado de un presidente para espacios chicos ("Néstor Kirchner" → "Kirchner", "Alberto Fernández" → "A. Fernández"). */
-export const nombreCorto = (n: string): string => n.replace("Néstor ", "").replace("Alberto Fernández", "A. Fernández");
+/** Nombre abreviado de un presidente para espacios chicos ("Néstor Kirchner" → "Néstor K.", "Alberto Fernández" → "Alberto F."): el `corto` de `PRES_DEF`. */
+export const nombreCorto = (n: string): string => (PRES_DEF.find((p) => p.n === n) as { corto?: string } | undefined)?.corto ?? n;

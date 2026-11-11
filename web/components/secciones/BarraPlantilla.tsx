@@ -59,10 +59,10 @@ export function BarraPlantilla({ p, set, info, simple }: { p: URLSearchParams; s
         </div>
       )}
       {simple && guardarEnMis}
-      <div className="acciones-vista">
-        <button type="button" className="btn" onClick={() => setNombre(nombre == null ? "" : null)} aria-expanded={nombre != null}>Guardar como plantilla</button>
+      <div className={`acciones-vista${simple ? " secundarias" : ""}`}>
+        <button type="button" className={simple ? "enlace" : "btn"} onClick={() => setNombre(nombre == null ? "" : null)} aria-expanded={nombre != null}>Guardar como plantilla</button>
         {!simple && <button type="button" className="btn primario" onClick={abrirCompartir} title="El link muestra exactamente esta vista">Compartir</button>}
-        <Link prefetch={false} href="/plantillas/" className="btn">Ver plantillas</Link>
+        <Link prefetch={false} href="/plantillas/" className={simple ? "enlace" : "btn"}>Ver plantillas</Link>
       </div>
       {nombre != null && (
         <form className="form-guardar" onSubmit={(ev) => { ev.preventDefault(); guardar(); }}>

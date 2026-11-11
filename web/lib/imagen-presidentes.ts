@@ -1,7 +1,7 @@
 // Datos de la imagen de compartir para las secciones de presidentes (Por presidente, Meses de mandato y Ranking). No dibuja: eso es `imagen.ts`.
 // Usa los mismos cálculos que la página (statsMandato, claseVariacion, calcularMandato, rankingPresidentes) para que den lo mismo.
 import {
-  baseIdx, baseResumen, baseTxt, calcularMandato, claseVariacion, crearPres, rankingPresidentes, statsMandato, TITULOS_MANDATO, varNum,
+  baseIdx, baseTxt, oracionInicio, calcularMandato, claseVariacion, crearPres, rankingPresidentes, statsMandato, TITULOS_MANDATO, varNum,
   type BaseCfg, type CritRk, type IndRk, type ModoMandato,
 } from "./estadisticas";
 import type { DatosImagen, FilaBarra, FilaRank, FilaVariable } from "./imagen";
@@ -43,7 +43,7 @@ function notaParcial(F: string[], st: ReturnType<typeof statsMandato>, bi: numbe
 function esqueleto(m: Motor, o: OpcionesPres, base: BaseCfg, titulo: string, ultimo: string): DatosImagen {
   return {
     formato: o.formato, titulo, cifra: null, frases: [], leyenda: null, x: [], series: [], fmtEje: (v) => String(v), fmtEje2: null, franjas: [], presidentes: null,
-    inicioTxt: `Inicio: ${baseResumen(base)}`, comentario: limpiarComentario(o.comentario), unidad: "", fuente: "", nota: "",
+    inicioTxt: oracionInicio(base), comentario: limpiarComentario(o.comentario), unidad: "", fuente: "", nota: "",
     fecha: new Date().toLocaleDateString("es-AR"), archivo: `primerolosdatos-${slug(titulo)}-${ultimo.slice(0, 7)}`,
   };
 }

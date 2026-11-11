@@ -126,7 +126,7 @@ export function crearPlantillas(metas: SerieMeta[]): Plantilla[] {
   ] as const).forEach(([ind, titulo, desc]) => out.push({
     id: "cg-" + ind, titulo, desc, grupo: "Gobierno y Congreso",
     etiquetas: ["congreso", "diputados", "senado", "bancas", "mayoria", "leyes", "decretos", "dnu", "vetos", "oficialismo"], vista: {}, e: null, ids: [], curada: true,
-    href: `/presidentes/?cgi=${ind}#congreso`,
+    href: `/congreso/?cgi=${ind}`,
   }));
   return out;
 }

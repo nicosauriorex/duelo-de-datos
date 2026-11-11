@@ -3,7 +3,7 @@ import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "
 import { useSeccion } from "../useSeccion";
 import { BarraPlantilla, usePlantillaVista } from "./BarraPlantilla";
 import { BotonCompartir } from "../PanelCompartir";
-import { Cargando, Desplegable, Selector, Seg, alternar } from "../ui";
+import { Cargando, Desplegable, Modal, Selector, Seg, alternar } from "../ui";
 import { FilaVariable, RenglonVariable } from "../Variables";
 import { Grafico, hayDatos, type Fila, type Marca, type OpcionesG, type Ref, type SerieG, type TipoRef } from "../Grafico";
 import { PALETA, vcolor } from "../util";
@@ -12,7 +12,7 @@ import { fmtMes, MESES, nf0, nf1, ok } from "@/lib/formato";
 import type { Calculo, Expr, Motor } from "@/lib/motor";
 import { PRES_DEF, aBase100, claseVariacion, estadisticasRows, etiqueta, filasGrafico, franjasPres, type EstRows } from "@/lib/estadisticas";
 import { admiteContexto, contextoDato } from "@/lib/contexto-dato";
-import { MAX_GRAFICOS, MAX_MISMA_UNIDAD, PG, TODOS_MESES, exprsUsadas, leerComun, leerGrafico, sfx, type Comun, type GEst } from "@/lib/historico";
+import { MAX_GRAFICOS, MAX_MISMA_UNIDAD, PG, TODOS_MESES, exprsUsadas, fraseUltimoVs, frecuenciaOrigen, leerComun, leerGrafico, sfx, textoTemporalidad, type Comun, type GEst } from "@/lib/historico";
 import { fmtEjeDe, notaInflacion, tituloGrafico, type VistaImg } from "@/lib/imagen-datos";
 import { useConfig } from "../ConfigProvider";
 import { baseDeConfig, medidaPreferida } from "@/lib/config";
@@ -34,7 +34,7 @@ type SetFn = (c: Record<string, string | null | undefined>) => void;
 interface Simple {
   titulo: string | null;          // el de la plantilla, si la vista viene de una
   abierto: boolean; onAlternar: () => void;
-  barra: ReactNode; acciones: ReactNode; agregar: ReactNode;   // lo que va dentro de Personalizar
+  fecha: ReactNode; frecuencia: ReactNode; acciones: ReactNode; agregar: ReactNode;   // lo que va dentro de las ventanas de Personalizar
 }
 
 export function Historico() {
@@ -115,7 +115,7 @@ export function Historico() {
     // Vista simple: el dato, su contexto y el gráfico; los controles de siempre quedan en "Personalizar".
     const simple: Simple = {
       titulo: info.titulo, abierto: config.personalizar, onAlternar: () => cambiarConfig({ personalizar: !config.personalizar }),
-      barra: <Barra E={E} set={cambiar} F={m.F} fija={false} />,
+      fecha: <ControlesFecha E={E} set={cambiar} F={m.F} />, frecuencia: <ControlesFrecuencia E={E} set={cambiar} />,
       acciones: <BarraPlantilla p={p} set={set} info={info} simple />, agregar: agregarBtn,
     };
     return (
@@ -245,10 +245,10 @@ function SelFecha({ valor, min, max, etq, onElegir }: { valor: string; min: stri
   );
 }
 
-function Barra({ E, set, F, fija }: { E: Comun; set: SetFn; F: string[]; fija: boolean }) {
+/** Filtrar fecha: desde, hasta, atajos y meses del año. */
+function ControlesFecha({ E, set, F }: { E: Comun; set: SetFn; F: string[] }) {
   const N = F.length, ult = F[N - 1], hace12 = F[Math.max(0, N - 12)];
   const PRESETS: [string, string][] = [[F[0], "Todo"], ["1995-01", "1995"], ["2003-01", "2003"], ["2011-01", "2011"], ["2017-01", "2017"], ["2023-01", "2023"], [hace12, "Último año"]];
-  const ms = [...E.meses].sort((a, b) => a - b).map((k) => MESES[k - 1]).join(", ");
   const cambiarDesde = (v: string) => { if (!v) return; set({ d: v, h: v > E.hasta ? v : undefined }); };
   const cambiarHasta = (v: string) => { if (!v) return; set({ h: v === ult ? null : v, d: v < E.desde ? v : undefined }); };
   const mesClick = (k: number | "todos") => {
@@ -259,24 +259,50 @@ function Barra({ E, set, F, fija }: { E: Comun; set: SetFn; F: string[]; fija: b
     set({ ms: n.size === 12 ? null : [...n].sort((a, b) => a - b).join(",") });
   };
   return (
+    <>
+      <div className="controls"><label>Desde</label><SelFecha etq="Desde" valor={E.desde} min={F[0]} max={ult} onElegir={cambiarDesde} />
+        <label>Hasta</label><SelFecha etq="Hasta" valor={E.hasta} min={F[0]} max={ult} onElegir={cambiarHasta} /></div>
+      <div className="controls"><label>Atajos</label>
+        <div className="seg">{PRESETS.map(([v, t]) => (
+          <button key={t} type="button" aria-pressed={E.desde === v && E.hasta === ult} onClick={() => set({ d: v, h: null })}>{t}</button>
+        ))}</div></div>
+      <div className="controls"><label>Meses del año</label>
+        <div className="seg">
+          <button type="button" aria-pressed={E.meses.size === 12} onClick={() => mesClick("todos")}>Todos</button>
+          {MESES.map((n, k) => <button key={n} type="button" aria-pressed={E.meses.size < 12 && E.meses.has(k + 1)} onClick={() => mesClick(k + 1)}>{n}</button>)}
+        </div></div>
+    </>
+  );
+}
+
+/** Cómo se agregan los meses al ver por trimestre o año (solo si no es Mes). */
+function ControlesAgregar({ E, set }: { E: Comun; set: SetFn }) {
+  if (E.freq === "M") return null;
+  return (
+    <div className="controls"><label>Al ver por {E.freq === "A" ? "año" : "trimestre"}</label>
+      <Seg valor={E.ag} opciones={[["promedio", "Promedio"], ["cierre", "Cierre"]]} onElegir={(v) => set({ ag: v === "promedio" ? null : v })} />
+      <span className="note" style={{ margin: 0 }}>{E.ag === "cierre" ? "Último mes con dato de cada período." : "Promedio de los meses del período."}</span></div>
+  );
+}
+
+/** Mes / Trimestre / Año y, si no es Mes, cómo se agregan (Promedio o Cierre). */
+function ControlesFrecuencia({ E, set }: { E: Comun; set: SetFn }) {
+  return (
+    <>
+      <div className="controls"><label>Ver por</label>
+        <Seg valor={E.freq} opciones={[["M", "Mes"], ["T", "Trimestre"], ["A", "Año"]]} onElegir={(v) => set({ f: v === "M" ? null : v })} /></div>
+      <ControlesAgregar E={E} set={set} />
+    </>
+  );
+}
+
+function Barra({ E, set, F, fija }: { E: Comun; set: SetFn; F: string[]; fija: boolean }) {
+  const ms = [...E.meses].sort((a, b) => a - b).map((k) => MESES[k - 1]).join(", ");
+  return (
     <div className={`barra-hist${fija ? " fija" : ""}`} role="region" aria-label="Período y frecuencia">
       <Desplegable etiqueta={<><span className="solo-grande">Período: </span>{fmtMes(E.desde)} – {fmtMes(E.hasta)}{E.meses.size < 12 ? ` · ${ms}` : ""}</>}>
-        <div className="controls"><label>Desde</label><SelFecha etq="Desde" valor={E.desde} min={F[0]} max={ult} onElegir={cambiarDesde} />
-          <label>Hasta</label><SelFecha etq="Hasta" valor={E.hasta} min={F[0]} max={ult} onElegir={cambiarHasta} /></div>
-        <div className="controls"><label>Atajos</label>
-          <div className="seg">{PRESETS.map(([v, t]) => (
-            <button key={t} type="button" aria-pressed={E.desde === v && E.hasta === ult} onClick={() => set({ d: v, h: null })}>{t}</button>
-          ))}</div></div>
-        <div className="controls"><label>Meses del año</label>
-          <div className="seg">
-            <button type="button" aria-pressed={E.meses.size === 12} onClick={() => mesClick("todos")}>Todos</button>
-            {MESES.map((n, k) => <button key={n} type="button" aria-pressed={E.meses.size < 12 && E.meses.has(k + 1)} onClick={() => mesClick(k + 1)}>{n}</button>)}
-          </div></div>
-        {E.freq !== "M" && (
-          <div className="controls"><label>Al ver por {E.freq === "A" ? "año" : "trimestre"}</label>
-            <Seg valor={E.ag} opciones={[["promedio", "Promedio"], ["cierre", "Cierre"]]} onElegir={(v) => set({ ag: v === "promedio" ? null : v })} />
-            <span className="note" style={{ margin: 0 }}>{E.ag === "cierre" ? "Último mes con dato de cada período." : "Promedio de los meses del período."}</span></div>
-        )}
+        <ControlesFecha E={E} set={set} F={F} />
+        <ControlesAgregar E={E} set={set} />
         <p className="note" style={{ margin: 0 }}>Con meses sueltos (p.ej. solo enero) se ve un punto por año y se unen con una línea. Escape o un clic afuera cierran este panel.</p>
       </Desplegable>
       <Seg valor={E.freq} opciones={[["M", "Mes"], ["T", "Trimestre"], ["A", "Año"]]} onElegir={(v) => set({ f: v === "M" ? null : v })} />
@@ -284,10 +310,21 @@ function Barra({ E, set, F, fija }: { E: Comun; set: SetFn; F: string[]; fija: b
   );
 }
 
+/** Ventana de Personalizar: título, cuerpo con scroll y "Listo". Entra entera en la pantalla (ver .modal en globals.css). */
+function VentanaPers({ titulo, onCerrar, children }: { titulo: string; onCerrar: () => void; children: ReactNode }) {
+  return (
+    <Modal titulo={titulo} onCerrar={onCerrar}>
+      <header className="vp-cab"><h2>{titulo}</h2></header>
+      <div className="config-cuerpo vp-cuerpo">{children}</div>
+      <footer><button type="button" className="btn primario" onClick={onCerrar}>Listo</button></footer>
+    </Modal>
+  );
+}
+
 // ------------------------------------------------------------ tarjeta de gráfico: barra (Gráfico / Tabla, Configurar, expandir), gráfico o tabla
 type Vista = "grafico" | "tabla";
-function CardGrafico({ titulo, nota, leyenda, visibles, config, rows, series, opts, unidades, vista: vistaProp, onVista, simple }: {
-  titulo: string; nota?: ReactNode; leyenda?: ReactNode; visibles?: ReactNode; config?: { cuenta: number; children: ReactNode }; simple?: boolean;
+function CardGrafico({ titulo, temporal, nota, leyenda, visibles, config, rows, series, opts, unidades, vista: vistaProp, onVista, simple }: {
+  titulo: string; temporal?: string; nota?: ReactNode; leyenda?: ReactNode; visibles?: ReactNode; config?: { cuenta: number; children: ReactNode }; simple?: boolean;
   rows: Fila[]; series: SerieG[]; opts: OpcionesG; unidades?: Record<string, string>; vista?: Vista; onVista?: (v: Vista) => void;
 }) {
   const [vistaL, setVistaL] = useState<Vista>("grafico");
@@ -321,7 +358,7 @@ function CardGrafico({ titulo, nota, leyenda, visibles, config, rows, series, op
   }
   return (
     <div className="card">
-      <h2>{titulo}</h2>{nota && <p className="note">{nota}</p>}
+      <h2>{titulo}</h2>{temporal && <p className="temporal">{temporal}</p>}{nota && <p className="note">{nota}</p>}
       <div className="barra-graf">
         {visibles}
         <Seg valor={vista} opciones={[["grafico", "Gráfico"], ["tabla", "Tabla"]]} onElegir={elegirVista} />
@@ -339,25 +376,27 @@ function CardGrafico({ titulo, nota, leyenda, visibles, config, rows, series, op
 
 // ------------------------------------------------------------ resumen: tarjetas (≥ 640 px) y chips (celular)
 /** Fila de resumen en un solo renglón: si no entra se desliza de costado (con sombra en el borde) y hace un paseo lento de ida y vuelta la primera vez que se ve. */
-function FilaResumen({ className, children, lista }: { className: string; children: ReactNode; lista?: boolean }) {
+function FilaResumen({ className, children, etiqueta = "Resumen" }: { className: string; children: ReactNode; etiqueta?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   useDeslizable(ref, true);
-  return <div className={className} ref={ref} role={lista ? "list" : "group"} aria-label="Resumen" tabIndex={0}>{children}</div>;
+  return <div className={className} ref={ref} role="group" aria-label={etiqueta} tabIndex={0}>{children}</div>;
 }
 
-interface DefResumen { tit: string; corto: string; val: (s: EstRows) => number; fecha?: (s: EstRows) => string | undefined; desde: (s: EstRows) => number; vs: (s: EstRows) => string }
+/** Tarjetas "Comparado con el último dato": cada una con su valor (y su mes si corresponde) y cuánto está el último por encima o por debajo. */
+interface DefResumen { tit: string; val: (s: EstRows) => number; fecha?: (s: EstRows) => string | undefined }
 const DEFS_RES: DefResumen[] = [
-  { tit: "Último dato", corto: "Último", val: (s) => s.ult[0], fecha: (s) => s.ult[1], desde: (s) => s.pri[0], vs: (s) => `vs. ${s.pri[1]}` },
-  { tit: "Promedio", corto: "Prom.", val: (s) => s.prom, desde: (s) => s.prom, vs: () => "último vs. este" },
-  { tit: "Mediana", corto: "Mediana", val: (s) => s.med, desde: (s) => s.med, vs: () => "último vs. este" },
-  { tit: "Máximo", corto: "Máx.", val: (s) => s.max[0], fecha: (s) => s.max[1], desde: (s) => s.max[0], vs: () => "último vs. este" },
-  { tit: "Mínimo", corto: "Mín.", val: (s) => s.min[0], fecha: (s) => s.min[1], desde: (s) => s.min[0], vs: () => "último vs. este" },
+  { tit: "Inicio del período", val: (s) => s.pri[0], fecha: (s) => s.pri[1] },
+  { tit: "Promedio", val: (s) => s.prom },
+  { tit: "Mediana", val: (s) => s.med },
+  { tit: "Máximo", val: (s) => s.max[0], fecha: (s) => s.max[1] },
+  { tit: "Mínimo", val: (s) => s.min[0], fecha: (s) => s.min[1] },
 ];
 
 // ------------------------------------------------------------ gráfico principal
 function Principal({ m, E, set, version, compacto, simple }: { m: Motor; E: Estado; set: SetFn; version: number; compacto: boolean; simple?: Simple & { variables: ReactNode } }) {
   const { F } = m;
   const { config: cfg } = useConfig();
+  const [ventanaP, setVentanaP] = useState<null | "fecha" | "variable" | "opciones">(null); // ventana abierta de Personalizar
   const b100 = E.modo === "b100";
   const conFranjas = E.pf === "1" ? true : E.pf === "0" ? false : cfg.franjas;
   // Claves estables: el gráfico solo se rehace (y pierde el zoom) si cambia algo que lo afecta
@@ -412,6 +451,7 @@ function Principal({ m, E, set, version, compacto, simple }: { m: Motor; E: Esta
     : E.freq !== "M" ? ` (${agTxt}).` : "";
   const multi = lista.length > 1;
   const titulo = tituloGrafico(lista, b100);
+  const temporal = textoTemporalidad({ freq: E.freq, ag: E.ag, meses: E.meses, suma: lista.some((o) => !!o.flujo), origen: frecuenciaOrigen(lista[0].c.v) });
   const nota = (b100 ? "Cada serie vale 100 en su primer dato del período: la línea muestra cuánto subió o bajó desde ahí."
     : (lista.length > 2 ? lista[0].c.unidad : lista.map((o, k) => `${dos ? (k ? "Derecha: " : "Izquierda: ") : ""}${o.c.unidad}`).join(" · ")) + ".") + porFreq + sumaTxt +
     (bd ? " La sombra va del mínimo al máximo." : "") +
@@ -452,65 +492,43 @@ function Principal({ m, E, set, version, compacto, simple }: { m: Motor; E: Esta
   const leyenda = <div className="legend">{lista.length > 1 && lista.map((o) => <span key={o.key} style={vcolor(o.color)}>{o.c.corto}{o.axis ? " (eje der.)" : ""}</span>)}</div>;
   const unidades = Object.fromEntries(lista.map((o) => [o.key, b100 ? "base 100" : o.c.unidad]));
 
-  // Resumen (tarjetas y chips)
-  const celda = (def: DefResumen, o: (typeof lista)[number], k: number) => {
-    const s = st[k]; if (!s) return null;
-    const hasta = s.ult[0], desde = def.desde(s);
-    return { txt: m.fmtC(o.c, def.val(s)), f: def.fecha?.(s), vs: def.vs(s), vr: m.variacionTxt(o.c, desde, hasta), cls: claseVariacion(o.c.dir, o.c.pct, desde, hasta) };
+  // Resumen: "Último dato" fijo y, al lado, las comparaciones del último contra cada referencia (siempre de la primera variable)
+  const o0 = lista[0], s0 = st[0];
+  const tarjeta = (def: DefResumen) => {
+    if (!s0) return null;
+    const desde = def.val(s0), hasta = s0.ult[0], f = def.fecha?.(s0);
+    return (
+      <div className="tile" key={def.tit}><div className="k">{def.tit}</div>
+        <div className="v">{m.fmtC(o0.c, desde)}</div>
+        <div className="d">{f ? <>{f}<br /></> : null}<b className={`var-${claseVariacion(o0.c.dir, o0.c.pct, desde, hasta)}`}>{fraseUltimoVs(o0.c.pct, desde, hasta) || "–"}</b></div></div>
+    );
   };
-  const resumen = (
-    <>
-      {b100 ? (
-        <div className="tiles">
-          <div className="card" style={{ gridColumn: "1/-1", margin: 0 }}><h2>Resumen (de mayor a menor)</h2>
-            <div className="tablewrap"><table><thead><tr><th>Variable</th><th>Base 100 en</th><th>Último</th><th>Variación</th><th>Máximo</th><th>Mínimo</th><th>Promedio</th></tr></thead><tbody>
-              {lista.map((o, k) => ({ o, s: st[k] })).filter((x) => x.s).sort((a, b) => b.s!.ult[0] - a.s!.ult[0]).map(({ o, s }) => {
-                const d = s!.ult[0] - 100, cls = claseVariacion(o.c.dir, true, 100, s!.ult[0]);
-                return (
-                  <tr key={o.key}><td className="nombre"><span className="punto" style={vcolor(o.color)} /> {o.c.corto}<small>{o.c.unidad}</small></td><td>{o.base}</td>
-                    <td>{nf1.format(s!.ult[0])}<small>{s!.ult[1]}</small></td><td className={`var-${cls}`}>{d > 0 ? "+" : ""}{nf1.format(d)} %</td>
-                    <td>{nf1.format(s!.max[0])}<small>{s!.max[1]}</small></td><td>{nf1.format(s!.min[0])}<small>{s!.min[1]}</small></td><td>{nf1.format(s!.prom)}</td></tr>
-                );
-              })}
-            </tbody></table></div></div>
+  const resumen = b100 ? (
+    <div className="tiles">
+      <div className="card" style={{ gridColumn: "1/-1", margin: 0 }}><h2>Resumen (de mayor a menor)</h2>
+        <div className="tablewrap"><table><thead><tr><th>Variable</th><th>Base 100 en</th><th>Último</th><th>Variación</th><th>Máximo</th><th>Mínimo</th><th>Promedio</th></tr></thead><tbody>
+          {lista.map((o, k) => ({ o, s: st[k] })).filter((x) => x.s).sort((a, b) => b.s!.ult[0] - a.s!.ult[0]).map(({ o, s }) => {
+            const d = s!.ult[0] - 100, cls = claseVariacion(o.c.dir, true, 100, s!.ult[0]);
+            return (
+              <tr key={o.key}><td className="nombre"><span className="punto" style={vcolor(o.color)} /> {o.c.corto}<small>{o.c.unidad}</small></td><td>{o.base}</td>
+                <td>{nf1.format(s!.ult[0])}<small>{s!.ult[1]}</small></td><td className={`var-${cls}`}>{d > 0 ? "+" : ""}{nf1.format(d)} %</td>
+                <td>{nf1.format(s!.max[0])}<small>{s!.max[1]}</small></td><td>{nf1.format(s!.min[0])}<small>{s!.min[1]}</small></td><td>{nf1.format(s!.prom)}</td></tr>
+            );
+          })}
+        </tbody></table></div></div>
+    </div>
+  ) : s0 ? (
+    <div className="resumen">
+      {multi && <p className="note resumen-de">Resumen de: {o0.c.corto}</p>}
+      <div className="res-fila">
+        <div className="tile tile-ult"><div className="k">Último dato</div><div className="v">{m.fmtC(o0.c, s0.ult[0])}</div><div className="d">{s0.ult[1]}</div></div>
+        <div className="res-comp">
+          <p className="res-rotulo">Comparado con el último dato</p>
+          <FilaResumen className="tiles res-cmp" etiqueta="Comparado con el último dato">{DEFS_RES.map(tarjeta)}</FilaResumen>
         </div>
-      ) : (
-        <>
-          <FilaResumen className="tiles res">
-            {DEFS_RES.map((def) => (
-              <div className="tile" key={def.tit}><div className="k">{def.tit}</div>
-                <div className={`mitades${dos ? " dos" : ""}${lista.length > 2 ? " varias" : ""}`}>{lista.map((o, k) => {
-                  const c = celda(def, o, k);
-                  if (!c) return <div className="mitad" key={k}><div className="v">–</div></div>;
-                  return (
-                    <div className="mitad" key={k}>{multi && <><span className="punto" style={vcolor(o.color)} />{" "}</>}<span className="v">{c.txt}</span>
-                      <div className="d">{c.f ? <>{c.f} · </> : null}{c.vs}: <b className={`var-${c.cls}`}>{c.vr}</b></div></div>
-                  );
-                })}</div></div>
-            ))}
-          </FilaResumen>
-          <FilaResumen className="chips" lista>
-            {DEFS_RES.map((def) => (
-              <div className="chip" role="listitem" key={def.tit} title={def.tit}>
-                <span className="n">{def.corto}</span>
-                <div className="col">{lista.map((o, k) => {
-                  const c = celda(def, o, k);
-                  return (
-                    <div className="ln" key={k} title={c ? `${def.tit}${c.f ? " · " + c.f : ""} · ${c.vs}` : undefined}>
-                      {multi && <span className="punto" style={vcolor(o.color)} />}
-                      <span className="v">{c ? c.txt : "–"}</span>
-                      {c && <span className={`vr var-${c.cls}`}>{c.vr}</span>}
-                      {c?.f && <span className="f">{c.f}</span>}
-                    </div>
-                  );
-                })}</div>
-              </div>
-            ))}
-          </FilaResumen>
-        </>
-      )}
-    </>
-  );
+      </div>
+    </div>
+  ) : null;
   const onVista = (v: Vista) => set({ t: v === "tabla" ? "tabla" : null });
 
   if (simple) {
@@ -522,6 +540,7 @@ function Principal({ m, E, set, version, compacto, simple }: { m: Motor; E: Esta
       <>
         <div className="vs-cab">
           <h2 className="vs-titulo">{nombre}</h2>
+          <p className="temporal vs-temporal">{temporal}</p>
           {ctx ? (
             <>
               <p className="vs-cifra"><span className="v">{ctx.valor}</span><span className="mes">{ctx.mes}{ctx.ultimoDisponible ? " · Último dato disponible" : ""}</span></p>
@@ -542,15 +561,24 @@ function Principal({ m, E, set, version, compacto, simple }: { m: Motor; E: Esta
         </div>
         {simple.abierto && (
           <div className="vs-personalizar" id="vs-personalizar">
-            {simple.barra}
-            {simple.variables}
-            <div className="barra-graf">
-              <Seg valor={E.tabla} opciones={[["grafico", "Gráfico"], ["tabla", "Tabla"]]} onElegir={(v) => onVista(v as Vista)} />
-              <Desplegable etiqueta={cuenta ? `Opciones del gráfico (${cuenta})` : "Opciones del gráfico"}>{config}</Desplegable>
+            <div className="vs-botones">
+              <button type="button" className="btn" aria-haspopup="dialog" onClick={() => setVentanaP("fecha")}>Filtrar fecha</button>
+              <button type="button" className="btn" aria-haspopup="dialog" onClick={() => setVentanaP("variable")}>Elegir variable</button>
+              <button type="button" className="btn" aria-haspopup="dialog" onClick={() => setVentanaP("opciones")}>{cuenta ? `Opciones del gráfico (${cuenta})` : "Opciones del gráfico"}</button>
             </div>
-            {simple.acciones}
-            {simple.agregar}
+            <div className="vs-secundarios">{simple.acciones}</div>
           </div>
+        )}
+        {ventanaP === "fecha" && <VentanaPers titulo="Filtrar fecha" onCerrar={() => setVentanaP(null)}>{simple.fecha}</VentanaPers>}
+        {ventanaP === "variable" && (
+          <VentanaPers titulo="Elegir variable" onCerrar={() => setVentanaP(null)}>{simple.variables}{simple.agregar}</VentanaPers>
+        )}
+        {ventanaP === "opciones" && (
+          <VentanaPers titulo="Opciones del gráfico" onCerrar={() => setVentanaP(null)}>
+            {simple.frecuencia}
+            <div className="controls"><label>Mostrar como</label><Seg valor={E.tabla} opciones={[["grafico", "Gráfico"], ["tabla", "Tabla"]]} onElegir={(v) => onVista(v as Vista)} /></div>
+            {config}
+          </VentanaPers>
         )}
         {resumen}
       </>
@@ -559,7 +587,7 @@ function Principal({ m, E, set, version, compacto, simple }: { m: Motor; E: Esta
   return (
     <>
       {resumen}
-      <CardGrafico titulo={titulo} nota={nota} leyenda={leyenda} config={{ cuenta, children: config }}
+      <CardGrafico titulo={titulo} temporal={temporal} nota={nota} leyenda={leyenda} config={{ cuenta, children: config }}
         rows={rows} series={series} opts={opts} unidades={unidades} vista={E.tabla} onVista={onVista} />
     </>
   );

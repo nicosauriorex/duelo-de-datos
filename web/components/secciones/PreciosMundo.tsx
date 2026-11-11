@@ -134,7 +134,7 @@ function Detalle({ d, rid, dolar, arg, p, set }: { d: DatosPM; rid: string; dola
       {sinEst.length > 0 && <p className="note">Sin estimado para este rubro (solo se ven los valores medidos): {sinEst.map((c) => d.paises[c]).join(", ")}.</p>}
       {Object.keys(nv[ARG].med).length < anios.length && dolar === "blue" && <p className="note">Con el dólar blue faltan años medidos porque no hay cotización suficiente ese año.</p>}
       <h3>Valores medidos</h3>
-      <div className="tablewrap"><table>
+      <div className="tablewrap fija"><table>
         <thead><tr><th>País</th>{anios.map((y) => <th key={y}>{y}</th>)}</tr></thead>
         <tbody>{Object.keys(d.paises).map((c) => {
           const v = (y: number) => (c === ARG ? nv[ARG].med[y] : d.medido[y]?.[rid]?.[c]);

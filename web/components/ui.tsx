@@ -61,7 +61,7 @@ export function Modal({ titulo, onCerrar, children, ancho }: { titulo: string; o
   }, []);
   return (
     <div className="modal-fondo" onMouseDown={(ev) => { if (ev.target === ev.currentTarget) onCerrar(); }}>
-      <div className="modal" role="dialog" aria-modal="true" aria-label={titulo} style={ancho ? { width: "min(760px,100%)" } : undefined}>
+      <div className="modal" role="dialog" aria-modal="true" aria-label={titulo} style={{ maxWidth: "100%", ...(ancho ? { width: "min(760px,100%)" } : null) }}>
         {children}
       </div>
     </div>
@@ -130,7 +130,7 @@ export function Selector({ etiqueta, valor, opciones, onElegir, className = "" }
         onClick={() => (abierto ? cerrar() : abrir())} onKeyDown={teclaBoton}><span className="et">{opciones[idx]?.[1] ?? ""}</span></button>
       {abierto && pos && (
         <ul ref={lista} id={id} className="sel-lista" role="listbox" tabIndex={-1} aria-label={etiqueta} aria-activedescendant={`${id}-${activo}`} onKeyDown={teclaLista}
-          style={{ left: pos.left, top: pos.top, bottom: pos.bottom, minWidth: pos.width, maxHeight: pos.max }}>
+          style={{ left: pos.left, top: pos.top, bottom: pos.bottom, minWidth: pos.width, maxHeight: pos.max, maxWidth: "calc(100vw - 8px)" }}>
           {opciones.map(([v, t], i) => (
             <li key={v} id={`${id}-${i}`} data-i={i} role="option" aria-selected={v === valor} className={i === activo ? "activo" : undefined}
               onMouseEnter={() => setActivo(i)} onClick={() => elegir(i)}>{t}</li>

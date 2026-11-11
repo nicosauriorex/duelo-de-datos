@@ -7,11 +7,10 @@ import { Cargando } from "../ui";
 import { BotonInfo } from "../Variables";
 import { CardValor } from "../CardValor";
 import { useConfig } from "../ConfigProvider";
-import { CeldasStats, LineaInicio, useBase } from "./comunes";
+import { CeldaPresMandato, CeldasStats, LineaInicio, useBase } from "./comunes";
 import { Tarjeta } from "./Plantillas";
 import { crearPres, statsMandato } from "@/lib/estadisticas";
 import { medidaInicial } from "@/lib/config";
-import { fmtMes } from "@/lib/formato";
 import { medDefaultDe, type SerieMeta } from "@/lib/motor";
 import { crearPlantillas, evaluar, plantillaSuelta, plantillasDeTema, type Evaluada } from "@/lib/plantillas";
 import { hrefHistorico, idsDe, principalesDe, seriesDe, subgrupoDe, type Principal, type Tema } from "@/lib/temas";
@@ -19,6 +18,8 @@ import { encExpr, useParams } from "@/lib/url";
 
 const POR_NIVEL = 30;   // más series que esto en un bloque: se despliegan por niveles (región, rubro…)
 const MAX_PLANTILLAS = 8;
+/** Cómo se ofrece el IPC empalmado en "Todos los datos": [medida, nombre]. */
+const INFLACION: [string, string][] = [["vm", "Inflación mensual"], ["via", "Inflación interanual"]];
 const COLS_PRES: [string, string][] = [["ini", "Inicio"], ["fin", "Cierre"], ["var", "Variación"]];
 
 function Texto({ t }: { t: Tema }) {
@@ -42,7 +43,10 @@ function Series({ series, nivel, href }: { series: SerieMeta[]; nivel: number; h
   return (
     <ul className="lista-series">
       {[...grupos.m].map(([k, ss]) => <Desplegado key={k} titulo={k} cuenta={ss.length}><Series series={ss} nivel={nivel + 1} href={href} /></Desplegado>)}
-      {grupos.sueltas.map((s) => (
+      {grupos.sueltas.map((s) => s.id === "ipc_empalme" ? (
+        // El índice (nivel) sigue existiendo para los cálculos; acá la inflación se ofrece ya como variación.
+        INFLACION.map(([med, nombre]) => <li key={s.id + med}><Link prefetch={false} href={hrefHistorico({ id: s.id, med, rel: null, modo: "compra", esc: "" })}>{nombre}</Link> <span className="unidad">%</span> <BotonInfo id={s.id} /></li>)
+      ) : (
         <li key={s.id}><Link prefetch={false} href={href(s)}>{s.n}</Link> <span className="unidad">{s.u}</span> <BotonInfo id={s.id} /></li>
       ))}
     </ul>
@@ -103,12 +107,12 @@ export function TemaPagina({ t }: { t: Tema }) {
       <section aria-label="Por presidente">
         <h2>Por presidente</h2>
         <p className="note">{primero.nombre}. Unidad: {c.unidad}.</p>
-        <LineaInicio info={info} />
+        <LineaInicio info={info} F={m.F} />
         {filas.length ? (
-          <div className="tablewrap"><table>
-            <thead><tr><th>Presidente</th><th style={{ textAlign: "left" }}>Mandato</th>{COLS_PRES.map(([k, n]) => <th key={k}>{n}</th>)}</tr></thead>
+          <div className="tablewrap fija"><table>
+            <thead><tr><th>Presidente</th>{COLS_PRES.map(([k, n]) => <th key={k}>{n}</th>)}</tr></thead>
             <tbody>{filas.map(({ x, st }) => (
-              <tr key={x.id}><td>{x.n}</td><td className="unidad">{fmtMes(x.ini)} a {fmtMes(m.F[x.i1])}</td><CeldasStats m={m} c={c} st={st} cols={COLS_PRES} /></tr>
+              <tr key={x.id}><CeldaPresMandato x={x} F={m.F} arr={c.v} /><CeldasStats m={m} c={c} st={st} cols={COLS_PRES} /></tr>
             ))}</tbody>
           </table></div>
         ) : <p className="note">Sin datos de este indicador en los mandatos.</p>}
@@ -119,13 +123,22 @@ export function TemaPagina({ t }: { t: Tema }) {
 
   return (
     <section className="tema-pagina">
-      <h1 className="titulo-tema">{t.nombre}</h1>
-      <Texto t={t} />
+      <div className={`cab-tema${tarjetas.length ? " con-dato" : ""}`}>
+        <div className="cab-tema-texto">
+          <h1 className="titulo-tema">{t.nombre}</h1>
+          <Texto t={t} />
+        </div>
+        {tarjetas.length > 0 && (
+          <div className="dato-principal" aria-label="Dato principal del tema">
+            <CardValor titulo={tarjetas[0].pr.nombre} ev={tarjetas[0].ev} href={hrefHistorico(tarjetas[0].pr)} motor={m} />
+          </div>
+        )}
+      </div>
 
-      {tarjetas.length > 0 && (
+      {tarjetas.length > 1 && (
         <section aria-label="Principales">
           <h2>Principales</h2>
-          <div className="curios">{tarjetas.map(({ pr, ev }) => <CardValor key={pr.nombre} titulo={pr.nombre} ev={ev} href={hrefHistorico(pr)} motor={m} />)}</div>
+          <div className="curios">{tarjetas.slice(1).map(({ pr, ev }) => <CardValor key={pr.nombre} titulo={pr.nombre} ev={ev} href={hrefHistorico(pr)} motor={m} />)}</div>
         </section>
       )}
 

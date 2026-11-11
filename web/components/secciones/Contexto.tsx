@@ -6,9 +6,11 @@ import { Cargando, Seg, Selector, alternar } from "../ui";
 import { Grafico, type Fila, type OpcionesG, type SerieG } from "../Grafico";
 import { useConfig } from "../ConfigProvider";
 import { baseDeConfig } from "@/lib/config";
-import { tinte, PALETA } from "../util";
+import { PALETA } from "../util";
+import { CeldaPres, Valor } from "./comunes";
+import { columnaComparable, periodoMandato } from "@/lib/tablas";
 import { nf0, nf1, ok } from "@/lib/formato";
-import { PRES_DEF, crearPres, franjasPres, type Pres } from "@/lib/estadisticas";
+import { PRES_DEF, crearPres, franjasPres, nombreCorto, type Pres } from "@/lib/estadisticas";
 import {
   ARG, COMPARAR, ESPERADO, GRUPOS_CMP, GRUPOS_EXTRA, MARCA_TXT, PAISES, VEC, VECINOS, VIENTOS,
   aniosDe, crecimientoIndice, filasEsperado, nombreEnt, promedioAnios, serieAnual, serieComparar, sorpresaPres, textoAnios, ultimoCerrado, vientosPres,
@@ -21,6 +23,7 @@ import { PreciosMundo } from "./PreciosMundo";
 const f1 = (v: number | null | undefined) => (ok(v) ? nf1.format(v) : "—");
 const signo = (v: number) => { const r = Math.round(v * 10) / 10; return (r > 0 ? "+" : r < 0 ? "−" : "") + nf1.format(Math.abs(r)); };
 const resaltar = (on: boolean) => (on ? { background: "color-mix(in srgb, var(--series-1) 14%, transparent)" } : undefined);
+const tonoSig = (v: number | null | undefined, dir: number) => (ok(v) && dir && v * dir !== 0 ? (v * dir > 0 ? "bueno" : "malo") as "bueno" | "malo" : null);
 const nDe = (p: { n: number; de: number }) => (p.n < p.de ? <small>{p.n} de {p.de} años</small> : null);
 
 export function Contexto() {
@@ -94,7 +97,11 @@ function Esperado({ datos, grupo, nombreGrupo, p, set, resalta }: { datos: Datos
     return { x, s: sorpresaPres(filas, anios), anios };
   });
   const frase = (s: number) => (Math.abs(s) < 0.05 ? "lo esperado" : `${nf1.format(Math.abs(s))} puntos ${s * dir >= 0 ? "mejor" : "peor"} de lo esperado`);
-  const color = (v: number | null) => (ok(v) && dir ? tinte(Math.max(-1, Math.min(1, (v * dir) / 3))) : undefined);
+  const colS = {
+    arg: columnaComparable(porPres.map((q) => q.s.sArg), dir, true),
+    grp: columnaComparable(porPres.map((q) => q.s.sGrp), dir, true),
+    dif: columnaComparable(porPres.map((q) => q.s.dif), dir, true),
+  };
   return (
     <div className="card">
       <h2>Lo esperado vs. lo que pasó</h2>
@@ -108,20 +115,20 @@ function Esperado({ datos, grupo, nombreGrupo, p, set, resalta }: { datos: Datos
       {ok(estA) && <p className="note">{hasta + 1} (estimado, todavía sin dato real): la última proyección del FMI es {f1(estA)} para la Argentina y {f1(estG)} para {nombre}. No entra en las sorpresas.</p>}
       <p className="note">Las proyecciones de abril que publica el FMI como base descargable llegan hasta la edición de 2022 y cubren crecimiento e inflación (no desempleo ni América Latina): los años sin proyección no tienen sorpresa y no entran en los promedios.</p>
       <h3>Por presidente</h3>
-      <div className="tablewrap"><table>
-        <thead><tr><th>Presidente</th><th style={{ textAlign: "left" }}>Años</th><th>Sorpresa Argentina</th><th>Sorpresa {nombreGrupo}</th><th>Diferencia</th></tr></thead>
-        <tbody>{porPres.map(({ x, s, anios }) => (
+      <div className="tablewrap fija"><table>
+        <thead><tr><th>Presidente</th><th>Sorpresa Argentina</th><th>Sorpresa {nombreGrupo}</th><th>Diferencia</th></tr></thead>
+        <tbody>{porPres.map(({ x, s, anios }, k) => (
           <tr key={x.id} style={resaltar(resalta === x.id)}>
-            <td>{x.n}</td><td className="unidad">{textoAnios(anios)}</td>
+            <CeldaPres n={x.n} corto={nombreCorto(x.n)} periodo={anios.length ? textoAnios(anios) : "sin años completos"} sel={resalta === x.id} />
             {anios.length && s.n ? <>
-              <td style={color(s.sArg)}>{ok(s.sArg) ? signo(s.sArg) : "—"}{s.n < anios.length ? <small>{s.n} de {anios.length} años</small> : null}</td>
-              <td style={color(s.sGrp)}>{ok(s.sGrp) ? signo(s.sGrp) : "—"}</td>
-              <td style={color(s.dif)}>{ok(s.dif) ? signo(s.dif) : "—"}</td>
+              <Valor tono={colS.arg.tono[k]} f={colS.arg.frac[k]} modo="centro" neg={(s.sArg ?? 0) < 0} marca={colS.arg.marca[k]} sub={s.n < anios.length ? <small>{s.n} de {anios.length} años</small> : null}>{ok(s.sArg) ? signo(s.sArg) : "—"}</Valor>
+              <Valor tono={colS.grp.tono[k]} f={colS.grp.frac[k]} modo="centro" neg={(s.sGrp ?? 0) < 0} marca={colS.grp.marca[k]}>{ok(s.sGrp) ? signo(s.sGrp) : "—"}</Valor>
+              <Valor tono={colS.dif.tono[k]} f={colS.dif.frac[k]} modo="centro" neg={(s.dif ?? 0) < 0} marca={colS.dif.marca[k]}>{ok(s.dif) ? signo(s.dif) : "—"}</Valor>
             </> : <td colSpan={3} style={{ textAlign: "center", color: "var(--text-muted)" }}>{anios.length ? "sin proyección de abril para esos años" : "sin años completos"}</td>}
           </tr>
         ))}</tbody>
         <caption style={{ captionSide: "bottom", textAlign: "left", fontSize: 12, color: "var(--text-muted)", paddingTop: 8 }}>
-          Sorpresa promedio por año, en puntos. {dir > 0 ? "Verde: mejor de lo esperado." : "Que salga más alto es peor: verde = más bajo de lo esperado."}
+          Sorpresa promedio por año, en puntos. {dir > 0 ? "Verde: mejor de lo esperado." : "Que salga más alto es peor: verde = más bajo de lo esperado."} La barra muestra la magnitud frente al mayor de la columna (a la derecha si es positiva, a la izquierda si es negativa) y las marcas “mejor” y “peor” señalan los extremos.
         </caption>
       </table></div>
       <ul className="note" style={{ paddingLeft: 18 }}>
@@ -131,11 +138,11 @@ function Esperado({ datos, grupo, nombreGrupo, p, set, resalta }: { datos: Datos
       </ul>
       <details>
         <summary>Ver año por año</summary>
-        <div className="tablewrap alto"><table>
+        <div className="tablewrap alto fija"><table>
           <thead><tr><th>Año</th><th>Arg. proyectado</th><th>Arg. real</th><th>Sorpresa Arg.</th><th>{nombreGrupo} proyectado</th><th>{nombreGrupo} real</th><th>Sorpresa {nombreGrupo}</th><th>Diferencia</th></tr></thead>
           <tbody>{filas.filter((f) => f.y >= 1995 && (f.pArg != null || f.rArg != null)).map((f) => (
-            <tr key={f.y}><td>{f.y}{f.y > hasta ? <small>estimado</small> : null}</td><td>{f1(f.pArg)}</td><td>{f1(f.rArg)}</td><td style={color(f.sArg)}>{ok(f.sArg) ? signo(f.sArg) : "—"}</td>
-              <td>{f1(f.pGrp)}</td><td>{f1(f.rGrp)}</td><td style={color(f.sGrp)}>{ok(f.sGrp) ? signo(f.sGrp) : "—"}</td><td style={color(f.dif)}>{ok(f.dif) ? signo(f.dif) : "—"}</td></tr>
+            <tr key={f.y}><td>{f.y}{f.y > hasta ? <small>estimado</small> : null}</td><td>{f1(f.pArg)}</td><td>{f1(f.rArg)}</td><Valor tono={tonoSig(f.sArg, dir)}>{ok(f.sArg) ? signo(f.sArg) : "—"}</Valor>
+              <td>{f1(f.pGrp)}</td><td>{f1(f.rGrp)}</td><Valor tono={tonoSig(f.sGrp, dir)}>{ok(f.sGrp) ? signo(f.sGrp) : "—"}</Valor><Valor tono={tonoSig(f.dif, dir)}>{ok(f.dif) ? signo(f.dif) : "—"}</Valor></tr>
           ))}</tbody>
         </table></div>
       </details>
@@ -182,7 +189,7 @@ function Comparar({ datos, p, set, resalta }: { datos: DatosContexto; p: URLSear
     }
     return { x, anios, vals, puesto, de: mejores, pctIni, pctFin };
   });
-  const colPuesto = (pu: number | null, de: number) => (pu && de > 1 ? tinte(1 - (2 * (pu - 1)) / (de - 1)) : undefined);
+  const tonoPuesto = (pu: number | null, de: number) => { if (!pu || de < 2) return null; const sc = 1 - (2 * (pu - 1)) / (de - 1); return sc > 0 ? "bueno" as const : sc < 0 ? "malo" as const : null; };
   const sufijo = esIdx ? "Crecimiento acumulado en el mandato (%)" : `Promedio del mandato (${def.u})`;
 
   return (
@@ -211,14 +218,14 @@ function Comparar({ datos, p, set, resalta }: { datos: DatosContexto; p: URLSear
       <Grafico rows={rows} series={sg} opts={opts} />
       <Leyenda items={sg.map((s) => ({ color: s.color, n: s.name, dash: s.dash }))} />
       <h3>Por presidente</h3>
-      <div className="tablewrap"><table>
-        <thead><tr><th>Presidente</th><th style={{ textAlign: "left" }}>Años</th>{ents.map((e) => <th key={e}>{nombreEnt(datos, e)}</th>)}<th>Puesto de la Argentina</th>{def.id === "pibpc" && <th>Arg. como % del promedio (inicio → fin)</th>}</tr></thead>
+      <div className="tablewrap fija"><table>
+        <thead><tr><th>Presidente</th>{ents.map((e) => <th key={e}>{nombreEnt(datos, e)}</th>)}<th>Puesto de la Argentina</th>{def.id === "pibpc" && <th>Arg. como % del promedio (inicio → fin)</th>}</tr></thead>
         <tbody>{filasP.map(({ x, anios, vals, puesto, de, pctIni, pctFin }) => (
           <tr key={x.id} style={resaltar(resalta === x.id)}>
-            <td>{x.n}</td><td className="unidad">{textoAnios(anios)}</td>
+            <CeldaPres n={x.n} corto={nombreCorto(x.n)} periodo={anios.length ? textoAnios(anios) : "sin años completos"} sel={resalta === x.id} />
             {anios.length ? ents.map((e) => <td key={e} style={e === ARG ? { fontWeight: 600 } : undefined}>{f1(vals[e].v)}{nDe(vals[e])}</td>)
               : <td colSpan={ents.length} style={{ textAlign: "center", color: "var(--text-muted)" }}>sin años completos</td>}
-            <td style={colPuesto(puesto, de)}>{puesto ? `${puesto}º de ${de}` : "—"}</td>
+            <Valor tono={tonoPuesto(puesto, de)}>{puesto ? `${puesto}º de ${de}` : "—"}</Valor>
             {def.id === "pibpc" && <td>{ok(pctIni) && ok(pctFin) ? `${nf0.format(pctIni)} % → ${nf0.format(pctFin)} %` : "—"}</td>}
           </tr>
         ))}</tbody>
@@ -250,7 +257,7 @@ function GraficoMensual({ rows, series, opts, F }: { rows: Fila[]; series: Serie
 }
 
 const fmtV = (def: Omit<DefViento, "fmt">, v: number | null) => (ok(v) ? (def.u.includes("%") ? nf1.format(v) : nf0.format(v)) : "—");
-const colorMarca = (mk: Marca) => (mk === "favor" ? tinte(0.6) : mk === "contra" ? tinte(-0.6) : undefined);
+const tonoMarca = (mk: Marca) => (mk === "favor" ? "bueno" as const : mk === "contra" ? "malo" as const : null);
 
 function Viento({ m, datos, PRES, resalta }: { m: NonNullable<ReturnType<typeof useSeccion>["motor"]>; datos: DatosContexto; PRES: Pres[]; resalta: string | null }) {
   const hasta = ultimoCerrado(datos);
@@ -281,14 +288,14 @@ function Viento({ m, datos, PRES, resalta }: { m: NonNullable<ReturnType<typeof 
         </div>
       </div>
       <h3>Por presidente</h3>
-      <div className="tablewrap"><table>
+      <div className="tablewrap fija"><table>
         <thead><tr><th>Presidente</th>{VIENTOS.map((v) => <th key={v.id}>{v.n}</th>)}</tr></thead>
         <tbody>{porPres.map(({ x, v }) => (
           <tr key={x.id} style={resaltar(resalta === x.id)}>
-            <td>{x.n}</td>
+            <CeldaPres n={x.n} corto={x.corto} periodo={periodoMandato(m.F, x)} sel={resalta === x.id} />
             {v.map((c) => c.mandato == null
               ? <td key={c.def.id} style={{ color: "var(--text-muted)", textAlign: "center" }}>sin datos</td>
-              : <td key={c.def.id} style={colorMarca(c.marca)}>{fmtV(c.def, c.mandato)}<small>{MARCA_TXT[c.marca] === "—" ? `prom. total ${fmtV(c.def, c.total)}` : `${MARCA_TXT[c.marca]} (prom. total ${fmtV(c.def, c.total)})`}</small></td>)}
+              : <Valor key={c.def.id} tono={tonoMarca(c.marca)} sub={<small>{MARCA_TXT[c.marca] === "—" ? `prom. total ${fmtV(c.def, c.total)}` : `${MARCA_TXT[c.marca]} (prom. total ${fmtV(c.def, c.total)})`}</small>}>{fmtV(c.def, c.mandato)}</Valor>)}
           </tr>
         ))}</tbody>
         <caption style={{ captionSide: "bottom", textAlign: "left", fontSize: 12, color: "var(--text-muted)", paddingTop: 8 }}>

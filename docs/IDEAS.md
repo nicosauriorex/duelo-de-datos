@@ -164,6 +164,28 @@ Dirección: **animaciones ligadas al scroll + scrollytelling + motion design**. 
 **Presidentes en la línea de tiempo**
 - En la mayoría de los gráficos, una opción para **pintar el período de cada presidente** como un área de color (o marcarlo). Por defecto con los colores de cada partido (Macri amarillo, Cristina celeste, Milei violeta), y que los colores se puedan cambiar desde la **configuración global**.
 
+## ~~Ajustes pedidos al recorrer la página (2026-11-10)~~ ✅ 2026-11-10
+→ spec A (Histórico y gráfico): docs/specs/ajustes-grafico.md · → spec B (imagen): docs/specs/personalizar-imagen.md · → spec C (tablas, presidentes y temas): docs/specs/ajustes-tablas.md
+Criterio general pedido: lo que se pide para una pantalla vale para toda la página.
+1. Gráfico: al pasar por una línea de último, promedio o mediana, mostrar solo ese dato (hoy el de la serie lo tapa). → A
+2. Imagen compartible: elegir marcadores y líneas (último, promedio, mediana); nombres de presidentes del mismo tamaño (abreviar "Néstor K.", "Alberto F."); compartir solo un rango de fechas, con tarjetas solo de esos presidentes; elegir qué datos van en las tarjetas (recibido, entregado, variación, promedio, mediana…) y que se entienda qué es cada uno; presidentes resaltados sin tarjetas, o tarjetas generales con o sin presidentes. → B
+3. Página de tema en PC: mucho espacio vacío a la derecha del título y la bajada. → C
+4. Zoom: al seleccionar un área, la escala no siempre se ajusta. → A
+5. "Todos los datos" de inflación ofrece el índice y además la mensual y la interanual: dejar una sola forma (lo más fácil, las variaciones ya calculadas). → C
+6. Celular: gráficos de muchos años ilegibles; zoom con deslizadores en el eje X y poder mover el gráfico; sin marcadores cuando está muy apretado. → A
+7. Tabla por presidente de las páginas de tema: el mandato debajo del nombre, no en otra columna (también en PC). → C
+8. Celular: compartir manda la imagen y el link. ✅ probado por el usuario (2026-11-10).
+9. Celular: en Personalizar, Mes/Trimestre/Año se sale de la ventana. Mostrar siempre la temporalidad y cómo se agregan los datos (al ver y al compartir). → A y B
+10. Personalizar: tres botones (Filtrar fecha, Elegir variable, Opciones del gráfico); en Opciones van Mes/Trimestre/Año, cómo se agregan, Gráfico/Tabla y lo de hoy; nada se sale de la pantalla. → A
+11. Tarjetas de resumen del Histórico: no se sabe contra qué es la variación; fijar el último y pasar inicio, promedio, mediana, mínimo, etc. con la variación contra el último, aclarado arriba. → A
+12. Por presidente: mandato debajo del nombre; variación en $ más chica y debajo del %; abreviar nombres; períodos no más anchos que el nombre; mejor/peor por color es confuso en fondo oscuro (un rojo oscuro alarma más que uno claro): buscar otra técnica; primera columna fija al desplazarse. → C
+13. Celular: el desplegable del inicio de mandato en la configuración global es el nativo de Android. → C
+14. "Inicio: T-1" poco claro: oración dinámica ("Mes inicial de cada presidente: T-1, excepto Milei (T+1)") y aclarar que T = mes de asunción. → C (y B para la imagen)
+15. Por presidente: la explicación del inicio y el contexto del mandato, contraídos o como ícono de información. → C
+16. Un presidente, todas las variables: mucha configuración arriba; unidad debajo de la variable, columna fija, nombres con puntos suspensivos o en varias líneas. → C
+17. Gobierno y Congreso: no se ven los datos (vetos). → C (faltan cargar totales y bancas; que se entienda qué hay y qué falta)
+18. Es raro que Congreso sea la misma página que Por presidente. → C
+
 ## Correcciones pedidas (2026-11-09)
 → spec: docs/specs/correcciones-historico.md
 Son ajustes a lo ya hecho, no ideas nuevas.

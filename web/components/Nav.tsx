@@ -14,12 +14,12 @@ export const SECCIONES: [string, string][] = [
 /** Subsecciones de Presidentes: [carpeta, ancla, nombre]. Las URLs son las de siempre. */
 const SUBSECCIONES: [string, string, string][] = [
   ["presidentes", "", "Por presidente"], ["ranking", "", "Ranking"], ["mandato", "", "Meses de mandato"],
-  ["curiosidades", "", "Curiosidades"], ["elecciones", "", "Elecciones"], ["presidentes", "#congreso", "Congreso"],
+  ["curiosidades", "", "Curiosidades"], ["elecciones", "", "Elecciones"], ["congreso", "", "Congreso"],
 ];
 const GRUPO_PRES = new Set(SUBSECCIONES.map((s) => s[0]));
 const TITULOS: Record<string, string> = {
   historico: "Histórico", presidentes: "Por presidente", ranking: "Ranking de presidentes", mandato: "Meses de mandato",
-  curiosidades: "Curiosidades", elecciones: "Elecciones", contexto: "Contexto internacional", plantillas: "Plantillas", fuentes: "Fuentes",
+  curiosidades: "Curiosidades", congreso: "Gobierno y Congreso", elecciones: "Elecciones", contexto: "Contexto internacional", plantillas: "Plantillas", fuentes: "Fuentes",
 };
 /** Páginas donde aparece "Volver" si se llegó desde otra página del sitio. */
 const CON_VOLVER = new Set(["historico", "tema", ...GRUPO_PRES]);
@@ -42,7 +42,7 @@ function LinksPresidentes({ carpeta, ancla, onIr }: { carpeta: string; ancla: st
   return (
     <>
       {SUBSECCIONES.map(([c, h, n]) => {
-        const actual = carpeta === c && (c !== "presidentes" || (ancla === "#congreso") === (h === "#congreso"));
+        const actual = carpeta === c;
         return <Link key={c + h} prefetch={false} href={`/${c}/${h}`} aria-current={actual ? "page" : undefined} onClick={() => onIr(h)}>{n}</Link>;
       })}
     </>

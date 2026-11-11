@@ -1,18 +1,19 @@
 "use client";
-// Panel de compartir: vista previa de la imagen, formato, "Comparar presidentes", comentario y acciones. Ver docs/specs/responder-con-imagen.md.
-import { useEffect, useRef, useState, type ReactNode } from "react";
+// Panel de compartir: vista previa de la imagen, formato, "Personalizar imagen" (período, líneas, presidentes, tarjetas), comentario y acciones.
+// Ver docs/specs/responder-con-imagen.md y docs/specs/personalizar-imagen.md.
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { Modal, Seg } from "./ui";
+import { Modal, Selector, Seg } from "./ui";
 import { useConfig } from "./ConfigProvider";
 import { useCargar, useDatos } from "./DatosProvider";
 import { exprsUsadas } from "@/lib/historico";
 import { PRES_DEF } from "@/lib/estadisticas";
-import { baseDeConfig, FORMATOS_IMG, type FormatoImg } from "@/lib/config";
+import { baseDeConfig, DATOS_GEN, DATOS_PRES, FORMATOS_IMG, MAX_DATOS_GEN, MAX_DATOS_PRES, TARJETAS_IMG, type FormatoImg, type OpcionesImagen, type TarjetasImg } from "@/lib/config";
 import {
   archivoPng, avisoCompartir, avisoImagen, compartir, compartirImagen, copiarImagen, descargarImagen, puedeCompartirArchivo, puedeCopiarImagen, type ResultadoImagen,
 } from "@/lib/compartir";
 import { dibujarImagen, esperarFuentes } from "@/lib/imagen";
-import { armarImagen, MAX_COMENTARIO, type VistaImg } from "@/lib/imagen-datos";
+import { admitePersonalizar, armarImagen, MAX_COMENTARIO, mesesDisponibles, type VistaImg } from "@/lib/imagen-datos";
 import { armarImagenPres, esVistaPres, idsDeVistaPres, type VistaPres } from "@/lib/imagen-presidentes";
 import { leerPaleta } from "@/lib/imagen-paleta";
 
@@ -25,16 +26,31 @@ export function PanelCompartir({ vista, href, titulo, onCerrar }: Props) {
   const pres = esVistaPres(vista);
   const ids = pres ? idsDeVistaPres(vista) : vista.exprs.flatMap((e) => (e.rel ? [e.id, e.rel] : [e.id]));
   const cargado = useCargar(archivosDe(ids));
-  const [comparar, setComparar] = useState(false);
+  const [periodo, setPeriodo] = useState<{ desde: string; hasta: string } | null>(null);   // null = el período visible del gráfico
   const [comentario, setComentario] = useState("");
   const [comentarioAplicado, setComentarioAplicado] = useState("");
   const [aviso, setAviso] = useState<string | null>(null);
-  const [estado, setEstado] = useState<"cargando" | "listo" | "sin-datos">("cargando");
+  const [estado, setEstado] = useState<"cargando" | "listo" | "sin-datos" | "sin-periodo">("cargando");
   const [archivo, setArchivo] = useState<File | null>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const formato: FormatoImg = config.formatoImagen;
-  const puedeComparar = !pres && vista.exprs.length === 1 && vista.modo !== "b100";
-  const conComparar = comparar && puedeComparar;
+  const img = config.imagen;
+  const exprsV = useMemo(() => (pres || !motor || !cargado ? [] : exprsUsadas(motor, vista)), [pres, motor, cargado, vista, version]);   // eslint-disable-line react-hooks/exhaustive-deps
+  const vg = esVistaPres(vista) ? null : vista;
+  const vistaG = vg ? { ...vg, exprs: exprsV } : null;
+  const completa = !!vistaG && exprsV.length > 0 && admitePersonalizar(vistaG);   // una variable en valores: todo se puede personalizar
+  const disp = useMemo(() => (vistaG && motor && cargado && exprsV.length ? mesesDisponibles(motor, vistaG) : []), [motor, cargado, exprsV, version]);   // eslint-disable-line react-hooks/exhaustive-deps
+  // el período arranca en el visible del gráfico, recortado a los meses con datos
+  const porDefecto = useMemo(() => {
+    if (!vistaG || !disp.length) return null;
+    const d = disp.find((x) => x.fecha >= vistaG.desde) ?? disp[disp.length - 1], h = [...disp].reverse().find((x) => x.fecha <= vistaG.hasta) ?? disp[0];
+    return { desde: d.fecha, hasta: h.fecha };
+  }, [disp, vista]);   // eslint-disable-line react-hooks/exhaustive-deps
+  const per = periodo ?? porDefecto;
+  const periodoValido = !!per && disp.filter((x) => x.fecha >= per.desde && x.fecha <= per.hasta).length >= 2;
+  // el título lleva el período solo si quien comparte lo cambió respecto del que ya muestra el gráfico
+  const periodoEnTitulo = !!periodo && !!porDefecto && (periodo.desde !== porDefecto.desde || periodo.hasta !== porDefecto.hasta);
+  const cambiarImg = (c: Partial<OpcionesImagen>) => cambiar({ imagen: { ...img, ...c } });
   const kBase = `${config.t0}|${JSON.stringify(config.t0p)}`;
 
   // el comentario se aplica al dejar de escribir
@@ -46,12 +62,13 @@ export function PanelCompartir({ vista, href, titulo, onCerrar }: Props) {
     let vivo = true;
     (async () => {
       let datos = null;
-      setArchivo(null);   // hasta terminar de dibujar no hay imagen nueva: no se ofrece la vieja
+      setArchivo(null);
+      if (!pres && per && !periodoValido) { setEstado("sin-periodo"); return; }   // hasta terminar de dibujar no hay imagen nueva: no se ofrece la vieja
       try {
         datos = esVistaPres(vista)
           ? armarImagenPres(motor, vista, { formato, comentario: comentarioAplicado })
-          : armarImagen(motor, { ...vista, exprs: exprsUsadas(motor, vista) }, {
-            formato, comparar: conComparar, comentario: comentarioAplicado,
+          : armarImagen(motor, { ...vista, exprs: exprsUsadas(motor, vista), desde: per?.desde ?? vista.desde, hasta: per?.hasta ?? vista.hasta }, {
+            formato, comentario: comentarioAplicado, personal: img, periodoEnTitulo,
             base: baseDeConfig(config, PRES_DEF.map((p) => p.id)), colPres: config.colPres,
           });
       } catch { datos = null; }
@@ -66,7 +83,7 @@ export function PanelCompartir({ vista, href, titulo, onCerrar }: Props) {
     })();
     return () => { vivo = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cargado, motor, version, vista, formato, conComparar, comentarioAplicado, kBase, config.colPres]);
+  }, [cargado, motor, version, vista, formato, per?.desde, per?.hasta, periodoValido, periodoEnTitulo, JSON.stringify(img), comentarioAplicado, kBase, config.colPres]);
 
   const mostrar = (t: string | null) => { setAviso(t); if (t) setTimeout(() => setAviso(null), 4000); };
   const alResultado = (r: ResultadoImagen) => mostrar(avisoImagen(r));
@@ -78,15 +95,42 @@ export function PanelCompartir({ vista, href, titulo, onCerrar }: Props) {
         <h2>Compartir como imagen</h2>
         <div className="comp-previa">
           <canvas ref={canvas} role="img" aria-label={`Vista previa de la imagen: ${titulo}`} />
-          {estado !== "listo" && <p className="note comp-estado" role="status">{estado === "sin-datos" ? "No hay datos para armar la imagen." : "Armando la imagen…"}</p>}
+          {estado !== "listo" && <p className="note comp-estado" role="status">{estado === "sin-datos" ? "No hay datos para armar la imagen." : estado === "sin-periodo" ? "Elegí un período con datos." : "Armando la imagen…"}</p>}
         </div>
         <div className="comp-opciones">
           <div className="controls"><label>Formato</label>
             <Seg valor={formato} opciones={FORMATOS_IMG} onElegir={(f) => cambiar({ formatoImagen: f as FormatoImg })} /></div>
-          {puedeComparar && (
-            <div className="controls"><label>Comparar presidentes</label>
-              <Seg valor={comparar ? "si" : "no"} opciones={[["no", "No"], ["si", "Sí"]]} onElegir={(v) => setComparar(v === "si")} />
-              <span className="note" style={{ margin: 0 }}>Franja de cada mandato y cómo cambió el dato en cada uno.</span></div>
+          {!pres && disp.length > 0 && per && (
+            <details className="comp-personalizar">
+              <summary>Personalizar imagen</summary>
+              <Grupo titulo="Período" abierto>
+                <div className="comp-periodo">
+                  <Selector etiqueta="Desde" valor={per.desde} opciones={disp.map((x) => [x.fecha, x.etq])} onElegir={(v) => setPeriodo({ desde: v, hasta: per.hasta })} />
+                  <span aria-hidden="true">a</span>
+                  <Selector etiqueta="Hasta" valor={per.hasta} opciones={disp.map((x) => [x.fecha, x.etq])} onElegir={(v) => setPeriodo({ desde: per.desde, hasta: v })} />
+                </div>
+                {!periodoValido && <p className="note" role="status" style={{ margin: 0 }}>Elegí un período con datos: hacen falta al menos dos meses.</p>}
+              </Grupo>
+              <Grupo titulo="Líneas y marcadores" razon={completa ? null : RAZON}>
+                <Marca t="Marcador del último dato" v={img.marcaUltimo} f={(x) => cambiarImg({ marcaUltimo: x })} />
+                <Marca t="Línea de promedio" v={img.promedio} f={(x) => cambiarImg({ promedio: x })} off={!completa} />
+                <Marca t="Línea de mediana" v={img.mediana} f={(x) => cambiarImg({ mediana: x })} off={!completa} />
+                <Marca t="Línea del último dato" v={img.lineaUltimo} f={(x) => cambiarImg({ lineaUltimo: x })} off={!completa} />
+                <Marca t="Marcadores de máximo y mínimo" v={img.marcaExtremos} f={(x) => cambiarImg({ marcaExtremos: x })} off={!completa} />
+              </Grupo>
+              <Grupo titulo="Presidentes" razon={completa ? null : RAZON}>
+                <Marca t="Resaltar presidentes en el gráfico" v={img.resaltar} f={(x) => cambiarImg({ resaltar: x })} off={!completa} />
+              </Grupo>
+              <Grupo titulo="Tarjetas" razon={completa ? null : RAZON}>
+                <Seg valor={completa ? img.tarjetas : "ninguna"} opciones={TARJETAS_IMG} onElegir={(v) => { if (completa) cambiarImg({ tarjetas: v as TarjetasImg }); }} />
+                {completa && img.tarjetas === "pres" && (
+                  <Datos t={`Datos de cada presidente (hasta ${MAX_DATOS_PRES})`} todos={DATOS_PRES} elegidos={img.datosPres} tope={MAX_DATOS_PRES} f={(l) => cambiarImg({ datosPres: l })} />
+                )}
+                {completa && img.tarjetas === "gen" && (
+                  <Datos t={`Datos del período (hasta ${MAX_DATOS_GEN})`} todos={DATOS_GEN} elegidos={img.datosGen} tope={MAX_DATOS_GEN} f={(l) => cambiarImg({ datosGen: l })} />
+                )}
+              </Grupo>
+            </details>
           )}
           <div className="controls"><label htmlFor="comp-comentario">Comentario propio</label>
             <input id="comp-comentario" type="text" value={comentario} maxLength={MAX_COMENTARIO} placeholder="Opcional, una línea"
@@ -123,5 +167,40 @@ export function BotonCompartir({ crearVista, href, titulo, className, children, 
       <button type="button" className={className} disabled={deshabilitado} {...resto} onClick={abrir}>{children}</button>
       {abierto && createPortal(<PanelCompartir vista={abierto.vista} href={abierto.href} titulo={titulo} onCerrar={() => setAbierto(null)} />, document.body)}
     </>
+  );
+}
+
+const RAZON = "Disponible con una sola variable en valores (no en base 100).";
+
+/** Un grupo de opciones del panel, plegable. Con `razon`, sus opciones están deshabilitadas y se dice por qué. */
+function Grupo({ titulo, abierto, razon, children }: { titulo: string; abierto?: boolean; razon?: string | null; children: ReactNode }) {
+  return (
+    <details className="comp-grupo" open={abierto}>
+      <summary>{titulo}</summary>
+      <div className="comp-grupo-cuerpo">
+        {razon && <p className="note" style={{ margin: 0 }}>{razon}</p>}
+        {children}
+      </div>
+    </details>
+  );
+}
+/** Interruptor con nombre. */
+function Marca({ t, v, f, off }: { t: string; v: boolean; f: (x: boolean) => void; off?: boolean }) {
+  return (
+    <label className="comp-marca"><input type="checkbox" checked={v && !off} disabled={off} onChange={(ev) => f(ev.target.checked)} /> {t}</label>
+  );
+}
+/** Datos elegibles de las tarjetas: hasta `tope`, y siempre al menos uno. */
+function Datos<T extends string>({ t, todos, elegidos, tope, f }: { t: string; todos: [T, string][]; elegidos: T[]; tope: number; f: (l: T[]) => void }) {
+  const alternar = (d: string) => {
+    const x = d as T;
+    if (elegidos.includes(x)) { if (elegidos.length > 1) f(elegidos.filter((e) => e !== x)); }
+    else if (elegidos.length < tope) f([...elegidos, x]);
+  };
+  return (
+    <div className="comp-datos">
+      <span className="note" style={{ margin: 0 }}>{t}</span>
+      <Seg valor={new Set<string>(elegidos)} opciones={todos} onElegir={alternar} />
+    </div>
   );
 }

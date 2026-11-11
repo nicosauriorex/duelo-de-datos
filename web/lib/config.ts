@@ -11,6 +11,19 @@ export type MedidaPref = "real" | "corr" | "usdr" | "usd";
 export type DesdePref = "todo" | "1995" | "2003" | "2011" | "2017" | "2023" | "ultimo";
 export type TemaPref = "auto" | "claro" | "oscuro";
 export type FormatoImg = "1x1" | "4x5" | "16x9";
+export type TarjetasImg = "ninguna" | "pres" | "gen";
+export type DatoPres = "recibio" | "entrego" | "variacion" | "promedio" | "mediana" | "maximo" | "minimo";
+export type DatoGen = "ultimo" | "inicio" | "variacion" | "promedio" | "mediana" | "maximo" | "minimo";
+/** Lo que el usuario elige para personalizar la imagen del dato (ver docs/specs/personalizar-imagen.md). El período no se guarda. */
+export interface OpcionesImagen {
+  promedio: boolean; mediana: boolean; lineaUltimo: boolean;   // líneas horizontales con su nombre y valor
+  marcaUltimo: boolean; marcaExtremos: boolean;                 // marcadores sobre la serie
+  resaltar: boolean;                                            // franjas de los presidentes en el gráfico
+  tarjetas: TarjetasImg;
+  datosPres: DatoPres[];                                        // hasta 3, en el orden de DATOS_PRES
+  datosGen: DatoGen[];                                          // hasta 4, en el orden de DATOS_GEN
+}
+export const MAX_DATOS_PRES = 3, MAX_DATOS_GEN = 4;
 
 export interface Config {
   v: number;
@@ -24,19 +37,46 @@ export interface Config {
   colPres: Record<string, string>; // color elegido por presidente (id → #rrggbb)
   personalizar: boolean;         // Histórico: el panel "Personalizar" de la vista simple quedó abierto
   formatoImagen: FormatoImg;     // último formato elegido para la imagen de compartir
+  imagen: OpcionesImagen;        // últimas elecciones de "Personalizar imagen"
 }
-export const DEFECTO: Config = { v: VERSION, t0: -1, t0p: {}, dolar: "oficial", medida: "real", desde: "2003", tema: "oscuro", franjas: false, colPres: {}, personalizar: false, formatoImagen: "1x1" };
+export const IMAGEN_DEFECTO: OpcionesImagen = {
+  promedio: false, mediana: false, lineaUltimo: false, marcaUltimo: true, marcaExtremos: false, resaltar: false, tarjetas: "ninguna",
+  datosPres: ["recibio", "entrego", "variacion"], datosGen: ["ultimo", "promedio", "maximo", "minimo"],
+};
+export const DEFECTO: Config = { v: VERSION, t0: -1, t0p: {}, dolar: "oficial", medida: "real", desde: "2003", tema: "oscuro", franjas: false, colPres: {}, personalizar: false, formatoImagen: "1x1", imagen: IMAGEN_DEFECTO };
 
 export const DOLARES: [Dolar, string][] = [["oficial", "Oficial"], ["blue", "Blue"], ["mep", "MEP"], ["ccl", "CCL"]];
 export const MEDIDAS: [MedidaPref, string][] = [["real", "Pesos reales"], ["corr", "Pesos corrientes"], ["usdr", "Dólares reales"], ["usd", "Dólares corrientes"]];
 export const DESDES: [DesdePref, string][] = [["todo", "Todo"], ["1995", "1995"], ["2003", "2003"], ["2011", "2011"], ["2017", "2017"], ["2023", "2023"], ["ultimo", "Último año"]];
 export const TEMAS: [TemaPref, string][] = [["oscuro", "Oscuro"], ["claro", "Claro"], ["auto", "Automático"]];
 export const FORMATOS_IMG: [FormatoImg, string][] = [["1x1", "Cuadrada 1:1"], ["4x5", "Vertical 4:5"], ["16x9", "Horizontal 16:9"]];
+export const TARJETAS_IMG: [TarjetasImg, string][] = [["ninguna", "Ninguna"], ["pres", "Por presidente"], ["gen", "Generales"]];
+/** Datos elegibles de cada tipo de tarjeta, en el orden en que se muestran. */
+export const DATOS_PRES: [DatoPres, string][] = [["recibio", "Recibió"], ["entrego", "Entregó"], ["variacion", "Variación"], ["promedio", "Promedio"], ["mediana", "Mediana"], ["maximo", "Máximo"], ["minimo", "Mínimo"]];
+export const DATOS_GEN: [DatoGen, string][] = [["ultimo", "Último"], ["inicio", "Inicio del período"], ["variacion", "Variación del período"], ["promedio", "Promedio"], ["mediana", "Mediana"], ["maximo", "Máximo"], ["minimo", "Mínimo"]];
 
 const unoDe = <T extends string>(x: unknown, validos: readonly [T, string][], def: T): T =>
   validos.some((v) => v[0] === x) ? (x as T) : def;
 const entero = (x: unknown): number | null =>
   typeof x === "number" && Number.isFinite(x) ? Math.max(T_MIN, Math.min(T_MAX, Math.round(x))) : null;
+
+/** Lista de datos válidos, sin repetir, en el orden del catálogo y con tope; si queda vacía, la de fábrica. */
+function datosDe<T extends string>(x: unknown, validos: readonly [T, string][], tope: number, def: T[]): T[] {
+  const pedidos = Array.isArray(x) ? x : [];
+  const lista = validos.map((v) => v[0]).filter((v) => pedidos.includes(v)).slice(0, tope);
+  return lista.length ? lista : def;
+}
+/** Las elecciones de la imagen: lo inválido cae al valor de fábrica, campo por campo. */
+export function normalizarImagen(raw: unknown): OpcionesImagen {
+  const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>, D = IMAGEN_DEFECTO;
+  const si = (x: unknown, def: boolean) => (typeof x === "boolean" ? x : def);
+  return {
+    promedio: si(r.promedio, D.promedio), mediana: si(r.mediana, D.mediana), lineaUltimo: si(r.lineaUltimo, D.lineaUltimo),
+    marcaUltimo: si(r.marcaUltimo, D.marcaUltimo), marcaExtremos: si(r.marcaExtremos, D.marcaExtremos), resaltar: si(r.resaltar, D.resaltar),
+    tarjetas: unoDe(r.tarjetas, TARJETAS_IMG, D.tarjetas),
+    datosPres: datosDe(r.datosPres, DATOS_PRES, MAX_DATOS_PRES, D.datosPres), datosGen: datosDe(r.datosGen, DATOS_GEN, MAX_DATOS_GEN, D.datosGen),
+  };
+}
 
 /** Convierte cualquier cosa leída del almacenamiento en una configuración válida: lo que no se entiende cae al valor por defecto. */
 export function normalizar(raw: unknown): Config {
@@ -50,7 +90,7 @@ export function normalizar(raw: unknown): Config {
     for (const [id, c] of Object.entries(r.colPres as Record<string, unknown>)) if (/^[a-z0-9]+$/.test(id) && typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c)) colPres[id] = c.toLowerCase();
   }
   return {
-    franjas: r.franjas === true, colPres, personalizar: r.personalizar === true, formatoImagen: unoDe(r.formatoImagen, FORMATOS_IMG, DEFECTO.formatoImagen),
+    franjas: r.franjas === true, colPres, personalizar: r.personalizar === true, formatoImagen: unoDe(r.formatoImagen, FORMATOS_IMG, DEFECTO.formatoImagen), imagen: normalizarImagen(r.imagen),
     v: VERSION, t0: entero(r.t0) ?? DEFECTO.t0, t0p,
     dolar: unoDe(r.dolar, DOLARES, DEFECTO.dolar), medida: unoDe(r.medida, MEDIDAS, DEFECTO.medida),
     desde: unoDe(r.desde, DESDES, DEFECTO.desde), tema: unoDe(r.tema, TEMAS, DEFECTO.tema),

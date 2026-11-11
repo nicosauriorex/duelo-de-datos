@@ -1,16 +1,17 @@
 "use client";
-// Sección "Gobierno y Congreso" de Presidentes (bloque 6d): bancas propias y aliadas, leyes del Ejecutivo, DNU y vetos.
+// Página "Gobierno y Congreso" (/congreso/, bloque 6d): bancas propias y aliadas, leyes del Ejecutivo, DNU y vetos.
 // Sin cuentas acá: todo sale de lib/capacidad.ts.
 import { useEffect, useMemo, useState } from "react";
 import { useCapacidad } from "../useCapacidad";
+import { useSeccion } from "../useSeccion";
 import { Cargando, Seg } from "../ui";
 import { fmtMes, nf0, nf1, ok } from "@/lib/formato";
 import {
-  CAMARAS, INDICADORES, bancasDe, mandatos, pctAliados, pctPropios, quorumPct, resumenBancas, resumenDnu, resumenLeyes, resumenVetos, valorIndicador,
+  CAMARAS, INDICADORES, bancasDe, indicadorTieneDatos, mandatos, primerIndicadorConDatos, queHayCargado, pctAliados, pctPropios, quorumPct, resumenBancas, resumenDnu, resumenLeyes, resumenVetos, valorIndicador,
   type Camara, type DatosCap, type Indicador, type Mandato,
 } from "@/lib/capacidad";
-import { PRES_DEF } from "@/lib/estadisticas";
-import { unoDe } from "@/lib/url";
+import { PRES_DEF, nombreCorto } from "@/lib/estadisticas";
+import { unoDe, useParams } from "@/lib/url";
 
 type Setter = (c: Record<string, string | null | undefined>) => void;
 const SIN = <span title="sin dato cargado">—</span>;
@@ -18,20 +19,33 @@ const pc = (v: number | null | undefined) => (ok(v) ? `${nf0.format(v)} %` : nul
 type ColClave = "dip" | "sen" | "leyes" | "dnu" | "vetos";
 const IDS = PRES_DEF.map((p) => p.id);
 
+/** Mes anterior a "AAAA-MM" (el mandato termina el mes antes de que asuma el siguiente). */
+const mesAnterior = (f: string) => { const a = +f.slice(0, 4), m = +f.slice(5, 7); return m === 1 ? `${a - 1}-12` : `${a}-${String(m - 1).padStart(2, "0")}`; };
+const periodoDe = (m: Mandato) => `${fmtMes(m.ini)} a ${m.fin ? fmtMes(mesAnterior(m.fin)) : "hoy"}`;
+
+/** Contenido de la ruta /congreso/: toma el último mes de los datos y los filtros de la URL. */
+export function Congreso() {
+  const [p, set, montado] = useParams();
+  const sec = useSeccion([]);
+  if (sec.errorGeneral) return <p className="error" role="alert">{sec.errorGeneral}</p>;
+  if (!sec.motor || !montado) return <Cargando />;
+  return <GobiernoCongreso ultimo={sec.motor.F[sec.motor.F.length - 1]} p={p} set={set} />;
+}
+
 export function GobiernoCongreso({ ultimo, p, set }: { ultimo: string; p: URLSearchParams; set: Setter }) {
   const { datos, error } = useCapacidad();
-  useEffect(() => {   // el ancla #congreso existe recién cuando llegan los datos: se vuelve a ir ahí una vez
-    if (datos && window.location.hash === "#congreso") document.getElementById("congreso")?.scrollIntoView();
-  }, [datos]);
   if (error) return <div className="card" id="congreso"><h2>Gobierno y Congreso</h2><p className="error" role="alert">{error}</p></div>;
   if (!datos) return <div className="card" id="congreso"><h2>Gobierno y Congreso</h2><Cargando /></div>;
   return <Cuerpo d={datos} ultimo={ultimo} p={p} set={set} />;
 }
 
 function Cuerpo({ d, ultimo, p, set }: { d: DatosCap; ultimo: string; p: URLSearchParams; set: Setter }) {
-  const ind = unoDe<Indicador>(p.get("cgi"), ["bancas", "leyes", "dnu", "vetos"], "bancas");
-  const sel = p.get("cgp") && IDS.includes(p.get("cgp") as string) ? (p.get("cgp") as string) : null;
   const M = useMemo(() => mandatos(ultimo), [ultimo]);
+  const primero = primerIndicadorConDatos(d, M);   // la página abre en el primer indicador que tenga datos, no en uno vacío
+  const ind = unoDe<Indicador>(p.get("cgi"), ["bancas", "leyes", "dnu", "vetos"], primero);
+  const sel = p.get("cgp") && IDS.includes(p.get("cgp") as string) ? (p.get("cgp") as string) : null;
+  const hay: Record<Indicador, boolean> = { bancas: indicadorTieneDatos(d, "bancas", M), leyes: indicadorTieneDatos(d, "leyes", M), dnu: indicadorTieneDatos(d, "dnu", M), vetos: indicadorTieneDatos(d, "vetos", M) };
+  const sinTotalVetos = M.some((x) => { const rv = resumenVetos(d, x.id, x); return !!rv && rv.total == null; });
   const [ord, setOrd] = useState<{ k: ColClave | null; d: number }>({ k: null, d: -1 });
   const valor = (m: Mandato, k: ColClave): number | null => {
     if (k === "dip" || k === "sen") return resumenBancas(d, m.id, k).alEmpezar;
@@ -52,7 +66,6 @@ function Cuerpo({ d, ultimo, p, set }: { d: DatosCap; ultimo: string; p: URLSear
       <button type="button" className="th-orden" onClick={() => orden(k)}>{titulo}{ord.k === k ? (ord.d === 1 ? " ▲" : " ▼") : ""}<small>{sub}</small></button>
     </th>
   );
-  const enCurso = (m: Mandato) => (m.enCurso ? <small> en curso, hasta {fmtMes(ultimo)}</small> : null);
   const maxInd = Math.max(1, ...M.map((m) => valorIndicador(d, m.id, m, ind)?.v ?? 0));
   const cmax = ind === "bancas" || ind === "leyes" ? 100 : maxInd;
 
@@ -60,44 +73,56 @@ function Cuerpo({ d, ultimo, p, set }: { d: DatosCap; ultimo: string; p: URLSear
     <div className="card" id="congreso">
       <h2>Gobierno y Congreso</h2>
       <p className="note">Cuánto respaldo tuvo cada presidente en el Congreso y cómo gobernó con él: números crudos, sin puntaje. Tocá un presidente para ver su detalle.</p>
+      <p className="note cg-cargado"><b>Qué hay cargado.</b> {queHayCargado(d, M).replace(/^Hay cargado: /, "")}</p>
 
-      <div className="cg-tabla tablewrap"><table>
+      <div className="cg-tabla tablewrap fija"><table>
         <thead><tr>
           <th>Presidente</th>
-          {th("dip", "Diputados", "propios + aliados, al empezar · promedio")}
-          {th("sen", "Senado", "al empezar · promedio")}
-          {th("leyes", "Leyes del Ejecutivo", "aprobadas de enviadas")}
-          {th("dnu", "DNU", "total · por año")}
-          {th("vetos", "Vetos", "total · por año · insistidos")}
+          {hay.bancas && th("dip", "Diputados", "propios + aliados, al empezar · promedio")}
+          {hay.bancas && th("sen", "Senado", "al empezar · promedio")}
+          {hay.leyes && th("leyes", "Leyes del Ejecutivo", "aprobadas de enviadas")}
+          {hay.dnu && th("dnu", "DNU", "total · por año")}
+          {hay.vetos && th("vetos", "Vetos", sinTotalVetos ? "insistidos · por año" : "total · por año · insistidos")}
         </tr></thead>
         <tbody>{filas.map((m) => {
           const dip = resumenBancas(d, m.id, "dip"), sen = resumenBancas(d, m.id, "sen"), l = resumenLeyes(d, m.id), n = resumenDnu(d, m.id, m), v = resumenVetos(d, m.id, m);
           return (
             <tr key={m.id} className={sel === m.id ? "cg-sel" : undefined}>
-              <td><button type="button" className="cg-pres" aria-pressed={sel === m.id} onClick={() => set({ cgp: sel === m.id ? null : m.id })}>{m.n}</button>{enCurso(m)}</td>
-              <td>{ok(dip.alEmpezar) ? <>{pc(dip.alEmpezar)} · {pc(dip.promedio)}</> : SIN}</td>
-              <td>{ok(sen.alEmpezar) ? <>{pc(sen.alEmpezar)} · {pc(sen.promedio)}</> : SIN}</td>
-              <td>{l ? <>{nf0.format(l.aprobadas)} de {nf0.format(l.enviadas)} ({pc(l.pct)})</> : SIN}</td>
-              <td>{n ? <>{nf0.format(n.total)} · {nf1.format(n.porAnio as number)}</> : SIN}</td>
-              <td>{v ? (v.total != null ? <>{nf0.format(v.total)} ({nf0.format(v.totales as number)} tot. + {nf0.format(v.parciales as number)} parc.) · {nf1.format(v.porAnio as number)} · {nf0.format(v.insistidos)} insistidos</> : <><span title="sin dato cargado de vetos totales y parciales">{nf0.format(v.insistidos)} insistidos</span> · {nf1.format(v.insistidosPorAnio)} por año</>) : SIN}</td>
+              <td className="c-pres" title={m.n}>
+                <button type="button" className="cg-pres" aria-pressed={sel === m.id} onClick={() => set({ cgp: sel === m.id ? null : m.id })}>
+                  {nombreCorto(m.n) !== m.n ? <><span className="n-largo">{m.n}</span><span className="n-corto" aria-hidden>{nombreCorto(m.n)}</span></> : m.n}</button>
+                <small className="c-per">{m.enCurso ? `${fmtMes(m.ini)} a hoy` : periodoDe(m)}</small>
+              </td>
+              {hay.bancas && <td>{ok(dip.alEmpezar) ? <>{pc(dip.alEmpezar)} · {pc(dip.promedio)}</> : SIN}</td>}
+              {hay.bancas && <td>{ok(sen.alEmpezar) ? <>{pc(sen.alEmpezar)} · {pc(sen.promedio)}</> : SIN}</td>}
+              {hay.leyes && <td>{l ? <>{nf0.format(l.aprobadas)} de {nf0.format(l.enviadas)} ({pc(l.pct)})</> : SIN}</td>}
+              {hay.dnu && <td>{n ? <>{nf0.format(n.total)} · {nf1.format(n.porAnio as number)}</> : SIN}</td>}
+              {hay.vetos && <td>{v ? (v.total != null ? <>{nf0.format(v.total)} ({nf0.format(v.totales as number)} tot. + {nf0.format(v.parciales as number)} parc.) · {nf1.format(v.porAnio as number)} · {nf0.format(v.insistidos)} insistidos</> : <>{nf0.format(v.insistidos)} insistidos<small>{nf1.format(v.insistidosPorAnio)} por año</small></>) : SIN}</td>}
             </tr>
           );
         })}</tbody>
       </table></div>
+      {sinTotalVetos && hay.vetos && <p className="note">Falta cargar el total de vetos; solo se conocen los que el Congreso insistió.</p>}
 
       <div className="cg-movil">
-        <div className="controls"><Seg valor={ind} opciones={INDICADORES} onElegir={(v) => set({ cgi: v === "bancas" ? null : v })} /></div>
-        <p className="note">{ind === "bancas" ? "Diputados: % de bancas propias y aliadas al asumir." : ind === "leyes" ? "Leyes del Ejecutivo aprobadas, en % de las enviadas." : ind === "dnu" ? "DNU por año de mandato." : "Vetos por año de mandato."}</p>
+        <div className="seg cg-ind" role="group" aria-label="Indicador">
+          {INDICADORES.map(([v, t]) => (
+            <button key={v} type="button" aria-pressed={ind === v} className={hay[v] ? undefined : "tenue"} onClick={() => set({ cgi: v === primero ? null : v })}>
+              {t}{!hay[v] && <small>Todavía sin datos cargados</small>}</button>
+          ))}
+        </div>
+        {!hay[ind] ? <p className="note">Todavía sin datos cargados de este indicador.</p> : <>
+        <p className="note">{ind === "bancas" ? "Diputados: % de bancas propias y aliadas al asumir." : ind === "leyes" ? "Leyes del Ejecutivo aprobadas, en % de las enviadas." : ind === "dnu" ? "DNU por año de mandato." : sinTotalVetos ? "Vetos que el Congreso insistió, por año de mandato. Falta cargar el total de vetos; solo se conocen los insistidos." : "Vetos por año de mandato."}</p>
         <div className="pm-lista" role="list">{M.map((m) => {
           const x = valorIndicador(d, m.id, m, ind);
           return (
             <button key={m.id} type="button" role="listitem" className="pm-fila cg-fila" aria-pressed={sel === m.id} onClick={() => set({ cgp: sel === m.id ? null : m.id })}>
-              <span className="pm-n">{m.n}{m.enCurso && <small>en curso, hasta {fmtMes(ultimo)}</small>}</span>
+              <span className="pm-n">{m.n}<small>{m.enCurso ? `${fmtMes(m.ini)} a hoy` : periodoDe(m)}</small></span>
               <span className="pm-barra" aria-hidden>{x && <span className="pm-rel" style={{ left: 0, width: `${Math.min(100, (x.v / cmax) * 100)}%`, background: "var(--series-1)" }} />}</span>
               <span className="pm-v">{x ? x.txt : SIN}</span>
             </button>
           );
-        })}</div>
+        })}</div></>}
       </div>
 
       <div id="cg-detalle">{sel ? <Detalle d={d} m={M.find((x) => x.id === sel)!} /> : <p className="note">Elegí un presidente para ver sus bancas año por año y sus DNU y vetos.</p>}</div>
@@ -186,7 +211,7 @@ function Apiladas({ d, m, cam, nom }: { d: DatosCap; m: Mandato; cam: Camara; no
       </div>
       <p className="note"><span className="cg-ley" style={{ background: "var(--series-1)" }} /> propios <span className="cg-ley" style={{ background: "var(--series-2)" }} /> aliados · línea continua: mayoría (50 %); línea punteada: quórum (mitad más uno).</p>
       {asuncion && (
-        <div className="tablewrap"><table>
+        <div className="tablewrap fija"><table>
           <caption style={{ captionSide: "top", textAlign: "left" }}>Bloques de {nom} al asumir ({bs[0].fecha})</caption>
           <thead><tr><th>Bloque</th><th>Bancas</th><th>Rol</th></tr></thead>
           <tbody>{asuncion.map((b) => <tr key={b.b}><td>{b.b}</td><td>{b.n}</td><td>{b.rol}</td></tr>)}</tbody>

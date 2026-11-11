@@ -27,19 +27,21 @@ export function ContextoMandato({ m, pres }: { m: Motor; pres: Pres }) {
   const r = resumenMandato(m, datos, pres, grupo[2]);
   const s = r.sorpresa;
   return (
-    <div className="callout">
-      <b>Contexto del mandato</b> <span style={{ color: "var(--text-muted)" }}>({pres.n}, {textoAnios(r.anios)}; comparado con {grupo[1].toLowerCase() === "mundo" ? "el mundo" : grupo[1]})</span>
+    <details className="callout contexto-plegado">
+      <summary><b>Contexto del mandato</b>{" "}
+        <span className="resumen">{pres.n}{ok(r.crecArg.v) && ok(r.crecGrp.v) ? `: crece ${nf1.format(r.crecArg.v)} % por año contra ${nf1.format(r.crecGrp.v)} % de ${grupo[1].toLowerCase() === "mundo" ? "el mundo" : grupo[1]}` : ""}</span></summary>
+      <span style={{ color: "var(--text-muted)" }}>({pres.n}, {textoAnios(r.anios)}; comparado con {grupo[1].toLowerCase() === "mundo" ? "el mundo" : grupo[1]})</span>
       {!r.anios.length ? <p className="note">Sin años completos en el mandato.</p> : (
         <ul style={{ margin: "6px 0", paddingLeft: 18 }}>
           <li>Crecimiento promedio: Argentina {ok(r.crecArg.v) ? `${nf1.format(r.crecArg.v)} %` : "—"}; {grupo[1]} {ok(r.crecGrp.v) ? `${nf1.format(r.crecGrp.v)} %` : "—"}.</li>
           {ok(s.sArg) && ok(s.sGrp) && ok(s.dif) &&
             <li>Contra lo que proyectaba el FMI en abril: la Argentina {signo(s.sArg)} puntos por año; {grupo[1]}, {signo(s.sGrp)}. Diferencia: {signo(s.dif)} puntos.</li>}
           {ext && <li>Rubro más caro contra el mundo (dólar oficial, estimado): {ext.caro.n} ({nf0.format(ext.caro.nivel)}, {fmtMes(ext.caro.fecha)}); más barato: {ext.barato.n} ({nf0.format(ext.barato.nivel)}, {fmtMes(ext.barato.fecha)}). Mundo = 100. <Link href="/contexto/#precios-mundo" prefetch={false}>Ver precios en el mundo</Link></li>}
-          {congreso && <li>{congreso} <Link href={`/presidentes/?cgp=${pres.id}#congreso`} prefetch={false}>Ver gobierno y Congreso</Link></li>}
+          {congreso && <li>{congreso} <Link href={`/congreso/?cgp=${pres.id}`} prefetch={false}>Ver gobierno y Congreso</Link></li>}
           {r.hayViento && <li>Viento externo: {r.favor} a favor, {r.neutro} neutros y {r.contra} en contra.</li>}
         </ul>
       )}
       <Link href={`/contexto/?cpr=${pres.id}`} prefetch={false}>Ver el contexto completo</Link>
-    </div>
+    </details>
   );
 }
