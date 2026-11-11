@@ -73,6 +73,22 @@ def _a_fecha(df):
     return pd.to_datetime(df["periodo"].astype(str).str[:6], format="%Y%m")
 
 
+def ipc_nacional_de_cache():
+    """IPC nivel general nacional de la última copia guardada de la API de INDEC (datos/cache/ipc_indec_completo.pkl).
+    Sirve cuando la API no responde: esa copia suele estar más al día que la serie de datos.gob.ar. Vacía si no hay copia."""
+    archivo = salarios.CACHE / "ipc_indec_completo.pkl"
+    if not archivo.exists():
+        return pd.Series(dtype=float, name="ipc")
+    df = pd.read_pickle(archivo)
+    ng = df[df["descripcion"].str.contains("nivel general", case=False, na=False)
+            & df["tipo_de_indicador"].str.contains("ndice", case=False, na=False)
+            & df["region"].str.contains("nacional", case=False, na=False)].copy()
+    if ng.empty:
+        return pd.Series(dtype=float, name="ipc")
+    ng["fecha"] = _a_fecha(ng)
+    return ng.groupby("fecha")["valor"].mean().rename("ipc")
+
+
 def precios_e_ipc_api_indec(token):
     """Precios promedio de los cortes (región GBA) e IPC nivel general nacional desde api.indec.gob.ar."""
     pp = indec_query("ipc_nacional", token, tipo_de_indicador="ilike.*precio*")
@@ -187,8 +203,25 @@ def main():
             print(f"API INDEC no disponible ({e}); uso las fuentes anteriores.")
     else:
         print("Sin INDEC_TOKEN: uso Excel de INDEC + IPC de datos.gob.ar.")
+    if not fuente.startswith("API INDEC"):
+        # La API no respondió (o no hay token): se completa el IPC nacional con la última copia guardada de la API,
+        # que suele traer meses que la serie de datos.gob.ar todavía no tiene. Solo agrega o pisa meses si la copia coincide en los comunes.
+        try:
+            ipc_cache = ipc_nacional_de_cache()
+            comun = ipc_cache.dropna().index.intersection(api["ipc"].dropna().index)
+            dif = (ipc_cache[comun] / api["ipc"][comun] - 1).abs().max() if len(comun) else None
+            if len(ipc_cache) and dif is not None and dif < 0.005:
+                antes = api["ipc"].dropna().index.max()
+                api = api.reindex(api.index.union(ipc_cache.index))
+                api["ipc"] = ipc_cache.combine_first(api["ipc"])
+                print(f"IPC nacional: completo con la copia guardada de la API de INDEC (de {antes:%Y-%m} a {api['ipc'].dropna().index.max():%Y-%m}; dif. máx. {dif:.3%})")
+                fuente += " + copia guardada de la API de INDEC"
+            elif len(ipc_cache):
+                print(f"IPC nacional: la copia guardada de la API no coincide con datos.gob.ar (dif. máx. {dif}); no se usa.")
+        except Exception as e:  # noqa: BLE001
+            print(f"IPC nacional: no se pudo leer la copia guardada de la API ({e}).")
     print("Fuente de precios e IPC:", fuente)
-    ipc_nac_override = api["ipc"].dropna() if token else None
+    ipc_nac_override = api["ipc"].dropna()
     sal = salarios.construir(prorratear_sac, ipc_nac_override)
     idx = pd.date_range("1990-01-01", sal.index.max(), freq="MS")
     sal = sal.reindex(idx)

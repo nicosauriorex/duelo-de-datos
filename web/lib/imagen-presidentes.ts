@@ -1,7 +1,7 @@
 // Datos de la imagen de compartir para las secciones de presidentes (Por presidente, Meses de mandato y Ranking). No dibuja: eso es `imagen.ts`.
 // Usa los mismos cálculos que la página (statsMandato, claseVariacion, calcularMandato, rankingPresidentes) para que den lo mismo.
 import {
-  baseIdx, baseTxt, oracionInicio, calcularMandato, claseVariacion, crearPres, rankingPresidentes, statsMandato, TITULOS_MANDATO, varNum,
+  baseIdx, baseTxt, oracionInicio, calcularMandato, claseVariacion, crearPres, rankingPresidentes, statsMandato, TITULOS_MANDATO, nombreCorto, varNum,
   type BaseCfg, type CritRk, type IndRk, type ModoMandato,
 } from "./estadisticas";
 import type { DatosImagen, FilaBarra, FilaRank, FilaVariable } from "./imagen";
@@ -15,7 +15,7 @@ import { grupoDe } from "./catalogo";
 export type VistaPres =
   | { tipo: "barras"; expr: Expr; presIds: string[]; base: BaseCfg }                  // presIds en el orden en que está la tabla
   | { tipo: "variables"; presId: string; exprs: Expr[]; base: BaseCfg }
-  | { tipo: "mandato"; expr: Expr; modo: ModoMandato; presIds: string[]; anc: string | null; md: string | null; mh: string | null; base: BaseCfg }
+  | { tipo: "mandato"; expr: Expr; modo: ModoMandato; presIds: string[]; anc: string | null; md: string | null; mh: string | null; valorFinal?: boolean; base: BaseCfg }
   | { tipo: "ranking"; crit: CritRk; inds: IndRk[]; usaVars: boolean; base: BaseCfg };
 export interface OpcionesPres { formato: FormatoImg; comentario: string }
 
@@ -90,9 +90,11 @@ export function armarImagenPres(m: Motor, v: VistaPres, o: OpcionesPres): DatosI
         nota: notaParcial(F, st, bi, p.i1), spark: c.v.slice(desde, p.i1 + 1),
       };
     });
-    const cierre = p.i1 === F.length - 1 ? "hoy" : fmtMes(F[p.i1]);
-    const d = esqueleto(m, o, b, `${p.n}: de ${fmtMes(F[bi])} a ${cierre}`, F[p.i1]);
-    d.frases = [neutro(`Inicio de mandato: ${baseTxt(b)}`)];
+    // con un solo presidente se dice el mes exacto (no la oración general del inicio de mandato)
+    const fin = Math.min(p.i1, F.length - 1);
+    const d = esqueleto(m, o, b, `${p.n}: de ${fmtMes(F[bi])} (mes inicial) ${p.i1 < F.length - 1 ? `a ${fmtMes(F[fin])} (fin del mandato)` : "a hoy (último dato de cada variable)"}`, F[fin]);
+    d.inicioTxt = null;
+    d.frases = [neutro("Si los datos de una variable no cubren todo el período, la fila lo indica.")];
     d.lienzo = { tipo: "variables", filas, presId: p.id };
     d.unidad = "Valor al inicio y al cierre, y variación en % (en puntos si el dato ya es un porcentaje)";
     const f = fuentesTxt(calcs.map((c) => c.serie.fuente));
@@ -106,17 +108,25 @@ export function armarImagenPres(m: Motor, v: VistaPres, o: OpcionesPres): DatosI
     if (!D || !D.pres.length || !D.rows.length) return null;
     const titulo = `${D.c.corto}: ${TITULOS_MANDATO[v.modo]} por mes de mandato`;
     const d = esqueleto(m, o, b, titulo, F[lastIdx(D.c.v)] ?? F[F.length - 1]);
-    const recorte = D.desde > 0 || D.hasta < D.maxMes ? ` Se muestran los meses ${D.desde} a ${D.hasta}.` : "";
-    d.frases = [neutro(`Eje horizontal: meses desde el inicio de cada mandato (mes 0 = ${baseTxt(b)}).${recorte}`)];
-    if (D.teo) d.frases.push(neutro(`Líneas punteadas: precio teórico. Valor de partida: ${m.fmtC(D.c, D.ancla)}, ${D.ancTxt}; a ese valor se le aplica lo que pasó en cada mandato.`));
+    // la explicación va en letra chica y en dos renglones como máximo: el eje y la unidad (pie) y, si es teórico, el valor de partida (junto a la fuente)
+    const recorte = D.desde > 0 || D.hasta < D.maxMes ? ` (meses ${D.desde} a ${D.hasta})` : "";
+    d.frases = [];
     d.x = D.rows.map((r) => r.t as number);
-    d.series = D.pres.map((x) => ({
-      nombre: x.n, color: 0, axis: 0 as const, presId: x.id, etiqueta: x.n, trazo: D.teo ? "largo" as const : x.dash ? "corto" as const : "continuo" as const,
-      v: D.rows.map((r) => (ok(r[x.id]) ? (r[x.id] as number) : null)),
-    }));
+    d.series = D.pres.map((x) => {
+      // con la opción, cada línea lleva el valor del último mes visible de ese presidente (el último con dato)
+      let ult: number | null = null;
+      for (let i = D.rows.length - 1; i >= 0 && ult == null; i--) { const y = D.rows[i][x.id]; if (ok(y)) ult = y as number; }
+      return {
+        nombre: x.n, color: 0, axis: 0 as const, presId: x.id, etiqueta: v.valorFinal && ult != null ? `${nombreCorto(x.n)} ${D.fmtTip(ult)}` : x.n,
+        trazo: D.teo ? "largo" as const : x.dash ? "corto" as const : "continuo" as const,
+        v: D.rows.map((r) => (ok(r[x.id]) ? (r[x.id] as number) : null)),
+      };
+    });
     d.fmtEje = D.fmtAxis; d.ejeX = "mes"; d.log = D.usarLog; d.refLinea = D.ref;
-    d.unidad = v.modo === "indice" ? "Índice (mes 0 = 100)" : v.modo === "var" && !D.c.pct ? "Variación en %, desde el mes 0" : D.c.unidad;
-    d.fuente = "Fuente: " + fuenteLegible(D.c.serie.fuente); d.nota = notaInflacion([D.c], false);
+    const unidadDato = v.modo === "indice" ? "índice, mes 0 = 100" : v.modo === "var" && !D.c.pct ? "variación en %, desde el mes 0" : D.c.unidad;
+    d.unidad = `Eje horizontal: meses desde el inicio de cada mandato${recorte} · ${unidadDato}`;
+    d.fuente = "Fuente: " + fuenteLegible(D.c.serie.fuente);
+    d.nota = [D.teo ? `Punteadas: precio teórico, partiendo de ${m.fmtC(D.c, D.ancla)} (${D.ancTxt}).` : "", notaInflacion([D.c], false)].filter(Boolean).join(" ");
     return d;
   }
 

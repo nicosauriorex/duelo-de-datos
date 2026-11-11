@@ -12,6 +12,12 @@ export async function compartir(url: string, titulo: string): Promise<ResultadoC
 export const avisoCompartir = (r: ResultadoCompartir): string | null =>
   r === "copiado" ? "Link copiado" : r === "error" ? "No se pudo copiar el link" : null;
 
+/** Copia un texto al portapapeles (si está bloqueado: "error"). */
+export async function copiarTexto(texto: string): Promise<"copiado" | "error"> {
+  try { await navigator.clipboard.writeText(texto); return "copiado"; } catch { return "error"; }
+}
+export const avisoTabla = (r: "copiado" | "error"): string => (r === "copiado" ? "Tabla copiada" : "No se pudo copiar");
+
 // ---- imagen (PNG): compartir con el menú del sistema, descargar o copiar al portapapeles
 export const archivoPng = (blob: Blob, nombre: string): File => new File([blob], nombre + ".png", { type: "image/png" });
 /** ¿Este navegador puede compartir archivos con el menú del sistema? (casi solo los de celular) */

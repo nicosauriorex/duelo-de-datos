@@ -22,8 +22,16 @@ export interface OpcionesImagen {
   tarjetas: TarjetasImg;
   datosPres: DatoPres[];                                        // hasta 3, en el orden de DATOS_PRES
   datosGen: DatoGen[];                                          // hasta 4, en el orden de DATOS_GEN
+  frases: ClaveFrase[] | null;                                  // hasta 2 frases elegidas; null = las dos que salen solas
 }
 export const MAX_DATOS_PRES = 3, MAX_DATOS_GEN = 4;
+/** Frases que el sitio puede calcular para un dato (las elige quien comparte; no se editan). */
+export type ClaveFrase = "desde" | "record" | "minimo" | "anio" | "promedio" | "inicio";
+export const FRASES_IMG: [ClaveFrase, string][] = [
+  ["desde", "Más alto / más bajo desde"], ["record", "Contra su récord"], ["minimo", "Contra su mínimo"],
+  ["anio", "Contra hace un año"], ["promedio", "Contra el promedio del período"], ["inicio", "Contra el inicio del período"],
+];
+export const MAX_FRASES_IMG = 2;
 
 export interface Config {
   v: number;
@@ -42,6 +50,7 @@ export interface Config {
 export const IMAGEN_DEFECTO: OpcionesImagen = {
   promedio: false, mediana: false, lineaUltimo: false, marcaUltimo: true, marcaExtremos: false, resaltar: false, tarjetas: "ninguna",
   datosPres: ["recibio", "entrego", "variacion"], datosGen: ["ultimo", "promedio", "maximo", "minimo"],
+  frases: null,
 };
 export const DEFECTO: Config = { v: VERSION, t0: -1, t0p: {}, dolar: "oficial", medida: "real", desde: "2003", tema: "oscuro", franjas: false, colPres: {}, personalizar: false, formatoImagen: "1x1", imagen: IMAGEN_DEFECTO };
 
@@ -75,6 +84,8 @@ export function normalizarImagen(raw: unknown): OpcionesImagen {
     marcaUltimo: si(r.marcaUltimo, D.marcaUltimo), marcaExtremos: si(r.marcaExtremos, D.marcaExtremos), resaltar: si(r.resaltar, D.resaltar),
     tarjetas: unoDe(r.tarjetas, TARJETAS_IMG, D.tarjetas),
     datosPres: datosDe(r.datosPres, DATOS_PRES, MAX_DATOS_PRES, D.datosPres), datosGen: datosDe(r.datosGen, DATOS_GEN, MAX_DATOS_GEN, D.datosGen),
+    // null (o algo inválido) = las dos de fábrica; una lista vacía válida = ninguna frase
+    frases: Array.isArray(r.frases) ? FRASES_IMG.map((f) => f[0]).filter((f) => (r.frases as unknown[]).includes(f)).slice(0, MAX_FRASES_IMG) : D.frases,
   };
 }
 

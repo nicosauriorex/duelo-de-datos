@@ -1,8 +1,9 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSeccion } from "../useSeccion";
 import { useContexto } from "../useContexto";
 import { Cargando, Seg, Selector, alternar } from "../ui";
+import { BotonLink } from "../BotonLink";
 import { Grafico, type Fila, type OpcionesG, type SerieG } from "../Grafico";
 import { useConfig } from "../ConfigProvider";
 import { baseDeConfig } from "@/lib/config";
@@ -32,6 +33,11 @@ export function Contexto() {
   const { datos, error } = useContexto();
   const m = sec.motor;
   const PRES = useMemo(() => (m ? crearPres(m.F) : []), [m]);
+  const listo = !!m && !sec.ocupado && !!datos;
+  useEffect(() => {   // los bloques existen recién cuando llegan los datos: un link con ancla (#esperado, #comparar, #viento) va al bloque una vez
+    const h = window.location.hash.slice(1);
+    if (listo && h) document.getElementById(h)?.scrollIntoView();
+  }, [listo]);
 
   if (sec.errorGeneral) return <p className="error" role="alert">{sec.errorGeneral}</p>;
   if (error) return <p className="error" role="alert">{error}</p>;
@@ -49,11 +55,12 @@ export function Contexto() {
         <label>Grupo de comparación</label>
         <Seg valor={grupoId} opciones={GRUPOS_CMP.map((g) => [g[0], g[1]] as [string, string])} onElegir={(v) => set({ cg: v === "mundo" ? null : v })} />
       </div>
-      <div className="callout">
-        <b>Cómo se asignan los años:</b> cada año calendario es del presidente que gobernó 6 meses o más de ese año (2003 es de Néstor Kirchner; 2015, de CFK 2; 2023, de Alberto Fernández; si son 6 y 6, como 1995, va para el que ya estaba al empezar el año).
-        Si un presidente no tiene ningún año así, figura &quot;sin años completos&quot;. Los gráficos y los promedios usan los años cerrados (hasta {hasta}); los años siguientes son proyecciones del FMI y no se muestran.
-        {" "}«Vecinos» es el promedio simple de Brasil, Chile, Uruguay, Paraguay y Bolivia.
-      </div>
+      <details className="contexto-plegado">
+        <summary>Cómo se asignan los años y qué es «Vecinos»</summary>
+        <p className="note"><b>Cómo se asignan los años:</b> cada año calendario es del presidente que gobernó 6 meses o más de ese año (2003 es de Néstor Kirchner; 2015, de CFK 2; 2023, de Alberto Fernández; si son 6 y 6, como 1995, va para el que ya estaba al empezar el año).
+        Si un presidente no tiene ningún año así, figura &quot;sin años completos&quot;. Los gráficos y los promedios usan los años cerrados (hasta {hasta}); los años siguientes son proyecciones del FMI y no se muestran.</p>
+        <p className="note">«Vecinos» es el promedio simple de Brasil, Chile, Uruguay, Paraguay y Bolivia.</p>
+      </details>
       <Esperado datos={datos} grupo={grupo[2]} nombreGrupo={grupo[1]} p={p} set={set} resalta={resalta} />
       <Comparar datos={datos} p={p} set={set} resalta={resalta} />
       <PreciosMundo m={m} p={p} set={set} />
@@ -103,8 +110,8 @@ function Esperado({ datos, grupo, nombreGrupo, p, set, resalta }: { datos: Datos
     dif: columnaComparable(porPres.map((q) => q.s.dif), dir, true),
   };
   return (
-    <div className="card">
-      <h2>Lo esperado vs. lo que pasó</h2>
+    <div className="card" id="esperado">
+      <div className="cab-bloque"><h2>Lo esperado vs. lo que pasó</h2><BotonLink id="esperado" titulo="Primero los Datos: lo esperado contra lo que pasó" /></div>
       <p className="note">Cada año, lo que el FMI proyectaba en abril y lo que terminó pasando. «Sorpresa» = real − proyectado. Se usa siempre la última edición del FMI para lo que pasó y la de abril de cada año para lo esperado (el FMI corrige datos viejos en cada edición).</p>
       <div className="controls">
         <label>Dato</label>
@@ -191,8 +198,8 @@ function Comparar({ datos, p, set, resalta }: { datos: DatosContexto; p: URLSear
   const sufijo = esIdx ? "Crecimiento acumulado en el mandato (%)" : `Promedio del mandato (${def.u})`;
 
   return (
-    <div className="card">
-      <h2>La Argentina y otros países</h2>
+    <div className="card" id="comparar">
+      <div className="cab-bloque"><h2>La Argentina y otros países</h2><BotonLink id="comparar" titulo="Primero los Datos: la Argentina y otros países" /></div>
       <p className="note">Datos anuales del FMI. Elegí el dato y con quién comparar.</p>
       <div className="controls">
         <label>Dato</label>
@@ -267,8 +274,8 @@ function Viento({ m, datos, PRES, resalta }: { m: NonNullable<ReturnType<typeof 
   const rowsAnual = datos.anios.filter((y) => y <= hasta).map((y) => { const i = datos.anios.indexOf(y); return ({ fecha: `${y}-01`, per: String(y), bra: (datos.real.NGDP_RPCH?.BRA ?? [])[i] ?? null, chn: (datos.real.NGDP_RPCH?.CHN ?? [])[i] ?? null }); });
   const sgAnual: SerieG[] = [{ key: "bra", name: "Brasil", color: "--series-2" }, { key: "chn", name: "China", color: "--series-4" }];
   return (
-    <div className="card">
-      <h2>Viento de cola o de frente</h2>
+    <div className="card" id="viento">
+      <div className="cab-bloque"><h2>Viento de cola o de frente</h2><BotonLink id="viento" titulo="Primero los Datos: viento de cola o de frente" /></div>
       <p className="note">Lo que pasaba afuera y la Argentina no controlaba. Precios en dólares de hoy (descontada la inflación de EE.UU.).</p>
       <div className="bloque-graf">
         {mensuales.map((def) => (

@@ -8,19 +8,55 @@ import { useConfig } from "./ConfigProvider";
 import { useCargar, useDatos } from "./DatosProvider";
 import { exprsUsadas } from "@/lib/historico";
 import { PRES_DEF } from "@/lib/estadisticas";
-import { baseDeConfig, DATOS_GEN, DATOS_PRES, FORMATOS_IMG, MAX_DATOS_GEN, MAX_DATOS_PRES, TARJETAS_IMG, type FormatoImg, type OpcionesImagen, type TarjetasImg } from "@/lib/config";
+import { baseDeConfig, DATOS_GEN, DATOS_PRES, FORMATOS_IMG, MAX_DATOS_GEN, MAX_DATOS_PRES, MAX_FRASES_IMG, TARJETAS_IMG, type ClaveFrase, type FormatoImg, type OpcionesImagen, type TarjetasImg } from "@/lib/config";
+import { contextoDato, admiteContexto } from "@/lib/contexto-dato";
 import {
-  archivoPng, avisoCompartir, avisoImagen, compartir, compartirImagen, copiarImagen, descargarImagen, puedeCompartirArchivo, puedeCopiarImagen, type ResultadoImagen,
+  archivoPng, avisoCompartir, avisoImagen, avisoTabla, compartir, compartirImagen, copiarImagen, copiarTexto, descargarImagen, puedeCompartirArchivo, puedeCopiarImagen, type ResultadoImagen,
 } from "@/lib/compartir";
 import { dibujarImagen, esperarFuentes } from "@/lib/imagen";
-import { admitePersonalizar, armarImagen, MAX_COMENTARIO, mesesDisponibles, type VistaImg } from "@/lib/imagen-datos";
+import { admitePersonalizar, armarImagen, MAX_COMENTARIO, mesesDisponibles, tablaTextoDeVista, type VistaImg } from "@/lib/imagen-datos";
 import { armarImagenPres, esVistaPres, idsDeVistaPres, type VistaPres } from "@/lib/imagen-presidentes";
 import { leerPaleta } from "@/lib/imagen-paleta";
 
 export type VistaCompartir = VistaImg | VistaPres;
 interface Props { vista: VistaCompartir; href: string; titulo: string; onCerrar: () => void }
 
-export function PanelCompartir({ vista, href, titulo, onCerrar }: Props) {
+/** Con la vista en Tabla se ofrece copiar la tabla o, si se prefiere, compartir el gráfico; con cualquier otra vista va directo a la imagen. */
+export function PanelCompartir(p: Props) {
+  const [comoGrafico, setComoGrafico] = useState(false);
+  if (!esVistaPres(p.vista) && p.vista.tabla && !comoGrafico) return <ElegirTabla {...p} onGrafico={() => setComoGrafico(true)} />;
+  return <PanelImagen {...p} />;
+}
+
+function ElegirTabla({ vista, href, titulo, onCerrar, onGrafico }: Props & { onGrafico: () => void }) {
+  const { motor, archivosDe } = useDatos();
+  const ids = esVistaPres(vista) ? [] : vista.exprs.flatMap((e) => (e.rel ? [e.id, e.rel] : [e.id]));
+  const cargado = useCargar(archivosDe(ids));
+  const [aviso, setAviso] = useState<string | null>(null);
+  const copiar = async () => {
+    if (esVistaPres(vista) || !motor) return;
+    const texto = tablaTextoDeVista(motor, { ...vista, exprs: exprsUsadas(motor, vista) }, new URL(href, window.location.origin).toString());
+    if (!texto) { setAviso("No hay datos para copiar"); return; }
+    setAviso(avisoTabla(await copiarTexto(texto)));
+  };
+  return (
+    <Modal titulo="Compartir la tabla" onCerrar={onCerrar}>
+      <div className="comp-cuerpo comp-elegir">
+        <h2>Compartir {titulo}</h2>
+        <p className="note" style={{ margin: 0 }}>Estás viendo la tabla. Elegí qué querés compartir.</p>
+        <div className="comp-elegir-botones">
+          <button type="button" className="btn primario" disabled={!cargado || !motor} onClick={copiar}>Copiar la tabla</button>
+          <button type="button" className="btn" onClick={onGrafico}>Compartir como gráfico</button>
+        </div>
+        <p className="note" style={{ margin: 0 }}>La tabla se copia como texto para pegar en una planilla, con la dirección de la vista en la última fila.</p>
+        {aviso && <p className="aviso-link" role="status">{aviso}</p>}
+      </div>
+      <footer><button type="button" className="btn" onClick={onCerrar}>Cerrar</button></footer>
+    </Modal>
+  );
+}
+
+function PanelImagen({ vista, href, titulo, onCerrar }: Props) {
   const { motor, archivosDe, version } = useDatos();
   const { config, cambiar } = useConfig();
   const pres = esVistaPres(vista);
@@ -52,6 +88,15 @@ export function PanelCompartir({ vista, href, titulo, onCerrar }: Props) {
   const periodoValido = !!per && disp.filter((x) => x.fecha >= per.desde && x.fecha <= per.hasta).length >= 2;
   // el título lleva el período solo si quien comparte lo cambió respecto del que ya muestra el gráfico
   const periodoEnTitulo = !!periodo && !!porDefecto && (periodo.desde !== porDefecto.desde || periodo.hasta !== porDefecto.hasta);
+  // las frases que el sitio puede calcular para este dato y este período (el de la imagen)
+  const ctxFrases = useMemo(() => (vistaG && motor && cargado && per && completa && admiteContexto({ variables: 1, modo: vistaG.modo, freq: vistaG.freq })
+    ? contextoDato(motor, exprsV[0], true, { periodo: per }) : null),
+    [vistaG && vistaG.modo, vistaG && vistaG.freq, motor, cargado, exprsV, per?.desde, per?.hasta, version]);   // eslint-disable-line react-hooks/exhaustive-deps
+  const frasesElegidas: ClaveFrase[] = img.frases ?? ctxFrases?.defecto ?? [];
+  const alternarFrase = (k: ClaveFrase, on: boolean) => {
+    const sin = frasesElegidas.filter((x) => x !== k);
+    cambiarImg({ frases: on ? [...sin, k].slice(0, MAX_FRASES_IMG) : sin });
+  };
   const cambiarImg = (c: Partial<OpcionesImagen>) => cambiar({ imagen: { ...img, ...c } });
   const kBase = `${config.t0}|${JSON.stringify(config.t0p)}`;
 
@@ -126,6 +171,15 @@ export function PanelCompartir({ vista, href, titulo, onCerrar }: Props) {
                 <Marca t="Línea del último dato" v={img.lineaUltimo} f={(x) => cambiarImg({ lineaUltimo: x })} off={!completa} />
                 <Marca t="Marcadores de máximo y mínimo" v={img.marcaExtremos} f={(x) => cambiarImg({ marcaExtremos: x })} off={!completa} />
               </Grupo>
+              {ctxFrases && ctxFrases.todas.length > 0 && (
+                <Grupo titulo="Frases">
+                  <p className="note" style={{ margin: 0 }}>Elegí hasta {MAX_FRASES_IMG}. Las calcula el sitio: no se pueden editar.</p>
+                  {ctxFrases.todas.map((f) => (
+                    <Marca key={f.clave} t={f.texto} v={frasesElegidas.includes(f.clave!)} f={(x) => alternarFrase(f.clave!, x)}
+                      off={!frasesElegidas.includes(f.clave!) && frasesElegidas.length >= MAX_FRASES_IMG} />
+                  ))}
+                </Grupo>
+              )}
               <Grupo titulo="Presidentes" razon={completa ? null : RAZON}>
                 <Marca t="Resaltar presidentes en el gráfico" v={img.resaltar} f={(x) => cambiarImg({ resaltar: x })} off={!completa} />
               </Grupo>

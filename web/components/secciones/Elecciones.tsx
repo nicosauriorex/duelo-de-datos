@@ -45,10 +45,12 @@ function Dispersion({ o, color, metrica, hoy }: { o: Corr; color: string; metric
       <line x1={X(x0)} x2={X(x1)} y1={Y(o.a + o.b * x0)} y2={Y(o.a + o.b * x1)} stroke={`var(${color})`} strokeOpacity=".55" strokeDasharray="4 3" />
       {hoy && (
         <g>
+          <line x1={mg.l} x2={X(hoy.x)} y1={Y(hoy.est)} y2={Y(hoy.est)} stroke="var(--series-2)" strokeWidth="1" strokeDasharray="2 2" />
+          <path d={`M${mg.l - 4},${Y(hoy.est)} l5,-3.5 v7 z`} fill="var(--series-2)"><title>{`Valor estimado hoy: ${nf1.format(hoy.est)}%`}</title></path>
           <path d={`M${X(hoy.x)},${Y(hoy.est) - 6} l5.5,6 l-5.5,6 l-5.5,-6 z`} fill="var(--series-2)" stroke="var(--surface-1)" strokeWidth="1">
             <title>{`Hoy: ${o.s.n} ${nf1.format(hoy.x)} → ${nf1.format(hoy.est)}% estimado por la recta${hoy.fuera ? " (fuera de lo visto antes)" : ""}`}</title>
           </path>
-          <text x={X(hoy.x) + 8} y={Y(hoy.est) + 3} style={{ fontSize: 9, fontWeight: 700, fill: "var(--text-primary)" }}>Hoy{hoy.fuera ? " (fuera de lo visto antes)" : ""}</text>
+          <text x={X(hoy.x) > W / 2 ? X(hoy.x) - 8 : X(hoy.x) + 8} y={Y(hoy.est) + 3} textAnchor={X(hoy.x) > W / 2 ? "end" : "start"} style={{ fontSize: 9, fontWeight: 700, fill: "var(--text-primary)" }}>Hoy {nf0.format(hoy.est)}%{hoy.fuera ? " (extrapolado)" : ""}</text>
         </g>
       )}
       {o.pts.map((q) => {
@@ -121,7 +123,6 @@ export function Elecciones() {
   const voto = estimarVoto(m, m.F, PRES, metrica, b, sinDetalle, corte);
   const ultG = ultimoGlobalDe(sinDetalle);
   const hoyDe = (o: Corr): Hoy | null => {
-    if (o.n < 8) return null;
     const x = valorHoy(m, m.F, PRES, metrica, b, o, ultG);
     if (!ok(x)) return null;
     const xs = o.pts.map((q) => q.x);
@@ -139,12 +140,13 @@ export function Elecciones() {
         <label>Medir</label><Seg valor={metrica} opciones={Object.entries(METRICA_E).map(([k, v]) => [k, v[0]] as [string, string])} onElegir={(v) => set({ em: v === "var12" ? null : v })} />
       </div>
       {metrica === "mandato" && <LineaInicio info={info} F={m.F} />}
-      <div className="callout">
-        Para cada variable se calcula su valor en cada elección ({METRICA_E[metrica][1]}) y se lo compara con el % que sacó el oficialismo nacional. <b>r</b> es la correlación: +1 = se mueven juntos, −1 = al revés, 0 = nada que ver. Con tan pocas elecciones ({el.length}), una correlación alta puede ser casualidad; con menos de 8 puntos, |r| por debajo de ~0,7 no dice mucho. Los montos de toda la economía se miden como % del PIB y los montos en pesos, en pesos reales.
-      </div>
+      <details className="contexto-plegado">
+        <summary>Cómo leer estos números</summary>
+        <p className="note">Para cada variable se calcula su valor en cada elección ({METRICA_E[metrica][1]}) y se lo compara con el % que sacó el oficialismo nacional. <b>r</b> es la correlación: +1 = se mueven juntos, −1 = al revés, 0 = nada que ver. Con tan pocas elecciones ({el.length}), una correlación alta puede ser casualidad; con menos de 8 puntos, |r| por debajo de ~0,7 no dice mucho. Los montos de toda la economía se miden como % del PIB y los montos en pesos, en pesos reales.</p>
+        <p className="note">Lo que dice el resultado de abajo <b>no es una encuesta ni un pronóstico</b>: son cuentas simples con pocas elecciones, que muestran qué pasó en el pasado cuando la economía estaba como hoy, no qué va a pasar. Una relación fuerte puede ser casualidad.</p>
+      </details>
       <div className="card">
         <h2>¿Qué dicen los datos sobre el voto al oficialismo hoy?</h2>
-        <p className="voto-aviso" role="note">Esto <b>no es una encuesta ni un pronóstico</b>. Son cuentas simples con pocas elecciones: muestran qué pasó en el pasado cuando la economía estaba como hoy, no qué va a pasar. Una relación fuerte puede ser casualidad.</p>
         <div className="controls"><label>Relación mínima (|r|)</label>
           <Seg valor={String(corte)} opciones={CORTES_R.map((r) => [String(r), nf1.format(r)] as [string, string])} onElegir={(v) => set({ elr: v === "0.6" ? null : v })} /></div>
         {!voto ? <p className="note">Con las elecciones y la medida elegidas no hay suficientes variables para estimar nada (hacen falta al menos 3 con 8 elecciones o más).</p> : (
@@ -157,10 +159,15 @@ export function Elecciones() {
                 {voto.ponderada != null ? <div className="voto-rango">{nf1.format(voto.ponderada)} %</div>
                   : <p className="note">No se muestra: ninguna variable acompaña al voto (la suma de r² es muy baja).</p>}</div>
             </div>
-            <p className="note">Para cada variable se ajustó una recta y se la evaluó en el valor de hoy, medido igual que en las elecciones ({METRICA_E[metrica][0].toLowerCase()}). Se usan las variables con al menos 8 elecciones; las de relación fuerte van primero y resaltadas.
-              {ultima ? <> Como referencia, el último resultado real del oficialismo fue <b>{nf1.format(ultima.v)} %</b> ({ultima.of}, {fmtMes(ultima.f)}).</> : null}</p>
-            <p className="note"><b>Cómo se pondera:</b> el número ponderado promedia las estimaciones de todas las variables, y cada una pesa según su r² (&quot;cuánto del voto acompaña a la variable&quot;: 0 % = nada, 100 % = todo). Ojo: muchas variables miden casi lo mismo (varios salarios, por ejemplo), y eso hace que ese tema pese más de lo que correspondería. Sigue sin ser una encuesta ni un pronóstico.</p>
-            <div className="tablewrap alto fija"><table>
+            {ultima && <p className="note">Como referencia, el último resultado real del oficialismo fue <b>{nf1.format(ultima.v)} %</b> ({ultima.of}, {fmtMes(ultima.f)}).</p>}
+            <details className="contexto-plegado">
+              <summary>Cómo se calcula</summary>
+              <p className="note">Para cada variable se ajustó una recta y se la evaluó en el valor de hoy, medido igual que en las elecciones ({METRICA_E[metrica][0].toLowerCase()}). Se usan las variables con al menos 8 elecciones; las de relación fuerte van primero y resaltadas.</p>
+              <p className="note"><b>Cómo se pondera:</b> el número ponderado promedia las estimaciones de todas las variables, y cada una pesa según su r² (&quot;cuánto del voto acompaña a la variable&quot;: 0 % = nada, 100 % = todo). Ojo: muchas variables miden casi lo mismo (varios salarios, por ejemplo), y eso hace que ese tema pese más de lo que correspondería.</p>
+            </details>
+            <details className="contexto-plegado">
+              <summary>Ver las {voto.vars.length} variables detrás del número</summary>
+              <div className="tablewrap alto fija"><table>
               <thead><tr><th>Variable</th><th>r</th><th>Peso</th><th>Valor de hoy</th><th>% estimado</th></tr></thead>
               <tbody>{voto.vars.map((v) => (
                 <tr key={v.o.s.id} className={v.fuerte ? "fila-fuerte" : ""}>
@@ -172,17 +179,19 @@ export function Elecciones() {
                 </tr>
               ))}</tbody>
             </table></div>
+            </details>
           </>
         )}
       </div>
       <div className="card">
         <h2>Gráficos de dispersión</h2>
-        <p className="note">{sel.length ? `${elegidos.length} variables elegidas.` : "Las 12 de correlación más fuerte (elegí otras con \"+ graficar\")."} Cada punto es una elección (lleno = presidencial, vacío = legislativa); la línea punteada es la tendencia y el rombo es el valor de hoy.{" "}
+        <p className="note">{sel.length ? `${elegidos.length} variables elegidas.` : "Las 12 de correlación más fuerte (elegí otras con \"+ graficar\")."} Lleno = presidencial, vacío = legislativa; rombo = hoy.{" "}
           {sel.length > 0 && <button type="button" className="btn" onClick={() => setSel([])}>Volver a las 12 más fuertes</button>}</p>
         <div className="disps">
           {elegidos.map((o, k) => (
             <div className="disp" key={o.s.id}><div className="k">{o.s.n}</div><div className="d">r = {fmtR(o.r)} · {o.n} elecciones</div>
               <Dispersion o={o} color={PALETA[k % 8]} metrica={metrica} hoy={hoyDe(o)} />
+              {!hoyDe(o) && <div className="d">Sin dato actual: la serie no tiene datos recientes.</div>}
               <div className="d">eje X: {metrica === "nivel" ? o.c.unidad : o.c.pct ? "cambio en puntos" : "cambio %"} · eje Y: % del oficialismo</div></div>
           ))}
         </div>

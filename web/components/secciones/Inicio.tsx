@@ -24,19 +24,26 @@ interface DefCifra {
   titulo: string; e: Expr;
   /** Ignora los datos curiosos (que traen su propio valor y texto) al buscar la plantilla. */
   sinCurio?: boolean;
-  /** Línea de contexto propia (si no, la de la plantilla). */
+  /** Si `e` no se puede calcular (por ejemplo, sin dato interanual), se muestra esta otra expresión. */
+  alt?: Expr;
+  /** Fuente que se muestra abajo (la misma forma en las cuatro placas). */
+  fuente: string;
+  /** Línea de contexto propia (si no, la de la plantilla). Recibe la plantilla que se terminó usando. */
   contexto?: (m: Motor, p: Plantilla, ev: Evaluada) => Extra | null;
 }
+const ID_EMAE = "dg_143_3_no_pr_2004_a_31";
+/** Las cuatro placas de la portada (fijas): inflación del último mes, salario mediano contra su récord, actividad económica y dólar blue de hoy. */
 const CIFRAS: DefCifra[] = [
-  { titulo: "Inflación del último mes", e: ex("ipc_empalme", { med: "vm" }), sinCurio: true,
+  { titulo: "Inflación del último mes", e: ex("ipc_empalme", { med: "vm" }), sinCurio: true, fuente: "INDEC",
     contexto: (m) => { const t = interanualTxt(m); return t ? { texto: `Interanual: ${t}`, cls: null } : null; } },
-  { titulo: "Salario mediano contra su récord", e: ex("sipa_med", { med: "real" }),
+  { titulo: "Salario mediano contra su récord", e: ex("sipa_med", { med: "real" }), fuente: "Secretaría de Trabajo (SIPA)",
     contexto: (m, p) => {
       const dif = p.e && !p.def ? distanciaRecord(m, p.e) : null;      // el dato curioso ya trae su propio texto
       return dif == null ? null : { texto: dif > -0.005 ? "En su récord histórico" : `${nf1.format(-dif * 100)} % por debajo de su récord`, cls: null };
     } },
-  { titulo: "Kilos de asado por salario mediano", e: ex("pp_gba_asado", { rel: "sipa_med", med: "corr" }) },
-  { titulo: "Dólar blue, en pesos de hoy", e: ex("fx_blue", { med: "real" }) },
+  { titulo: "Actividad económica", e: ex(ID_EMAE, { med: "via" }), sinCurio: true, alt: ex(ID_EMAE, { med: "asis" }), fuente: "INDEC (EMAE)",
+    contexto: (_m, p) => ({ texto: p.e?.med === "via" ? "Variación interanual del EMAE" : "Nivel del EMAE, índice 2004 = 100", cls: null }) },
+  { titulo: "Dólar blue, en pesos de hoy", e: ex("fx_blue", { med: "real" }), fuente: "Ámbito y Bluelytics" },
 ];
 
 /** Verdadero cuando el elemento entra (o está por entrar) en pantalla. */
@@ -54,26 +61,25 @@ function useVisible() {
   return { ref, visible };
 }
 
-const ES_ORGANISMO = /INDEC|BCRA|Trabajo|Rosario|datos\.gob/i;
-interface ItemCifra { d: DefCifra; p: Plantilla; ev: Evaluada | null; extra: Extra | null; fuente?: string }
+interface ItemCifra { d: DefCifra; p: Plantilla; ev: Evaluada | null; extra: Extra | null }
 
 /** Los datos más buscados: placas grandes en un carrusel que avanza solo de a una.
  *  El avance lo marca la animación del segmento activo: al terminar pasa a la siguiente, y pausarla (mouse, foco, toque, fuera de pantalla) pausa el carrusel.
  *  Con "reducir movimiento" esa animación no existe, así que el carrusel queda quieto. */
-function Carrusel({ plantillas, S }: { plantillas: Plantilla[]; S: Record<string, SerieMeta> }) {
+function Carrusel({ plantillas }: { plantillas: Plantilla[] }) {
   const { motor, archivosDe, version, listo: catalogo } = useDatos();
   const defs = useMemo(() => CIFRAS.map((d) => ({ d, p: plantillaDeExpr(d.sinCurio ? plantillas.filter((x) => !x.def) : plantillas, d.e) ?? plantillaSuelta("c-" + d.e.id, d.titulo, d.e) })), [plantillas]);
   const ids = useMemo(() => (catalogo ? [...defs.flatMap(({ p }) => p.ids), "ipc_empalme"] : []), [defs, catalogo]);
   const listo = useCargar(archivosDe(ids)) && catalogo;
   const items = useMemo<ItemCifra[]>(() => defs.map(({ d, p }) => {
     if (!motor || !listo) return { d, p, ev: null, extra: null };
-    const ev = evaluar(motor, p);
+    let ef = p, ev = evaluar(motor, p);
+    if (!ev && d.alt) { ef = plantillaSuelta("c-" + d.alt.id, d.titulo, d.alt); ev = evaluar(motor, ef); }   // sin dato interanual: el nivel y el mes
     let extra: Extra | null = null;
-    try { extra = ev ? d.contexto?.(motor, p, ev) ?? null : null; } catch { extra = null; }
-    const f = S[d.e.id]?.fuente;
-    return { d, p, ev, extra, fuente: f && ES_ORGANISMO.test(f) ? f : undefined };   // solo si nombra al organismo (no un método como "IPC empalmado")
+    try { extra = ev ? d.contexto?.(motor, ef, ev) ?? null : null; } catch { extra = null; }
+    return { d, p: ef, ev, extra };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [motor, listo, defs, version, S]);
+  }), [motor, listo, defs, version]);
 
   const raiz = useRef<HTMLDivElement>(null), pista = useRef<HTMLOListElement>(null);
   const [activa, setActiva] = useState(0);
@@ -143,11 +149,11 @@ function Carrusel({ plantillas, S }: { plantillas: Plantilla[]; S: Record<string
         ))}
       </div>
       <ol className="pista" ref={pista} aria-busy={!listo} onScroll={alDeslizar} onPointerDown={(ev) => { destino.current = null; if (ev.pointerType !== "mouse") setPausa(true); }}>
-        {items.map(({ d, p, ev, extra, fuente }, k) => (
+        {items.map(({ d, p, ev, extra }, k) => (
           <li key={d.titulo} className="placa" aria-current={k === activa ? "true" : undefined} aria-roledescription="diapositiva" aria-label={`${k + 1} de ${n}`}>
             {ev ? (
               <CardValor titulo={d.titulo} ev={ev} href={p.id.startsWith("c-") && p.e ? hrefHistorico(p.e) : hrefPlantilla(p, ev.vista)} motor={motor} grande
-                texto={extra?.texto} cls={extra ? extra.cls : undefined} fuente={fuente} />
+                texto={extra?.texto} cls={extra ? extra.cls : undefined} fuente={d.fuente} />
             ) : (
               <div className="placa-link">
                 <h3 className="placa-titulo">{d.titulo}</h3>
@@ -221,7 +227,7 @@ export function Inicio() {
         </div>
       </header>
 
-      {errorGeneral ? <div className="ancho"><p className="error" role="alert">{errorGeneral}</p></div> : <Carrusel plantillas={plantillas} S={S} />}
+      {errorGeneral ? <div className="ancho"><p className="error" role="alert">{errorGeneral}</p></div> : <Carrusel plantillas={plantillas} />}
 
       <Entrada className="bloque ancho">
         <h2 id="temas">¿Qué datos te interesan?</h2>

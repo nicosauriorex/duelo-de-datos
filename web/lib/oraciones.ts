@@ -15,12 +15,34 @@ const ROTULOS: Record<string, string> = {
 export const rotulo = (id: string, S: Record<string, SerieMeta>): string =>
   ROTULOS[id] ?? (S[id] ? minus(S[id].n.replace(/ \((GBA|Nacional)\)$/, "").replace(/^IPC /, "")) : id);
 
+/** Preposición + texto con la contracción que corresponde: "a" + "el riesgo país" → "al riesgo país", "de" + "el salario" → "del salario" (nunca "a el" ni "de el"). */
+export const contraer = (prep: "a" | "de", texto: string): string => {
+  const t = texto.trim();
+  if (/^el(\s|$)/i.test(t)) return (prep === "a" ? "al" : "del") + t.slice(2);
+  return `${prep} ${t}`;
+};
+
 export const SALARIOS = ["sipa_med", "sipa_prom", "smvm", "jub_min", "ripte"];
 const ids = (S: Record<string, SerieMeta>, f: (s: SerieMeta) => boolean) => Object.values(S).filter(f).map((s) => s.id);
 
 /** Qué compra el salario: productos, canastas y dólares. */
 export const idsCompra = (S: Record<string, SerieMeta>) =>
   ids(S, (s) => s.id.startsWith("pp_gba_") || s.id.startsWith("can_") || (FX_KEYS as readonly string[]).some((k) => s.id === "fx_" + k));
+/** Los ítems de "¿Cuánto … compra un …?" ya ordenados y con sus separadores: Canastas, Precios promedio (una sección por categoría) y Dólares. */
+export interface SeccionCompra { grupo: "Canastas" | "Precios promedio" | "Dólares"; categoria?: string; ids: string[] }
+export function seccionesCompra(S: Record<string, SerieMeta>, ids: string[]): SeccionCompra[] {
+  const nombre = (id: string) => rotulo(id, S);
+  const porNombre = (a: string, b: string) => nombre(a).localeCompare(nombre(b), "es");
+  const out: SeccionCompra[] = [];
+  const canastas = ids.filter((i) => i.startsWith("can_") && S[i]).sort(porNombre);
+  if (canastas.length) out.push({ grupo: "Canastas", ids: canastas });
+  const cats = new Map<string, string[]>();
+  ids.filter((i) => i.startsWith("pp_gba_") && S[i]).forEach((i) => { const c = S[i].cat[3] ?? "Otros"; if (!cats.has(c)) cats.set(c, []); cats.get(c)!.push(i); });
+  [...cats].sort((a, b) => a[0].localeCompare(b[0], "es")).forEach(([c, v]) => out.push({ grupo: "Precios promedio", categoria: c.replace(/^\d+\s+/, ""), ids: v.sort(porNombre) }));
+  const dolares = (FX_KEYS as readonly string[]).map((k) => "fx_" + k).filter((i) => ids.includes(i) && S[i]);
+  if (dolares.length) out.push({ grupo: "Dólares", ids: dolares });
+  return out;
+}
 /** Montos en pesos: salarios, canastas y productos. */
 export const idsMontos = (S: Record<string, SerieMeta>) =>
   [...SALARIOS.filter((i) => S[i]), ...ids(S, (s) => s.id.startsWith("can_") || s.id.startsWith("pp_gba_"))];
@@ -38,12 +60,26 @@ const e = (id: string, extra: Partial<Expr> = {}): Expr => ({ id, rel: null, mod
 /** ¿Cuánto [producto] compra un [salario]? */
 export const hrefCompra = (producto: string, salario: string) =>
   hrefHistorico(e(producto, { rel: salario, med: "corr" }));
-/** ¿Cómo le fue a [indicador] con [presidente]? */
-export const hrefPresidente = (p: Principal, presidente: string) =>
+/** Mes anterior a uno "AAAA-MM". */
+const mesAntes = (m: string): string => { const [a, k] = m.split("-").map(Number); return k === 1 ? `${a - 1}-12` : `${a}-${String(k - 1).padStart(2, "0")}`; };
+/** Período de un mandato: desde su primer mes hasta el mes anterior al del siguiente presidente (el último llega hasta el último dato: sin `h`). */
+export function periodoDe(presidente: string): { d: string; h?: string } {
+  const k = PRES_DEF.findIndex((p) => p.id === presidente);
+  if (k < 0) return { d: "" };
+  const sig = PRES_DEF[k + 1];
+  return sig ? { d: PRES_DEF[k].ini, h: mesAntes(sig.ini) } : { d: PRES_DEF[k].ini };
+}
+/** ¿Cómo le fue a [indicador] con [presidente]? Histórico de esa variable recortado a su mandato, con las franjas de presidentes. */
+export const hrefPresidente = (p: Principal, presidente: string) => {
+  const { d, h } = periodoDe(presidente);
+  return hrefHistorico(p, { ...(d ? { d } : {}), ...(h ? { h } : {}), pf: "1" });
+};
+/** Enlace de acompañamiento: la tabla por presidente de ese indicador. */
+export const hrefTablaPresidente = (p: Principal, presidente: string) =>
   `/presidentes/?${new URLSearchParams({ pv: encExpr(p), pr: presidente }).toString()}`;
 /** ¿Cómo cambió [indicador] desde [año]? */
 export const hrefDesde = (p: Principal, anio: string) => hrefHistorico(p, { d: `${anio}-01` });
-/** ¿Cuánto vale [monto] en [medida]? */
+/** ¿Cómo evolucionó [monto] en [medida]? */
 export const hrefMedida = (id: string, med: string) => hrefHistorico(e(id, { med }));
 /** ¿Qué subió más: [a] o [b]? Base 100, contra la inflación. */
 export const hrefSubio = (a: string, b: string) =>

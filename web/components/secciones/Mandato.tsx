@@ -1,25 +1,26 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { useSeccion } from "../useSeccion";
-import { Cargando, Desplegable, Selector, Seg, alternar } from "../ui";
+import { Cargando, Selector, Seg, alternar } from "../ui";
 import { FilaVariable } from "../Variables";
 import { BotonCompartir } from "../PanelCompartir";
 import { IconoCompartir } from "../Iconos";
 import { Grafico, type Fila, type SerieG } from "../Grafico";
 import { CeldaPresMandato, LineaInicio, useBase } from "./comunes";
 import { fmtMes } from "@/lib/formato";
-import { baseIdx, calcularMandato, crearPres, nombreCorto, TITULOS_MANDATO as TITULOS } from "@/lib/estadisticas";
+import { baseIdx, calcularMandato, crearPres, nombreCorto, TITULOS_MANDATO as TITULOS, type ModoMandato } from "@/lib/estadisticas";
 import type { Expr } from "@/lib/motor";
 import { decExpr, enteroEn, encExpr, lista, unoDe, useParams } from "@/lib/url";
 import { vcolor } from "../util";
 
-const MODOS: [string, string][] = [["teorico", "Precio teórico"], ["var", "Variación % desde el mes 0"], ["indice", "Índice (mes 0 = 100)"], ["valor", "Valor del período"]];
+// "indice" ya no se ofrece (es la misma curva que la variación): los links viejos con ese modo abren en Variación %
+const MODOS: [string, string][] = [["teorico", "Precio teórico"], ["var", "Variación %"], ["valor", "Valor del período"]];
 const AYUDA: Record<string, string> = {
-  teorico: "Se toma un valor de partida y se le aplica lo que pasó en cada mandato: si con Milei el dólar arrancó en $ 1.000 y en el mes 20 de CFK 2 había subido 50 %, CFK 2 marca $ 1.500 en el mes 20.",
-  var: "Variación %: cuánto subió desde el mes 0.",
-  indice: "Índice: el mes 0 vale 100 y el resto se mide contra él.",
-  valor: "Valor del período: el dato tal cual, sin transformar.",
+  teorico: "La misma curva que la variación, expresada en un precio de partida.",
+  var: "Cuánto subió desde el mes 0.",
+  valor: "El dato tal cual, sin transformar.",
 };
+type Panel = "var" | "modo" | "pres";
 const DEF_PRES = "nk,cfk1,cfk2,macri,af,milei";
 
 export function Mandato() {
@@ -35,10 +36,13 @@ export function Mandato() {
 
   // animación: mes actual y si avanza; cualquier cambio de filtro la corta
   const [anim, setAnim] = useState<{ t: number; play: boolean } | null>(null);
+  const [panel, setPanel] = useState<Panel | null>(null);
+  const [valorFinal, setValorFinal] = useState(false);   // opción de la imagen: el valor de cada presidente en el último mes visible
   const clave = p.toString() + JSON.stringify(b);
   useEffect(() => { setAnim(null); }, [clave]);
 
-  const modo = unoDe(p.get("mmo"), ["teorico", "var", "indice", "valor"] as const, "teorico");
+  const modoUrl = unoDe(p.get("mmo"), ["teorico", "var", "indice", "valor"] as const, "teorico");
+  const modo: ModoMandato = modoUrl === "indice" ? "var" : modoUrl;
   const selIds = new Set(lista(p.has("mp") ? p.get("mp") : DEF_PRES).filter((id) => PRES_T0.some((x) => x.id === id)));
   const banda = unoDe(p.get("mbd"), ["no", "si"] as const, "no");
 
@@ -71,63 +75,81 @@ export function Mandato() {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setAnim(null); return; }
     setAnim({ t: 0, play: true });
   };
-  const rowsVista = D && anim ? D.rows.map((r, i) => (i <= anim.t ? r : { t: r.t })) : D?.rows;
+  // el cuadro actual nunca pasa del último mes visible: al achicar "Hasta" con la animación terminada, anim.t queda fuera de rango hasta que el efecto de arriba la corta
+  const cuadro = anim ? Math.max(0, Math.min(anim.t, maxAnim)) : 0;
+  const rowsVista = D && anim ? D.rows.map((r, i) => (i <= cuadro ? r : { t: r.t })) : D?.rows;
 
   if (sec.errorGeneral) return <p className="error" role="alert">{sec.errorGeneral}</p>;
   if (!m || !montado) return <Cargando />;
   const errs = Object.values(sec.errores);
   const HITOS = [6, 12, 24, 36, 48];
 
+  const abrir = (k: Panel) => setPanel(panel === k ? null : k);
+  const BOTONES: [Panel, string][] = [["var", "Variable"], ["modo", "Cómo mostrar"], ["pres", "Presidentes"]];
+
   return (
     <section>
       <p className="sub">Cada línea arranca en el mes 0 de un presidente y sigue mes a mes durante su mandato.</p>
-      <FilaVariable e={eB} onChange={(e) => e && set({ mv: encExpr(e) })} />
       <LineaInicio info={info} F={m.F} />
-      <div className="modos" role="radiogroup" aria-label="Modo">
-        {MODOS.map(([k, t]) => (
-          <div key={k} className="modo">
-            <label className="radio"><input type="radio" name="mmo" checked={modo === k} onChange={() => set({ mmo: k === "teorico" ? null : k })} /> {t}</label>
-            <p className="note">{AYUDA[k]}</p>
-            {k === "teorico" && modo === "teorico" && D && (
-              <div className="sangria"><label>Partiendo de</label>
-                <Selector etiqueta="Partiendo de" valor={D.anc} opciones={D.ancOpc.map((o) => [o[0], o[1]] as [string, string])} onElegir={(v) => set({ anc: v === "milei" ? null : v })} /></div>
-            )}
-          </div>
+      <div className="mand-barra" role="group" aria-label="Configuración del gráfico">
+        {BOTONES.map(([k, t]) => (
+          <button key={k} type="button" className="btn drop" aria-expanded={panel === k} aria-controls={`mand-panel-${k}`} onClick={() => abrir(k)}><span className="et">{t}</span></button>
         ))}
       </div>
-      <div className="controls">
-        <Desplegable etiqueta="Presidentes y opciones">
-          <div className="controls"><label>Presidentes</label><Seg valor={selIds} opciones={PRES_T0.map((x) => [x.id, x.n] as [string, string])} onElegir={(v) => set({ mp: [...alternar(selIds, v)].join(",") })} /></div>
-          <div className="controls"><label>Rango del mes</label><Seg valor={banda} opciones={[["no", "Solo promedio"], ["si", "Promedio + mín/máx"]]} onElegir={(v) => set({ mbd: v === "no" ? null : v })} /></div>
-        </Desplegable>
-      </div>
-      {D && (
-        <div className="controls">
-          <label>Meses</label><label htmlFor="mm_desde">desde</label>
-          <input type="range" id="mm_desde" min={0} max={D.maxMes - 1} step={1} value={D.desde} onChange={(ev) => { const d = +ev.target.value; set({ md: d ? String(d) : null, mh: d >= D.hasta ? String(d + 1) : undefined }); }} />
-          <label htmlFor="mm_hasta">hasta</label>
-          <input type="range" id="mm_hasta" min={1} max={D.maxMes} step={1} value={D.hasta} onChange={(ev) => { const h = +ev.target.value; set({ mh: h === D.maxMes ? null : String(h), md: D.desde >= h ? String(h - 1) : undefined }); }} />
-          <span className="lbl">mes {D.desde} a {D.hasta}{D.hasta === D.maxMes && D.desde === 0 ? " (todo)" : ""}</span>
+      {panel && (
+        <div className="mand-panel" id={`mand-panel-${panel}`}>
+          {panel === "var" && <FilaVariable e={eB} onChange={(e) => e && set({ mv: encExpr(e) })} />}
+          {panel === "modo" && (
+            <>
+              <div className="modos" role="radiogroup" aria-label="Cómo mostrar">
+                {MODOS.map(([k, t]) => (
+                  <div key={k} className="modo">
+                    <label className="radio"><input type="radio" name="mmo" checked={modo === k} onChange={() => set({ mmo: k === "teorico" ? null : k })} /> {t}</label>
+                    <p className="note">{AYUDA[k]}</p>
+                    {k === "teorico" && modo === "teorico" && D && (
+                      <div className="sangria"><label>Partiendo de</label>
+                        <Selector etiqueta="Partiendo de" valor={D.anc} opciones={D.ancOpc.map((o) => [o[0], o[1]] as [string, string])} onElegir={(v) => set({ anc: v === "milei" ? null : v })} /></div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="controls"><label>Rango del mes</label><Seg valor={banda} opciones={[["no", "Solo promedio"], ["si", "Promedio + mín/máx"]]} onElegir={(v) => set({ mbd: v === "no" ? null : v })} /></div>
+            </>
+          )}
+          {panel === "pres" && (
+            <div className="controls"><Seg valor={selIds} opciones={PRES_T0.map((x) => [x.id, x.n] as [string, string])} onElegir={(v) => set({ mp: [...alternar(selIds, v)].join(",") })} /></div>
+          )}
         </div>
       )}
       {!D ? (errs.length ? null : <Cargando />) : (
         <>
-          <div className="card">
-            <h2>{D.c.corto}: {TITULOS[modo]} por mes de mandato</h2><p className="note">{D.nota}</p>
+          <div className="card mand-grafico">
+            <h2>{D.c.corto}: {TITULOS[modo]} por mes de mandato</h2>
             <div className="anim-barra">
               {!anim ? <button type="button" className="btn" onClick={animar}>▶ Animar</button>
                 : anim.play ? <button type="button" className="btn" onClick={() => setAnim({ ...anim, play: false })}>⏸ Pausa</button>
-                : <><button type="button" className="btn" onClick={() => setAnim(anim.t >= maxAnim ? { t: 0, play: true } : { ...anim, play: true })}>▶ Seguir</button>
+                : <><button type="button" className="btn" onClick={() => setAnim(cuadro >= maxAnim ? { t: 0, play: true } : { t: cuadro, play: true })}>▶ Seguir</button>
                   <button type="button" className="btn" onClick={() => setAnim({ t: 0, play: true })}>↺ Reiniciar</button></>}
-              {anim && <span className="lbl" role="status">Mes {D.rows[anim.t].t as number}</span>}
-            </div>
-            <div className="controls">
+              {anim && <span className="lbl" role="status">Mes {D.rows[cuadro]?.t as number}</span>}
               <BotonCompartir className="btn" titulo={`Primero los Datos: ${D.c.corto} por mes de mandato`} href={() => window.location.href} deshabilitado={D.pres.length === 0}
                 title="Armar una imagen de este gráfico para compartir" aria-label="Compartir como imagen: meses de mandato"
-                crearVista={() => ({ tipo: "mandato", expr: eB, modo, presIds: D.pres.map((x) => x.id), anc: p.get("anc"), md: p.get("md"), mh: p.get("mh"), base: b })}><IconoCompartir />Compartir</BotonCompartir>
+                crearVista={() => ({ tipo: "mandato", expr: eB, modo, presIds: D.pres.map((x) => x.id), anc: p.get("anc"), md: p.get("md"), mh: p.get("mh"), valorFinal, base: b })}><IconoCompartir />Compartir</BotonCompartir>
             </div>
             <div className="legend">{D.pres.map((x) => <span key={x.id} style={vcolor(x.color)}>{x.n}</span>)}</div>
             <Grafico rows={rowsVista || D.rows} series={D.series} opts={D.opts} />
+            <div className="controls mand-meses">
+              <label>Meses</label><label htmlFor="mm_desde">desde</label>
+              <input type="range" id="mm_desde" min={0} max={D.maxMes - 1} step={1} value={D.desde} onChange={(ev) => { const d = +ev.target.value; set({ md: d ? String(d) : null, mh: d >= D.hasta ? String(d + 1) : undefined }); }} />
+              <label htmlFor="mm_hasta">hasta</label>
+              <input type="range" id="mm_hasta" min={1} max={D.maxMes} step={1} value={D.hasta} onChange={(ev) => { const h = +ev.target.value; set({ mh: h === D.maxMes ? null : String(h), md: D.desde >= h ? String(h - 1) : undefined }); }} />
+              <span className="lbl">mes {D.desde} a {D.hasta}{D.hasta === D.maxMes && D.desde === 0 ? " (todo)" : ""}</span>
+            </div>
+            <label className="comp-marca mand-valor"><input type="checkbox" checked={valorFinal} onChange={(ev) => setValorFinal(ev.target.checked)} /> Mostrar el valor de cada presidente en el último mes visible (en la imagen para compartir)</label>
+            <details className="contexto-plegado">
+              <summary>Cómo se calcula</summary>
+              <p className="note">{D.nota}</p>
+              {modo === "teorico" && <p className="note">Si con Milei el dólar arrancó en $ 1.000 y en el mes 20 de CFK 2 había subido 50 %, CFK 2 marca $ 1.500 en el mes 20.</p>}
+            </details>
           </div>
           <div className="card">
             <h2>Resumen por hitos</h2><p className="note">Mismo cálculo que el gráfico ({TITULOS[modo]}) en meses clave y al final de cada mandato.</p>

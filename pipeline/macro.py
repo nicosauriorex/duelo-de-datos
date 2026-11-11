@@ -110,6 +110,20 @@ def _mes(s: pd.Series) -> pd.DataFrame:
     return pd.DataFrame({"": g.mean(), "_min": g.min(), "_max": g.max()})
 
 
+def _sin_datos_sueltos(s: pd.Series, tolerancia: float = 0.3) -> pd.Series:
+    """Saca cotizaciones diarias sueltas que se apartan más de `tolerancia` de la mediana de las 7 cotizaciones de alrededor
+    (por ejemplo, un día de enero de 2024 con el valor de antes de la devaluación). Un salto que se sostiene, como una
+    devaluación, no se toca: los días de cada lado quedan en mayoría con los suyos.
+    Solo se aplica donde hay ventana completa y sin huecos: los 3 primeros y los 3 últimos datos de la serie, y los tramos
+    donde las 7 cotizaciones abarcan más de 20 días, se dejan como vienen."""
+    s = s.sort_index()
+    med = s.rolling(7, center=True, min_periods=7).median()
+    dias = pd.Series(s.index.view("int64") // 86_400_000_000_000, index=s.index, dtype=float)
+    tramo = dias.rolling(7, center=True, min_periods=7).apply(lambda x: x[-1] - x[0], raw=True)
+    confiable = med.notna() & (tramo <= 20)
+    return s[~confiable | ((s / med - 1).abs() <= tolerancia)]
+
+
 def construir(indice: pd.DatetimeIndex) -> pd.DataFrame:
     """DataFrame mensual (en el índice dado) con promedio, mínimo y máximo de cada serie de mercado."""
     print("Mercados: bajando series diarias...")
@@ -135,6 +149,8 @@ def construir(indice: pd.DatetimeIndex) -> pd.DataFrame:
     oficial = d["a3500"].combine_first(d["mayorista"])
     # Ámbito es la fuente principal (Bluelytics tiene 2011-2012 sin variación diaria); Bluelytics completa días faltantes
     blue = d["blue_ambito"].combine_first(d["blue_bluelytics"][d["blue_bluelytics"].index >= "2013-01-01"])
+    oficial, blue = _sin_datos_sueltos(oficial), _sin_datos_sueltos(blue)
+    d["mep"], d["ccl"] = _sin_datos_sueltos(d["mep"]), _sin_datos_sueltos(d["ccl"])
     fuentes = {"fx_oficial": oficial, "fx_blue": blue, "fx_mep": d["mep"], "fx_ccl": d["ccl"],
                "riesgo": d["riesgo"], "tcrm": d["tcrm"], "soja_ros": d["soja_ros"], "soja_chi": d["soja_chi"]}
     out = pd.DataFrame(index=indice)

@@ -7,12 +7,14 @@ import { leerComun, leerGrafico, frecuenciaOrigen, textoTemporalidad, TODOS_MESE
 import type { DatosImagen, TarjetaDato, TarjetaImg } from "./imagen";
 import { fmtMes, nf0, nf1, fmtNum, norm, ok } from "./formato";
 import type { Calculo, Expr, Motor } from "./motor";
+import { filasDeTabla, tablaATexto } from "./tabla-texto";
 
 /** Lo que muestra un gráfico de Histórico y, por lo tanto, lo que lleva la imagen. */
 export interface VistaImg {
   exprs: Expr[]; modo: "valor" | "b100"; eje: "propia" | "misma";
   desde: string; hasta: string; meses: Set<number>; freq: "M" | "T" | "A"; ag: "promedio" | "cierre";
   titulo?: string;      // el de la plantilla, si la vista viene de una
+  tabla?: boolean;      // la vista que se comparte es la Tabla: el panel ofrece copiar la tabla o compartir el gráfico
 }
 export interface OpcionesImg {
   formato: FormatoImg; comentario: string; base: BaseCfg; colPres?: Record<string, string>;
@@ -87,6 +89,17 @@ export function mesesDisponibles(m: Motor, v: Pick<VistaImg, "exprs" | "modo" | 
   if (!p) return [];
   const rows = filasGrafico(m.F, p.lista, { desde: m.F[0], hasta: m.F[m.F.length - 1], meses: new Set(TODOS_MESES), freq: "M", cierre: false, banda: false });
   return rows.map((r) => ({ fecha: r.fecha as string, etq: fmtMes(r.fecha) }));
+}
+
+/** El texto tabulado de la tabla de una vista de Histórico (mismos números que en pantalla), con la dirección `url` como última fila. Null si falta algo cargado o no hay filas. */
+export function tablaTextoDeVista(m: Motor, v: VistaImg, url: string): string | null {
+  const prep = preparar(m, v);
+  if (!prep) return null;
+  const rows = filasGrafico(m.F, prep.lista, { desde: v.desde, hasta: v.hasta, meses: v.meses, freq: v.freq, cierre: v.ag === "cierre", banda: false });
+  if (!rows.length) return null;
+  if (prep.b100) aBase100(rows, prep.lista.map((x) => x.key));
+  const cols = prep.lista.map((x) => ({ key: x.key, name: x.c.corto, unidad: prep.b100 ? "base 100" : x.c.unidad, fmt: prep.b100 ? (n: number) => nf1.format(n) : (n: number) => m.fmtC(x.c, n) }));
+  return tablaATexto(cols, filasDeTabla(rows, cols), url);
 }
 
 /** ¿La imagen puede llevar líneas, marcadores de extremos, presidentes y tarjetas? Solo con una variable en valores (no base 100). */
@@ -169,7 +182,7 @@ export function armarImagen(m: Motor, v: VistaImg, o: OpcionesImg): DatosImagen 
   const unico = lista.length === 1, fmtDe = (c: Calculo) => (b100 ? (x: number) => nf1.format(x) : (x: number) => m.fmtC(c, x));
   const ultimaFila = (key: string) => { for (let i = rows.length - 1; i >= 0; i--) if (ok(rows[i][key])) return rows[i][key] as number; return null; };
 
-  const ctx = unico && !b100 ? contextoDato(m, v.exprs[0], admiteContexto({ variables: 1, modo: v.modo, freq: v.freq })) : null;
+  const ctx = unico && !b100 ? contextoDato(m, v.exprs[0], admiteContexto({ variables: 1, modo: v.modo, freq: v.freq }), { periodo: { desde: v.desde, hasta: v.hasta }, elegidas: pers?.frases ?? null }) : null;
   const tituloBase = v.titulo ?? (unico && !b100 ? tituloVariable(m, v.exprs[0], calcs[0]) : tituloGrafico(lista, b100));
   const titulo = o.periodoEnTitulo ? `${tituloBase} · ${fmtMes(v.desde)} a ${fmtMes(v.hasta)}` : tituloBase;
 

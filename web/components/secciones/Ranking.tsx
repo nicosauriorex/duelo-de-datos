@@ -96,6 +96,7 @@ export function Ranking() {
   const [p, set, montado] = useParams();
   const sec = useSeccion("todo");
   const info = useBase(p, set, montado), b = info.b;
+  const [puntajeAbierto, setPuntajeAbierto] = useState(true);   // "Puntaje combinado" arranca desplegado; si se pliega, queda plegado
   const { motor: m, version } = sec;
   const PRES = useMemo(() => (m ? crearPres(m.F) : []), [m]);
   const I = useMemo(() => (m && !sec.ocupado ? crearIndicadores(m) : null), [m, sec.ocupado, version]);  // eslint-disable-line react-hooks/exhaustive-deps
@@ -154,7 +155,7 @@ export function Ranking() {
       <p className="note">Para cada indicador, los presidentes se ordenan según <b>{CRIT_TXT[crit]}</b>. Verde = el que quedó mejor, rojo = el que quedó peor; debajo del nombre va el dato que lo explica. Cada presidente se evalúa con los mismos indicadores y el mismo criterio.</p>
       <Comparacion m={m} tablas={tablasComp} PRES={PRES} crit={crit} conUnidad={!usaVars} />
       {!res ? <p className="note">Con al menos {MIN_V} variables se arma también el puntaje combinado.</p> : (
-        <details className="callout contexto-plegado rk-puntaje" open={abiertos.length > 0 ? true : undefined}>
+        <details className="callout contexto-plegado rk-puntaje" open={puntajeAbierto} onToggle={(ev) => setPuntajeAbierto(ev.currentTarget.open)}>
           <summary><b>Puntaje combinado</b>{" "}<span className="resumen">Depende de los indicadores elegidos; no es una medida oficial</span></summary>
           <p className="note">Un puntaje de 0 (el peor) a 100 (el mejor) por presidente. Se promedia dentro de cada grupo y después entre grupos, para que ningún grupo pese más por tener más series. <b>Ojo:</b> muchos datos empiezan en 2003, 2012 o 2016, así que Menem, De la Rúa y Duhalde se evalúan con pocos indicadores; Milei, con un mandato en curso; y el contexto internacional y la herencia de cada uno no entran en el número. En la tabla, la barra va de 0 a 100, verde es la mitad de arriba y rojo la de abajo, y las marcas “mejor” y “peor” señalan los extremos.
             {res.incompletas && usaVars ? " Algunas variables no tienen datos para todos los presidentes." : ""}</p>

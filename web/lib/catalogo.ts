@@ -1,7 +1,7 @@
 // Catálogo: orden de categorías, búsqueda con sinónimos, indicadores de Curiosidades.
 import { norm } from "./formato";
 import { medDefaultDe, type Expr, type Motor, type Serie, type SerieMeta } from "./motor";
-import { NOMBRES, SINONIMOS, esOculta } from "./nombres";
+import { NOMBRES, SINONIMOS, catPublica, esOculta, rutaPublica } from "./nombres";
 import { colapsarRegiones } from "./regiones";
 
 export const ORDEN_RAIZ = ["Salarios", "Precios", "Dólar y tipo de cambio", "Mercados", "Tasas de interés", "Dinero y bancos (BCRA)",
@@ -21,12 +21,12 @@ const ALIAS: [RegExp, string][] = [
 /** Texto en el que se busca una serie: nombre público, nombre técnico, categoría, descripción, id y sinónimos. */
 export function textoBusqueda(s: Pick<Serie, "n" | "cat" | "desc" | "id"> & { busca?: string; nTecnico?: string }): string {
   if (s.busca) return s.busca;
-  const base = norm(s.n + " " + (s.nTecnico || "") + " " + s.cat.join(" ") + " " + (s.desc || "") + " " + s.id);
+  const base = norm(s.n + " " + (s.nTecnico || "") + " " + s.cat.join(" ") + " " + rutaPublica(s.cat).join(" ") + " " + (s.desc || "") + " " + s.id);
   s.busca = base + " " + ALIAS.filter(([re]) => re.test(base)).map((a) => a[1]).join(" ") + " " + (SINONIMOS[s.id] || "");
   return s.busca;
 }
 
-export const grupoDe = (s: { cat: string[] }) => s.cat[1] && s.cat[0] !== "Salarios" ? `${s.cat[0]} › ${s.cat[1]}` : s.cat[0];
+export const grupoDe = (s: { cat: string[] }) => s.cat[1] && s.cat[0] !== "Salarios" ? `${s.cat[0]} › ${catPublica(s.cat[1])}` : s.cat[0];
 export function ordenarGrupos(grupos: string[]): string[] {
   return grupos.slice().sort((a, b) => ORDEN_RAIZ.indexOf(a.split(" › ")[0]) - ORDEN_RAIZ.indexOf(b.split(" › ")[0]) || (a.includes("›") ? 1 : 0) - (b.includes("›") ? 1 : 0));
 }
@@ -140,7 +140,7 @@ export function buscarSeries(metas: SerieMeta[], q: string, max: number): SerieM
     const t = textoBusqueda(s as SerieMeta & { busca?: string }), nombre = norm(s.n + " " + (s.nTecnico || ""));   // el nombre técnico también cuenta como "en el nombre"
     return {
       s, n: toks.filter((k) => t.includes(k)).length,
-      puntaje: toks.reduce((a, k) => a + (nombre.includes(k) ? 2 : 0) + (nombre.startsWith(k) ? 1 : 0), 0),
+      puntaje: toks.reduce((a, k) => a + (nombre.includes(k) ? 2 : 0) + (nombre.startsWith(k) ? 1 : 0) + (SINONIMOS[s.id]?.includes(k) ? 2 : 0), 0),   // un sinónimo explícito pesa como el nombre
     };
   });
   let res = filas.filter((f) => f.n === toks.length);

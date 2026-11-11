@@ -5,7 +5,7 @@ import { Modal } from "../ui";
 import { fmtMes, ok } from "@/lib/formato";
 import type { Calculo, Motor } from "@/lib/motor";
 import { AYUDA_T, PRES_DEF, baseIdx, baseTxt, crearPres, oracionInicio, varNum, type Pres, type StatsM } from "@/lib/estadisticas";
-import { columnaComparable, datosDesde, lecturaTono, periodoMandato, tonoDeCambio, type ColComp, type MarcaCol, type Tono } from "@/lib/tablas";
+import { colorPuesto, columnaPresidentes, datosDesde, lecturaTono, periodoMandato, tonoDeCambio, type ColComp, type MarcaCol, type Tono } from "@/lib/tablas";
 import { DEFECTO, txtT, baseDeConfig, baseDeUrl, encT0p, esBaseDeFabrica, limpiarBase, mismaBase, type BaseCfg } from "@/lib/config";
 
 export const COLS: [string, string][] = [["ini", "Inicio"], ["fin", "Cierre"], ["var", "Variación"], ["min", "Mínimo"], ["max", "Máximo"], ["prom", "Promedio"], ["med", "Mediana"], ["n", "Meses"]];
@@ -34,16 +34,16 @@ export function useBase(p: URLSearchParams, set: (c: Record<string, string | nul
 
 /** Oración del inicio de mandato ("Mes inicial de cada presidente: T-1, excepto Milei (T+1).") con un ícono de información que abre la explicación y el botón Configurar.
  *  Si el link trae otro inicio, avisa y ofrece volver al propio. `F` (opcional) permite poner un ejemplo con Milei; `children` suma texto propio de cada sección. */
-export function LineaInicio({ info, F, children }: { info: InicioMandato; F?: string[]; children?: React.ReactNode }) {
+export function LineaInicio({ info, F, children, texto, sinAviso }: { info: InicioMandato; F?: string[]; children?: React.ReactNode; texto?: string; sinAviso?: boolean }) {
   const { abrirPanel } = useConfig();
   const [abierto, setAbierto] = useState(false);
   const b = info.b;
   const milei = F ? crearPres(F).find((x) => x.id === "milei") : null;
   return (
     <>
-      <div className="linea-inicio"><span>{oracionInicio(b)}</span>
+      <div className="linea-inicio"><span>{texto ?? oracionInicio(b)}</span>
         <button type="button" className="btn-info" aria-label="Qué significa T y cómo se elige el mes inicial" aria-haspopup="dialog" onClick={() => setAbierto(true)}><span className="info-btn" aria-hidden>i</span></button></div>
-      {info.delLink && (
+      {info.delLink && !sinAviso && (
         <p className="aviso-link" role="status">Estás viendo el inicio de mandato del link · <button type="button" className="enlace" onClick={info.usarMio}>Usar el mío</button></p>
       )}
       {abierto && (
@@ -110,16 +110,17 @@ export function CeldaVar({ nombre, unidad, extra, info }: { nombre: React.ReactN
   );
 }
 
-/** Celda numérica: el valor en un solo tono (verde = mejor, rojo = peor), debajo un dato menor, una barra de magnitud y la marca escrita de mejor / peor. */
-export function Valor({ tono, f, modo, neg, marca, lectura, sub, children, ...resto }: {
-  tono?: Tono; f?: number; modo?: ColComp["modo"]; neg?: boolean; marca?: MarcaCol; lectura?: string; sub?: React.ReactNode; children: React.ReactNode } & React.TdHTMLAttributes<HTMLTableCellElement>) {
+/** Celda numérica: el valor en un solo tono (verde = mejor, rojo = peor), debajo un dato menor, una barra de magnitud y la marca escrita de mejor / peor.
+ *  `pos` (0 = el peor, 1 = el mejor): la barra se pinta en degradado rojo → amarillo → verde; sin `pos` lleva el tono de la celda (gris si no hay). */
+export function Valor({ tono, f, modo, pos, neg, marca, lectura, sub, children, ...resto }: {
+  tono?: Tono; f?: number; modo?: ColComp["modo"]; pos?: number | null; neg?: boolean; marca?: MarcaCol; lectura?: string; sub?: React.ReactNode; children: React.ReactNode } & React.TdHTMLAttributes<HTMLTableCellElement>) {
   const conBarra = f != null && modo != null;
   return (
     <td {...resto} className={`cc${tono ? ` t-${tono}` : ""}${resto.className ? " " + resto.className : ""}`}>
       <span className="cc-v"><span className="cc-n">{children}</span>
         {marca && <em className={`marca-ext ${marca === "mejor" ? "m-bueno" : marca === "peor" ? "m-malo" : "m-neutro"}`}>{marca}</em>}</span>
       {sub}
-      {conBarra && <span className={`cc-barra b-${modo}${neg ? " neg" : ""}`} aria-hidden><i style={{ ["--f" as string]: f }} /></span>}
+      {conBarra && <span className={`cc-barra b-${modo}${neg ? " neg" : ""}`} aria-hidden><i style={{ ["--f" as string]: f, ...(pos != null ? { background: colorPuesto(pos) } : {}) }} /></span>}
       {lectura ? <span className="sr-solo"> ({lectura})</span> : null}
     </td>
   );
@@ -131,25 +132,25 @@ export interface Comparativa { cols: Partial<Record<string, ColComp>>; k: number
 /** Arma las columnas comparables (barras y marcas) de la tabla "una variable, todos los presidentes". `niv` = los niveles se pueden comparar entre épocas. */
 export function comparativaDe(c: Calculo, sts: StatsM[], niv: boolean): Partial<Record<string, ColComp>> {
   const dir = c.dir || 0;
-  const cols: Partial<Record<string, ColComp>> = { var: columnaComparable(sts.map((s) => varNum(c, s)), dir, true) };
-  if (niv) (["fin", "min", "max", "prom", "med"] as const).forEach((k) => { cols[k] = columnaComparable(sts.map((s) => s[k]), dir, false); });
+  const cols: Partial<Record<string, ColComp>> = { var: columnaPresidentes(sts.map((s) => varNum(c, s)), dir, true) };
+  if (niv) (["ini", "fin", "min", "max", "prom", "med"] as const).forEach((k) => { cols[k] = columnaPresidentes(sts.map((s) => s[k]), dir, false); });
   return cols;
 }
 export function CeldasStats({ m, c, st, cols, comp }: { m: Motor; c: Calculo; st: StatsM; cols: [string, string][]; comp?: Comparativa }) {
   if (!st.n) return <td colSpan={cols.length} style={{ textAlign: "center", color: "var(--text-muted)" }}>sin datos en este período</td>;
   const d = varNum(c, st);
-  const nivel = (k: "fin" | "min" | "max" | "prom" | "med", conMes: number | undefined) => {
+  const nivel = (k: "ini" | "fin" | "min" | "max" | "prom" | "med", conMes: number | undefined) => {
     const cc = comp?.cols[k], v = st[k];
     if (!cc) return <td key={k}>{m.fmtC(c, v)}{mesCorto(m, conMes)}</td>;
     const tono = cc.tono[comp.k];
-    return <Valor key={k} tono={tono} f={cc.frac[comp.k]} modo={cc.modo} neg={(v ?? 0) < 0} marca={cc.marca[comp.k]} lectura={lecturaTono(tono)} sub={mesCorto(m, conMes)}>{m.fmtC(c, v)}</Valor>;
+    return <Valor key={k} tono={tono} f={cc.frac[comp.k]} modo={cc.modo} pos={cc.pos[comp.k]} neg={(v ?? 0) < 0} marca={cc.marca[comp.k]} lectura={lecturaTono(tono)} sub={mesCorto(m, conMes)}>{m.fmtC(c, v)}</Valor>;
   };
   const cv = comp?.cols.var;
   const dif = m.difAbsTxt(c, st.ini ?? null, st.fin ?? null);
   const cel: Record<string, React.ReactNode> = {
-    ini: <td key="ini">{m.fmtC(c, st.ini)}{mesCorto(m, st.iniI)}</td>,
+    ini: nivel("ini", st.iniI),
     fin: nivel("fin", st.finI),
-    var: <Valor key="var" tono={cv && comp ? cv.tono[comp.k] : tonoDeCambio(c.dir, d)} f={comp ? cv?.frac[comp.k] : undefined} modo={cv?.modo} neg={(d ?? 0) < 0} marca={comp ? cv?.marca[comp.k] : null}
+    var: <Valor key="var" tono={cv && comp ? cv.tono[comp.k] : tonoDeCambio(c.dir, d)} f={comp ? cv?.frac[comp.k] : undefined} modo={cv?.modo} pos={comp ? cv?.pos[comp.k] : null} neg={(d ?? 0) < 0} marca={comp ? cv?.marca[comp.k] : null}
       sub={dif ? <small>{dif}</small> : null}>{menos(m.variacionTxt(c, st.ini ?? null, st.fin ?? null))}</Valor>,
     min: nivel("min", st.minI),
     max: nivel("max", st.maxI),

@@ -453,7 +453,7 @@ export function calcularMandato(m: Motor, PRES: Pres[], PRES_T0: Pres[], q: Para
     }
   });
   const hasta = Math.min(maxMes, entEn(q.mh, 1, 10000, maxMes));
-  const desde = Math.min(entEn(q.md, 0, 10000, 0), hasta - 1);
+  const desde = Math.max(0, Math.min(entEn(q.md, 0, 10000, 0), hasta - 1));   // siempre quedan al menos 2 meses (hasta ≥ 1)
   const rows = todas.slice(desde, hasta + 1);
   let fmtAxis: (v: number) => string, fmtTip: (v: number) => string, ref: number | null = null;
   if (c.pct && modo !== "valor") { fmtAxis = (v) => nf0.format(v); fmtTip = (v) => nf1.format(v) + " %"; ref = teo ? ancla : 0; }

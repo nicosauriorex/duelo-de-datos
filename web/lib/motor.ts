@@ -35,7 +35,7 @@ const RE_VAR = /^(vm|via|vp12)(_r)?$/;
 export const ES_VAR = (m?: string) => !!m && RE_VAR.test(m);
 /** Los links viejos usaban `vac` (acumulada en el año): hoy se leen como interanual. */
 export const normMed = (m?: string) => (m === "vac" ? "via" : m);
-/** Series de IPC general: contra la inflación general serían una línea plana, no se les ofrece "Real" ni "Precio relativo". */
+/** Series de IPC general: contra la inflación general serían una línea plana, no se les ofrece "Real" ni índice real. */
 export const ES_IPC_GENERAL = (id: string) => id === "ipc_empalme" || id === "ipc_nacional_0_ipc";
 
 /** Si subir es bueno (1), malo (-1) o neutro (0) para una serie vista con esta medida.
@@ -125,6 +125,21 @@ export function crearMotor(F: string[]) {
     partir: (c) => { const r = RE_VAR.exec(c); return !r || (!real && r[2]) ? null : real ? [r[1], r[2] ? "real" : "nom"] : [r[1]]; },
     etq: (v) => `Variación ${({ vm: "mensual", via: "interanual", vp12: "mensual promedio 12 meses" } as Record<string, string>)[v[0]]}${v[1] === "real" ? " real" : ""}`,
   });
+  /** Índices de precios por rubro: Mensual, Interanual, Promedio de 12 meses e Índice, y un único interruptor Nominal / Real (contra la inflación general) que vale para las cuatro.
+   *  Los códigos no cambian: `vm`, `via`, `vp12` y con sufijo `_r` en real; el índice nominal es `corr` y el real (el precio relativo de antes) es `real`. */
+  const grupoVarRubro = (): GrupoMed => ({
+    k: "var", nombre: "Variaciones",
+    dims: [{ opciones: [...VAR_BASE, ["ind", "Índice"]] }, { opciones: [["nom", "Nominal"], ["real", "Real (contra la inflación general)"]] }],
+    unir: (v) => (v[0] === "ind" ? (v[1] === "real" ? "real" : "corr") : v[0] + (v[1] === "real" ? "_r" : "")),
+    partir: (c) => {
+      if (c === "corr") return ["ind", "nom"];
+      if (c === "real") return ["ind", "real"];
+      const r = RE_VAR.exec(c);
+      return r ? [r[1], r[2] ? "real" : "nom"] : null;
+    },
+    etq: (v) => v[0] === "ind" ? (v[1] === "real" ? "Índice real (contra la inflación general)" : "Índice tal cual (base 100)")
+      : `Variación ${({ vm: "mensual", via: "interanual", vp12: "mensual promedio 12 meses" } as Record<string, string>)[v[0]]}${v[1] === "real" ? " real" : ""}`,
+  });
   const simple = (k: string, nombre: string, opciones: Opcion[], tenue?: string): GrupoMed => ({
     k, nombre, dims: [{ opciones, tenue }],
     unir: (v) => v[0], partir: (c) => (opciones.some((o) => o[0] === c) ? [c] : null),
@@ -157,8 +172,7 @@ export function crearMotor(F: string[]) {
         const tal: Opcion = ["corr", "Índice tal cual (base 100)"];
         const gral = ES_IPC_GENERAL(s.id as string);
         if (s.dir === 1) return [simple("indice", "Índice", [["real", "Real"], tal], "corr"), grupoVar(true)];
-        if (s.cat[0] === "Precios") return [
-          grupoVar(!gral), simple("indice", "Índice", gral ? [tal] : [["real", "Precio relativo (contra la inflación general)"], tal], "corr")];
+        if (s.cat[0] === "Precios") return gral ? [grupoVar(false), simple("indice", "Índice", [tal], "corr")] : [grupoVarRubro()];
         return [simple("indice", "Índice", [tal], "corr"), grupoVar(false)];
       }
       default:

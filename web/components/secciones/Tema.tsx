@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useSeccion } from "../useSeccion";
-import { Cargando } from "../ui";
+import { Cargando, Seg } from "../ui";
 import { BotonInfo } from "../Variables";
 import { CardValor } from "../CardValor";
 import { useConfig } from "../ConfigProvider";
@@ -13,9 +13,9 @@ import { crearPres, statsMandato } from "@/lib/estadisticas";
 import { medidaInicial } from "@/lib/config";
 import { medDefaultDe, type SerieMeta } from "@/lib/motor";
 import { crearPlantillas, evaluar, plantillaSuelta, plantillasDeTema, type Evaluada } from "@/lib/plantillas";
-import { catListado, listables } from "@/lib/regiones";
+import { catListado, esNivelGeneralIpc, listables, ordenarListado } from "@/lib/regiones";
 import { hrefHistorico, idsDe, principalesDe, seriesDe, subgrupoDe, type Principal, type Tema } from "@/lib/temas";
-import { encExpr, useParams } from "@/lib/url";
+import { encExpr, enteroEn, useParams } from "@/lib/url";
 
 const POR_NIVEL = 30;   // más series que esto en un bloque: se despliegan por niveles (región, rubro…)
 const MAX_PLANTILLAS = 8;
@@ -60,6 +60,10 @@ function Desplegado({ titulo, cuenta, children }: { titulo: string; cuenta: numb
   );
 }
 
+/** Columnas de la grilla de principales para que llene el ancho sin dejar una tarjeta suelta: en pantalla ancha 2 a 4 por fila; en tablet 1 a 3; en celular 1 (el CSS). */
+const columnasAncho = (n: number): number => (n <= 4 ? n : n % 3 === 0 || n === 5 ? 3 : 4);
+const columnasMedio = (n: number): number => (n <= 3 ? n : n % 2 === 0 ? 2 : 3);
+
 export function TemaPagina({ t }: { t: Tema }) {
   const [p, set, montado] = useParams();
   const { config } = useConfig();
@@ -72,8 +76,9 @@ export function TemaPagina({ t }: { t: Tema }) {
   const info = useBase(p, set, montado);
   const plantillas = useMemo(() => (listo ? crearPlantillas(metas) : []), [listo, metas]);
   const delTemaTodas = useMemo(() => seriesDe(t, metas), [t, metas]);
-  const series = useMemo(() => listables(delTemaTodas), [delTemaTodas]);   // una por rubro o producto, sin las series ocultas
   const catDe = useMemo(() => (s: SerieMeta) => catListado(s, delTemaTodas), [delTemaTodas]);
+  // Una por rubro o producto, sin las series ocultas ni el IPC nivel general (es lo mismo que "Inflación"), con el orden de las listas (rubros por código, productos por categoría).
+  const series = useMemo(() => ordenarListado(listables(delTemaTodas).filter((s) => !esNivelGeneralIpc(s.id)), catDe), [delTemaTodas, catDe]);
   const subgrupos = useMemo(() => {
     const mapa = new Map<string, SerieMeta[]>();
     series.forEach((s) => { const k = subgrupoDe(t, s); if (!mapa.has(k)) mapa.set(k, []); mapa.get(k)!.push(s); });
@@ -95,7 +100,9 @@ export function TemaPagina({ t }: { t: Tema }) {
   if (!listo || !m || !montado) return <Cargando />;
 
   const hrefSerie = (s: SerieMeta) => hrefHistorico({ id: s.id, med: medidaInicial(s.tipo, medDefaultDe(s), config), rel: null, modo: "compra", esc: "" });
-  const primero = principales[0];
+  // Tabla "Por presidente": la variable elegida con los botones (arranca en el primero; no cambia sola). Se guarda en la URL (`pt`, posición entre los principales).
+  const iPres = enteroEn(p.get("pt"), 0, Math.max(0, principales.length - 1), 0);
+  const primero = principales[iPres];
   let presidentes: React.ReactNode = null;
   if (primero && !sec.ocupado) {
     const PRES = crearPres(m.F);
@@ -104,6 +111,11 @@ export function TemaPagina({ t }: { t: Tema }) {
     presidentes = (
       <section aria-label="Por presidente">
         <h2>Por presidente</h2>
+        {principales.length > 1 && (
+          <div className="elegir-principal">
+            <Seg valor={String(iPres)} opciones={principales.map((pr, i) => [String(i), pr.nombre] as [string, string])} onElegir={(v) => set({ pt: v === "0" ? null : v })} />
+          </div>
+        )}
         <p className="note">{primero.nombre}. Unidad: {c.unidad}.</p>
         <LineaInicio info={info} F={m.F} />
         {filas.length ? (
@@ -121,22 +133,17 @@ export function TemaPagina({ t }: { t: Tema }) {
 
   return (
     <section className="tema-pagina">
-      <div className={`cab-tema${tarjetas.length ? " con-dato" : ""}`}>
-        <div className="cab-tema-texto">
-          <h1 className="titulo-tema">{t.nombre}</h1>
-          <Texto t={t} />
-        </div>
-        {tarjetas.length > 0 && (
-          <div className="dato-principal" aria-label="Dato principal del tema">
-            <CardValor titulo={tarjetas[0].pr.nombre} ev={tarjetas[0].ev} href={hrefHistorico(tarjetas[0].pr)} motor={m} />
-          </div>
-        )}
+      <div className="cab-tema">
+        <h1 className="titulo-tema">{t.nombre}</h1>
+        <Texto t={t} />
       </div>
 
-      {tarjetas.length > 1 && (
+      {tarjetas.length > 0 && (
         <section aria-label="Principales">
           <h2>Principales</h2>
-          <div className="curios">{tarjetas.slice(1).map(({ pr, ev }) => <CardValor key={pr.nombre} titulo={pr.nombre} ev={ev} href={hrefHistorico(pr)} motor={m} />)}</div>
+          <div className="principales" style={{ ["--n" as string]: tarjetas.length, ["--c-med" as string]: columnasMedio(tarjetas.length), ["--c-ancho" as string]: columnasAncho(tarjetas.length) }}>
+            {tarjetas.map(({ pr, ev }) => <CardValor key={pr.nombre} titulo={pr.nombre} ev={ev} href={hrefHistorico(pr)} motor={m} />)}
+          </div>
         </section>
       )}
 

@@ -37,11 +37,20 @@ export const NOMBRES: Record<string, string> = {
   bcra_12: "Tasa de plazo fijo",
   dg_380_3_icc_nacionnal_0_t_12: "Confianza del consumidor",
   dg_370_3_icg_nivel_ral_0_0_17_94: "Confianza en el gobierno",
-  soja_ratio_oficial: "Soja: Rosario contra Chicago (dólar oficial)",
-  soja_ratio_blue: "Soja: Rosario contra Chicago (dólar blue)",
-  soja_ratio_mep: "Soja: Rosario contra Chicago (dólar MEP)",
-  soja_ratio_ccl: "Soja: Rosario contra Chicago (dólar CCL)",
+  soja_ratio_oficial: "Brecha de la soja: Rosario contra Chicago (dólar oficial)",
+  soja_ratio_blue: "Brecha de la soja: Rosario contra Chicago (dólar blue)",
+  soja_ratio_mep: "Brecha de la soja: Rosario contra Chicago (dólar MEP)",
+  soja_ratio_ccl: "Brecha de la soja: Rosario contra Chicago (dólar CCL)",
 };
+
+/** Nombres públicos de las categorías (`cat[1]`, y el grupo de las listas). El catálogo conserva el nombre técnico: sirve para agrupar y para leer los metadatos;
+ *  solo lo que se muestra pasa por `catPublica`. */
+export const CATS_PUBLICAS: Record<string, string> = {
+  "IPC INDEC (índices, dic-2016 = 100)": "IPC por rubros",
+};
+export const catPublica = (c: string): string => CATS_PUBLICAS[c] ?? c;
+/** Una ruta de categorías ya lista para mostrar. */
+export const rutaPublica = (cat: string[]): string[] => cat.map(catPublica);
 
 /** Palabras que la gente usa para buscar cada serie y que no están en su nombre (la búsqueda ya mira el nombre público, el técnico y la categoría). */
 export const SINONIMOS: Record<string, string> = {
@@ -66,6 +75,9 @@ export const SINONIMOS: Record<string, string> = {
   bcra_12: "plazo fijo tasa de interes ahorro",
   riesgo: "embi bonos",
 };
+
+// Los "regulados" del IPC (tarifas de servicios públicos, combustibles, transporte, educación…): se buscan también como "servicios públicos" y "tarifas", en todas las regiones.
+for (const r of ["nacional", "gba", "cuyo", "noreste", "noroeste", "pampeana", "patagonia"]) SINONIMOS[`ipc_${r}_r_estaci`] = "servicios publicos tarifas";
 
 /** Series que ya no se listan porque su entrada pública es otra: se siguen leyendo, y los links viejos se traducen a la entrada nueva. */
 export const ALIAS_ID: Record<string, { id: string; med: string }> = {

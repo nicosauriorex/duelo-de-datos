@@ -8,8 +8,8 @@ import { Desplegable, Modal, Selector, Seg } from "./ui";
 import { IconoEditar } from "./Iconos";
 import { fmtMes, lastIdx, norm } from "@/lib/formato";
 import { ORDEN_RAIZ, textoBusqueda } from "@/lib/catalogo";
-import { esOculta } from "@/lib/nombres";
-import { catListado, colapsarRegiones, listables, otrasRegiones } from "@/lib/regiones";
+import { esOculta, rutaPublica } from "@/lib/nombres";
+import { catListado, colapsarRegiones, listables, ordenarListado, otrasRegiones } from "@/lib/regiones";
 import { INFO_CAT, INFO_CORTA } from "@/lib/info";
 import type { Expr, Motor, SerieMeta } from "@/lib/motor";
 
@@ -63,7 +63,7 @@ function Info({ id, onCerrar }: { id: string; onCerrar: () => void }) {
     <Modal titulo="Información de la variable" onCerrar={onCerrar}>
       <div className="info-cuerpo">
         <h2>{meta.n}</h2>
-        <p className="note">{meta.cat.join(" › ")}</p>
+        <p className="note">{rutaPublica(meta.cat).join(" › ")}</p>
         <p>{meta.desc || ""}</p>
         <table className="ficha"><tbody>
           {meta.nTecnico && meta.nTecnico !== meta.n && <tr><td>Nombre técnico</td><td>{meta.nTecnico}</td></tr>}
@@ -74,7 +74,7 @@ function Info({ id, onCerrar }: { id: string; onCerrar: () => void }) {
           <tr><td>Se puede ver</td><td>{meds}{meta.agg ? " · por habitante · % del PIB" : ""}{motor.relPermitido(meta) ? " · en términos de otra variable" : ""}</td></tr>
           <tr><td>Bueno o malo</td><td>{meta.dir > 0 ? "Que suba es bueno" : meta.dir < 0 ? "Que suba es malo" : "Neutro"}</td></tr>
         </tbody></table>
-        {meta.cat.map((c) => INFO_CAT[c] ? (
+        {rutaPublica(meta.cat).map((c) => INFO_CAT[c] ? (
           <details key={c}><summary>Sobre &quot;{c}&quot;</summary><div className="info-cat" dangerouslySetInnerHTML={{ __html: INFO_CAT[c] }} /></details>
         ) : null)}
       </div>
@@ -124,7 +124,7 @@ export function Picker({ pedido, onCerrar }: { pedido: PickerPedido; onCerrar: (
   useEffect(() => { inp.current?.focus(); }, []);
   // `sub`: lo que el pedido permite; el árbol lista una sola serie por rubro o producto (la región se elige después en "Configurar variable")
   const sub = useMemo(() => (pedido.filtro ? metas.filter(pedido.filtro) : metas), [metas, pedido.filtro]);
-  const raiz = useMemo(() => armarArbol(listables(sub), (s) => catListado(s, sub)), [sub]);
+  const raiz = useMemo(() => armarArbol(ordenarListado(listables(sub), (s) => catListado(s, sub)), (s) => catListado(s, sub)), [sub]);
   const elegir = (id: string, med?: string, esc?: string) => { onCerrar(); pedido.cb(id, med, esc); };
   const qn = norm(q.trim());
 
@@ -147,7 +147,7 @@ export function Picker({ pedido, onCerrar }: { pedido: PickerPedido; onCerrar: (
     cuerpo = res.slice(0, 150).map(([, s]) => (
       <li key={s.id}>
         <button type="button" title={s.desc || ""} onClick={() => elegir(s.id)}>
-          <span>{s.n}<span className="ruta">{s.cat.join(" › ")} · {s.u}</span></span>
+          <span>{s.n}<span className="ruta">{rutaPublica(s.cat).join(" › ")} · {s.u}</span></span>
           <Insignia s={s} esIndice={motor ? motor.esIndice(s) : false} />
         </button>
         <BotonInfo id={s.id} />

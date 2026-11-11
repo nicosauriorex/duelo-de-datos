@@ -2,6 +2,8 @@
 // Cada tema junta categorías del catálogo (`cat[0]`), tiene indicadores principales y los grupos de plantillas que le corresponden.
 import { INFO_CAT, INFO_CORTA } from "./info";
 import { medDefaultDe, type Expr, type SerieMeta } from "./motor";
+import { esIndicadorIpc } from "./regiones";
+import { rutaPublica } from "./nombres";
 import { encExpr } from "./url";
 
 interface DefPrincipal { id: string; nombre: string; corto: string; med?: string; esc?: string }
@@ -90,9 +92,12 @@ export const todosLosPrincipales = (S: Record<string, SerieMeta>): Principal[] =
 export const idsDe = (e: Expr): string[] => [e.id, ...(e.rel ? [e.rel] : [])];
 
 export const seriesDe = (t: Tema, metas: SerieMeta[]): SerieMeta[] => metas.filter((s) => t.cats.includes(s.cat[0]));
-/** Subgrupo dentro del tema (`cat[1]`; con varias categorías se antepone la categoría). Sin subgrupo: "Generales". */
-export const subgrupoDe = (t: Tema, s: SerieMeta): string =>
-  t.cats.length > 1 ? (s.cat[1] ? `${s.cat[0]} › ${s.cat[1]}` : s.cat[0]) : s.cat[1] ?? "Generales";
+/** Subgrupo dentro del tema (`cat[1]` con su nombre público; con varias categorías se antepone la categoría). Sin subgrupo: "Generales".
+ *  Bienes, Servicios, Estacional, Núcleo y Regulados van con los indicadores de inflación. */
+export const subgrupoDe = (t: Tema, s: SerieMeta): string => {
+  const c = esIndicadorIpc(s.id) ? [s.cat[0], "Indicadores de inflación"] : rutaPublica(s.cat);
+  return t.cats.length > 1 ? (c[1] ? `${c[0]} › ${c[1]}` : c[0]) : c[1] ?? "Generales";
+};
 
 /** Link a Histórico con una variable (medida ya elegida). */
 export const hrefHistorico = (e: Expr, extra: Record<string, string> = {}): string =>

@@ -3,6 +3,8 @@ name: Actualizar datos y publicar
 on:
   schedule:
     - cron: "0 0 * * *" # 21:00 en Argentina
+    - cron: "10 19 * * 1-5" # 16:10 en Argentina, días hábiles: el IPC de INDEC sale a las 16:00
+    - cron: "15 20 * * 1-5" # 17:15 en Argentina, días hábiles: el parte diario del BCRA (reservas, compras, tasas) sale entre 16:45 y 17:00
   push:
     branches: [main]
     paths:

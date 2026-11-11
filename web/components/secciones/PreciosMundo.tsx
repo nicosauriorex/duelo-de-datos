@@ -2,7 +2,8 @@
 // Bloque "Precios en el mundo" de Contexto (bloque 6c): cuánto cuesta cada rubro en la Argentina contra el mundo, en dólares.
 import { useEffect, useMemo } from "react";
 import { usePreciosMundo } from "../usePreciosMundo";
-import { Cargando, Seg } from "../ui";
+import { Cargando, Selector, Seg } from "../ui";
+import { BotonLink } from "../BotonLink";
 import { Grafico, type OpcionesG, type SerieG } from "../Grafico";
 import { PALETA } from "../util";
 import { fmtMes, nf0, nf1, ok } from "@/lib/formato";
@@ -30,26 +31,30 @@ function Cuerpo({ m, d, p, set }: { m: Motor; d: DatosPM; p: URLSearchParams; se
   const dolar = unoDe<Dolar>(p.get("pmd"), ["oficial", "blue"], "oficial");
   const arg = useMemo(() => argDesdeMotor(m, d), [m, d]);
   const tabla = useMemo(() => tablaRubros(d, arg, dolar), [d, arg, dolar]);
-  const rid = p.get("pmr") && d.rubros[p.get("pmr") as string] ? (p.get("pmr") as string) : null;
+  // el gráfico de líneas siempre muestra un rubro: el elegido en la URL o, si no hay, el consumo total
+  const ids = Object.keys(d.rubros);
+  const rid = p.get("pmr") && d.rubros[p.get("pmr") as string] ? (p.get("pmr") as string) : d.rubros.total ? "total" : ids[0];
   const hayBlue = !!m.SER.fx_blue;
   return (
     <div className="card" id="precios-mundo">
-      <h2>Precios en el mundo</h2>
+      <div className="cab-bloque"><h2>Precios en el mundo</h2><BotonLink id="precios-mundo" titulo="Primero los Datos: precios en el mundo" /></div>
       <p className="note">¿Es más caro o más barato en la Argentina que afuera, en dólares? Cada rubro se compara con el promedio del mundo (= 100): arriba de 100 es más caro que el promedio; abajo, más barato.</p>
       <div className="controls">
         <label>Dólar para los precios argentinos</label>
         <Seg valor={dolar} opciones={DOLARES} onElegir={(v) => set({ pmd: v === "oficial" ? null : v })} />
       </div>
       {dolar === "blue" && !hayBlue && <p className="note" role="status">Todavía no hay serie de dólar blue: se usa el oficial.</p>}
-      <div className="callout">
-        <b>Cómo leerlo:</b> «medido» es lo que midió el Banco Mundial (Programa de Comparación Internacional, ICP: {aniosMedidos(d).join(", ")}). «Estimado» es nuestra cuenta mes a mes desde la última medición, con la inflación del rubro y el tipo de cambio de cada país. Lo estimado puede desviarse de la próxima medición.
-        {" "}Con cepo o brecha alta, el nivel en dólares depende mucho del dólar elegido. No se comparan calidades ni impuestos por separado.
+      <details className="contexto-plegado">
+        <summary>Cómo leerlo</summary>
+        <p className="note">«Medido» es lo que midió el Banco Mundial (Programa de Comparación Internacional, ICP: {aniosMedidos(d).join(", ")}). «Estimado» es nuestra cuenta mes a mes desde la última medición, con la inflación del rubro y el tipo de cambio de cada país. Lo estimado puede desviarse de la próxima medición.
+          {" "}Con cepo o brecha alta, el nivel en dólares depende mucho del dólar elegido. No se comparan calidades ni impuestos por separado.</p>
+      </details>
+      <div id="pm-detalle">
+        {rid && <Detalle d={d} rid={rid} dolar={dolar} arg={arg} p={p} set={set} />}
       </div>
+      <p className="note">Tocá un rubro de las listas para verlo arriba, en el gráfico.</p>
       <Filas titulo="Por rubro" filas={tabla.divisiones} rid={rid} set={set} />
       <Filas titulo="Algunos productos" filas={tabla.productos} rid={rid} set={set} />
-      <div id="pm-detalle">
-        {rid ? <Detalle d={d} rid={rid} dolar={dolar} arg={arg} p={p} set={set} /> : <p className="note">Tocá un rubro para ver su evolución contra el mundo y otros países.</p>}
-      </div>
       <p className="note">Fuente: {d.fuente}. La zona euro es el promedio simple de Alemania, Francia, Italia y España en lo medido, y el índice armonizado de la zona en lo estimado.</p>
     </div>
   );
@@ -66,7 +71,7 @@ function Filas({ titulo, filas, rid, set }: { titulo: string; filas: ResumenRubr
           const caro = f.nivel >= 100;
           return (
             <button key={f.rid} type="button" role="listitem" className="pm-fila" aria-pressed={rid === f.rid}
-              onClick={() => { set({ pmr: rid === f.rid ? null : f.rid }); }}>
+              onClick={() => { set({ pmr: f.rid === "total" ? null : f.rid }); document.getElementById("pm-detalle")?.scrollIntoView({ block: "start" }); }}>
               <span className="pm-n">{f.n}<small>{fecha(f)}</small></span>
               <span className="pm-barra" aria-hidden>
                 <span className="pm-medio" />
@@ -113,6 +118,10 @@ function Detalle({ d, rid, dolar, arg, p, set }: { d: DatosPM; rid: string; dola
   return (
     <>
       <h3>{r.n}: Argentina contra el mundo</h3>
+      <div className="controls">
+        <label>Rubro</label>
+        <Selector etiqueta="Rubro" valor={rid} opciones={Object.keys(d.rubros).map((k) => [k, d.rubros[k].n] as [string, string])} onElegir={(v) => set({ pmr: v === "total" ? null : v })} />
+      </div>
       <p className="note">Nivel de precios en dólares, mundo = 100. Los círculos son lo medido por el ICP; la línea punteada, lo estimado. Cuando llega una medición nueva la línea salta a ese valor: no se corrige el pasado.</p>
       <div className="controls">
         <label>Países</label>

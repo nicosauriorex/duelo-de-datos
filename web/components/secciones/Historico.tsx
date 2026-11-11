@@ -1,5 +1,5 @@
 "use client";
-import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useSeccion } from "../useSeccion";
 import { BarraPlantilla, usePlantillaVista } from "./BarraPlantilla";
 import { BotonCompartir } from "../PanelCompartir";
@@ -7,7 +7,6 @@ import { Cargando, Desplegable, Modal, Selector, Seg, alternar } from "../ui";
 import { FilaVariable, RenglonVariable } from "../Variables";
 import { Grafico, hayDatos, type Fila, type Marca, type OpcionesG, type Ref, type SerieG, type TipoRef } from "../Grafico";
 import { PALETA, vcolor } from "../util";
-import { useDeslizable } from "../Movimiento";
 import { fmtMes, MESES, nf0, nf1, ok } from "@/lib/formato";
 import type { Calculo, Expr, Motor } from "@/lib/motor";
 import { PRES_DEF, aBase100, claseVariacion, estadisticasRows, etiqueta, filasGrafico, franjasPres, type EstRows } from "@/lib/estadisticas";
@@ -17,7 +16,12 @@ import { fmtEjeDe, notaInflacion, tituloGrafico, type VistaImg } from "@/lib/ima
 import { useConfig } from "../ConfigProvider";
 import { baseDeConfig, medidaPreferida } from "@/lib/config";
 import { encExpr, useParams } from "@/lib/url";
+import { avisoTabla, copiarTexto } from "@/lib/compartir";
+import { filasDeTabla, tablaATexto, type ColTabla } from "@/lib/tabla-texto";
 import { IconoCompartir } from "../Iconos";
+
+/** Los parámetros de la vista que "Volver a lo de fábrica" borra (todos menos `v`, `pl` y `pn`). */
+const PARAMS_FABRICA = ["d", "h", "ms", "f", "ag", ...PG.filter((k) => k !== "v")];
 
 const REFS_H = [
   { k: "ult", letra: "Último", corto: "Últ.", nom: "Último", btn: "Último", dash: "1 3", val: (s: EstRows): [number, string?] => s.ult },
@@ -35,6 +39,7 @@ interface Simple {
   titulo: string | null;          // el de la plantilla, si la vista viene de una
   abierto: boolean; onAlternar: () => void;
   fecha: ReactNode; frecuencia: ReactNode; acciones: ReactNode; agregar: ReactNode;   // lo que va dentro de las ventanas de Personalizar
+  alFabrica?: () => void;         // "Volver a lo de fábrica": solo si la vista cambió respecto de la de fábrica
 }
 
 export function Historico() {
@@ -112,11 +117,19 @@ export function Historico() {
     <p><button type="button" className="btn" onClick={() => setVacios(vacios + 1)}>+ Agregar gráfico ({total} de {MAX_GRAFICOS})</button></p>
   );
   if (total === 1) {
+    // ¿Algo cambió respecto de lo de fábrica? Se compara lo que se ve (período, frecuencia, meses, opciones del gráfico), no los parámetros escritos.
+    const pBase = new URLSearchParams(); if (p.get("v")) pBase.set("v", p.get("v") as string);
+    const E0 = leerComun(pBase, m.F, config.desde), g = G[0].g, g0 = leerGrafico(pBase, 0, existe, defExpr);
+    const mismos = (a: Set<unknown>, b: Set<unknown>) => a.size === b.size && [...a].every((x) => b.has(x));
+    const franjasDe = (pf: string) => (pf === "1" ? true : pf === "0" ? false : config.franjas);
+    const hayCambios = !!g0 && (E.desde !== E0.desde || E.hasta !== E0.hasta || E.freq !== E0.freq || E.ag !== E0.ag || !mismos(E.meses, E0.meses)
+      || g.modo !== g0.modo || g.escala !== g0.escala || g.banda !== g0.banda || g.eje !== g0.eje || g.tabla !== g0.tabla || !mismos(g.refs, g0.refs) || franjasDe(g.pf) !== franjasDe(g0.pf));
     // Vista simple: el dato, su contexto y el gráfico; los controles de siempre quedan en "Personalizar".
     const simple: Simple = {
       titulo: info.titulo, abierto: config.personalizar, onAlternar: () => cambiarConfig({ personalizar: !config.personalizar }),
       fecha: <ControlesFecha E={E} set={cambiar} F={m.F} />, frecuencia: <ControlesFrecuencia E={E} set={cambiar} />,
       acciones: <BarraPlantilla p={p} set={set} info={info} simple />, agregar: agregarBtn,
+      alFabrica: hayCambios ? () => set(Object.fromEntries(PARAMS_FABRICA.map((k) => [k, null]))) : undefined,   // deja la variable (v) y la plantilla (pl, pn) si están
     };
     return (
       <section className="vista-simple">
@@ -220,7 +233,7 @@ function BloqueGrafico({ i, total, compacto, g, E, m, set, version, onQuitar, on
 
 /** La vista de un gráfico tal como se ve (variables ya cargadas, período y frecuencia), para armar la imagen de compartir. */
 const vistaImg = (E: Comun, g: GEst, exprs: Expr[], titulo?: string): VistaImg =>
-  ({ exprs, modo: g.modo, eje: g.eje, desde: E.desde, hasta: E.hasta, meses: E.meses, freq: E.freq, ag: E.ag, titulo });
+  ({ exprs, modo: g.modo, eje: g.eje, desde: E.desde, hasta: E.hasta, meses: E.meses, freq: E.freq, ag: E.ag, titulo, tabla: g.tabla === "tabla" });
 
 // ------------------------------------------------------------ barra fija: período + Mes / Trimestre / Año
 const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -333,14 +346,24 @@ function CardGrafico({ titulo, temporal, nota, leyenda, visibles, config, rows, 
   const elegirVista = (v: string) => (onVista ? onVista(v as Vista) : setVistaL(v as Vista));
   const hay = hayDatos(rows, series, opts);
   const cab = leyenda ?? null;
+  const [avisoT, setAvisoT] = useState<string | null>(null);
+  const copiarTabla = async () => {
+    const cols: ColTabla[] = series.map((se) => ({ key: se.key, name: se.name, unidad: unidades?.[se.key], fmt: se.fmt || opts.fmtTip }));
+    const r = await copiarTexto(tablaATexto(cols, filasDeTabla(rows, cols), window.location.href));
+    setAvisoT(avisoTabla(r)); setTimeout(() => setAvisoT(null), 4000);
+  };
   const tabla = vista === "tabla"
-    ? (rows.length && hay ? (
+    ? (rows.length && hay ? (<>
+      <div className="tabla-acciones">
+        <button type="button" className="btn" onClick={copiarTabla}>Copiar tabla</button>
+        {avisoT && <span className="note" role="status" style={{ margin: 0 }}>{avisoT}</span>}
+      </div>
       <div className="tablewrap tabla-graf"><table>
         <thead><tr><th>Período</th>{series.map((se) => <th key={se.key}>{se.name}{unidades?.[se.key] && <small>{unidades[se.key]}</small>}</th>)}</tr></thead>
         <tbody>{rows.slice().reverse().map((r) => (
           <tr key={r.fecha + (r.per || "")}><td>{etiqueta(r)}</td>{series.map((se) => <td key={se.key}>{ok(r[se.key]) ? (se.fmt || opts.fmtTip)(r[se.key]) : "–"}</td>)}</tr>
         ))}</tbody>
-      </table></div>
+      </table></div></>
     ) : <p className="note">Sin datos para esta selección.</p>)
     : null;
   if (simple) {
@@ -374,17 +397,11 @@ function CardGrafico({ titulo, temporal, nota, leyenda, visibles, config, rows, 
   );
 }
 
-// ------------------------------------------------------------ resumen: tarjetas (≥ 640 px) y chips (celular)
-/** Fila de resumen en un solo renglón: si no entra se desliza de costado (con sombra en el borde) y hace un paseo lento de ida y vuelta la primera vez que se ve. */
-function FilaResumen({ className, children, etiqueta = "Resumen" }: { className: string; children: ReactNode; etiqueta?: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useDeslizable(ref, true);
-  return <div className={className} ref={ref} role="group" aria-label={etiqueta} tabIndex={0}>{children}</div>;
-}
-
-/** Tarjetas "Comparado con el último dato": cada una con su valor (y su mes si corresponde) y cuánto está el último por encima o por debajo. */
-interface DefResumen { tit: string; val: (s: EstRows) => number; fecha?: (s: EstRows) => string | undefined }
+// ------------------------------------------------------------ resumen del período: seis celdas fijas
+/** Celdas de "Resumen del período": cada una con su valor (y su mes si corresponde) y, salvo el último dato, cuánto está el último por encima o por debajo. */
+interface DefResumen { tit: string; val: (s: EstRows) => number; fecha?: (s: EstRows) => string | undefined; ultimo?: boolean }
 const DEFS_RES: DefResumen[] = [
+  { tit: "Último dato", val: (s) => s.ult[0], fecha: (s) => s.ult[1], ultimo: true },
   { tit: "Inicio del período", val: (s) => s.pri[0], fecha: (s) => s.pri[1] },
   { tit: "Promedio", val: (s) => s.prom },
   { tit: "Mediana", val: (s) => s.med },
@@ -483,7 +500,15 @@ function Principal({ m, E, set, version, compacto, simple }: { m: Motor; E: Esta
       {!b100 && (
         <div className="controls">
           {grupo("Líneas", <Seg valor={E.refs} opciones={REFS_H.map((r) => [r.k, r.btn] as [string, string])} onElegir={refsToggle} />)}
+        </div>
+      )}
+      {!b100 && (
+        <div className="controls">
           {grupo("Marcadores", <Seg valor={E.refs} opciones={[["mk_ult", "Último"], ["mk_max", "Máximo"], ["mk_min", "Mínimo"]]} onElegir={refsToggle} />)}
+        </div>
+      )}
+      {!b100 && hayBanda && (
+        <div className="controls">
           {hayBanda && grupo("Rango", <Seg valor={E.banda} opciones={[["no", "Solo promedio"], ["si", "Con mín/máx"]]} onElegir={(v) => set({ bd: v === "no" ? null : v })} />)}
         </div>
       )}
@@ -492,7 +517,7 @@ function Principal({ m, E, set, version, compacto, simple }: { m: Motor; E: Esta
   const leyenda = <div className="legend">{lista.length > 1 && lista.map((o) => <span key={o.key} style={vcolor(o.color)}>{o.c.corto}{o.axis ? " (eje der.)" : ""}</span>)}</div>;
   const unidades = Object.fromEntries(lista.map((o) => [o.key, b100 ? "base 100" : o.c.unidad]));
 
-  // Resumen: "Último dato" fijo y, al lado, las comparaciones del último contra cada referencia (siempre de la primera variable)
+  // Resumen del período: seis celdas fijas; la frase de cada una compara el último dato con ella (siempre de la primera variable)
   const o0 = lista[0], s0 = st[0];
   const tarjeta = (def: DefResumen) => {
     if (!s0) return null;
@@ -500,7 +525,7 @@ function Principal({ m, E, set, version, compacto, simple }: { m: Motor; E: Esta
     return (
       <div className="tile" key={def.tit}><div className="k">{def.tit}</div>
         <div className="v">{m.fmtC(o0.c, desde)}</div>
-        <div className="d">{f ? <>{f}<br /></> : null}<b className={`var-${claseVariacion(o0.c.dir, o0.c.pct, desde, hasta)}`}>{fraseUltimoVs(o0.c.pct, desde, hasta) || "–"}</b></div></div>
+        <div className="d">{f ?? null}{def.ultimo ? null : <>{f ? <br /> : null}<b className={`var-${claseVariacion(o0.c.dir, o0.c.pct, desde, hasta)}`}>{fraseUltimoVs(o0.c.pct, desde, hasta) || "–"}</b></>}</div></div>
     );
   };
   const resumen = b100 ? (
@@ -519,14 +544,9 @@ function Principal({ m, E, set, version, compacto, simple }: { m: Motor; E: Esta
     </div>
   ) : s0 ? (
     <div className="resumen">
+      <h2 className="res-titulo">Resumen del período</h2>
       {multi && <p className="note resumen-de">Resumen de: {o0.c.corto}</p>}
-      <div className="res-fila">
-        <div className="tile tile-ult"><div className="k">Último dato</div><div className="v">{m.fmtC(o0.c, s0.ult[0])}</div><div className="d">{s0.ult[1]}</div></div>
-        <div className="res-comp">
-          <p className="res-rotulo">Comparado con el último dato</p>
-          <FilaResumen className="tiles res-cmp" etiqueta="Comparado con el último dato">{DEFS_RES.map(tarjeta)}</FilaResumen>
-        </div>
-      </div>
+      <div className="res-grilla" role="group" aria-label="Resumen del período">{DEFS_RES.map(tarjeta)}</div>
     </div>
   ) : null;
   const onVista = (v: Vista) => set({ t: v === "tabla" ? "tabla" : null });
@@ -535,7 +555,7 @@ function Principal({ m, E, set, version, compacto, simple }: { m: Motor; E: Esta
     // Contexto del dato: solo con una variable, en mensual y sin base 100 (admiteContexto); si no, la cifra de cada variable.
     const ctx = lista.length === 1 && !b100 ? contextoDato(m, E.exprs[0], admiteContexto({ variables: 1, modo: E.modo, freq: E.freq })) : null;
     const nombre = simple.titulo ?? titulo;
-    const vista = { exprs: E.exprs, modo: E.modo, eje: E.eje, desde: E.desde, hasta: E.hasta, meses: E.meses, freq: E.freq, ag: E.ag, titulo: simple.titulo ?? undefined } satisfies VistaImg;
+    const vista = { exprs: E.exprs, modo: E.modo, eje: E.eje, desde: E.desde, hasta: E.hasta, meses: E.meses, freq: E.freq, ag: E.ag, titulo: simple.titulo ?? undefined, tabla: E.tabla === "tabla" } satisfies VistaImg;
     return (
       <>
         <div className="vs-cab">
@@ -566,6 +586,7 @@ function Principal({ m, E, set, version, compacto, simple }: { m: Motor; E: Esta
               <button type="button" className="btn" aria-haspopup="dialog" onClick={() => setVentanaP("variable")}>Elegir variable</button>
               <button type="button" className="btn" aria-haspopup="dialog" onClick={() => setVentanaP("opciones")}>{cuenta ? `Opciones del gráfico (${cuenta})` : "Opciones del gráfico"}</button>
             </div>
+            {simple.alFabrica && <div className="vs-fabrica"><button type="button" className="btn" onClick={simple.alFabrica}>Volver a lo de fábrica</button></div>}
             <div className="vs-secundarios">{simple.acciones}</div>
           </div>
         )}

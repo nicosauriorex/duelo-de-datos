@@ -195,6 +195,35 @@ Decisiones del usuario (2026-11-11): los nombres públicos los propone Claude y 
 - "Plantillas" pasa a "Gráficos listos", con filtros por tema.
 - Detalles de lectura que marcó la revisión con agentes: rótulos U/P/M, colores de presidentes parecidos, notas al pie dentro del área deslizable, vista previa chica de la imagen.
 
+## ~~Ajustes pedidos al recorrer la página, tanda 3 (2026-11-11)~~ ✅ 2026-11-11
+→ spec: docs/specs/ajustes-tanda-3.md (bloque 5i). Pendiente aparte: el parte diario del BCRA como bloque propio (compra de divisas del día, tipo de cambio minorista), que necesita datos diarios.
+**Datos al día (prioridad)**
+1. La inflación quedó en ago-26 y ya salió septiembre (antes del 2026-11-10 el sitio mostraba sep-26: revisar qué fuente del IPC manda en la corrida de GitHub). Capturar los datos a la hora en que se publican: IPC de INDEC (segunda semana del mes, 16 h) y el parte diario del BCRA (16:45 a 17 h: reservas, compra de divisas, tipo de cambio minorista, TAMAR, BADLAR). Sirve para comentar y difundir el sitio en ese momento.
+**Portada y temas**
+2. En "Los datos más buscados", actividad económica en lugar de kilos de asado (definir si son fijas o las más vistas).
+3. La placa del dólar blue tiene otro formato ("-13,3 % contra hace un año" resaltado); en la de inflación la fecha a veces se parte ("AGO" / "26").
+4. Página de tema: la cabecera se ve mal (tarjeta del dato principal suelta a la derecha y una sola tarjeta en "Principales"). Rediseñar.
+5. Tema de precios: "IPC nivel general (Nacional)" repite la inflación; llevar Bienes, Servicios, Estacional, Núcleo y Regulados a "Indicadores de inflación"; renombrar "IPC INDEC" a "IPC por rubros"; ordenar bien los rubros (hoy 01, 04, 06, 07, 02, 03) y los precios promedio.
+7. En el tema, la tabla por presidente con las demás variables principales (elegibles o rotando sola).
+**Histórico y gráfico**
+6. Las tarjetas "Último dato" + "Comparado con el último dato" quedan feas (peor en celular): rediseñar.
+11. En Personalizar, un botón para volver a lo de fábrica (limpiar filtros).
+12. "Regulados" debería encontrarse como servicios públicos. En índices del IPC es redundante "Precio relativo (contra la inflación general)" junto a "Nominal / Real": dejar una sola forma (probable: nominal y real, con mensual, interanual, etc.).
+13. Con la vista en Tabla, Compartir comparte el gráfico: preguntar (copiar tabla o pasar a gráfico). Ícono para copiar la tabla, con la URL del sitio como última fila. En Opciones del gráfico, "Líneas" y "Marcadores" quedan en el mismo renglón.
+**Nombres**
+8. "Soja: Rosario contra Chicago (dólar X)" → que diga "Brecha".
+**Imagen compartible**
+9. Poder elegir cuál de las frases automáticas va en la imagen (contra el promedio, el inicio, el récord, hace un año…).
+**Preguntale a los datos**
+10. Elegir producto más directo: todos los ítems desplegados con separadores (canastas, precios promedio por categoría, dólares). El desplegable del salario se va de pantalla al deslizar. "¿Cómo le fue a el riesgo país?" → "al". Esa oración debería mostrar también un gráfico del mandato, no solo la tabla. "¿Cuánto vale… en dólares blue?" → "¿Cómo evolucionó…?".
+**Presidentes**
+14. Tabla Por presidente: no se entiende cómo se llena la barra. Opciones: eje en cero cuando hay negativos; o de izquierda a derecha con el mejor lleno y el peor vacío; degradado rojo-amarillo-verde entre presidentes. Sumar una vista tipo vela japonesa acostada (inicio, cierre, mínimo, máximo).
+15. "Un presidente, todas las variables": "Contraer todas" fuera de Personalizar y todo contraído al entrar; filtro por tipo de variable y buscador a la vista; Personalizar solo para columnas y moneda. "Mis variables" con el mismo formato que "Todas" y modo edición aparte (subir, bajar, editar, quitar; Guardar). Con un solo presidente, decir el mes exacto de inicio y de cierre en lugar de la oración general.
+16. Ranking: "Puntaje combinado" desplegado, pero abajo.
+17. Meses de mandato: configuración en botones (variable; cómo mostrar: variación %, precio teórico, valor; presidentes), sin "índice base 100" (igual a variación %); explicar que el precio teórico es la misma variación valorizada. **Error**: Milei muestra el mes 0 en 366,4 aunque tenga T+1. **Error**: después de animar hasta el final, achicar "Hasta" tira "Algo falló al mostrar esta página". La imagen tiene demasiado texto; opción de mostrar el último dato a ese mes de mandato.
+18. Elecciones: explicaciones plegadas o con ícono de información. En los gráficos de dispersión falta a veces el dato actual (rombo) y su valor marcado en el eje Y.
+19. Contexto: faltan botones de compartir; falta un gráfico de líneas con los precios por producto de Argentina contra otros países.
+
 ## Correcciones pedidas (2026-11-09)
 → spec: docs/specs/correcciones-historico.md
 Son ajustes a lo ya hecho, no ideas nuevas.
