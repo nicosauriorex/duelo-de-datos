@@ -22,15 +22,15 @@ const largoDe = (...cats: string[]) => cats.map((c) => INFO_CAT[c]).filter(Boole
 export const TEMAS: Tema[] = [
   { slug: "precios", nombre: "Precios e inflación", cats: ["Precios"], corto: INFO_CORTA["Precios"].texto, largo: largoDe("Precios"),
     principales: [
-      { id: "inflacion", nombre: "Inflación mensual", corto: "la inflación" },
+      { id: "ipc_empalme", nombre: "Inflación mensual", corto: "la inflación", med: "vm" },
       { id: "ipc_empalme", nombre: "Inflación interanual", corto: "la inflación interanual", med: "via" },
     ], grupos: ["Precios contra la inflación"], q: "inflación", desc: "Inflación mensual e interanual, índices por rubro y región, y precio de productos concretos en Argentina." },
   { slug: "salarios", nombre: "Salarios y jubilaciones", cats: ["Salarios"], corto: INFO_CORTA["Salarios"].texto, largo: largoDe("Salarios"),
     principales: [
-      { id: "sipa_med", nombre: "Salario SIPA mediana (real)", corto: "el salario real" },
-      { id: "smvm", nombre: "Salario mínimo (real)", corto: "el salario mínimo real" },
-      { id: "jub_min_bono", nombre: "Jubilación mínima con bono (real)", corto: "la jubilación mínima" },
-      { id: "dg_149_1_tl_indiios_octu_0_21", nombre: "Índice de salarios INDEC, total (real)", corto: "el índice de salarios", med: "real" },
+      { id: "sipa_med", nombre: "Salario mediano real (trabajadores registrados)", corto: "el salario real" },
+      { id: "smvm", nombre: "Salario mínimo real", corto: "el salario mínimo real" },
+      { id: "jub_min_bono", nombre: "Jubilación mínima con bono real", corto: "la jubilación mínima" },
+      { id: "dg_149_1_tl_indiios_octu_0_21", nombre: "Índice de salarios real (todos los trabajadores)", corto: "el índice de salarios", med: "real" },
     ], grupos: ["Salarios", "Poder de compra"], q: "salario", desc: "Salarios registrados, salario mínimo, jubilación mínima y su poder de compra, con datos oficiales." },
   { slug: "dolar", nombre: "Dólar", cats: ["Dólar y tipo de cambio"], corto: INFO_CORTA["Dólar y tipo de cambio"].texto, largo: largoDe("Dólar y tipo de cambio"),
     principales: [
@@ -41,8 +41,8 @@ export const TEMAS: Tema[] = [
   { slug: "actividad", nombre: "Actividad económica", cats: ["Actividad"], corto: INFO_CORTA["Actividad"].texto, largo: largoDe("Actividad"),
     principales: [
       { id: "dg_143_3_no_pr_2004_a_31", nombre: "Actividad económica (EMAE)", corto: "la actividad económica" },
-      { id: "dg_3_2_ogp_d_2004_t_17", nombre: "PIB real", corto: "el PIB" },
-      { id: "dg_3_2_ogp_d_2004_t_17", nombre: "PIB real por habitante", corto: "el PIB por habitante", esc: "pc" },
+      { id: "dg_3_2_ogp_d_2004_t_17", nombre: "PIB (producción total del país)", corto: "el PIB" },
+      { id: "dg_3_2_ogp_d_2004_t_17", nombre: "PIB por habitante", corto: "el PIB por habitante", esc: "pc" },
       { id: "dg_453_1_serie_deseada_0_0_24_58", nombre: "Producción industrial", corto: "la producción industrial" },
     ], grupos: ["Actividad"], q: "actividad", desc: "Actividad económica mensual (EMAE), PIB, producción industrial y construcción de Argentina." },
   { slug: "empleo", nombre: "Empleo y pobreza", cats: ["Empleo, pobreza e ingresos"], corto: INFO_CORTA["Empleo, pobreza e ingresos"].texto, largo: largoDe("Empleo, pobreza e ingresos"),
@@ -60,13 +60,13 @@ export const TEMAS: Tema[] = [
     ], grupos: ["Sector externo"], q: "externo", desc: "Exportaciones, importaciones, saldo comercial, cuenta corriente y soja." },
   { slug: "fiscal", nombre: "Cuentas públicas", cats: ["Fiscal"], corto: INFO_CORTA["Fiscal"].texto, largo: largoDe("Fiscal"),
     principales: [
-      { id: "dg_379_9_superavit_017_23_94", nombre: "Resultado primario (% del PIB)", corto: "el resultado primario", esc: "pib" },
-      { id: "dg_379_9_resultado_017_18_38", nombre: "Resultado financiero (% del PIB)", corto: "el resultado financiero", esc: "pib" },
+      { id: "dg_379_9_superavit_017_23_94", nombre: "Resultado fiscal primario (% del PIB)", corto: "el resultado primario", esc: "pib" },
+      { id: "dg_379_9_resultado_017_18_38", nombre: "Resultado fiscal financiero (% del PIB)", corto: "el resultado financiero", esc: "pib" },
     ], grupos: ["Fiscal"], q: "fiscal", desc: "Resultado primario y financiero del sector público nacional, ingresos y gastos." },
   { slug: "finanzas", nombre: "Dinero, tasas y mercados", cats: ["Dinero y bancos (BCRA)", "Tasas de interés", "Mercados"],
     corto: "Reservas, tasas de interés y riesgo país: cómo están el dinero y los mercados.", largo: largoDe("Dinero y bancos (BCRA)", "Tasas de interés", "Mercados"),
     principales: [
-      { id: "bcra_1", nombre: "Reservas del BCRA (dólares de hoy)", corto: "las reservas", med: "usdr" },
+      { id: "bcra_1", nombre: "Reservas del Banco Central (dólares de hoy)", corto: "las reservas", med: "usdr" },
       { id: "riesgo", nombre: "Riesgo país", corto: "el riesgo país" },
       { id: "bcra_12", nombre: "Tasa de plazo fijo (real anual)", corto: "la tasa de plazo fijo", med: "real_a" },
     ], grupos: ["Dólar y mercados"], porCat: true, q: "mercados", desc: "Reservas del Banco Central, tasas de interés, riesgo país, depósitos y préstamos." },

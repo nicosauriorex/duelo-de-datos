@@ -1,5 +1,5 @@
 "use client";
-// Encabezado "Plantilla: …" de Histórico y botones Guardar como plantilla / Compartir / Ver plantillas.
+// Encabezado "Gráfico listo: …" de Histórico y botones Guardar en Mis gráficos / Compartir / Ver gráficos listos.
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useDatos } from "../DatosProvider";
@@ -26,8 +26,8 @@ export function usePlantillaVista(p: URLSearchParams): InfoVista {
   return { titulo: de ? de.titulo : pn || null, de, pn };
 }
 
-/** Encabezado "Plantilla: …" y botones Guardar como plantilla / Compartir / Ver plantillas. En la vista simple (`simple`) solo van
- *  Guardar como plantilla y Ver plantillas, dentro de "Personalizar" (el título y Compartir los pone la vista). */
+/** Encabezado "Gráfico listo: …" y botones Guardar en Mis gráficos / Compartir / Ver gráficos listos. En la vista simple (`simple`) solo van
+ *  Guardar en Mis gráficos y Ver gráficos listos, dentro de "Personalizar" (el título y Compartir los pone la vista). */
 export function BarraPlantilla({ p, set, info, simple }: { p: URLSearchParams; set: SetFn; info: InfoVista; simple?: boolean }) {
   const mis = useMisPlantillas();
   const [nombre, setNombre] = useState<string | null>(null); // null = formulario cerrado
@@ -43,30 +43,30 @@ export function BarraPlantilla({ p, set, info, simple }: { p: URLSearchParams; s
     if (!r.ok) { mostrar(r.aviso ?? null); return; }
     set({ pl: null, pn: nombre.trim().slice(0, MAX_NOMBRE) });
     setNombre(null);
-    mostrar(r.aviso ?? "Guardada en Mis plantillas");
+    mostrar(r.aviso ?? "Guardado en Mis gráficos");
   };
   const abrirCompartir = async () => mostrar(avisoCompartir(await compartir(window.location.href, titulo ?? "Primero los Datos: Histórico")));
   const guardarEnMis = !de && pn && !yaGuardada && nombre == null
-    ? <p style={{ margin: "4px 0 0" }}><button type="button" className="btn" onClick={() => setNombre(pn)}>Guardar en mis plantillas</button></p> : null;
+    ? <p style={{ margin: "4px 0 0" }}><button type="button" className="btn" onClick={() => setNombre(pn)}>Guardar en Mis gráficos</button></p> : null;
 
   return (
     <>
       {titulo && !simple && (
-        <div className="encabezado-plantilla" role="region" aria-label="Plantilla">
-          <p className="titulo-pl">Plantilla: {titulo}</p>
+        <div className="encabezado-plantilla" role="region" aria-label="Gráfico listo">
+          <p className="titulo-pl">Gráfico listo: {titulo}</p>
           {de && <p className="note" style={{ margin: 0 }}>{de.desc}</p>}
           {guardarEnMis}
         </div>
       )}
       {simple && guardarEnMis}
       <div className={`acciones-vista${simple ? " secundarias" : ""}`}>
-        <button type="button" className={simple ? "enlace" : "btn"} onClick={() => setNombre(nombre == null ? "" : null)} aria-expanded={nombre != null}>Guardar como plantilla</button>
+        <button type="button" className={simple ? "enlace" : "btn"} onClick={() => setNombre(nombre == null ? "" : null)} aria-expanded={nombre != null}>Guardar en Mis gráficos</button>
         {!simple && <button type="button" className="btn primario" onClick={abrirCompartir} title="El link muestra exactamente esta vista">Compartir</button>}
-        <Link prefetch={false} href="/plantillas/" className={simple ? "enlace" : "btn"}>Ver plantillas</Link>
+        <Link prefetch={false} href="/plantillas/" className={simple ? "enlace" : "btn"}>Ver gráficos listos</Link>
       </div>
       {nombre != null && (
         <form className="form-guardar" onSubmit={(ev) => { ev.preventDefault(); guardar(); }}>
-          <input type="text" value={nombre} maxLength={MAX_NOMBRE} autoFocus aria-label="Nombre de la plantilla" placeholder="Nombre (hasta 60 caracteres)"
+          <input type="text" value={nombre} maxLength={MAX_NOMBRE} autoFocus aria-label="Nombre del gráfico" placeholder="Nombre (hasta 60 caracteres)"
             onChange={(ev) => setNombre(ev.target.value)} />
           <button type="submit" className="btn on">Guardar</button>
           <button type="button" className="btn" onClick={() => setNombre(null)}>Cancelar</button>

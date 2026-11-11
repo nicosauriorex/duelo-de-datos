@@ -20,9 +20,9 @@ import { encExpr, useParams } from "@/lib/url";
 import { IconoCompartir } from "../Iconos";
 
 const REFS_H = [
-  { k: "ult", letra: "U", nom: "Último", btn: "U · Último", dash: "1 3", val: (s: EstRows): [number, string?] => s.ult },
-  { k: "prom", letra: "P", nom: "Promedio", btn: "P · Promedio", dash: "6 4", val: (s: EstRows): [number, string?] => [s.prom] },
-  { k: "med", letra: "M", nom: "Mediana", btn: "M · Mediana", dash: "2 3 8 3", val: (s: EstRows): [number, string?] => [s.med] },
+  { k: "ult", letra: "Último", corto: "Últ.", nom: "Último", btn: "Último", dash: "1 3", val: (s: EstRows): [number, string?] => s.ult },
+  { k: "prom", letra: "Promedio", corto: "Prom.", nom: "Promedio", btn: "Promedio", dash: "6 4", val: (s: EstRows): [number, string?] => [s.prom] },
+  { k: "med", letra: "Mediana", corto: "Med.", nom: "Mediana", btn: "Mediana", dash: "2 3 8 3", val: (s: EstRows): [number, string?] => [s.med] },
   { k: "max", letra: "↑", nom: "Máximo", btn: "↑ Máximo", dash: "4 2", val: (s: EstRows): [number, string?] => s.max },
   { k: "min", letra: "↓", nom: "Mínimo", btn: "↓ Mínimo", dash: "4 2", val: (s: EstRows): [number, string?] => s.min },
 ];
@@ -421,7 +421,7 @@ function Principal({ m, E, set, version, compacto, simple }: { m: Motor; E: Esta
       const s = st[k]; if (!s) return;
       REFS_H.filter((r) => E.refs.has(r.k)).forEach((r) => {
         const [v] = r.val(s);
-        refs.push({ v, axis: misma ? 0 : o.axis, color: o.color, letra: r.letra, dash: r.dash, key: o.key, tipo: r.k as TipoRef, nom: r.nom, quien: lista.length > 1 ? o.c.corto : undefined, fmt: fmtDe(o) });
+        refs.push({ v, axis: misma ? 0 : o.axis, color: o.color, letra: r.letra, corto: "corto" in r ? r.corto : undefined, dash: r.dash, key: o.key, tipo: r.k as TipoRef, nom: r.nom, quien: lista.length > 1 ? o.c.corto : undefined, fmt: fmtDe(o) });
       });
     });
     const tiposMk = new Set(["ult", "max", "min"].filter((k) => E.refs.has("mk_" + k)));

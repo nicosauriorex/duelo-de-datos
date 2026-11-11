@@ -28,7 +28,7 @@ interface DefCifra {
   contexto?: (m: Motor, p: Plantilla, ev: Evaluada) => Extra | null;
 }
 const CIFRAS: DefCifra[] = [
-  { titulo: "Inflación del último mes", e: ex("inflacion"), sinCurio: true,
+  { titulo: "Inflación del último mes", e: ex("ipc_empalme", { med: "vm" }), sinCurio: true,
     contexto: (m) => { const t = interanualTxt(m); return t ? { texto: `Interanual: ${t}`, cls: null } : null; } },
   { titulo: "Salario mediano contra su récord", e: ex("sipa_med", { med: "real" }),
     contexto: (m, p) => {
@@ -204,7 +204,7 @@ export function Inicio() {
   const [aviso, setAviso] = useState<string | null>(null);
   const S = useMemo(() => Object.fromEntries(metas.map((s) => [s.id, s])), [metas, listo]);   // eslint-disable-line react-hooks/exhaustive-deps
   const plantillas = useMemo(() => (listo ? crearPlantillas(metas) : []), [listo, metas]);
-  const destacadas = useMemo(() => plantillas.filter((x) => x.grupo === "Destacadas").slice(0, 6), [plantillas]);
+  const destacadas = useMemo(() => plantillas.filter((x) => x.grupo === "Destacados").slice(0, 6), [plantillas]);
 
   // Los links viejos a "/" traían parámetros de Histórico: se mandan allá con los mismos parámetros.
   if (montado && [...p.keys()].some((k) => !/^(utm_|fbclid$|gclid$)/.test(k))) return <Redireccion a="/historico/" />;
@@ -236,11 +236,11 @@ export function Inicio() {
 
       {destacadas.length > 0 && (
         <Entrada className="bloque ancho">
-          <h2>Plantillas destacadas</h2>
+          <h2>Gráficos listos destacados</h2>
           <p className="bajada-bloque">Gráficos ya armados para abrir y compartir.</p>
           {aviso && <p className="aviso-link" role="status">{aviso}</p>}
           <div className="curios">{destacadas.map((pl) => <Tarjeta key={pl.id} pl={pl} onAviso={mostrar} />)}</div>
-          <p className="acciones-vista"><Link prefetch={false} className="btn" href="/plantillas/">Ver todas las plantillas</Link></p>
+          <p className="acciones-vista"><Link prefetch={false} className="btn" href="/plantillas/">Ver todos los gráficos listos</Link></p>
         </Entrada>
       )}
 

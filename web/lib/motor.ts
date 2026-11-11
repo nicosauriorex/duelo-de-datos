@@ -1,12 +1,15 @@
 // Motor de cálculo: port tipado de las líneas "datos / medidas / calc" de src/app.js.
 // Una sola fuente de verdad: todas las secciones usan estas funciones.
 import { fmtMes, nf0, nf1, fmtNum, ok, lastIdx, mul } from "./formato";
+import { NOMBRES } from "./nombres";
 
 export type Vals = (number | null)[];
 export interface Banda { i0: number; v: (number | null)[] }
 export interface SerieMeta {
   id: string; n: string; cat: string[]; tipo: string; u: string; dir: number; fuente: string; desc: string;
   agg?: number; flujo?: number; archivo: string;
+  /** Nombre original del catálogo cuando `n` es el nombre público (ver nombres.ts). */
+  nTecnico?: string;
 }
 export interface SerieDatos { i0: number; v: (number | null)[]; min?: Banda; max?: Banda }
 export interface Serie extends SerieMeta {
@@ -56,7 +59,12 @@ export const FACTOR_U = (u: string): [number, string] =>
   /^millones de /.test(u) ? [1e6, u.replace(/^millones de /, "")] : /^miles de /.test(u) ? [1e3, u.replace(/^miles de /, "")] : [1, u];
 
 /** Las tasas nominales anuales llegan como tipo "none" con TNA en la unidad: se tratan como "tasa". */
-export const normalizarMeta = (m: SerieMeta): SerieMeta => (m.tipo === "none" && /TNA/.test(m.u) ? { ...m, tipo: "tasa" } : m);
+export function normalizarMeta(m: SerieMeta): SerieMeta {
+  let r = m.tipo === "none" && /TNA/.test(m.u) ? { ...m, tipo: "tasa" } : m;
+  const publico = NOMBRES[m.id];
+  if (publico && !r.nTecnico) r = { ...r, n: publico, nTecnico: m.n };   // idempotente: si ya tiene nombre técnico, ya se aplicó
+  return r;
+}
 
 export function expandir(i0: number, v: (number | null)[], N: number): Vals {
   const a: Vals = new Array(N).fill(null);
@@ -66,7 +74,8 @@ export function expandir(i0: number, v: (number | null)[], N: number): Vals {
 
 /** Medida por defecto de una serie (solo depende de su metadato: sirve sin tener los datos cargados). */
 export const medDefaultDe = (s: SerieMeta): string =>
-  s.tipo === "idx" && s.dir !== 1 && s.cat[0] === "Precios" ? "via"
+  s.id === "ipc_empalme" ? "vm"   // la entrada pública de la inflación: se abre mensual (la interanual es una opción)
+    : s.tipo === "idx" && s.dir !== 1 && s.cat[0] === "Precios" ? "via"
     : ({ ars: "real", idx: s.dir === 1 ? "real" : "corr", fx: "corr", usd: "corr" } as Record<string, string>)[s.tipo] || "asis";
 
 export function crearMotor(F: string[]) {

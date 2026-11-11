@@ -13,6 +13,7 @@ import { crearPres, statsMandato } from "@/lib/estadisticas";
 import { medidaInicial } from "@/lib/config";
 import { medDefaultDe, type SerieMeta } from "@/lib/motor";
 import { crearPlantillas, evaluar, plantillaSuelta, plantillasDeTema, type Evaluada } from "@/lib/plantillas";
+import { catListado, listables } from "@/lib/regiones";
 import { hrefHistorico, idsDe, principalesDe, seriesDe, subgrupoDe, type Principal, type Tema } from "@/lib/temas";
 import { encExpr, useParams } from "@/lib/url";
 
@@ -31,18 +32,17 @@ function Texto({ t }: { t: Tema }) {
   );
 }
 
-/** Lista de series; si son muchas, se abre por niveles según `cat[nivel]`. Los hijos se dibujan recién al abrir. */
-function Series({ series, nivel, href }: { series: SerieMeta[]; nivel: number; href: (s: SerieMeta) => string }) {
+/** Lista de series; si son muchas, se abre por niveles según la categoría (sin el nivel de región). Los hijos se dibujan recién al abrir. */
+function Series({ series, nivel, href, cat }: { series: SerieMeta[]; nivel: number; href: (s: SerieMeta) => string; cat: (s: SerieMeta) => string[] }) {
   const grupos = useMemo(() => {
     const m = new Map<string, SerieMeta[]>(), sueltas: SerieMeta[] = [];
-    if (series.length > POR_NIVEL) series.forEach((s) => { const k = s.cat[nivel]; if (k) { if (!m.has(k)) m.set(k, []); m.get(k)!.push(s); } else sueltas.push(s); });
+    if (series.length > POR_NIVEL) series.forEach((s) => { const k = cat(s)[nivel]; if (k) { if (!m.has(k)) m.set(k, []); m.get(k)!.push(s); } else sueltas.push(s); });
     return { m, sueltas: m.size ? sueltas : series };
-  }, [series, nivel]);
+  }, [series, nivel, cat]);
   return (
     <ul className="lista-series">
-      {[...grupos.m].map(([k, ss]) => <Desplegado key={k} titulo={k} cuenta={ss.length}><Series series={ss} nivel={nivel + 1} href={href} /></Desplegado>)}
-      {/* El índice (nivel) sigue existiendo para los cálculos; acá la inflación ya está como "Inflación mensual" e "Inflación interanual". */}
-      {grupos.sueltas.filter((s) => s.id !== "ipc_empalme").map((s) => (
+      {[...grupos.m].map(([k, ss]) => <Desplegado key={k} titulo={k} cuenta={ss.length}><Series series={ss} nivel={nivel + 1} href={href} cat={cat} /></Desplegado>)}
+      {grupos.sueltas.map((s) => (
         <li key={s.id}><Link prefetch={false} href={href(s)}>{s.n}</Link> <span className="unidad">{s.u}</span> <BotonInfo id={s.id} /></li>
       ))}
     </ul>
@@ -71,7 +71,9 @@ export function TemaPagina({ t }: { t: Tema }) {
   const sec = useSeccion(principales.flatMap(idsDe));
   const info = useBase(p, set, montado);
   const plantillas = useMemo(() => (listo ? crearPlantillas(metas) : []), [listo, metas]);
-  const series = useMemo(() => seriesDe(t, metas), [t, metas]);
+  const delTemaTodas = useMemo(() => seriesDe(t, metas), [t, metas]);
+  const series = useMemo(() => listables(delTemaTodas), [delTemaTodas]);   // una por rubro o producto, sin las series ocultas
+  const catDe = useMemo(() => (s: SerieMeta) => catListado(s, delTemaTodas), [delTemaTodas]);
   const subgrupos = useMemo(() => {
     const mapa = new Map<string, SerieMeta[]>();
     series.forEach((s) => { const k = subgrupoDe(t, s); if (!mapa.has(k)) mapa.set(k, []); mapa.get(k)!.push(s); });
@@ -142,20 +144,20 @@ export function TemaPagina({ t }: { t: Tema }) {
         <h2>Todos los datos</h2>
         <p className="note">{series.length} series. Tocá un bloque para ver sus series y una serie para abrirla en Histórico.</p>
         <ul className="lista-series raiz">
-          {subgrupos.map(([nombre, ss]) => <Desplegado key={nombre} titulo={nombre} cuenta={ss.length}><Series series={ss} nivel={2} href={hrefSerie} /></Desplegado>)}
+          {subgrupos.map(([nombre, ss]) => <Desplegado key={nombre} titulo={nombre} cuenta={ss.length}><Series series={ss} nivel={2} href={hrefSerie} cat={catDe} /></Desplegado>)}
         </ul>
       </section>
 
       {presidentes}
 
       {delTema.length > 0 && (
-        <section aria-label="Plantillas del tema">
-          <h2>Plantillas del tema</h2>
+        <section aria-label="Gráficos listos del tema">
+          <h2>Gráficos listos del tema</h2>
           {aviso && <p className="aviso-link" role="status">{aviso}</p>}
           <div className="curios">{delTema.slice(0, MAX_PLANTILLAS).map((pl) => (
             <Tarjeta key={pl.id} pl={pl} onAviso={(a) => { setAviso(a); if (a) setTimeout(() => setAviso(null), 4000); }} />
           ))}</div>
-          <p className="acciones-vista"><Link prefetch={false} className="btn" href={`/plantillas/?${new URLSearchParams({ q: t.q }).toString()}`}>Ver todas las plantillas</Link></p>
+          <p className="acciones-vista"><Link prefetch={false} className="btn" href={`/plantillas/?${new URLSearchParams({ q: t.q }).toString()}`}>Ver todos los gráficos listos</Link></p>
         </section>
       )}
     </section>

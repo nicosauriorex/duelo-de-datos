@@ -3,6 +3,7 @@
 // (navegación privada, almacenamiento bloqueado) siguen valiendo mientras la pestaña está abierta.
 import { useCallback, useEffect, useState } from "react";
 import type { Vista } from "./plantillas";
+import { migrarListaExpr } from "./url";
 
 export const CLAVE_PLANTILLAS = "pld:plantillas";
 export const MAX_PROPIAS = 50;
@@ -10,7 +11,7 @@ export const MAX_NOMBRE = 60;
 export interface Propia { id: string; nombre: string; vista: Vista; fecha: string }
 export interface Resultado { ok: boolean; aviso?: string; id?: string }
 
-export const SIN_GUARDAR = "No se pudo guardar en este navegador: la plantilla sirve mientras no cierres esta pestaña.";
+export const SIN_GUARDAR = "No se pudo guardar en este navegador: el gráfico sirve mientras no cierres esta pestaña.";
 let memoria: Propia[] | null = null; // copia de la sesión (sobrevive a la navegación entre secciones)
 
 const limpiar = (raw: unknown): Propia[] => {
@@ -21,7 +22,8 @@ const limpiar = (raw: unknown): Propia[] => {
     const o = x as Record<string, unknown>;
     if (typeof o.id !== "string" || typeof o.nombre !== "string" || !o.vista || typeof o.vista !== "object") continue;
     const vista: Vista = {};
-    for (const [k, v] of Object.entries(o.vista as Record<string, unknown>)) if (typeof v === "string") vista[k] = v;
+    // los ids que ya no se listan (`inflacion`, `inflacion_ia`) se guardan con el id de hoy: la plantilla sigue mostrando lo mismo
+    for (const [k, v] of Object.entries(o.vista as Record<string, unknown>)) if (typeof v === "string") vista[k] = /^v\d?$/.test(k) ? migrarListaExpr(v) : v;
     out.push({ id: o.id, nombre: o.nombre.slice(0, MAX_NOMBRE), vista, fecha: typeof o.fecha === "string" ? o.fecha : "" });
   }
   return out.slice(0, MAX_PROPIAS);
@@ -51,14 +53,14 @@ export function useMisPlantillas() {
   }, []);
   const agregar = useCallback((nombre: string, vista: Vista): Resultado => {
     const actual = leerPropias(), n = nombreValido(nombre);
-    if (!n) return { ok: false, aviso: "Poné un nombre para la plantilla." };
-    if (actual.length >= MAX_PROPIAS) return { ok: false, aviso: `Ya tenés ${MAX_PROPIAS} plantillas propias, el máximo. Borrá alguna para guardar otra.` };
+    if (!n) return { ok: false, aviso: "Poné un nombre para el gráfico." };
+    if (actual.length >= MAX_PROPIAS) return { ok: false, aviso: `Ya tenés ${MAX_PROPIAS} gráficos propios, el máximo. Borrá alguna para guardar otra.` };
     const id = nuevoId();
     return aplicar([...actual, { id, nombre: n, vista, fecha: new Date().toISOString() }], id);
   }, [aplicar]);
   const renombrar = useCallback((id: string, nombre: string): Resultado => {
     const n = nombreValido(nombre);
-    if (!n) return { ok: false, aviso: "Poné un nombre para la plantilla." };
+    if (!n) return { ok: false, aviso: "Poné un nombre para el gráfico." };
     return aplicar(leerPropias().map((p) => (p.id === id ? { ...p, nombre: n } : p)));
   }, [aplicar]);
   const borrar = useCallback((id: string): Resultado => aplicar(leerPropias().filter((p) => p.id !== id)), [aplicar]);

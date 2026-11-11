@@ -90,7 +90,8 @@ export function Elecciones() {
     const res: Corr[] = [];
     Object.values(m.SER).forEach((s) => {
       if (s.id === "poblacion" || s.id === "pib_nom_anual") return;
-      const ind: Expr = { id: s.id, med: m.medDefault(s), rel: null, modo: "compra", esc: s.agg && base.PIB_AN && s.tipo !== "none" ? "pib" : "" };
+      // el IPC se sigue midiendo en interanual acá, como antes de que "Inflación" pasara a abrir en mensual: el cálculo no cambia
+      const ind: Expr = { id: s.id, med: s.id === "ipc_empalme" ? "via" : m.medDefault(s), rel: null, modo: "compra", esc: s.agg && base.PIB_AN && s.tipo !== "none" ? "pib" : "" };
       const c = m.calc(ind);
       const pts = elec.map((e) => ({ e, x: valorElec(m, m.F, PRES, metrica, b, c, e, ind) })).filter((q) => ok(q.x)) as Corr["pts"];
       if (pts.length < 4) return;
@@ -131,6 +132,7 @@ export function Elecciones() {
 
   return (
     <section>
+      <p className="aviso-elecciones" role="note"><b>Ejercicio estadístico, no un pronóstico.</b> Se basa en pocas elecciones y una relación entre dos datos no prueba que uno cause el otro.</p>
       <p className="sub">¿Qué dato de la economía va de la mano con lo que vota la gente? Cada variable se compara con el % que sacó el oficialismo nacional en cada elección desde 1995.</p>
       <div className="controls">
         <label>Elecciones</label><Seg valor={tipos} opciones={[["pres", "Presidenciales"], ["leg", "Legislativas"]]} onElegir={(v) => set({ et: [...alternar(tipos, v)].join(",") })} />

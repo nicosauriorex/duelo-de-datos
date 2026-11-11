@@ -1,14 +1,14 @@
 // Plantillas: gráficos ya armados de Histórico. Las curadas se escriben a mano (o vienen de Datos curiosos y de los indicadores);
 // las generadas salen solas del catálogo. Una plantilla es un conjunto de parámetros de Histórico (`vista`) más texto para buscarla.
 import { fmtMes, lastIdx, norm, ok } from "./formato";
-import { crearIndicadoresDe, palabrasBusqueda, textoBusqueda } from "./catalogo";
+import { NOMBRE_LEGADO, crearIndicadoresDe, palabrasBusqueda, textoBusqueda } from "./catalogo";
 import { defCurios, type DefCurio } from "./curiosidades";
 import { claseVariacion } from "./estadisticas";
 import { FX_KEYS, FX_NOM, type Expr, type Motor, type SerieMeta, type Vals } from "./motor";
 import { decExpr, encExpr, lista as listaUrl } from "./url";
 import { PM_RUBROS } from "./preciosMundo";
 
-export const GRUPOS = ["Mis plantillas", "Destacadas", "Poder de compra", "Precios contra la inflación", "Salarios", "Dólar y mercados",
+export const GRUPOS = ["Mis gráficos", "Destacados", "Poder de compra", "Precios contra la inflación", "Salarios", "Dólar y mercados",
   "Actividad", "Empleo y pobreza", "Sector externo", "Fiscal", "En el mundo", "Gobierno y Congreso"] as const;
 export type Vista = Record<string, string>;
 
@@ -48,7 +48,7 @@ export function crearPlantillas(metas: SerieMeta[]): Plantilla[] {
 
   // ---- curadas: datos curiosos (Destacadas)
   defCurios(S).forEach((d) => nueva({
-    id: d.id, titulo: d.k, desc: "Dato curioso con la serie completa", grupo: "Destacadas", etiquetas: [...d.etiquetas, "curioso", "destacada"],
+    id: d.id, titulo: d.k, desc: "Dato curioso con la serie completa", grupo: "Destacados", etiquetas: [...d.etiquetas, "curioso", "destacada"],
     vista: unaVista(d.e), e: d.e, ids: d.ids, def: d, curada: true,
   }));
 
@@ -57,9 +57,9 @@ export function crearPlantillas(metas: SerieMeta[]): Plantilla[] {
     "Salarios": "Salarios", "Poder de compra": "Poder de compra", "Precios y dólar": "Dólar y mercados", "Actividad": "Actividad",
     "Empleo y pobreza": "Empleo y pobreza", "Externo y finanzas": "Sector externo", "Fiscal": "Fiscal",
   };
-  const GRUPO_ID: Record<string, string> = { inflacion: "Precios contra la inflación", riesgo: "Dólar y mercados", mk_merv: "Dólar y mercados" };
+  const GRUPO_ID: Record<string, string> = { ipc_empalme: "Precios contra la inflación", riesgo: "Dólar y mercados", mk_merv: "Dólar y mercados" };
   INDIC.forEach((i) => nueva({
-    id: "i-" + slug(i.nombre), titulo: i.nombre, desc: fuente(i.id), grupo: GRUPO_ID[i.id] ?? GRUPO_DE[i.grupo] ?? "Destacadas",
+    id: "i-" + slug(NOMBRE_LEGADO[i.nombre] ?? i.nombre), titulo: i.nombre, desc: fuente(i.id), grupo: GRUPO_ID[i.id] ?? GRUPO_DE[i.grupo] ?? "Destacados",
     etiquetas: [i.grupo], vista: unaVista(i), e: i, curada: true,
   }));
 
@@ -82,7 +82,7 @@ export function crearPlantillas(metas: SerieMeta[]): Plantilla[] {
   manual("soja-rosario-chicago-blue", "Soja: lo que recibe el productor (al dólar blue)", "Sector externo", "Precio en Rosario como % de Chicago", ["campo", "retenciones", "productor"], [E("soja_ratio_blue")]);
   manual("soja-chicago-vs-rosario", "Soja: Chicago contra Rosario", "Sector externo", "US$ por tonelada, Rosario al dólar oficial", ["campo", "cosecha", "precio internacional"],
     [E("soja_chi", { med: "corr" }), E("soja_ros", { med: "usd_oficial" })], { ej: "misma" });
-  manual("salario-minimo-vs-canasta", "Cuántas canastas de pobreza compra un salario mínimo", "Poder de compra", "Salario mínimo, vital y móvil sobre la canasta total de un hogar de 4",
+  manual("salario-minimo-vs-canasta", "Cuántas líneas de pobreza (familia de 4) cubre un salario mínimo", "Poder de compra", "Salario mínimo sobre el valor de la línea de pobreza de una familia de 4",
     ["smvm", "sueldo minimo", "linea de pobreza"], [E("can_cbt_h2", { rel: "smvm", med: "corr" })]);
 
   // ---- generadas
@@ -103,12 +103,12 @@ export function crearPlantillas(metas: SerieMeta[]): Plantilla[] {
   if (tieneSal) {
     Object.values(S).filter((s) => s.id.startsWith("can_")).forEach((s) => {
       const e = E(s.id, { rel: "sipa_med", med: "corr" })!;
-      nueva({ id: "g-" + s.id, titulo: `Cuántas canastas compra un salario mediano: ${minus(s.n.replace(/^Canasta /, ""))}`, desc: "Salario SIPA mediano sobre el valor de la canasta (GBA)", grupo: "Poder de compra",
+      nueva({ id: "g-" + s.id, titulo: `Cuánto cubre un salario mediano: ${minus(s.n)}`, desc: "Salario mediano (trabajadores registrados) sobre el valor de la canasta (GBA)", grupo: "Poder de compra",
         etiquetas: ["canasta", "pobreza", "indigencia"], vista: unaVista(e), e, curada: false });
     });
     FX_KEYS.forEach((k) => {
       const e = E("fx_" + k, { rel: "sipa_med", med: "corr" });
-      if (e) nueva({ id: "g-dolares-" + k, titulo: `Cuántos dólares ${FX_NOM[k]} compra un salario mediano`, desc: "Salario SIPA mediano sobre la cotización", grupo: "Poder de compra", etiquetas: ["dolar", "sueldo"], vista: unaVista(e), e, curada: false });
+      if (e) nueva({ id: "g-dolares-" + k, titulo: `Cuántos dólares ${FX_NOM[k]} compra un salario mediano`, desc: "Salario mediano (trabajadores registrados) sobre la cotización", grupo: "Poder de compra", etiquetas: ["dolar", "sueldo"], vista: unaVista(e), e, curada: false });
     });
   }
   // ---- Precios en el mundo (bloque 6c): una por rubro, abre el detalle en Contexto
@@ -138,7 +138,7 @@ export function plantillaPropia(p: { id: string; nombre: string; vista: Vista; f
   const todas = Object.entries(p.vista).filter(([k]) => /^v\d?$/.test(k)).flatMap(([, s]) => listaUrl(s).map((x) => decExpr(x, existe)).filter(Boolean) as Expr[]);
   const primera = es[0] ?? todas[0];
   return {
-    id: p.id, titulo: p.nombre, desc: "Mi plantilla", grupo: "Mis plantillas", etiquetas: [], vista: p.vista, curada: false, propia: true, fecha: p.fecha,
+    id: p.id, titulo: p.nombre, desc: "Mi gráfico", grupo: "Mis gráficos", etiquetas: [], vista: p.vista, curada: false, propia: true, fecha: p.fecha,
     e: primera ?? null, ids: primera ? [primera.id, ...(primera.rel ? [primera.rel] : [])] : [],
     // para buscar: todas las variables de todos los gráficos
     ...(todas.length ? { etiquetas: [...new Set(todas.flatMap((x) => [x.id, ...(x.rel ? [x.rel] : [])]))] } : {}),

@@ -186,6 +186,15 @@ Criterio general pedido: lo que se pide para una pantalla vale para toda la pág
 17. Gobierno y Congreso: no se ven los datos (vetos). → C (faltan cargar totales y bancas; que se entienda qué hay y qué falta)
 18. Es raro que Congreso sea la misma página que Por presidente. → C
 
+## ~~Simplificación (auditoría 2026-11-10, etapa 3)~~ ✅ 2026-11-11
+→ spec: docs/specs/simplificacion.md (bloque 5h)
+Decisiones del usuario (2026-11-11): los nombres públicos los propone Claude y el usuario corrige; Elecciones queda en el menú con un aviso visible; el puntaje del Ranking se relega (plegado, debajo de la comparación por indicador); los precios por región pasan a ser un filtro.
+- Nombres que entienda cualquiera ("Salario mediano" en lugar de "Salario SIPA mediana").
+- Inflación como una sola entrada, con mensual, interanual y promedio.
+- Región como filtro del dato, no como cientos de series en el selector.
+- "Plantillas" pasa a "Gráficos listos", con filtros por tema.
+- Detalles de lectura que marcó la revisión con agentes: rótulos U/P/M, colores de presidentes parecidos, notas al pie dentro del área deslizable, vista previa chica de la imagen.
+
 ## Correcciones pedidas (2026-11-09)
 → spec: docs/specs/correcciones-historico.md
 Son ajustes a lo ya hecho, no ideas nuevas.

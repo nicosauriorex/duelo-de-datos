@@ -9,7 +9,7 @@ const minus = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
 
 /** Cómo se nombra una variable dentro de una oración. */
 const ROTULOS: Record<string, string> = {
-  sipa_med: "salario mediano", sipa_prom: "salario promedio", smvm: "salario mínimo", jub_min: "jubilación mínima", ripte: "RIPTE",
+  sipa_med: "salario mediano", sipa_prom: "salario promedio", smvm: "salario mínimo", jub_min: "jubilación mínima", ripte: "salario promedio de empleos estables (RIPTE)",
   ipc_gba_01_1_2_coicop: "la carne", ipc_gba_04_1_1_coicop: "los alquileres",
 };
 export const rotulo = (id: string, S: Record<string, SerieMeta>): string =>

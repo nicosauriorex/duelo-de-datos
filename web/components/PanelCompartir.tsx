@@ -3,7 +3,7 @@
 // Ver docs/specs/responder-con-imagen.md y docs/specs/personalizar-imagen.md.
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { Modal, Selector, Seg } from "./ui";
+import { Modal, Selector, Seg, useCapa } from "./ui";
 import { useConfig } from "./ConfigProvider";
 import { useCargar, useDatos } from "./DatosProvider";
 import { exprsUsadas } from "@/lib/historico";
@@ -32,6 +32,8 @@ export function PanelCompartir({ vista, href, titulo, onCerrar }: Props) {
   const [aviso, setAviso] = useState<string | null>(null);
   const [estado, setEstado] = useState<"cargando" | "listo" | "sin-datos" | "sin-periodo">("cargando");
   const [archivo, setArchivo] = useState<File | null>(null);
+  const [ampliada, setAmpliada] = useState(false);   // vista previa a pantalla completa (tocarla en el celular)
+  const previa = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const formato: FormatoImg = config.formatoImagen;
   const img = config.imagen;
@@ -93,10 +95,16 @@ export function PanelCompartir({ vista, href, titulo, onCerrar }: Props) {
     <Modal titulo="Compartir como imagen" onCerrar={onCerrar} ancho>
       <div className="comp-cuerpo">
         <h2>Compartir como imagen</h2>
-        <div className="comp-previa">
+        <div className={`comp-previa${estado === "listo" && archivo ? " ampliable" : ""}`} ref={previa}
+          {...(estado === "listo" && archivo ? {
+            role: "button", tabIndex: 0, "aria-label": "Ver la vista previa a pantalla completa", title: "Tocá para ver la imagen entera",
+            onClick: () => setAmpliada(true),
+            onKeyDown: (ev: React.KeyboardEvent) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); setAmpliada(true); } },
+          } : {})}>
           <canvas ref={canvas} role="img" aria-label={`Vista previa de la imagen: ${titulo}`} />
           {estado !== "listo" && <p className="note comp-estado" role="status">{estado === "sin-datos" ? "No hay datos para armar la imagen." : estado === "sin-periodo" ? "Elegí un período con datos." : "Armando la imagen…"}</p>}
         </div>
+        {ampliada && archivo && <VistaCompleta archivo={archivo} titulo={titulo} onCerrar={() => { setAmpliada(false); previa.current?.focus(); }} />}
         <div className="comp-opciones">
           <div className="controls"><label>Formato</label>
             <Seg valor={formato} opciones={FORMATOS_IMG} onElegir={(f) => cambiar({ formatoImagen: f as FormatoImg })} /></div>
@@ -151,6 +159,27 @@ export function PanelCompartir({ vista, href, titulo, onCerrar }: Props) {
       </footer>
     </Modal>
   );
+}
+
+/** La imagen entera (contenida) sobre fondo oscuro. Un toque, el botón o Escape la cierran; Escape cierra solo esta capa, no la ventana de abajo. */
+function VistaCompleta({ archivo, titulo, onCerrar }: { archivo: File; titulo: string; onCerrar: () => void }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const boton = useRef<HTMLButtonElement>(null);
+  const esLaDeArriba = useCapa(true);
+  const cerrar = useRef(onCerrar);
+  cerrar.current = onCerrar;
+  useEffect(() => { const u = URL.createObjectURL(archivo); setUrl(u); return () => URL.revokeObjectURL(u); }, [archivo]);
+  useEffect(() => {
+    boton.current?.focus();
+    const tecla = (ev: KeyboardEvent) => { if (ev.key === "Escape" && esLaDeArriba()) { ev.stopPropagation(); cerrar.current(); } };
+    document.addEventListener("keydown", tecla, true);
+    return () => document.removeEventListener("keydown", tecla, true);
+  }, [esLaDeArriba]);
+  return createPortal(
+    <div className="comp-completa" role="dialog" aria-modal="true" aria-label={`Vista previa a pantalla completa: ${titulo}`} onClick={onCerrar}>
+      {url && /* eslint-disable-next-line @next/next/no-img-element */ <img src={url} alt={`Imagen para compartir: ${titulo}`} />}
+      <button ref={boton} type="button" className="comp-completa-cerrar" aria-label="Cerrar la vista a pantalla completa" onClick={(ev) => { ev.stopPropagation(); onCerrar(); }}>×</button>
+    </div>, document.body);
 }
 
 /** Botón que abre el panel de compartir. `crearVista` y `href` se evalúan al abrir (así sirven también donde los datos se cargan recién ahí). */

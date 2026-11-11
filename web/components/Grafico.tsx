@@ -18,7 +18,7 @@ export interface Marca { key: string; axis?: number; color: string; fmt: (v: num
 export type TipoRef = "ult" | "prom" | "med" | "max" | "min";
 /** Línea de referencia. Con `key` y `tipo` se recalcula con el tramo visible al acercar; `nom`, `quien` y `fmt` arman la etiqueta al pasar el cursor. */
 export interface Ref {
-  v: number; axis?: number; color: string; letra: string; dash?: string;
+  v: number; axis?: number; color: string; letra: string; corto?: string; dash?: string;
   key?: string; tipo?: TipoRef; nom?: string; quien?: string; fmt?: (v: number) => string;
 }
 export interface FranjaG { ini: number; fin: number; nombre: string; color: string }
@@ -351,13 +351,14 @@ function GraficoBase({ rows, series, opts, lleno }: { rows: Fila[]; series: Seri
             ctx.strokeStyle = axisC; ctx.setLineDash([4 * d, 3 * d]); ctx.lineWidth = d;
             ctx.beginPath(); ctx.moveTo(L, yOf(opts.refLine, 0)); ctx.lineTo(L + W, yOf(opts.refLine, 0)); ctx.stroke(); ctx.setLineDash([]);
           }
-          // Referencias (U, P, M, ↑, ↓): línea fina punteada y una letra en el borde. Al acercar se recalculan con el tramo visible.
+          // Referencias (Último, Promedio, Mediana, ↑, ↓): línea fina punteada y un rótulo corto sobre ella, pegado al borde izquierdo (o derecho con eje doble). En pantalla angosta usa la forma abreviada. Al acercar se recalculan con el tramo visible.
           lineas = [];
           if (opts.refs && opts.refs.length) {
             const xa = uu.scales.x.min ?? x0, xb = uu.scales.x.max ?? x1, zoomed = xa > x0 + 1e-9 || xb < x1 - 1e-9;
             const vis = zoomed ? rows.filter((_, i) => xs[i] >= xa && xs[i] <= xb) : rows;
             const tramo = zoomed && vis.length ? (() => { const y0 = String(vis[0].fecha).slice(0, 4), y1 = String(vis[vis.length - 1].fecha).slice(0, 4); return y0 === y1 ? y0 : `${y0}–${y1}`; })() : "";
             const labs: { y: number; t: string; color: string; axis: number }[] = [];
+            const angosto = window.innerWidth < 640;
             opts.refs.forEach((rf) => {
               const ax = rf.axis || 0;
               let v = rf.v;
@@ -372,13 +373,14 @@ function GraficoBase({ rows, series, opts, lleno }: { rows: Fila[]; series: Seri
               ctx.setLineDash((rf.dash || "2 4").split(" ").map((n) => +n * d));
               ctx.beginPath(); ctx.moveTo(L, yy); ctx.lineTo(L + W, yy); ctx.stroke();
               ctx.setLineDash([]); ctx.globalAlpha = 1;
-              labs.push({ y: yy, t: rf.letra, color: rf.color, axis: ax });
+              labs.push({ y: yy, t: angosto && rf.corto ? rf.corto : rf.letra, color: rf.color, axis: ax });
               lineas.push({ rf, v, tramo, y: uu.valToPos(v, ax ? "y2" : "y", false), yd: yy });
             });
             [0, 1].forEach((ax) => {
               const l = labs.filter((o) => o.axis === ax).sort((a, b) => a.y - b.y);
-              for (let k = 1; k < l.length; k++) if (l[k].y - l[k - 1].y < 10 * d) l[k].y = l[k - 1].y + 10 * d;
-              l.forEach((o) => halo(o.t, ax ? L + W - 3 * d : L + 3 * d, o.y + 3.5 * d, colorDe(o.color), ax ? "right" : "left", 10, true));
+              for (let k = 1; k < l.length; k++) if (l[k].y - l[k - 1].y < 12 * d) l[k].y = l[k - 1].y + 12 * d;
+              // el texto va apenas arriba de su línea (no tachado por ella) y separado del eje; si no entra arriba, va debajo
+              l.forEach((o) => halo(o.t, ax ? L + W - 6 * d : L + 6 * d, o.y - 3 * d < T + 9 * d ? o.y + 11 * d : o.y - 3 * d, colorDe(o.color), ax ? "right" : "left", 10, true));
             });
           }
           // último dato de cada serie

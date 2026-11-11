@@ -1,4 +1,6 @@
 "use client";
+import { listables } from "@/lib/regiones";
+import { esOculta } from "@/lib/nombres";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { useSeccion } from "../useSeccion";
 import { Cargando, Desplegable, Selector, Seg, alternar } from "../ui";
@@ -66,7 +68,9 @@ export function Presidentes() {
   const setMis = (nv: Expr[]) => set({ pav: nv.map((e) => encExpr(e)).join(",") || null, pam2: "mis" });
   const mover = (k: number, d: number) => { const nv = mis.slice(); const j = k + d; if (j < 0 || j >= nv.length) return; [nv[k], nv[j]] = [nv[j], nv[k]]; setMis(nv); };
   const toks = norm(buscar.trim()) ? norm(buscar.trim()).split(/\s+/) : [];
-  const series = Object.values(m.SER);
+  // Una fila por rubro o producto (sin repetir regiones). La inflación va como mensual e interanual; el índice de precios no se lista.
+  const todasSer = Object.values(m.SER);
+  const series = [...(listables(todasSer) as typeof todasSer).filter((s) => s.id !== "ipc_empalme"), ...todasSer.filter((s) => esOculta(s.id))];
   const GRUPOS = ordenarGrupos([...new Set(series.map(grupoDe))]);
   const nc = cols.length + 1;
   const filasA: React.ReactNode[] = [];
@@ -116,8 +120,8 @@ export function Presidentes() {
             <tr key={x.id}><CeldaPresMandato x={x} F={F} arr={c.v} />
               <CeldasStats m={m} c={c} st={sts[k]} cols={cols} comp={{ cols: comp, k }} /></tr>
           ))}</tbody>
-          <caption style={{ captionSide: "bottom", textAlign: "left", fontSize: 12, color: "var(--text-muted)", paddingTop: 8 }}>Unidad: {c.unidad}. {nota}</caption>
         </table></div>
+        <p className="note" style={{ marginTop: "var(--e-2)" }}>Unidad: {c.unidad}. {nota}</p>
       </div>
       <div className="card">
         <h2>Un presidente, todas las variables</h2>

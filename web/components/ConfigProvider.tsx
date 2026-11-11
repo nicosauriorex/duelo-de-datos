@@ -137,7 +137,7 @@ function Panel({ onCerrar, guardado }: { onCerrar: () => void; guardado: boolean
           <div className="cfg-pres">
             {PRES_DEF.map((p) => (
               <div key={p.id} className="controls"><label>{p.n}</label>
-                <input type="color" aria-label={`Color de ${p.n}`} value={c.colPres[p.id] ?? colorBase(p.base)} onChange={(ev) => cambiar({ colPres: { ...c.colPres, [p.id]: ev.target.value } })} /></div>
+                <input type="color" aria-label={`Color de ${p.n}`} value={c.colPres[p.id] ?? colorBase(p.color)} onChange={(ev) => cambiar({ colPres: { ...c.colPres, [p.id]: ev.target.value } })} /></div>
             ))}
           </div>
           <button type="button" className="btn" disabled={!Object.keys(c.colPres).length} onClick={() => cambiar({ colPres: {} })}>Volver a los colores de fábrica</button>

@@ -1,6 +1,8 @@
 // Catálogo: orden de categorías, búsqueda con sinónimos, indicadores de Curiosidades.
 import { norm } from "./formato";
 import { medDefaultDe, type Expr, type Motor, type Serie, type SerieMeta } from "./motor";
+import { NOMBRES, SINONIMOS, esOculta } from "./nombres";
+import { colapsarRegiones } from "./regiones";
 
 export const ORDEN_RAIZ = ["Salarios", "Precios", "Dólar y tipo de cambio", "Mercados", "Tasas de interés", "Dinero y bancos (BCRA)",
   "Actividad", "Empleo, pobreza e ingresos", "Sector externo", "Fiscal", "Opinión pública (UTDT)", "Contexto internacional"];
@@ -16,10 +18,11 @@ const ALIAS: [RegExp, string][] = [
   [/desocupacion/, "desempleo paro"], [/recaudacion/, "impuestos afip arca"], [/resultado/, "deficit superavit fiscal"],
   [/carnes|asado|nalga|cuadril|paleta|picada/, "carne vaca vacio"], [/bebidas alcoholicas/, "vino cerveza alcohol"], [/tabaco/, "cigarrillos"],
 ];
-export function textoBusqueda(s: Pick<Serie, "n" | "cat" | "desc" | "id"> & { busca?: string }): string {
+/** Texto en el que se busca una serie: nombre público, nombre técnico, categoría, descripción, id y sinónimos. */
+export function textoBusqueda(s: Pick<Serie, "n" | "cat" | "desc" | "id"> & { busca?: string; nTecnico?: string }): string {
   if (s.busca) return s.busca;
-  const base = norm(s.n + " " + s.cat.join(" ") + " " + (s.desc || "") + " " + s.id);
-  s.busca = base + " " + ALIAS.filter(([re]) => re.test(base)).map((a) => a[1]).join(" ");
+  const base = norm(s.n + " " + (s.nTecnico || "") + " " + s.cat.join(" ") + " " + (s.desc || "") + " " + s.id);
+  s.busca = base + " " + ALIAS.filter(([re]) => re.test(base)).map((a) => a[1]).join(" ") + " " + (SINONIMOS[s.id] || "");
   return s.busca;
 }
 
@@ -38,37 +41,62 @@ export function medidaPara(s: Serie, med: string): string {
 
 export interface Indic extends Expr { grupo: string; nombre: string }
 
+/** Nombre que tenía cada indicador antes de los nombres públicos. El id de la plantilla (`pl=` en los links) se arma con ese nombre: no cambia. */
+export const NOMBRE_LEGADO: Record<string, string> = {
+  "Salario mediano (trabajadores registrados), real": "Salario SIPA mediana (real)",
+  "Salario promedio (trabajadores registrados), real": "Salario SIPA promedio (real)",
+  "Salario promedio de empleos estables (RIPTE), real": "RIPTE (real)",
+  "Índice de salarios (todos los trabajadores), real": "Índice de salarios INDEC, total (real)",
+  "Índice de salarios informales, real": "Salarios informales (real)",
+  "Jubilación mínima con bono, real": "Jubilación mínima con bono (real)",
+  "Salario mínimo, real": "Salario mínimo (real)",
+  "Salario mediano (trabajadores registrados) en dólares blue": "Salario SIPA mediana en dólares blue",
+  "Líneas de pobreza (familia de 4) por salario mediano": "Canastas de pobreza (hogar de 4) por salario mediano",
+  "Dólar oficial (en pesos de hoy)": "Dólar oficial (en pesos de hoy)",
+  "PIB (producción total del país)": "PIB real",
+  "PIB por habitante": "PIB real por habitante",
+  "Construcción": "Construcción (ISAC)",
+  "Trabajo informal (asalariados sin aportes)": "Informalidad",
+  "Reservas del Banco Central (dólares de hoy)": "Reservas del BCRA (dólares de hoy)",
+  "Saldo comercial (% del PIB)": "Saldo comercial (% del PIB)",
+  "Merval (bolsa argentina) en dólares CCL": "Merval en dólares CCL",
+  "Resultado fiscal primario (% del PIB)": "Resultado primario (% del PIB)",
+  "Resultado fiscal financiero (% del PIB)": "Resultado financiero (% del PIB)",
+  "Déficit cuasifiscal del Banco Central (% del PIB)": "Déficit cuasifiscal (% del PIB)",
+};
+
 /** Indicadores principales. Funciona con los metadatos del catálogo (no hace falta tener los datos cargados). */
 export function crearIndicadores(m: Motor) { return crearIndicadoresDe(m.SER); }
 export function crearIndicadoresDe(SER: Record<string, SerieMeta>) {
   const X = (id: string, grupo: string, nombre?: string, extra: Partial<Expr> = {}): Indic | null =>
     SER[id] ? { id, grupo, nombre: nombre || SER[id].n, med: extra.med || medDefaultDe(SER[id]), rel: null, modo: "compra", esc: "", ...extra } : null;
+  const N = (id: string) => NOMBRES[id];
   const INDIC = [
-    X("sipa_med", "Salarios", "Salario SIPA mediana (real)"), X("sipa_prom", "Salarios", "Salario SIPA promedio (real)"), X("ripte", "Salarios", "RIPTE (real)"),
-    X("dg_149_1_tl_indiios_octu_0_21", "Salarios", "Índice de salarios INDEC, total (real)", { med: "real" }),
-    X("dg_149_1_sor_priado_octu_0_28", "Salarios", "Salarios informales (real)", { med: "real" }),
-    X("jub_min_bono", "Salarios", "Jubilación mínima con bono (real)"), X("smvm", "Salarios", "Salario mínimo (real)"),
-    X("sipa_med", "Salarios", "Salario SIPA mediana en dólares blue", { med: "usdr_blue" }),
+    X("sipa_med", "Salarios", `${N("sipa_med")}, real`), X("sipa_prom", "Salarios", `${N("sipa_prom")}, real`), X("ripte", "Salarios", `${N("ripte")}, real`),
+    X("dg_149_1_tl_indiios_octu_0_21", "Salarios", `${N("dg_149_1_tl_indiios_octu_0_21")}, real`, { med: "real" }),
+    X("dg_149_1_sor_priado_octu_0_28", "Salarios", `${N("dg_149_1_sor_priado_octu_0_28")}, real`, { med: "real" }),
+    X("jub_min_bono", "Salarios", `${N("jub_min_bono")}, real`), X("smvm", "Salarios", `${N("smvm")}, real`),
+    X("sipa_med", "Salarios", `${N("sipa_med")} en dólares blue`, { med: "usdr_blue" }),
     X("pp_gba_asado", "Poder de compra", "Kg de asado por salario mediano", { rel: "sipa_med", med: "corr" }),
-    X("can_cbt_h2", "Poder de compra", "Canastas de pobreza (hogar de 4) por salario mediano", { rel: "sipa_med", med: "corr" }),
+    X("can_cbt_h2", "Poder de compra", "Líneas de pobreza (familia de 4) por salario mediano", { rel: "sipa_med", med: "corr" }),
     X("fx_blue", "Poder de compra", "Dólares blue por salario mediano", { rel: "sipa_med", med: "corr" }),
-    X("inflacion", "Precios y dólar", "Inflación mensual"), X("fx_oficial", "Precios y dólar", "Dólar oficial (en pesos de hoy)", { med: "real" }),
+    X("ipc_empalme", "Precios y dólar", "Inflación mensual", { med: "vm" }), X("fx_oficial", "Precios y dólar", `${N("fx_oficial")} (en pesos de hoy)`, { med: "real" }),
     X("fx_blue", "Precios y dólar", "Dólar blue (en pesos de hoy)", { med: "real" }), X("brecha_blue", "Precios y dólar", "Brecha blue"),
-    X("dg_143_3_no_pr_2004_a_31", "Actividad", "Actividad económica (EMAE)"), X("dg_3_2_ogp_d_2004_t_17", "Actividad", "PIB real"),
-    X("dg_3_2_ogp_d_2004_t_17", "Actividad", "PIB real por habitante", { esc: "pc" }),
-    X("dg_453_1_serie_deseada_0_0_24_58", "Actividad", "Producción industrial"), X("dg_33_2_isac_sin_edad_0_m_23_56", "Actividad", "Construcción (ISAC)"),
+    X("dg_143_3_no_pr_2004_a_31", "Actividad", N("dg_143_3_no_pr_2004_a_31")), X("dg_3_2_ogp_d_2004_t_17", "Actividad", `${N("dg_3_2_ogp_d_2004_t_17")}`),
+    X("dg_3_2_ogp_d_2004_t_17", "Actividad", "PIB por habitante", { esc: "pc" }),
+    X("dg_453_1_serie_deseada_0_0_24_58", "Actividad", N("dg_453_1_serie_deseada_0_0_24_58")), X("dg_33_2_isac_sin_edad_0_m_23_56", "Actividad", N("dg_33_2_isac_sin_edad_0_m_23_56")),
     X("dg_4_4_dgi_2004_t_19_pib", "Actividad", "Inversión (% del PIB)"),
     X("dg_42_3_eph_puntuatal_0_m_30", "Empleo y pobreza", "Desocupación"), X("dg_44_2_ectet_0_t_30", "Empleo y pobreza", "Tasa de empleo"),
-    X("dg_52_2_asdj_0_0_37", "Empleo y pobreza", "Informalidad"), X("dg_151_1_aariadotac_2012_m_26", "Empleo y pobreza", "Empleo privado registrado"),
+    X("dg_52_2_asdj_0_0_37", "Empleo y pobreza", N("dg_52_2_asdj_0_0_37")), X("dg_151_1_aariadotac_2012_m_26", "Empleo y pobreza", N("dg_151_1_aariadotac_2012_m_26")),
     X("pob_tasa_pobreza_personas", "Empleo y pobreza", "Pobreza"), X("pob_tasa_indigencia_personas", "Empleo y pobreza", "Indigencia"),
-    X("bcra_1", "Externo y finanzas", "Reservas del BCRA (dólares de hoy)", { med: "usdr" }), X("riesgo", "Externo y finanzas", "Riesgo país"),
-    X("dg_saldo_comercial", "Externo y finanzas", "Saldo comercial (% del PIB)", { esc: "pib" }),
-    X("dg_160_2_tl_cuennte_0_t_22", "Externo y finanzas", "Cuenta corriente (% del PIB)", { esc: "pib" }),
-    X("mk_merv", "Externo y finanzas", "Merval en dólares CCL", { med: "usdr_ccl" }),
-    X("bcra_26", "Externo y finanzas", "Crédito al sector privado (% del PIB)", { esc: "pib" }),
-    X("dg_379_9_superavit_017_23_94", "Fiscal", "Resultado primario (% del PIB)", { esc: "pib" }),
-    X("dg_379_9_resultado_017_18_38", "Fiscal", "Resultado financiero (% del PIB)", { esc: "pib" }),
-    X("bcra_cuasifiscal", "Fiscal", "Déficit cuasifiscal (% del PIB)", { esc: "pib" }),
+    X("bcra_1", "Externo y finanzas", `${N("bcra_1")} (dólares de hoy)`, { med: "usdr" }), X("riesgo", "Externo y finanzas", "Riesgo país"),
+    X("dg_saldo_comercial", "Externo y finanzas", `${N("dg_saldo_comercial")} (% del PIB)`, { esc: "pib" }),
+    X("dg_160_2_tl_cuennte_0_t_22", "Externo y finanzas", `${N("dg_160_2_tl_cuennte_0_t_22")} (% del PIB)`, { esc: "pib" }),
+    X("mk_merv", "Externo y finanzas", `${N("mk_merv")} en dólares CCL`, { med: "usdr_ccl" }),
+    X("bcra_26", "Externo y finanzas", `${N("bcra_26")} (% del PIB)`, { esc: "pib" }),
+    X("dg_379_9_superavit_017_23_94", "Fiscal", `${N("dg_379_9_superavit_017_23_94")} (% del PIB)`, { esc: "pib" }),
+    X("dg_379_9_resultado_017_18_38", "Fiscal", `${N("dg_379_9_resultado_017_18_38")} (% del PIB)`, { esc: "pib" }),
+    X("bcra_cuasifiscal", "Fiscal", `${N("bcra_cuasifiscal")} (% del PIB)`, { esc: "pib" }),
   ].filter(Boolean) as Indic[];
   const series = Object.values(SER);
   const INDIC_IPC: Indic[] = series.filter((s) => s.cat[1] && s.cat[1].startsWith("IPC INDEC") && s.cat[2] === "Nacional" && s.cat.length === 4 && s.id !== "ipc_nacional")
@@ -108,8 +136,8 @@ export function palabrasBusqueda(q: string): string[] {
 export function buscarSeries(metas: SerieMeta[], q: string, max: number): SerieMeta[] {
   const toks = palabrasBusqueda(q);
   if (!toks.length) return [];
-  const filas = metas.map((s) => {
-    const t = textoBusqueda(s as SerieMeta & { busca?: string }), nombre = norm(s.n);
+  const filas = metas.filter((s) => !esOculta(s.id)).map((s) => {
+    const t = textoBusqueda(s as SerieMeta & { busca?: string }), nombre = norm(s.n + " " + (s.nTecnico || ""));   // el nombre técnico también cuenta como "en el nombre"
     return {
       s, n: toks.filter((k) => t.includes(k)).length,
       puntaje: toks.reduce((a, k) => a + (nombre.includes(k) ? 2 : 0) + (nombre.startsWith(k) ? 1 : 0), 0),
@@ -117,5 +145,6 @@ export function buscarSeries(metas: SerieMeta[], q: string, max: number): SerieM
   });
   let res = filas.filter((f) => f.n === toks.length);
   if (!res.length && toks.length > 1) res = filas.filter((f) => f.n > 0);
-  return res.sort((a, b) => b.n - a.n || b.puntaje - a.puntaje || a.s.n.length - b.s.n.length).slice(0, max).map((f) => f.s);
+  // cada rubro o producto una sola vez (la región se elige después); con "patagonia" sale la versión de Patagonia
+  return colapsarRegiones(res.sort((a, b) => b.n - a.n || b.puntaje - a.puntaje || a.s.n.length - b.s.n.length).map((f) => f.s), metas).slice(0, max);
 }

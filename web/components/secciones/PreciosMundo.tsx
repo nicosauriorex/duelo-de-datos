@@ -145,10 +145,8 @@ function Detalle({ d, rid, dolar, arg, p, set }: { d: DatosPM; rid: string; dola
             </tr>
           );
         })}</tbody>
-        <caption style={{ captionSide: "bottom", textAlign: "left", fontSize: 12, color: "var(--text-muted)", paddingTop: 8 }}>
-          Mundo = 100. Argentina se muestra con el dólar {dolar === "blue" ? "blue" : "oficial"}; los demás países, tal cual los publica el Banco Mundial.
-        </caption>
       </table></div>
+      <p className="note">Mundo = 100. Argentina se muestra con el dólar {dolar === "blue" ? "blue" : "oficial"}; los demás países, tal cual los publica el Banco Mundial.</p>
     </>
   );
 }

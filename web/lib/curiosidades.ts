@@ -50,9 +50,9 @@ export function defCurios(S: Record<string, SerieMeta>): DefCurio[] {
     const { F } = m, x = extremos(m, c.v, m.idxDe("2003-01")), v = c.v as number[];
     return { v: c.v, val: m.fmtC(c, v[x.u]), d: `Máximo desde 2003: ${m.fmtC(c, v[x.mx])} en ${fmtMes(F[x.mx])} (hoy ${pctTxt(v[x.u], v[x.mx])}). Mínimo: ${fmtMes(F[x.mn])}.` };
   }, ["jubilados", "haber minimo"]);
-  def("inflacion-maxima", "La inflación mensual más alta", X("inflacion", ""), (m, c) => {
-    const { F, SER } = m, x = extremos(m, c.v), v = c.v as number[]; let def = 0; c.v.forEach((y) => { if (ok(y) && y < 0) def++; });
-    return { v: c.v, val: `${nf1.format(v[x.mx])} %`, d: `en ${fmtMes(F[x.mx])}. Hubo ${def} meses con deflación desde ${fmtMes(F[SER.inflacion.i0])}. Último: ${nf1.format(v[x.u])} % (${fmtMes(F[x.u])}).` };
+  def("inflacion-maxima", "La inflación mensual más alta", X("ipc_empalme", "", "", { med: "vm" }), (m, c) => {
+    const { F } = m, x = extremos(m, c.v), v = c.v as number[]; let def = 0; c.v.forEach((y) => { if (ok(y) && y < 0) def++; });
+    return { v: c.v, val: `${nf1.format(v[x.mx])} %`, d: `en ${fmtMes(F[x.mx])}. Hubo ${def} meses con deflación desde ${fmtMes(F[c.v.findIndex(ok)])}. Último: ${nf1.format(v[x.u])} % (${fmtMes(F[x.u])}).` };
   }, ["precios", "hiperinflacion"]);
 
   const idsPP = Object.keys(S).filter((id) => id.startsWith("pp_gba_"));

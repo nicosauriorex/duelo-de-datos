@@ -57,7 +57,7 @@ export function Oraciones({ S }: { S: Record<string, SerieMeta> }) {
   const lista = useMemo(() => anios(anioHoy), [anioHoy]);
 
   const [producto, setProducto] = useState("pp_gba_asado"), [salario, setSalario] = useState("sipa_med");
-  const [ind2, setInd2] = useState(clave(Math.max(0, principales.findIndex((p) => p.id === "inflacion")))), [pres, setPres] = useState("milei");
+  const [ind2, setInd2] = useState(clave(Math.max(0, principales.findIndex((p) => p.id === "ipc_empalme" && p.med === "vm")))), [pres, setPres] = useState("milei");
   const [ind3, setInd3] = useState(clave(Math.max(0, principales.findIndex((p) => p.id === "sipa_med")))), [anio, setAnio] = useState("2017");
   const [monto, setMonto] = useState("sipa_med"), [med, setMed] = useState("usdr_blue");
   const [a, setA] = useState("ipc_gba_01_1_2_coicop"), [b, setB] = useState("ipc_gba_04_1_1_coicop");
@@ -117,7 +117,7 @@ export function Buscar({ plantillas, S, listo = true }: { plantillas: Plantilla[
       </form>
       {largo && (pls.length || vars.length ? (
         <div className="resultados-busqueda" role="status">
-          {pls.length > 0 && <><h3>Plantillas</h3><ul>{pls.map((p) => <li key={p.id}><Link prefetch={false} href={hrefPlantilla(p)}>{p.titulo}</Link><small>{p.grupo}</small></li>)}</ul></>}
+          {pls.length > 0 && <><h3>Gráficos listos</h3><ul>{pls.map((p) => <li key={p.id}><Link prefetch={false} href={hrefPlantilla(p)}>{p.titulo}</Link><small>{p.grupo}</small></li>)}</ul></>}
           {vars.length > 0 && <><h3>Variables</h3><ul>{vars.map((s) => <li key={s.id}><Link prefetch={false} href={hrefVar(s)}>{s.n}</Link><small>{s.cat.join(" › ")}</small></li>)}</ul></>}
         </div>
       ) : (

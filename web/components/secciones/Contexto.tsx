@@ -127,10 +127,8 @@ function Esperado({ datos, grupo, nombreGrupo, p, set, resalta }: { datos: Datos
             </> : <td colSpan={3} style={{ textAlign: "center", color: "var(--text-muted)" }}>{anios.length ? "sin proyección de abril para esos años" : "sin años completos"}</td>}
           </tr>
         ))}</tbody>
-        <caption style={{ captionSide: "bottom", textAlign: "left", fontSize: 12, color: "var(--text-muted)", paddingTop: 8 }}>
-          Sorpresa promedio por año, en puntos. {dir > 0 ? "Verde: mejor de lo esperado." : "Que salga más alto es peor: verde = más bajo de lo esperado."} La barra muestra la magnitud frente al mayor de la columna (a la derecha si es positiva, a la izquierda si es negativa) y las marcas “mejor” y “peor” señalan los extremos.
-        </caption>
       </table></div>
+      <p className="note" style={{ marginTop: "var(--e-2)" }}>Sorpresa promedio por año, en puntos. {dir > 0 ? "Verde: mejor de lo esperado." : "Que salga más alto es peor: verde = más bajo de lo esperado."} La barra muestra la magnitud frente al mayor de la columna (a la derecha si es positiva, a la izquierda si es negativa) y las marcas “mejor” y “peor” señalan los extremos.</p>
       <ul className="note" style={{ paddingLeft: 18 }}>
         {porPres.filter(({ s, anios }) => anios.length && ok(s.sArg) && ok(s.sGrp) && ok(s.dif)).map(({ x, s }) => (
           <li key={x.id}>Con {x.n}, la Argentina rindió {frase(s.sArg as number)} por año; {nombre}, {frase(s.sGrp as number)}. Diferencia: {signo(s.dif as number)} puntos.</li>
@@ -229,10 +227,8 @@ function Comparar({ datos, p, set, resalta }: { datos: DatosContexto; p: URLSear
             {def.id === "pibpc" && <td>{ok(pctIni) && ok(pctFin) ? `${nf0.format(pctIni)} % → ${nf0.format(pctFin)} %` : "—"}</td>}
           </tr>
         ))}</tbody>
-        <caption style={{ captionSide: "bottom", textAlign: "left", fontSize: 12, color: "var(--text-muted)", paddingTop: 8 }}>
-          {sufijo}. Puesto 1 = el mejor entre los elegidos ({def.dir > 0 ? "más alto es mejor" : "más bajo es mejor"}).{esIdx ? " Se mide del cierre del año anterior al mandato al último año." : ""}
-        </caption>
       </table></div>
+      <p className="note" style={{ marginTop: "var(--e-2)" }}>{sufijo}. Puesto 1 = el mejor entre los elegidos ({def.dir > 0 ? "más alto es mejor" : "más bajo es mejor"}).{esIdx ? " Se mide del cierre del año anterior al mandato al último año." : ""}</p>
     </div>
   );
 }
@@ -298,10 +294,8 @@ function Viento({ m, datos, PRES, resalta }: { m: NonNullable<ReturnType<typeof 
               : <Valor key={c.def.id} tono={tonoMarca(c.marca)} sub={<small>{MARCA_TXT[c.marca] === "—" ? `prom. total ${fmtV(c.def, c.total)}` : `${MARCA_TXT[c.marca]} (prom. total ${fmtV(c.def, c.total)})`}</small>}>{fmtV(c.def, c.mandato)}</Valor>)}
           </tr>
         ))}</tbody>
-        <caption style={{ captionSide: "bottom", textAlign: "left", fontSize: 12, color: "var(--text-muted)", paddingTop: 8 }}>
-          Promedio del mandato contra el de toda la serie. «A favor» o «en contra»: más de 10 % mejor o peor (en la tasa de la Fed y en el crecimiento de Brasil y China, más de 1 punto). El petróleo va sin marca porque no es ni bueno ni malo para todos. Brasil y China se promedian en los años cerrados (hasta {hasta}).
-        </caption>
       </table></div>
+      <p className="note" style={{ marginTop: "var(--e-2)" }}>Promedio del mandato contra el de toda la serie. «A favor» o «en contra»: más de 10 % mejor o peor (en la tasa de la Fed y en el crecimiento de Brasil y China, más de 1 punto). El petróleo va sin marca porque no es ni bueno ni malo para todos. Brasil y China se promedian en los años cerrados (hasta {hasta}).</p>
       <p className="note"><b>Que el contexto haya sido favorable no dice si se aprovechó bien; que haya sido desfavorable no explica todo lo que pasó.</b></p>
     </div>
   );

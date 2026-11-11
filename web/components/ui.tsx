@@ -22,6 +22,20 @@ export function alternar(set: Set<string>, v: string, vacio = false): Set<string
   return n;
 }
 
+/** Capas abiertas (ventanas, desplegables y selectores) en orden de apertura: Escape cierra solo la de arriba. */
+const pilaModales: symbol[] = [];
+/** Mientras `abierta` es true, esta capa está en la pila. Devuelve una función que dice si es la de arriba. */
+export function useCapa(abierta: boolean): () => boolean {
+  const yo = useRef(Symbol("capa"));
+  useEffect(() => {
+    if (!abierta) return;
+    const id = yo.current;
+    pilaModales.push(id);
+    return () => { const k = pilaModales.indexOf(id); if (k >= 0) pilaModales.splice(k, 1); };
+  }, [abierta]);
+  return useCallback(() => pilaModales[pilaModales.length - 1] === yo.current, []);
+}
+
 /** Panel desplegable que se abre debajo del botón y EMPUJA el contenido (no flota encima).
  *  Se cierra con Escape o con un clic afuera. */
 export function Desplegable({ etiqueta, children, abiertoInicial = false, className = "" }: {
@@ -30,14 +44,15 @@ export function Desplegable({ etiqueta, children, abiertoInicial = false, classN
   const [abierto, setAbierto] = useState(abiertoInicial);
   const raiz = useRef<HTMLDivElement>(null);
   const boton = useRef<HTMLButtonElement>(null);
+  const esLaDeArriba = useCapa(abierto);
   useEffect(() => {
     if (!abierto) return;
     const clic = (ev: MouseEvent) => { if (raiz.current && !raiz.current.contains(ev.target as Node)) setAbierto(false); };
-    const tecla = (ev: KeyboardEvent) => { if (ev.key === "Escape") { setAbierto(false); boton.current?.focus(); } };
+    const tecla = (ev: KeyboardEvent) => { if (ev.key === "Escape" && esLaDeArriba()) { setAbierto(false); boton.current?.focus(); } };
     document.addEventListener("mousedown", clic);
     document.addEventListener("keydown", tecla);
     return () => { document.removeEventListener("mousedown", clic); document.removeEventListener("keydown", tecla); };
-  }, [abierto]);
+  }, [abierto, esLaDeArriba]);
   return (
     <div className={`desplegable ${className}`} ref={raiz}>
       <button ref={boton} type="button" className="btn drop" aria-expanded={abierto} onClick={() => setAbierto(!abierto)}><span className="et">{etiqueta}</span></button>
@@ -47,14 +62,13 @@ export function Desplegable({ etiqueta, children, abiertoInicial = false, classN
 }
 
 /** Ventana modal con foco, Escape y clic en el fondo para cerrar. */
-const pilaModales: symbol[] = []; // con ventanas una sobre otra, Escape cierra solo la de arriba
 export function Modal({ titulo, onCerrar, children, ancho }: { titulo: string; onCerrar: () => void; children: ReactNode; ancho?: boolean }) {
   const yo = useRef(Symbol("modal"));
   const cerrar = useRef(onCerrar);
   cerrar.current = onCerrar;
   useEffect(() => {
     const id = yo.current;
-    pilaModales.push(id);
+    pilaModales.push(id);   // la ventana es una capa más; con un desplegable abierto encima, Escape no la toca
     const tecla = (ev: KeyboardEvent) => { if (ev.key === "Escape" && pilaModales[pilaModales.length - 1] === id) { ev.stopPropagation(); cerrar.current(); } };
     document.addEventListener("keydown", tecla, true);
     return () => { document.removeEventListener("keydown", tecla, true); const k = pilaModales.indexOf(id); if (k >= 0) pilaModales.splice(k, 1); };
@@ -84,6 +98,7 @@ export function Selector({ etiqueta, valor, opciones, onElegir, className = "" }
   const boton = useRef<HTMLButtonElement>(null);
   const lista = useRef<HTMLUListElement>(null);
   const id = useId();
+  useCapa(abierto);   // para que Escape dentro de una ventana cierre solo la lista
   const idx = Math.max(0, opciones.findIndex((o) => o[0] === valor));
 
   const abrir = useCallback(() => {

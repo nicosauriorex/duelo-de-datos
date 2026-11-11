@@ -8,31 +8,27 @@ import { Desplegable, Modal, Selector, Seg } from "./ui";
 import { IconoEditar } from "./Iconos";
 import { fmtMes, lastIdx, norm } from "@/lib/formato";
 import { ORDEN_RAIZ, textoBusqueda } from "@/lib/catalogo";
+import { esOculta } from "@/lib/nombres";
+import { catListado, colapsarRegiones, listables, otrasRegiones } from "@/lib/regiones";
 import { INFO_CAT, INFO_CORTA } from "@/lib/info";
 import type { Expr, Motor, SerieMeta } from "@/lib/motor";
 
 interface Nodo { nombre: string; hijos: Map<string, Nodo>; items: SerieMeta[]; total: number }
 const nodoNuevo = (nombre: string): Nodo => ({ nombre, hijos: new Map(), items: [], total: 0 });
 
-function armarArbol(metas: SerieMeta[], filtro?: (s: SerieMeta) => boolean): Nodo {
+/** Árbol de categorías con las series ya listables (una por rubro o producto); `camino` da la ruta de cada una (sin el nivel de región). */
+function armarArbol(metas: SerieMeta[], camino: (s: SerieMeta) => string[]): Nodo {
   const raiz = nodoNuevo("Todas las variables");
   ORDEN_RAIZ.forEach((n) => raiz.hijos.set(n, nodoNuevo(n)));
   metas.forEach((s) => {
-    if (filtro && !filtro(s)) return;
     let nodo = raiz; raiz.total++;
-    s.cat.forEach((c) => {
+    camino(s).forEach((c) => {
       if (!nodo.hijos.has(c)) nodo.hijos.set(c, nodoNuevo(c));
       nodo = nodo.hijos.get(c)!; nodo.total++;
     });
     nodo.items.push(s);
   });
   for (const [k, v] of raiz.hijos) if (!v.total) raiz.hijos.delete(k);
-  // "Nacional" primero, después GBA y el resto de las regiones
-  const primero = (n: Nodo) => {
-    if (n.hijos.has("Nacional")) n.hijos = new Map([...n.hijos].sort((a, b) => (a[0] === "Nacional" ? -1 : 0) - (b[0] === "Nacional" ? -1 : 0)));
-    n.hijos.forEach(primero);
-  };
-  primero(raiz);
   return raiz;
 }
 
@@ -70,6 +66,7 @@ function Info({ id, onCerrar }: { id: string; onCerrar: () => void }) {
         <p className="note">{meta.cat.join(" › ")}</p>
         <p>{meta.desc || ""}</p>
         <table className="ficha"><tbody>
+          {meta.nTecnico && meta.nTecnico !== meta.n && <tr><td>Nombre técnico</td><td>{meta.nTecnico}</td></tr>}
           <tr><td>Tipo</td><td>{idx ? "Índice (sin unidad, se ve tal cual)" : "Valor"}</td></tr>
           <tr><td>Unidad</td><td>{meta.u}</td></tr>
           {s && <tr><td>Datos</td><td>{fmtMes(motor.F[s.i0])} a {fmtMes(motor.F[lastIdx(s.vals)])}</td></tr>}
@@ -125,7 +122,9 @@ export function Picker({ pedido, onCerrar }: { pedido: PickerPedido; onCerrar: (
   const inp = useRef<HTMLInputElement>(null);
   const primero = useRef<string | undefined>(undefined);
   useEffect(() => { inp.current?.focus(); }, []);
-  const raiz = useMemo(() => armarArbol(metas, pedido.filtro), [metas, pedido.filtro]);
+  // `sub`: lo que el pedido permite; el árbol lista una sola serie por rubro o producto (la región se elige después en "Configurar variable")
+  const sub = useMemo(() => (pedido.filtro ? metas.filter(pedido.filtro) : metas), [metas, pedido.filtro]);
+  const raiz = useMemo(() => armarArbol(listables(sub), (s) => catListado(s, sub)), [sub]);
   const elegir = (id: string, med?: string, esc?: string) => { onCerrar(); pedido.cb(id, med, esc); };
   const qn = norm(q.trim());
 
@@ -134,15 +133,17 @@ export function Picker({ pedido, onCerrar }: { pedido: PickerPedido; onCerrar: (
   let pie: string;
   if (qn) {
     const toks = qn.split(/\s+/);
-    const res: [number, SerieMeta][] = [];
-    metas.forEach((s) => {
-      if (pedido.filtro && !pedido.filtro(s)) return;
-      if (camino.length && !todo && !camino.every((c, k) => s.cat[k] === c)) return;
-      const nombre = norm(s.n), t = textoBusqueda(s as SerieMeta & { busca?: string });
+    const crudo: [number, SerieMeta][] = [];
+    sub.forEach((s) => {
+      if (esOculta(s.id)) return;
+      if (camino.length && !todo) { const cl = catListado(s, sub); if (!camino.every((c, k) => cl[k] === c)) return; }
+      const nombre = norm(s.n + " " + (s.nTecnico || "")), t = textoBusqueda(s as SerieMeta & { busca?: string });
       if (!toks.every((k) => t.includes(k))) return;
-      res.push([toks.reduce((a, k) => a + (nombre.includes(k) ? 2 : 0) + (nombre.startsWith(k) ? 1 : 0), 0), s]);
+      crudo.push([toks.reduce((a, k) => a + (nombre.includes(k) ? 2 : 0) + (nombre.startsWith(k) ? 1 : 0), 0), s]);
     });
-    res.sort((a, b) => b[0] - a[0] || a[1].n.length - b[1].n.length);
+    crudo.sort((a, b) => b[0] - a[0] || a[1].n.length - b[1].n.length);
+    // cada rubro o producto una vez; con "patagonia" sale con esa región ya elegida
+    const res: [number, SerieMeta][] = colapsarRegiones(crudo.map((r) => r[1]), sub).map((s) => [0, s]);
     cuerpo = res.slice(0, 150).map(([, s]) => (
       <li key={s.id}>
         <button type="button" title={s.desc || ""} onClick={() => elegir(s.id)}>
@@ -262,6 +263,7 @@ export function FilaVariable({ e, onChange, color, quitable, agregable, textoAgr
   const A = meta(e.id);
   if (!A) return null;
   const escs = motor.escPermitidas(A), escV = escs.some((o) => o[0] === e.esc) ? (e.esc || "") : "";
+  const regiones = otrasRegiones(metas, A.id);
   const nMed = motor.cantMedidas(motor.gruposMedida(A));
   const relOk = motor.relPermitido(A) && !escV && !sinRel;
   const conRel = relOk && !!e.rel;
@@ -273,6 +275,9 @@ export function FilaVariable({ e, onChange, color, quitable, agregable, textoAgr
         cb: (id, med, esc) => { const nuevo: Expr = { ...e, id, med: med ?? medidaInicial(meta(id)!.tipo, motor.medDefault(meta(id)!), config), esc: esc ?? "" }; if (!motor.relPermitido(meta(id)!)) nuevo.rel = null; onChange(nuevo); },
       })}>{A.n}</button>
       <BotonInfo id={A.id} />
+      {regiones.length > 1 && (
+        <Selector etiqueta="Región" valor={A.id} opciones={regiones.map((r) => [r.id, r.region] as [string, string])} onElegir={(id) => onChange({ ...e, id })} />
+      )}
       {(errores[A.archivo] || (B && errores[B.archivo])) && <span className="error" role="alert">No se pudieron bajar los datos de esta variable.</span>}
       {conRel || escV === "pib" ? null : nMed < 2
         ? <span className="lbl">{motor.esIndice(A) ? "Índice: se ve tal cual" : A.u}</span>
@@ -328,7 +333,7 @@ export function RenglonVariable({ e, onChange, color, quitable, sinRel, onMover,
       </button>
       {error && <span className="error" role="alert">No se pudieron bajar los datos.</span>}
       {verEnSalarios && (
-        <button type="button" className="btn chico" title="Cuántos salarios cuesta (salario SIPA mediano)" onClick={() => onChange({ ...e, rel: "sipa_med", modo: "medido", med: "corr", esc: "" })}>Ver en salarios</button>
+        <button type="button" className="btn chico" title="Cuántos salarios cuesta (salario mediano de trabajadores registrados)" onClick={() => onChange({ ...e, rel: "sipa_med", modo: "medido", med: "corr", esc: "" })}>Ver en salarios</button>
       )}
       {onMover && <>
         <button type="button" className="btn chico" aria-label="Subir" disabled={!puedeSubir} onClick={() => onMover(-1)}>↑</button>
@@ -386,8 +391,11 @@ function ConfigurarVariable({ e0, sinRel, onAceptar, onCerrar }: { e0: Expr; sin
   // "Cómo se mide": valor (en la moneda elegida), las medidas propias de la serie y las variaciones
   const como: [string, string][] = [];
   if (monedaG.length) como.push(["__valor", "Valor"]);
+  const varPrimero = motor.ubicarMedida(A, motor.medDefault(A))?.g.k === "var";   // la inflación y los índices de precios abren en variaciones: el índice tal cual va al final
+  const agregarVar = () => varG?.dims[0].opciones.forEach((o) => como.push([`v:${o[0]}`, o[1]]));
+  if (varPrimero) agregarVar();
   otrosG.forEach((g) => g.dims[0].opciones.forEach((o) => como.push([`o:${g.k}:${o[0]}`, o[1]])));
-  varG?.dims[0].opciones.forEach((o) => como.push([`v:${o[0]}`, o[1]]));
+  if (!varPrimero) agregarVar();
   const comoAct = enMoneda ? "__valor" : act.g.k === "var" ? `v:${act.v[0]}` : `o:${act.g.k}:${act.v[0]}`;
   const elegirComo = (k: string) => {
     if (k === "__valor") return setMed(porDefecto(monedaG[0]));
@@ -405,6 +413,7 @@ function ConfigurarVariable({ e0, sinRel, onAceptar, onCerrar }: { e0: Expr; sin
     },
   });
   const hayMedida = !conRel && escV !== "pib";
+  const regiones = otrasRegiones(metas, A.id);   // otras regiones del mismo rubro o producto (el IPC y los precios promedio vienen por región)
   return (
     <>
       <Modal titulo="Configurar variable" onCerrar={cancelar}>
@@ -414,6 +423,11 @@ function ConfigurarVariable({ e0, sinRel, onAceptar, onCerrar }: { e0: Expr; sin
             <button type="button" className="btn var" title={A.n} onClick={pickVar}>{A.n}</button>
             <BotonInfo id={A.id} />
           </Grupo>
+          {regiones.length > 1 && (
+            <Grupo titulo="Región">
+              <Selector etiqueta="Región" valor={A.id} opciones={regiones.map((r) => [r.id, r.region] as [string, string])} onElegir={(id) => setD({ ...d, id })} />
+            </Grupo>
+          )}
           {hayMedida && enMoneda && monedaG.length > 1 && (
             <Grupo titulo="Moneda">
               <Seg valor={act.g.k} opciones={monedaG.map((g) => [g.k, g.nombre] as [string, string])} onElegir={(k) => { if (k !== act.g.k) setMed(porDefecto(monedaG.find((g) => g.k === k)!)); }} />

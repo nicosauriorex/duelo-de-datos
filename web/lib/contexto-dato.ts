@@ -72,7 +72,7 @@ export function contextoDato(m: Motor, e: Expr, conFrases = true): ContextoDato 
     }
   }
   // 4. contra hace un año (la inflación mensual cuenta su interanual, como la portada)
-  if (e.id === "inflacion" && !e.rel) {
+  if (e.id === "ipc_empalme" && !e.rel && (e.med ?? m.medDefault(c.serie)) === "vm") {
     const t = interanualTxt(m);
     if (t) neutra(`Interanual: ${t}.`);
   } else {

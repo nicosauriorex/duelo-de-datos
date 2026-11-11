@@ -93,7 +93,7 @@ export function Curiosidades() {
   return (
     <section>
       <p className="sub">Lo que más se suele preguntar, calculado con los mismos datos.</p>
-      <p className="aviso-link">Los datos curiosos armados a mano están en <Link prefetch={false} href="/plantillas/"><b>Plantillas</b></Link>. El ranking de presidentes y &quot;Lo mejor y lo peor de cada gobierno&quot; pasaron a <Link prefetch={false} href="/ranking/"><b>Ranking</b></Link>.</p>
+      <p className="aviso-link">Los datos curiosos armados a mano están en <Link prefetch={false} href="/plantillas/"><b>Gráficos listos</b></Link>. El ranking de presidentes y &quot;Lo mejor y lo peor de cada gobierno&quot; pasaron a <Link prefetch={false} href="/ranking/"><b>Ranking</b></Link>.</p>
       <CuriosGeneradas m={m} PRES={PRES} I={I} b={b} p={p} set={set} />
     </section>
   );

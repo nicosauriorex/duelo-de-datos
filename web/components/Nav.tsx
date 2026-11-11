@@ -9,17 +9,18 @@ import { IconoAbajo, IconoVolver } from "./Iconos";
 
 /** Las 5 secciones del menú: [carpeta, nombre]. */
 export const SECCIONES: [string, string][] = [
-  ["", "Inicio"], ["historico", "Histórico"], ["presidentes", "Presidentes"], ["contexto", "Contexto"], ["plantillas", "Plantillas"],
+  ["", "Inicio"], ["historico", "Histórico"], ["presidentes", "Presidentes"], ["contexto", "Contexto"], ["plantillas", "Gráficos listos"],
 ];
 /** Subsecciones de Presidentes: [carpeta, ancla, nombre]. Las URLs son las de siempre. */
 const SUBSECCIONES: [string, string, string][] = [
   ["presidentes", "", "Por presidente"], ["ranking", "", "Ranking"], ["mandato", "", "Meses de mandato"],
-  ["curiosidades", "", "Curiosidades"], ["elecciones", "", "Elecciones"], ["congreso", "", "Congreso"],
+  ["elecciones", "", "Elecciones"], ["congreso", "", "Congreso"],
 ];
-const GRUPO_PRES = new Set(SUBSECCIONES.map((s) => s[0]));
+// Curiosidades ya no está en el menú, pero la página sigue en la misma URL y cuenta como parte de Presidentes.
+const GRUPO_PRES = new Set([...SUBSECCIONES.map((s) => s[0]), "curiosidades"]);
 const TITULOS: Record<string, string> = {
   historico: "Histórico", presidentes: "Por presidente", ranking: "Ranking de presidentes", mandato: "Meses de mandato",
-  curiosidades: "Curiosidades", congreso: "Gobierno y Congreso", elecciones: "Elecciones", contexto: "Contexto internacional", plantillas: "Plantillas", fuentes: "Fuentes",
+  curiosidades: "Curiosidades", congreso: "Gobierno y Congreso", elecciones: "Elecciones", contexto: "Contexto internacional", plantillas: "Gráficos listos", fuentes: "Fuentes",
 };
 /** Páginas donde aparece "Volver" si se llegó desde otra página del sitio. */
 const CON_VOLVER = new Set(["historico", "tema", ...GRUPO_PRES]);

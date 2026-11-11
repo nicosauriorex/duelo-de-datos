@@ -36,9 +36,11 @@
 }
 /* Color de cada presidente: se puede pisar desde la configuración global (aplicarColPres) */
 :root, .fijo-oscuro {
-  --pres-menem1: var(--neutral); --pres-menem2: var(--neutral); --pres-delarua: var(--series-8); --pres-duhalde: var(--series-7);
-  --pres-nk: var(--series-6); --pres-cfk1: var(--series-5); --pres-cfk2: var(--series-4); --pres-macri: var(--series-3);
-  --pres-af: var(--series-2); --pres-milei: var(--series-1);
+  /* Siguen al partido cuando se puede (Macri amarillo, Cristina celeste, Milei violeta) y ningún par de mandatos consecutivos, ni Néstor–Macri, comparte tono.
+     Duhalde es el único color fuera de las series (cian): su valor para el tema claro está al final de cada bloque claro. */
+  --pres-menem1: var(--neutral); --pres-menem2: var(--neutral); --pres-delarua: var(--series-8); --pres-duhalde: #3cd0e0;
+  --pres-nk: var(--series-5); --pres-cfk1: var(--series-1); --pres-cfk2: #4a86f2; --pres-macri: var(--series-4);
+  --pres-af: var(--series-2); --pres-milei: var(--series-7);
 }
 :root[data-theme="light"] {
   color-scheme: light;
@@ -49,7 +51,7 @@
   --accion: #ffb81c; --sobre-accion: #0a1230; --foco: #0b5cad;
   --campo: #ffffff; --sobre-campo: #0a1230; --campo-ayuda: #56638a;
   --series-1: #1f6fd0; --series-2: #d9601a; --series-3: #0f9d76; --series-4: #b98400;
-  --series-5: #d1568f; --series-6: #4f8f00; --series-7: #6250d6; --series-8: #d23c3c;
+  --series-5: #d1568f; --series-6: #4f8f00; --series-7: #6250d6; --series-8: #d23c3c; --pres-duhalde: #0a8ea0; --pres-cfk2: #0b47a6;
   --bueno: #0a7a2f; --malo: #b3261e; --pos: #0a7a2f; --neg: #b3261e;
   --bueno-f1: #e3f4e7; --bueno-f2: #b9e4c3; --bueno-f3: #5fbf7c; --bueno-f4: #0a7a2f;
   --sobre-bueno-1: #0a1230; --sobre-bueno-2: #0a1230; --sobre-bueno-3: #06210f; --sobre-bueno-4: #ffffff;
@@ -68,7 +70,7 @@
     --accion: #ffb81c; --sobre-accion: #0a1230; --foco: #0b5cad;
     --campo: #ffffff; --sobre-campo: #0a1230; --campo-ayuda: #56638a;
     --series-1: #1f6fd0; --series-2: #d9601a; --series-3: #0f9d76; --series-4: #b98400;
-    --series-5: #d1568f; --series-6: #4f8f00; --series-7: #6250d6; --series-8: #d23c3c;
+    --series-5: #d1568f; --series-6: #4f8f00; --series-7: #6250d6; --series-8: #d23c3c; --pres-duhalde: #0a8ea0; --pres-cfk2: #0b47a6;
     --bueno: #0a7a2f; --malo: #b3261e; --pos: #0a7a2f; --neg: #b3261e;
     --bueno-f1: #e3f4e7; --bueno-f2: #b9e4c3; --bueno-f3: #5fbf7c; --bueno-f4: #0a7a2f;
     --sobre-bueno-1: #0a1230; --sobre-bueno-2: #0a1230; --sobre-bueno-3: #06210f; --sobre-bueno-4: #ffffff;
@@ -618,6 +620,16 @@ th small { display: block; font-size: var(--t-micro); font-weight: 400; color: v
 .comp-cuerpo h2 { margin: 0; font-size: var(--t-lg); }
 .comp-previa { position: relative; display: flex; justify-content: center; align-items: center; height: min(46vh, 520px); background: var(--surface-2); border: 1px solid var(--border); overflow: hidden; }   /* alto fijo: la imagen (cuadrada, vertical u horizontal) se acomoda adentro y nunca se sale */
 .comp-previa canvas { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; }
+.comp-previa.ampliable { cursor: zoom-in; }
+.comp-previa.ampliable:focus-visible { outline: 2px solid var(--foco); outline-offset: 2px; }
+/* Vista previa a pantalla completa: la imagen entera, contenida, sobre fondo oscuro (igual en los dos temas) */
+.comp-completa { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; background: var(--barra); padding: var(--e-4); cursor: zoom-out; }
+.comp-completa img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; }
+.comp-completa-cerrar { position: absolute; top: max(var(--e-2), env(safe-area-inset-top)); right: max(var(--e-2), env(safe-area-inset-right)); width: var(--alto-toque); height: var(--alto-toque);
+  display: grid; place-items: center; padding: 0; border: 2px solid var(--sobre-barra); border-radius: var(--r-pleno); background: var(--barra); color: var(--sobre-barra); font-size: 1.75rem; line-height: 1; cursor: pointer; }
+.comp-completa-cerrar:focus-visible { outline: 3px solid var(--accion); outline-offset: 2px; }
+@media (prefers-reduced-motion: no-preference) { .comp-completa { animation: comp-completa-entra var(--d-2) var(--curva); } }
+@keyframes comp-completa-entra { from { opacity: 0; } to { opacity: 1; } }
 .comp-estado { position: absolute; margin: 0; }
 .comp-opciones { display: grid; gap: var(--e-2); }
 .comp-opciones .controls { margin: 0; }
@@ -874,6 +886,25 @@ tr.clic.abierto > td { font-weight: 700; }
 .modo .note { margin: 2px 0 0 var(--e-5); }
 .modo .sangria { margin: 6px 0 0 var(--e-5); display: flex; flex-wrap: wrap; gap: var(--e-2); align-items: center; }
 .rk-abiertos { display: flex; gap: var(--e-2); align-items: center; margin-bottom: var(--e-2); }
+/* Ranking: puntaje plegado, orden completo, "Mejor en" bajo el nombre en celular y detalle que no se desliza con la tabla */
+.rk-puntaje { margin-top: var(--e-4); }
+.rk-orden { min-width: 220px; }
+.rk-detalle { position: sticky; left: 0; width: min(100%, calc(100vw - 2 * var(--e-4))); }
+.rk-tabla .c-pres .c-per + .c-per { display: none; }
+@media (max-width: 639.98px) {
+  .rk-tabla .c-pres .c-per + .c-per { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-muted); }
+  .rk-tabla .rk-col-mejor { display: none; }
+}
+/* Gráficos listos: filtros por grupo, un botón por grupo con objetivo táctil de 44 px */
+.filtros-graficos { margin: 0 0 var(--e-3); }
+.filtros-graficos .seg { display: flex; gap: var(--e-1); border: 0; background: none; overflow: visible; }
+.filtros-graficos .seg button { min-height: var(--alto-toque); border: 1px solid var(--border-fuerte); border-radius: var(--r-2); background: var(--surface-1); padding: 0 var(--e-3); }
+.filtros-graficos .seg button[aria-pressed="true"] { border-color: var(--acento); background: var(--acento); color: var(--sobre-acento); }
+/* En celular, cada grupo plegado muestra 3 tarjetas (6 en pantallas anchas): la página queda corta y "Ver los N" despliega el resto. */
+@media (max-width: 639.98px) { .curios.plegado > :nth-child(n+4) { display: none; } }
+.filtros-graficos .seg button:focus-visible { outline: var(--linea) solid var(--foco); outline-offset: 2px; }
+/* Elecciones: aviso arriba de todo */
+.aviso-elecciones { border: 1px solid var(--malo); background: var(--malo-f1); color: var(--sobre-malo-1); border-radius: var(--r-2); padding: var(--e-2) var(--e-3); font-size: var(--t-sm); margin: 0 0 var(--e-3); max-width: 72ch; }
 .mp-grid { display: grid; grid-template-columns: 1fr; gap: var(--e-3); margin-top: 10px; }
 .voto-dos { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: var(--e-3); margin: var(--e-2) 0; }
 .fila-fuerte td { background: var(--acento-suave); }
@@ -895,7 +926,7 @@ tr.clic.abierto > td { font-weight: 700; }
     --accion: #ffb81c; --sobre-accion: #0a1230; --foco: #0b5cad;
     --campo: #ffffff; --sobre-campo: #0a1230; --campo-ayuda: #56638a;
     --series-1: #1f6fd0; --series-2: #d9601a; --series-3: #0f9d76; --series-4: #b98400;
-    --series-5: #d1568f; --series-6: #4f8f00; --series-7: #6250d6; --series-8: #d23c3c;
+    --series-5: #d1568f; --series-6: #4f8f00; --series-7: #6250d6; --series-8: #d23c3c; --pres-duhalde: #0a8ea0; --pres-cfk2: #0b47a6;
     --bueno: #0a7a2f; --malo: #b3261e; --pos: #0a7a2f; --neg: #b3261e;
     --bueno-f1: #e3f4e7; --bueno-f2: #b9e4c3; --bueno-f3: #5fbf7c; --bueno-f4: #0a7a2f;
     --sobre-bueno-1: #0a1230; --sobre-bueno-2: #0a1230; --sobre-bueno-3: #06210f; --sobre-bueno-4: #ffffff;

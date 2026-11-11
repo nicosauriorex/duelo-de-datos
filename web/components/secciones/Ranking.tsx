@@ -7,8 +7,8 @@ import { FilaVariable } from "../Variables";
 import { ContextoMandato } from "./ContextoMandato";
 import { BotonCompartir } from "../PanelCompartir";
 import { IconoCompartir } from "../Iconos";
-import { CeldaPresMandato, CeldaVar, LineaInicio, Valor, useBase } from "./comunes";
-import { columnaComparable } from "@/lib/tablas";
+import { CeldaPres, CeldaVar, LineaInicio, Valor, useBase } from "./comunes";
+import { columnaComparable, periodoMandato } from "@/lib/tablas";
 import { fmtMes, nf0, nf1, ok } from "@/lib/formato";
 import { crearPres, mejorPeor, rankingPresidentes, tablasIndicadores, type CritRk, type FilaMP, type IndRk, type Pres, type TablaInd } from "@/lib/estadisticas";
 import { crearIndicadores } from "@/lib/catalogo";
@@ -63,6 +63,35 @@ function MejorPeor({ m, tablas, PRES, pres, crit }: { m: Motor; tablas: TablaInd
   );
 }
 
+type DesRk = NonNullable<TablaInd["des"][number]>;
+/** Para cada indicador, el orden de los presidentes según el criterio, con quién quedó primero y quién último. */
+function Comparacion({ m, tablas, PRES, crit, conUnidad }: { m: Motor; tablas: TablaInd[]; PRES: Pres[]; crit: CritRk; conUnidad: boolean }) {
+  const nom = (k: number) => PRES[k].corto ?? PRES[k].n;
+  const filas = tablas.map((t) => {
+    const orden = t.des.map((d, k) => (d && d.puesto ? { k, d, score: crit === "ambos" ? (d.puesto.mejora[2] + d.puesto.nivel[2]) / 2 : d.puesto[crit][2] } : null))
+      .filter((x): x is { k: number; d: DesRk; score: number } => !!x).sort((a, c) => c.score - a.score);
+    return { t, orden };
+  }).filter((f) => f.orden.length >= 2);
+  const cifra = (t: TablaInd, d: DesRk) => (crit === "nivel" ? `promedio ${m.fmtC(t.c, d.st.prom)}` : menos(m.variacionTxt(t.c, d.st.ini ?? null, d.st.fin ?? null)));
+  if (!filas.length) return <p className="note">No hay indicadores con datos de al menos dos presidentes para comparar.</p>;
+  return (
+    <div className="tablewrap fija"><table>
+      <thead><tr><th style={{ textAlign: "left" }}>Indicador</th><th style={{ textAlign: "left" }}>Primero</th><th style={{ textAlign: "left" }}>Último</th><th style={{ textAlign: "left" }}>Orden completo</th></tr></thead>
+      <tbody>{filas.map(({ t, orden }) => {
+        const a = orden[0], z = orden[orden.length - 1];
+        return (
+          <tr key={t.grupo + t.nombre}>
+            <CeldaVar nombre={<Link prefetch={false} href={hrefHist(t.ind)} title={t.nombre}>{t.nombre}</Link>} unidad={conUnidad ? `${t.grupo} · ${t.c.unidad}` : t.c.unidad} />
+            <Valor tono="bueno" sub={<small>{cifra(t, a.d)}</small>}>{nom(a.k)}</Valor>
+            <Valor tono="malo" sub={<small>{cifra(t, z.d)}</small>}>{nom(z.k)}</Valor>
+            <td className="unidad rk-orden">{orden.map((x) => nom(x.k)).join(" › ")}</td>
+          </tr>
+        );
+      })}</tbody>
+    </table></div>
+  );
+}
+
 export function Ranking() {
   const [p, set, montado] = useParams();
   const sec = useSeccion("todo");
@@ -83,6 +112,7 @@ export function Ranking() {
   const inds: IndRk[] = usaVars
     ? vars.map((e, k) => ({ ind: e, grupo: "v" + k, nombre: m.calc(e).corto }))
     : I.INDIC.filter((i) => grupos.has(i.grupo)).map((i) => ({ ind: i as Expr, grupo: i.grupo, nombre: i.nombre }));
+  const tablasComp = usaVars ? tablasIndicadores(m, F, PRES, inds, b) : tablasTodos.filter((t) => grupos.has(t.grupo));
   const valido = !usaVars || vars.length >= MIN_V;
   const res = valido ? rankingPresidentes(m, F, PRES, inds, crit, b) : null;
 
@@ -90,7 +120,7 @@ export function Ranking() {
   const colPuntaje = columnaComparable((res?.filas ?? []).map((f) => f.score), 1, false);
   const abiertos = lista(p.get("rka")).filter((id) => res?.filas.some((f) => f.p.id === id));
   const alternarAb = (id: string) => set({ rka: (abiertos.includes(id) ? abiertos.filter((x) => x !== id) : [...abiertos, id]).join(",") || null });
-  const porDefecto = ["sipa_med", "inflacion", "pob_tasa_pobreza_personas"].map((id) => I.INDIC.find((i) => i.id === id)).filter(Boolean) as Expr[];
+  const porDefecto = ["sipa_med", "ipc_empalme", "pob_tasa_pobreza_personas"].map((id) => I.INDIC.find((i) => i.id === id)).filter(Boolean) as Expr[];
   const cambiarModo = (v: string) => {
     if (v === "vars") set({ rkv: porDefecto.map((e) => encExpr(e)).join(",") });
     else set({ rkv: null });
@@ -100,7 +130,7 @@ export function Ranking() {
 
   return (
     <section>
-      <p className="sub">Un puntaje de 0 a 100 por presidente, armado con los indicadores que elijas. Cada presidente se evalúa con los mismos indicadores y el mismo criterio.</p>
+      <p className="sub">Quién quedó mejor y quién peor en cada indicador, con los indicadores que elijas. Cada presidente se evalúa con los mismos indicadores y el mismo criterio. Más abajo, un puntaje combinado de 0 a 100.</p>
       <div className="controls">
         <label>Qué entra</label>
         <Seg valor={usaVars ? "vars" : "grupos"} opciones={[["grupos", "Por grupos"], ["vars", "Elegir variables"]]} onElegir={cambiarModo} />
@@ -120,56 +150,62 @@ export function Ranking() {
           <Seg valor={grupos} opciones={I.GRUPOS_IND.map((g) => [g, g] as [string, string])} onElegir={(v) => set({ rk: [...alternar(grupos, v)].join(",") })} /></div>
       )}
       <LineaInicio info={info} F={F} />
-      <div className="card">
-        <p className="note">Para cada indicador se ordena a los presidentes según <b>{CRIT_TXT[crit]}</b> y se pasa a un puntaje de 0 (el peor) a 100 (el mejor). Se promedia dentro de cada grupo y después entre grupos, para que ningún grupo pese más por tener más series. <b>Ojo:</b> muchos datos empiezan en 2003, 2012 o 2016, así que Menem, De la Rúa y Duhalde se evalúan con pocos indicadores; Milei, con un mandato en curso; y el contexto internacional y la herencia de cada uno no entran en el número. <b>Cada presidente se evalúa con los mismos indicadores y el mismo criterio.</b> En la tabla, la barra del puntaje va de 0 a 100, verde es la mitad de arriba y rojo la de abajo, y las marcas “mejor” y “peor” señalan los extremos.
-          {res?.incompletas && usaVars ? " Algunas variables no tienen datos para todos los presidentes." : ""}</p>
-        {!res ? <p className="note">Elegí al menos {MIN_V} variables para armar el ranking.</p> : (
-          <>
+      <h2 id="rk-comparacion">Indicador por indicador</h2>
+      <p className="note">Para cada indicador, los presidentes se ordenan según <b>{CRIT_TXT[crit]}</b>. Verde = el que quedó mejor, rojo = el que quedó peor; debajo del nombre va el dato que lo explica. Cada presidente se evalúa con los mismos indicadores y el mismo criterio.</p>
+      <Comparacion m={m} tablas={tablasComp} PRES={PRES} crit={crit} conUnidad={!usaVars} />
+      {!res ? <p className="note">Con al menos {MIN_V} variables se arma también el puntaje combinado.</p> : (
+        <details className="callout contexto-plegado rk-puntaje" open={abiertos.length > 0 ? true : undefined}>
+          <summary><b>Puntaje combinado</b>{" "}<span className="resumen">Depende de los indicadores elegidos; no es una medida oficial</span></summary>
+          <p className="note">Un puntaje de 0 (el peor) a 100 (el mejor) por presidente. Se promedia dentro de cada grupo y después entre grupos, para que ningún grupo pese más por tener más series. <b>Ojo:</b> muchos datos empiezan en 2003, 2012 o 2016, así que Menem, De la Rúa y Duhalde se evalúan con pocos indicadores; Milei, con un mandato en curso; y el contexto internacional y la herencia de cada uno no entran en el número. En la tabla, la barra va de 0 a 100, verde es la mitad de arriba y rojo la de abajo, y las marcas “mejor” y “peor” señalan los extremos.
+            {res.incompletas && usaVars ? " Algunas variables no tienen datos para todos los presidentes." : ""}</p>
           <div className="controls">
             <BotonCompartir className="btn" titulo="Primero los Datos: ranking de presidentes" href={() => window.location.href} deshabilitado={!res.filas.length}
               title="Armar una imagen del ranking para compartir" aria-label="Compartir como imagen: ranking de presidentes"
               crearVista={() => ({ tipo: "ranking", crit, inds, usaVars, base: b })}><IconoCompartir />Compartir</BotonCompartir>
           </div>
           {abiertos.length > 0 && <div className="rk-abiertos"><button type="button" className="btn" onClick={() => set({ rka: null })}>Cerrar todos</button></div>}
-          <div className="tablewrap fija"><table>
-            <thead><tr><th>Presidente</th><th>Puntaje</th><th>Indicadores</th><th style={{ textAlign: "left" }}>Mejor en</th><th style={{ textAlign: "left" }}>Peor en</th></tr></thead>
+          <div className="tablewrap fija rk-tabla"><table>
+            <thead><tr><th>Presidente</th><th>Puntaje</th><th>Indicadores</th><th className="rk-col-mejor" style={{ textAlign: "left" }}>Mejor en</th><th style={{ textAlign: "left" }}>Peor en</th></tr></thead>
             <tbody>{res.filas.map((f, k) => {
               const ab = abiertos.includes(f.p.id);
+              const px = PRES.find((x) => x.id === f.p.id) ?? f.p;
+              const mejorEn = f.items.slice(0, 3).map((i) => i.nombre).join(" · ");
               return (
                 <Fragment key={f.p.id}>
                   <tr className={`clic${ab ? " abierto" : ""}`} tabIndex={0} aria-expanded={ab} onClick={() => alternarAb(f.p.id)}
                     onKeyDown={(ev) => { if (ev.key === "Enter") alternarAb(f.p.id); }}>
-                    <CeldaPresMandato x={PRES.find((x) => x.id === f.p.id) ?? f.p} F={F} pos={k + 1} />
+                    <CeldaPres n={px.n} corto={px.corto} periodo={periodoMandato(F, px)} aparte={mejorEn ? `Mejor en: ${mejorEn}` : null} pos={k + 1} />
                     <Valor tono={colPuntaje.tono[k]} f={(f.score as number) / 100} modo="izq" marca={colPuntaje.marca[k]}>{nf0.format(f.score as number)}</Valor><td>{f.items.length}</td>
-                    <td className="unidad">{f.items.slice(0, 3).map((i) => i.nombre).join(" · ")}</td>
+                    <td className="unidad rk-col-mejor">{mejorEn}</td>
                     <td className="unidad">{f.items.slice(-3).reverse().map((i) => i.nombre).join(" · ")}</td>
                   </tr>
                   {ab && (
                     <tr><td colSpan={5}>
-                      <ContextoMandato m={m} pres={PRES.find((x) => x.id === f.p.id) ?? f.p} />
-                      <div className="tablewrap fija"><table>
-                        <thead><tr><th style={{ textAlign: "left" }}>Indicador</th><th>Inicio</th><th>Cierre</th><th>Cambio</th><th>Puesto</th></tr></thead>
-                        <tbody>{f.items.map((i) => (
-                          <tr key={i.grupo + i.nombre}>
-                            <CeldaVar nombre={i.nombre} unidad={usaVars ? i.c.unidad : i.grupo} />
-                            <td>{m.fmtC(i.c, i.d.st.ini)}<small>{i.d.st.iniI != null ? fmtMes(F[i.d.st.iniI]) : ""}</small></td>
-                            <td>{m.fmtC(i.c, i.d.st.fin)}<small>{i.d.st.finI != null ? fmtMes(F[i.d.st.finI]) : ""}</small></td>
-                            <Valor tono={i.d.bueno ? "bueno" : i.d.malo ? "malo" : null}
-                              sub={m.difAbsTxt(i.c, i.d.st.ini ?? null, i.d.st.fin ?? null) ? <small>{m.difAbsTxt(i.c, i.d.st.ini ?? null, i.d.st.fin ?? null)}</small> : null}>{menos(m.variacionTxt(i.c, i.d.st.ini ?? null, i.d.st.fin ?? null))}</Valor>
-                            <Valor tono={i.pct > 50 ? "bueno" : i.pct < 50 ? "malo" : null}>{i.puesto}º de {i.de}</Valor>
-                          </tr>
-                        ))}</tbody>
-                      </table></div>
-                      <MejorPeor m={m} tablas={tablasTodos} PRES={PRES} pres={PRES.find((x) => x.id === f.p.id) ?? f.p} crit={crit} />
+                      <div className="rk-detalle">
+                        <ContextoMandato m={m} pres={px} />
+                        <div className="tablewrap fija"><table>
+                          <thead><tr><th style={{ textAlign: "left" }}>Indicador</th><th>Inicio</th><th>Cierre</th><th>Cambio</th><th>Puesto</th></tr></thead>
+                          <tbody>{f.items.map((i) => (
+                            <tr key={i.grupo + i.nombre}>
+                              <CeldaVar nombre={i.nombre} unidad={usaVars ? i.c.unidad : i.grupo} />
+                              <td>{m.fmtC(i.c, i.d.st.ini)}<small>{i.d.st.iniI != null ? fmtMes(F[i.d.st.iniI]) : ""}</small></td>
+                              <td>{m.fmtC(i.c, i.d.st.fin)}<small>{i.d.st.finI != null ? fmtMes(F[i.d.st.finI]) : ""}</small></td>
+                              <Valor tono={i.d.bueno ? "bueno" : i.d.malo ? "malo" : null}
+                                sub={m.difAbsTxt(i.c, i.d.st.ini ?? null, i.d.st.fin ?? null) ? <small>{m.difAbsTxt(i.c, i.d.st.ini ?? null, i.d.st.fin ?? null)}</small> : null}>{menos(m.variacionTxt(i.c, i.d.st.ini ?? null, i.d.st.fin ?? null))}</Valor>
+                              <Valor tono={i.pct > 50 ? "bueno" : i.pct < 50 ? "malo" : null}>{i.puesto}º de {i.de}</Valor>
+                            </tr>
+                          ))}</tbody>
+                        </table></div>
+                        <MejorPeor m={m} tablas={tablasTodos} PRES={PRES} pres={px} crit={crit} />
+                      </div>
                     </td></tr>
                   )}
                 </Fragment>
               );
             })}</tbody>
           </table></div>
-          </>
-        )}
-      </div>
+        </details>
+      )}
     </section>
   );
 }
