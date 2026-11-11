@@ -4,7 +4,9 @@
       "Bash(python pipeline/obtener_datos.py --solo-json)",
       "Bash(git status*)",
       "Bash(git diff*)",
-      "Bash(git log*)"
+      "Bash(git log*)",
+      "Bash(python pipeline/ver_cache.py)",
+      "Bash(python pipeline/ver_cache.py *)"
     ],
     "ask": [
       "Bash(git push*)"

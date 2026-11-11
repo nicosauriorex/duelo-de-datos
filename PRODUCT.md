@@ -16,20 +16,21 @@ Uso secundario: quien se queda a explorar en la computadora (Histórico, Por pre
 
 Primero los Datos muestra datos económicos de Argentina (precios, salarios, dólar, actividad, empleo, pobreza, dinero, fiscal y sector externo) tomados de fuentes oficiales y actualizados solos todos los días. Existe para que la economía se discuta con datos y no con sensaciones.
 
-Funciona cuando alguien encuentra el dato que buscaba, lo entiende sin ayuda y se lleva un link que muestra exactamente lo mismo a quien lo abra.
+Funciona cuando alguien encuentra el dato que buscaba, lo entiende sin ayuda y se lleva una imagen lista para pegar en una discusión, o un link que muestra exactamente lo mismo a quien lo abra.
 
 ## Positioning
 
 - **Comparar entre presidentes**: cada dato se puede ver por mandato, con ranking y meses de mandato contados desde el mismo punto.
-- **Todo se comparte por link**: la URL guarda la vista exacta (series, medida, período, filtros), lista para pegar en una discusión.
+- **Todo se comparte como imagen o por link**: cada dato arma una imagen con su cifra, su contexto, su gráfico y su fuente (cuadrada, vertical u horizontal); la URL guarda la vista exacta (series, medida, período, filtros).
 
-Además, sin opinión: solo el dato, con su fuente siempre a la vista.
+Además, sin opinión: solo el dato, con su fuente siempre a la vista. Las imágenes no llevan veredicto y usan palabras neutras (D-012).
 
 ## Operating Context
 
 - Entrada típica: un link en X, WhatsApp o Instagram, abierto en el celular.
-- Secciones: Inicio, Histórico, Presidentes (Por presidente, Ranking, Meses de mandato, Curiosidades, Elecciones, Congreso), Contexto internacional, Plantillas, páginas de tema y Fuentes.
-- Los datos se leen con contexto cotidiano: "kilos de asado por salario", "en pesos de hoy", "contra su récord de jul-15".
+- Secciones: Inicio, Histórico, Presidentes (Por presidente, Ranking, Meses de mandato, Elecciones, Congreso), Contexto internacional, Gráficos listos (antes Plantillas; la dirección sigue siendo `/plantillas/`), páginas de tema y Fuentes. Curiosidades sigue existiendo pero no está en el menú.
+- Los datos se leen con contexto cotidiano: "kilos de asado por salario", "en pesos de hoy", "contra su récord de jul-15", "el valor más bajo desde may-24".
+- Los nombres son los del público ("Salario mediano (trabajadores registrados)"), no los del catálogo; el nombre técnico queda en la ficha de cada dato.
 
 ## Capabilities and Constraints
 
@@ -38,7 +39,7 @@ Además, sin opinión: solo el dato, con su fuente siempre a la vista.
 - El estado de los filtros vive en la URL; las URLs existentes no cambian.
 - Configuración del usuario en el navegador (`pld:config`): tema, dólar y medida preferidos, inicio del mandato, colores de cada presidente.
 - Todo en español; números en formato es-AR.
-- El rediseño (bloque 5e) es un cambio de aspecto: no cambia funciones, cálculos ni textos de los datos.
+- Ningún id de serie ni parámetro de URL cambia de significado: los links ya compartidos siguen mostrando lo mismo.
 
 ## Brand Commitments
 
@@ -52,14 +53,14 @@ Además, sin opinión: solo el dato, con su fuente siempre a la vista.
 ## Evidence on Hand
 
 - Series oficiales reales: INDEC, BCRA, Secretaría de Trabajo, Bolsa de Comercio de Rosario y otras (detalle en `/fuentes/` y `web/lib/fuentes.ts`).
-- Cifras en vivo de la portada: inflación del último mes, salario mediano real, kilos de asado por salario mediano, dólar blue en pesos de hoy.
+- Cifras en vivo de la portada: inflación del último mes, salario mediano contra su récord, actividad económica (interanual) y dólar blue en pesos de hoy.
 - No hay testimonios, cifras de uso ni menciones de prensa: no inventarlos.
 
 ## Product Principles
 
 1. El dato primero: el número y su contexto se ven antes que cualquier adorno.
 2. La fuente siempre a la vista.
-3. Lo que se ve se puede compartir tal cual, con un link.
+3. Lo que se ve se puede compartir tal cual, como imagen o con un link.
 4. Se entiende sin saber economía: nombres cortos, comparaciones cotidianas.
 5. El celular es la pantalla principal.
 

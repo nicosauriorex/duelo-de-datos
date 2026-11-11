@@ -10,4 +10,6 @@ paths:
 - `fuente` y `desc` de cada serie se muestran en la página: escribirlos para un lector común, citando organismo y número de serie.
 - Salarios SIPA incluyen aguinaldo (SAC) en jun/dic: respetar la separación base/prorrateado de salarios.py.
 - El IPC es un empalme de varias fuentes (ver docstring de salarios.py). No reemplazar por una sola serie sin decidirlo.
-- Para inspeccionar un caché, leer solo lo necesario con pandas (`head`, columnas), nunca volcar el archivo entero.
+- Para inspeccionar un caché: `python pipeline/ver_cache.py <nombre>` (admite `--donde columna=valor`, `--desde`, `--hasta`, `--filas`). Muestra columnas, tamaño y pocas filas. No leer `datos/cache/` de otra forma ni volcar un archivo entero.
+- Cada serie lleva en `fuente` el organismo o sitio de origen; `--solo-json` no toma cambios de textos ni de cálculos.
+- Controles de cordura dentro del pipeline cuando hay una relación conocida (ejemplo: canasta de hogar de 4 = 3,09 adultos): si no se cumple, la corrida falla en lugar de publicar un dato malo.

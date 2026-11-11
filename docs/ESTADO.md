@@ -35,6 +35,11 @@ Durante la tanda 3 las capturas del navegador fallaron: se comprobó contenido y
 - La vista interanual de la inflación se titula "Inflación"; "interanual" aparece en la línea de la unidad.
 - Quedan reglas CSS sin uso de versiones anteriores (`.chips`, `.voto-aviso`) y ramas del modo "índice" de Meses de mandato que ya no se alcanzan.
 
+## Herramientas
+- `python pipeline/ver_cache.py <nombre>`: mira un archivo de `datos/cache/` sin volcarlo (columnas y pocas filas). Es la única forma permitida de leer el caché.
+- Flujo elegido: spec e implementación en la misma sesión, orquestando subagentes (`CLAUDE.md`, `docs/COMO-TRABAJAMOS.md`).
+- Pendiente de herramientas: los scripts del barrido de la tanda 4 y regenerar `DESIGN.md` con el documentador de Impeccable después de esa tanda.
+
 ## Cómo se trabajó (y funcionó)
 - El usuario recorre el sitio publicado y pasa una lista de pedidos. Se anotan en `docs/IDEAS.md`, se bajan a una spec de tanda y se implementan.
 - Specs grandes: tres o cuatro subagentes en paralelo, cada uno con sus archivos; después compilar, barrido por código, verificación en el navegador y `revisor`.

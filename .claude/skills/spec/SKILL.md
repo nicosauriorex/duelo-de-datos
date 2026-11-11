@@ -22,7 +22,7 @@ Argumento: la idea (o el nombre de una entrada de docs/IDEAS.md).
 4b. En `docs/IDEAS.md`, marcar cada idea que entró en la spec con `→ spec: docs/specs/<nombre>.md`.
 5. Si salió una decisión de arquitectura, agregarla a `docs/DECISIONES.md`.
 6. Commitear la spec (y los docs tocados) si el usuario lo aprueba.
-7. Ofrecer abrir la sesión que la implementa, para que el usuario solo tenga que aceptar:
+7. Implementar en esta misma sesión, orquestando subagentes (ver "Cómo trabajamos" en `CLAUDE.md`): cada uno arranca limpio con la spec y sus archivos, así no se arrastra la entrevista. Solo si el usuario pide una sesión aparte, o si la conversación ya es muy larga, ofrecer abrir la sesión que la implementa:
    - Usar la herramienta para abrir sesiones (`start_session`), como propuesta que el usuario acepta con un botón.
    - Contexto **fresh**, no fork: la spec tiene todo lo necesario y arrastrar la entrevista encarece cada mensaje.
    - Modelo según `docs/COMO-TRABAJAMOS.md`: Sonnet 5.5 para una spec clara; Opus 5.5 si toca seguridad, permisos o datos de usuarios.

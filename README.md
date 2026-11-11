@@ -36,4 +36,4 @@ Opcional: con la variable de entorno `INDEC_TOKEN` (registro gratis en api.indec
 
 ## Hacia dónde va
 
-Un sitio público con páginas por indicador, gráficos para compartir en redes y una comunidad para comentar y votar datos. Ver [`docs/ROADMAP.md`](docs/ROADMAP.md) y [`docs/DECISIONES.md`](docs/DECISIONES.md).
+Hoy cada dato se puede compartir como imagen (con su contexto y su fuente) o como link a la vista exacta. Lo que sigue: vista previa de los links en redes, páginas fijas por indicador y, más adelante, una comunidad para comentar y votar datos. El estado al día está en [`docs/ESTADO.md`](docs/ESTADO.md). Ver [`docs/ROADMAP.md`](docs/ROADMAP.md) y [`docs/DECISIONES.md`](docs/DECISIONES.md).

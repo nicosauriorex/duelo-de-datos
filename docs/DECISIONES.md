@@ -176,3 +176,17 @@ Una entrada por decisión de arquitectura. Formato: contexto, decisión, por qu�
 **Decisión**: el workflow `actualizar.yml` elige un modo al empezar. **Solo el sitio**: un push que no toca `pipeline/`, `datos/`, `requirements.txt` ni los workflows, o una corrida a mano con la opción `solo_sitio`; usa `--solo-json` (los datos ya guardados en `datos/cache/compilado.json`, sin red), compila y publica. **Completo**: la corrida programada de las 21:00, los push que tocan el pipeline y cualquier caso dudoso.
 
 **Consecuencias**: un cambio de interfaz se publica en un par de minutos y no genera commit de datos. Un cambio en textos del pipeline (`fuente`, `desc`) o en cálculos sigue necesitando la corrida completa. Si `compilado.json` quedara viejo, el sitio se publica con esos datos hasta la corrida de las 21:00.
+
+## D-014 · Nombres públicos, alias y regiones se resuelven en el sitio, no en el catálogo — DECIDIDO (2026-11-11)
+**Contexto**: la auditoría mostró nombres de catálogo que el público no entiende ("Salario SIPA mediana"), la inflación repetida en tres series y 310 series regionales llenando el selector.
+
+**Decisión** (spec `simplificacion.md`): el pipeline y los JSON no cambian. El sitio aplica al cargar el catálogo una tabla de nombres públicos (`web/lib/nombres.ts`; el nombre original queda en `nTecnico`), oculta las series que son otra forma de una misma (`inflacion` e `inflacion_ia` pasan a ser alias de `ipc_empalme` con medida mensual o interanual, resueltos al leer la URL) y lista cada rubro o producto una sola vez, con la región como opción (`web/lib/regiones.ts`).
+
+**Consecuencias**: no se borra ninguna serie y los links viejos muestran lo mismo. Las categorías también tienen nombre público ("IPC por rubros"), pero el código sigue comparando contra el nombre técnico. Una serie nueva con jerga necesita su entrada en `nombres.ts` (ver skill `nueva-serie`).
+
+## D-015 · Datos al día: corridas a la hora de publicación y respaldos — DECIDIDO (2026-11-11)
+**Contexto**: el sitio mostraba la inflación de agosto cuando ya había salido septiembre: la API de INDEC no respondió en una corrida y la fuente de respaldo venía atrasada. El usuario quiere tener el dato apenas sale, para comentarlo y difundir el sitio.
+
+**Decisión**: el workflow corre a las 16:10 y a las 17:15 en días hábiles (IPC de INDEC y parte del BCRA), además de las 21:00. Si la API de INDEC no responde, el IPC nacional se completa con la última copia guardada de esa API, siempre que coincida con datos.gob.ar en los meses comunes (`ipc_nacional_de_cache`). Las cotizaciones diarias sueltas que se apartan más de 30 % de sus vecinas se descartan antes de calcular mínimos y máximos (`_sin_datos_sueltos`). Los controles de cordura cortan la corrida antes de publicar un dato malo (canastas).
+
+**Consecuencias**: tres corridas completas por día hábil (unos 10 minutos cada una). El parte diario del BCRA como bloque propio queda pendiente: necesita datos diarios y hoy todo el sitio es mensual.
