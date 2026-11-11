@@ -169,3 +169,10 @@ Una entrada por decisión de arquitectura. Formato: contexto, decisión, por qu�
 - En Histórico, con un solo gráfico, se ve primero una vista simple (dato, contexto, gráfico, fuente, Compartir); los controles quedan bajo "Personalizar".
 
 **Consecuencias**: la vista previa de los links en redes no se resuelve con esto (necesita páginas fijas por dato generadas en cada actualización; bloque 7c). El contexto automático pasa a ser una sola función en `web/lib/` que usan la portada, las plantillas, la vista del dato y la imagen.
+
+## D-013 · Publicación rápida cuando solo cambia el sitio — DECIDIDO (2026-11-10)
+**Contexto**: cada push a `web/` corría la actualización completa (bajar todas las fuentes), unos 10 minutos, aunque los datos no cambiaran.
+
+**Decisión**: el workflow `actualizar.yml` elige un modo al empezar. **Solo el sitio**: un push que no toca `pipeline/`, `datos/`, `requirements.txt` ni los workflows, o una corrida a mano con la opción `solo_sitio`; usa `--solo-json` (los datos ya guardados en `datos/cache/compilado.json`, sin red), compila y publica. **Completo**: la corrida programada de las 21:00, los push que tocan el pipeline y cualquier caso dudoso.
+
+**Consecuencias**: un cambio de interfaz se publica en un par de minutos y no genera commit de datos. Un cambio en textos del pipeline (`fuente`, `desc`) o en cálculos sigue necesitando la corrida completa. Si `compilado.json` quedara viejo, el sitio se publica con esos datos hasta la corrida de las 21:00.

@@ -16,6 +16,10 @@ on:
         description: "Aceptar menos series"
         type: boolean
         default: false
+      solo_sitio:
+        description: "Solo publicar el sitio (sin bajar datos)"
+        type: boolean
+        default: false
 
 concurrency:
   group: actualizar-datos
@@ -30,6 +34,28 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # hace falta el historial para ver qué archivos trajo el push
+
+      - name: Elegir el modo (completo o solo el sitio)
+        id: modo
+        shell: bash
+        # Solo el sitio: un push que no toca el pipeline, o una corrida a mano con "solo_sitio".
+        # Se usan los datos ya guardados en datos/cache (sin red) y la publicación tarda un par de minutos.
+        # La corrida programada y cualquier duda van por el camino completo.
+        run: |
+          MODO=completo
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.solo_sitio }}" = "true" ]; then
+            MODO=sitio
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            ANTES="${{ github.event.before }}"
+            if CAMBIOS=$(git diff --name-only "$ANTES" "${{ github.sha }}" 2>/dev/null) && [ -n "$CAMBIOS" ] \
+               && ! echo "$CAMBIOS" | grep -qE '^(pipeline/|datos/|requirements\.txt$|\.github/workflows/)'; then
+              MODO=sitio
+            fi
+          fi
+          echo "modo=$MODO" >> "$GITHUB_OUTPUT"
+          echo "Modo: $MODO" >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/setup-python@v5
         with:
@@ -48,7 +74,10 @@ jobs:
         env:
           INDEC_TOKEN: ${{ secrets.INDEC_TOKEN }}
         shell: bash # con pipefail: si el pipeline falla, el paso falla
-        run: python pipeline/obtener_datos.py 2>&1 | tee pipeline.log
+        run: |
+          ARGS=""
+          if [ "${{ steps.modo.outputs.modo }}" = "sitio" ]; then ARGS="--solo-json"; fi
+          python pipeline/obtener_datos.py $ARGS 2>&1 | tee pipeline.log
 
       - name: Resumen de fuentes
         # Corre aunque el pipeline falle, para ver el log en el resumen. Lo que sigue no corre.
