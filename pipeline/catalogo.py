@@ -43,6 +43,16 @@ def slug(s):
     return re.sub(r"[^a-z0-9]+", "_", s.lower()).strip("_")
 
 
+def _controlar_canastas(can):
+    """El hogar de 4 (Hogar 2) equivale a 3,09 adultos: si la relación con la canasta por adulto se aparta, los datos están mal armados."""
+    for cod in ("CBA", "CBT"):
+        adulto = can[can["codigo"] == cod].groupby("fecha")["valor"].mean()
+        hogar = can[can["codigo"] == cod + " H2"].groupby("fecha")["valor"].mean()
+        rel = (hogar / adulto).dropna()
+        if len(rel) and ((rel - 3.09).abs() > 0.05).any():
+            raise ValueError(f"Canastas: {cod} hogar de 4 / adulto equivalente fuera de 3,09 (entre {rel.min():.2f} y {rel.max():.2f})")
+
+
 # Fuente del IPC empalmado y de la inflación: se nombra al organismo de cada tramo (ver salarios.ipc_empalmado).
 FUENTE_IPC = "INDEC (IPC); de 2007 a 2016, IPC de San Luis y de la Ciudad de Buenos Aires"
 
@@ -442,6 +452,9 @@ def indec_social(token, idx):
         pob = _cache_df("indec_pobreza", lambda: (_ for _ in ()).throw(RuntimeError("sin token")))
     if not can.empty:
         can["fecha"] = pd.to_datetime(can["periodo"].astype(str).str[:6], format="%Y%m")
+        # La tabla trae, con el mismo código, el valor en pesos y sus variaciones en %: solo sirven los pesos.
+        can = can[can["unidad_de_medida"] == "Pesos argentinos"]
+        _controlar_canastas(can)
         for cod, n in [("CBA", "Canasta básica alimentaria (adulto equivalente)"), ("CBT", "Canasta básica total (adulto equivalente)"),
                        ("CBA H2", "Canasta básica alimentaria, hogar de 4"), ("CBT H2", "Canasta básica total, hogar de 4 (línea de pobreza)")]:
             g = can[can["codigo"] == cod]

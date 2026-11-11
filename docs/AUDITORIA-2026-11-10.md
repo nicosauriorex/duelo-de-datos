@@ -146,7 +146,8 @@ Seis bloques seguidos del roadmap (5b a 6d) sumaron profundidad de análisis (Ra
 
 - **Hecho y verificado en el navegador:** C2 ("Editar" y página de error en español), A4 (buscador con frases y temas cuando no hay resultado), M1 (grilla de 4 en escritorio; el carrusel queda en celular), y de A7 las variaciones sobre valores negativos y el aviso del IPC usado en los valores reales.
 - **Hecho, se ve en la próxima actualización completa de datos:** la fuente de la inflación y del IPC empalmado ahora nombra a INDEC y a los IPC de San Luis y CABA (`pipeline/catalogo.py`, `FUENTE_IPC`). `--solo-json` no la toma porque reutiliza los textos guardados.
-- **Pendiente:** C3 (canastas): no se pudo abrir `datos/cache/indec_canastas.pkl` por permisos, así que la causa sigue sin confirmar. De A7, marcar los mandatos con datos parciales (hay que distinguir series trimestrales de series que empiezan tarde).
+- **C3 (canastas), corregido el 2026-11-10:** causa confirmada en el caché. La tabla de INDEC trae, con el mismo código, el valor en pesos y sus variaciones en % (`v_m`, `v_ia`), y el promedio los mezclaba. Ahora se toman solo las filas en pesos y `_controlar_canastas` corta la corrida si hogar de 4 / adulto equivalente se aparta de 3,09. Los valores publicados se corrigen con la próxima actualización completa (`--solo-json` reutiliza los ya calculados).
+- **Pendiente:** de A7, marcar los mandatos con datos parciales (hay que distinguir series trimestrales de series que empiezan tarde).
 
 ## Qué no se verificó
 - El sitio publicado ni un teléfono real (se usó emulación a 375 px sobre el build local).
