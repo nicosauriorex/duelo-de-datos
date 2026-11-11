@@ -224,8 +224,8 @@ Decisiones del usuario (2026-11-11): los nombres públicos los propone Claude y 
 18. Elecciones: explicaciones plegadas o con ícono de información. En los gráficos de dispersión falta a veces el dato actual (rombo) y su valor marcado en el eje Y.
 19. Contexto: faltan botones de compartir; falta un gráfico de líneas con los precios por producto de Argentina contra otros países.
 
-## Ajustes pedidos al recorrer la página, tanda 4 (2026-11-11)
-→ spec: docs/specs/ajustes-tanda-4.md (bloque 5j). El usuario pidió no implementar todavía y, además de estos casos, buscar errores parecidos en todo el sitio.
+## ~~Ajustes pedidos al recorrer la página, tanda 4 (2026-11-11)~~ ✅ 2026-11-11
+→ spec: docs/specs/ajustes-tanda-4.md (bloque 5j). Además de estos casos, se buscaron errores parecidos en todo el sitio (scripts en `web/scripts/`).
 - Resumen del Histórico: la variación no cierra con los valores que se ven (último 1,9 y mediana 2,1 → dice 0,1).
 - El botón "Volver" del zoom tapa el último punto cuando queda arriba a la derecha.
 - Histórico: por defecto solo las líneas de último y promedio; franjas de presidentes más a la vista (botón debajo del gráfico, junto a Personalizar; Compartir abajo); que el arranque no sea el asado.

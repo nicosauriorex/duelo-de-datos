@@ -66,14 +66,17 @@ export function useDeslizable(ref: RefObject<HTMLElement | null>, paseo = false,
     mo?.observe(el, { childList: true });
     mirar();
     let raf = 0, io: IntersectionObserver | null = null;
+    const cierres: Array<() => void> = [];
     const frenar = () => { cancelAnimationFrame(raf); raf = 0; el.style.scrollSnapType = ""; };
     const eventos = ["pointerdown", "pointerenter", "wheel", "touchstart", "focusin"] as const;
     if (paseo && !quieto()) {
       eventos.forEach((e) => el.addEventListener(e, frenar, { passive: true }));
-      io = new IntersectionObserver((es) => {
+      // El paseo espera a que la fila esté en pantalla y la página quieta (0,8 s sin deslizar); cualquier deslizamiento de la página reinicia la espera.
+      let visible = false, espera = 0;
+      const arrancar = () => {
         const max = el.scrollWidth - el.clientWidth;
-        if (!es.some((x) => x.isIntersecting) || max <= 8 || el.matches(":hover")) return;
-        io?.disconnect();
+        if (!visible || max <= 8 || el.matches(":hover")) return;
+        io?.disconnect(); window.removeEventListener("scroll", rearmar);
         const dur = Math.max(2400, (max / 40) * 1000), t0 = performance.now();   // ~40 px por segundo
         el.style.scrollSnapType = "none";
         const paso = (t: number) => {
@@ -83,12 +86,19 @@ export function useDeslizable(ref: RefObject<HTMLElement | null>, paseo = false,
           raf = requestAnimationFrame(paso);
         };
         raf = requestAnimationFrame(paso);
-      }, { threshold: 0.9 });
+      };
+      function rearmar() { window.clearTimeout(espera); if (visible) espera = window.setTimeout(arrancar, 800); }
+      io = new IntersectionObserver((es) => { visible = es.some((x) => x.isIntersecting); rearmar(); if (!visible) window.clearTimeout(espera); }, { threshold: 0.9 });
       io.observe(el);
+      window.addEventListener("scroll", rearmar, { passive: true });
+      const limpiarPaseo = () => { window.clearTimeout(espera); window.removeEventListener("scroll", rearmar); };
+      eventos.forEach((e) => el.addEventListener(e, limpiarPaseo, { passive: true }));
+      cierres.push(() => { limpiarPaseo(); eventos.forEach((e) => el.removeEventListener(e, limpiarPaseo)); });
     }
     return () => {
       el.removeEventListener("scroll", marcar); ro?.disconnect(); mo?.disconnect(); io?.disconnect(); frenar();
       eventos.forEach((e) => el.removeEventListener(e, frenar));
+      cierres.forEach((f) => f());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ref, paseo, dep]);

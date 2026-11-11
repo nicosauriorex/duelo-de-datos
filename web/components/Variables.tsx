@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useDatos } from "./DatosProvider";
 import { useConfig } from "./ConfigProvider";
 import { medidaInicial } from "@/lib/config";
-import { Desplegable, Modal, Selector, Seg } from "./ui";
+import { Desplegable, Modal, Selector, Seg, useCerrarModal } from "./ui";
 import { IconoEditar } from "./Iconos";
 import { fmtMes, lastIdx, norm } from "@/lib/formato";
 import { ORDEN_RAIZ, textoBusqueda } from "@/lib/catalogo";
@@ -78,7 +78,6 @@ function Info({ id, onCerrar }: { id: string; onCerrar: () => void }) {
           <details key={c}><summary>Sobre &quot;{c}&quot;</summary><div className="info-cat" dangerouslySetInnerHTML={{ __html: INFO_CAT[c] }} /></details>
         ) : null)}
       </div>
-      <footer><button type="button" className="btn" onClick={onCerrar}>Cerrar</button></footer>
     </Modal>
   );
 }
@@ -115,7 +114,12 @@ function IntroCategoria({ nombre, reco, onReco }: { nombre: string; reco: { id: 
 export interface PickerPedido { cb: (id: string, med?: string, esc?: string) => void; filtro?: (s: SerieMeta) => boolean; titulo?: string }
 
 export function Picker({ pedido, onCerrar }: { pedido: PickerPedido; onCerrar: () => void }) {
+  return <Modal titulo="Elegir variable" onCerrar={onCerrar}><PickerInterior pedido={pedido} /></Modal>;
+}
+
+function PickerInterior({ pedido }: { pedido: PickerPedido }) {
   const { metas, motor } = useDatos();
+  const cerrarModal = useCerrarModal();
   const [camino, setCamino] = useState<string[]>([]);
   const [q, setQ] = useState("");
   const [todo, setTodo] = useState(false);
@@ -125,7 +129,8 @@ export function Picker({ pedido, onCerrar }: { pedido: PickerPedido; onCerrar: (
   // `sub`: lo que el pedido permite; el árbol lista una sola serie por rubro o producto (la región se elige después en "Configurar variable")
   const sub = useMemo(() => (pedido.filtro ? metas.filter(pedido.filtro) : metas), [metas, pedido.filtro]);
   const raiz = useMemo(() => armarArbol(ordenarListado(listables(sub), (s) => catListado(s, sub)), (s) => catListado(s, sub)), [sub]);
-  const elegir = (id: string, med?: string, esc?: string) => { onCerrar(); pedido.cb(id, med, esc); };
+  // se cierra por "Atrás" y recién después se aplica la elección (puede cambiar la URL)
+  const elegir = (id: string, med?: string, esc?: string) => { cerrarModal(() => pedido.cb(id, med, esc)); };
   const qn = norm(q.trim());
 
   let cuerpo: React.ReactNode;
@@ -198,7 +203,7 @@ export function Picker({ pedido, onCerrar }: { pedido: PickerPedido; onCerrar: (
     pie = camino.length ? `Escribí para buscar dentro de ${ultimo}. Esc para cerrar.` : "Elegí una categoría o escribí para buscar. Esc para cerrar.";
   }
   return (
-    <Modal titulo="Elegir variable" onCerrar={onCerrar}>
+    <>
       <header>
         <input ref={inp} type="search" value={q} autoComplete="off" placeholder={pedido.titulo || "Buscar: ropa, alquiler, salario, reservas, asado…"}
           onChange={(ev) => setQ(ev.target.value)}
@@ -207,7 +212,7 @@ export function Picker({ pedido, onCerrar }: { pedido: PickerPedido; onCerrar: (
       </header>
       <ul>{cuerpo}</ul>
       <footer>{pie}</footer>
-    </Modal>
+    </>
   );
 }
 
@@ -350,24 +355,23 @@ function Grupo({ titulo, children }: { titulo: string; children: React.ReactNode
   return <section className="grupo-cfg"><h3>{titulo}</h3><div className="grupo-cuerpo">{children}</div></section>;
 }
 
-/** Ventana con todo lo de una variable. Los cambios se aplican con Aceptar (un solo cambio de URL); Cancelar, ✕, Esc y "Atrás" no cambian nada. */
+/** Botones Cancelar / Aceptar: dentro de la ventana, para usar su cierre por "Atrás". Aceptar cierra primero y recién después aplica. */
+function BotonesConfigurar({ d, onAceptar }: { d: Expr; onAceptar: (e: Expr) => void }) {
+  const cerrarModal = useCerrarModal();
+  return (
+    <footer>
+      <button type="button" className="btn" onClick={() => cerrarModal()}>Cancelar</button>
+      <button type="button" className="btn primario" onClick={() => cerrarModal(() => onAceptar(d))}>Aceptar</button>
+    </footer>
+  );
+}
+
+/** Ventana con todo lo de una variable. Los cambios se aplican con Aceptar (un solo cambio de URL); Cancelar, la cruz, Esc y "Atrás" no cambian nada. */
 function ConfigurarVariable({ e0, sinRel, onAceptar, onCerrar }: { e0: Expr; sinRel?: boolean; onAceptar: (e: Expr) => void; onCerrar: () => void }) {
   const { motor, metas } = useDatos();
   const { config } = useConfig();
   const [d, setD] = useState<Expr>(e0);
   const [picker, setPicker] = useState<PickerPedido | null>(null);
-  const pendiente = useRef<Expr | null>(null);
-  const empujada = useRef(false);
-  // "Atrás" del navegador cierra la ventana sin aplicar; Aceptar vuelve atrás primero y recién después aplica.
-  useEffect(() => {
-    window.history.pushState({ pldVar: true }, ""); empujada.current = true;
-    const atras = () => { empujada.current = false; onCerrar(); if (pendiente.current) onAceptar(pendiente.current); };
-    window.addEventListener("popstate", atras);
-    return () => window.removeEventListener("popstate", atras);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  const cancelar = () => { if (empujada.current) window.history.back(); else onCerrar(); };
-  const aceptar = () => { pendiente.current = d; if (empujada.current) window.history.back(); else { onCerrar(); onAceptar(d); } };
   if (!motor) return null;
   const meta = (id: string) => metas.find((m) => m.id === id);
   const A = meta(d.id);
@@ -416,7 +420,7 @@ function ConfigurarVariable({ e0, sinRel, onAceptar, onCerrar }: { e0: Expr; sin
   const regiones = otrasRegiones(metas, A.id);   // otras regiones del mismo rubro o producto (el IPC y los precios promedio vienen por región)
   return (
     <>
-      <Modal titulo="Configurar variable" onCerrar={cancelar}>
+      <Modal titulo="Configurar variable" onCerrar={onCerrar}>
         <div className="config-cuerpo">
           <h2>Configurar variable</h2>
           <Grupo titulo="Variable">
@@ -468,10 +472,7 @@ function ConfigurarVariable({ e0, sinRel, onAceptar, onCerrar }: { e0: Expr; sin
             </Grupo>
           )}
         </div>
-        <footer>
-          <button type="button" className="btn" onClick={cancelar}>Cancelar</button>
-          <button type="button" className="btn primario" onClick={aceptar}>Aceptar</button>
-        </footer>
+        <BotonesConfigurar d={d} onAceptar={onAceptar} />
       </Modal>
       {picker && <Picker pedido={picker} onCerrar={() => setPicker(null)} />}
     </>

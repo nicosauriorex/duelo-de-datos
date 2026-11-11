@@ -1,12 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import Link from "next/link";
 import { Archivo } from "next/font/google";
 import "./globals.css";
 import { DatosProvider, Errores } from "@/components/DatosProvider";
-import { Barra, CabeceraPagina } from "@/components/Nav";
+import { Barra, CabeceraPagina, PieSitio } from "@/components/Nav";
 import { ConfigProvider } from "@/components/ConfigProvider";
 import { SCRIPT_TEMA } from "@/lib/config";
-import { ORGANISMOS } from "@/lib/fuentes";
 
 // Una sola familia para todo el sitio (se sirve desde el propio sitio): Archivo, con eje de ancho para los títulos y números condensados.
 const fuente = Archivo({ subsets: ["latin"], axes: ["wdth"], variable: "--fuente", display: "swap" });
@@ -30,12 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <noscript><p className="aviso-js">Esta página necesita JavaScript para mostrar los gráficos y las tablas.</p></noscript>
             <DatosProvider><Errores /><CabeceraPagina />{children}</DatosProvider>
           </main>
-          <footer className="pie">
-            <div className="ancho">
-              <p className="pie-fuentes"><b>Fuentes principales:</b> {ORGANISMOS.join(" · ")} y otras.</p>
-              <Link prefetch={false} href="/fuentes/" className="btn">Ver las fuentes</Link>
-            </div>
-          </footer>
+          <PieSitio />
         </ConfigProvider>
       </body>
     </html>

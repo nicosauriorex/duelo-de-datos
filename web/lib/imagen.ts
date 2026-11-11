@@ -33,11 +33,14 @@ export interface MarcaExt { tipo: "max" | "min"; x: number; valor: number; texto
 export interface FilaBarra { id: string; nombre: string; valor: number | null; variacion: string | null; cls: Cls; ini: string | null; fin: string | null; nota: string | null }
 /** Una fila de "un presidente, varias variables". */
 export interface FilaVariable { nombre: string; unidad: string; ini: string | null; fin: string | null; variacion: string | null; cls: Cls; nota: string | null; spark: (number | null)[] }
+/** Una vela de "una variable, todos los presidentes": valores numéricos (para el dibujo) y ya formateados (para el texto). */
+export interface FilaVela { id: string; nombre: string; periodo: string; ini: number; fin: number; min: number; max: number; iniTxt: string; finTxt: string; minTxt: string; maxTxt: string; variacion: string; cls: Cls; nota: string | null }
 export interface FilaRank { puesto: number; id: string; nombre: string; score: number; indicadores: number }
 /** Contenido de la imagen cuando no es un gráfico de líneas. */
 export type Lienzo =
   | { tipo: "barras"; filas: FilaBarra[]; sinDatos: string[] }
   | { tipo: "variables"; filas: FilaVariable[]; presId: string }
+  | { tipo: "velas"; filas: FilaVela[]; sinDatos: string[] }
   | { tipo: "ranking"; filas: FilaRank[]; sinDatos: string[] };
 
 export interface DatosImagen {
@@ -390,8 +393,8 @@ function grafico(ctx: Ctx, r: Rect, d: DatosImagen, pal: Paleta, esc: number) {
 
 // ---------------------------------------------------------------- filas: una variable entre presidentes, un presidente con varias variables, ranking
 type LienzoDe<T extends Lienzo["tipo"]> = Extract<Lienzo, { tipo: T }>;
-const MIN_FILA = { barras: 44, variables: 50, ranking: 42 } as const;   // alto mínimo legible de una fila (en px del lienzo)
-const MAX_FILA = { barras: 100, variables: 118, ranking: 96 } as const;
+const MIN_FILA = { barras: 44, variables: 50, velas: 64, ranking: 42 } as const;   // alto mínimo legible de una fila (en px del lienzo)
+const MAX_FILA = { barras: 100, variables: 118, velas: 120, ranking: 96 } as const;
 const ALTO_ENC = 32;      // renglón de encabezados de columnas
 const ALTO_SIN = 36;      // renglón "Sin datos: …"
 const sinDatosDe = (l: Lienzo): string[] => (l.tipo === "variables" ? [] : l.sinDatos);
@@ -538,6 +541,47 @@ function filasVariables(ctx: Ctx, r: Rect, L: LienzoDe<"variables">, pal: Paleta
   });
 }
 
+function filasVelas(ctx: Ctx, r: Rect, L: LienzoDe<"velas">, pal: Paleta, esc: number, horiz: boolean) {
+  const n = L.filas.length, g = rejilla(r, n, "velas", horiz), { f1, f2 } = tamFila(g.rowH, esc), pad = 14;
+  const iw = g.cw - pad * 2 - 8, fr = { nom: 0.3, vela: 0.46, vr: 0.24 };
+  const col = (cx: number) => { const x = cx + 8 + pad; return { nom: x, vela: x + iw * fr.nom, vr: x + iw * (fr.nom + fr.vela) }; };
+  // misma escala para todas las velas, como en pantalla
+  const lo = Math.min(...L.filas.map((f) => f.min)), hi = Math.max(...L.filas.map((f) => f.max)), rango = hi > lo ? hi - lo : 1;
+  const wV = iw * fr.vela - 16, wVar = iw * fr.vr;
+  const tamVar = tamComun(ctx, pal, L.filas.map((f) => f.variacion), { peso: 900, max: f1 * 1.1, min: 12, ancho: wVar });
+  for (let c = 0; c < g.cols; c++) {
+    const q = col(r.x + c * (g.cw + g.gap));
+    encabezado(ctx, pal, esc, r.y + 9, [{ t: "Presidente", x: q.nom, w: iw * fr.nom }, { t: "Mínimo, inicio, cierre y máximo", x: q.vela, w: wV }, { t: "Variación", x: q.vr, w: wVar, alinear: "right" }]);
+  }
+  L.filas.forEach((f, k) => {
+    const c = Math.floor(k / g.per), i = k % g.per, cx = r.x + c * (g.cw + g.gap), y = g.y0 + i * g.rowH, q = col(cx);
+    if (i > 0) separador(ctx, pal, cx + pad, y, g.cw - pad * 2);
+    ctx.fillStyle = pal.pres[f.id] ?? pal.eje; ctx.fillRect(cx + 8, y + 7, 6, g.rowH - 14);
+    const color = f.cls === "neutro" ? pal.acento : colorCls(pal, f.cls);
+    // nombre y período
+    const aN = ajustar(ctx, pal, f.nombre, { peso: 800, max: f1, min: 12, ancho: iw * fr.nom - 10, lineas: 1 });
+    const aP = ajustar(ctx, pal, f.periodo, { peso: 600, max: f2, min: 10, ancho: iw * fr.nom - 10, lineas: 1 });
+    const yt = y + (g.rowH - alto(aN, 1.2) - alto(aP, 1.2)) / 2;
+    texto(ctx, pal, aN, 800, q.nom + 6, yt, pal.tinta, 1.2); texto(ctx, pal, aP, 600, q.nom + 6, yt + alto(aN, 1.2), pal.tintaSec, 1.2);
+    // la vela y, debajo, sus cuatro valores
+    const aV = ajustar(ctx, pal, `Mín. ${f.minTxt} · Inicio ${f.iniTxt} · Cierre ${f.finTxt} · Máx. ${f.maxTxt}`, { peso: 600, max: f2, min: 10, ancho: wV, lineas: 1 });
+    const hTxt = alto(aV, 1.2), hVela = Math.min(g.rowH - hTxt - 12, 34), yVela = y + (g.rowH - hVela - hTxt - 4) / 2, yc = yVela + hVela / 2;
+    const X = (v: number) => q.vela + ((v - lo) / rango) * wV;
+    if (lo < 0 && hi > 0) { ctx.fillStyle = pal.eje; ctx.fillRect(X(0) - 1, yVela, 2, hVela); }
+    ctx.fillStyle = pal.tintaTenue; ctx.fillRect(X(f.min), yc - 1.5, Math.max(2, X(f.max) - X(f.min)), 3);
+    ctx.fillRect(X(f.min) - 1.5, yc - hVela * 0.3, 3, hVela * 0.6); ctx.fillRect(X(f.max) - 1.5, yc - hVela * 0.3, 3, hVela * 0.6);
+    const xa = Math.min(X(f.ini), X(f.fin)), wa = Math.max(Math.abs(X(f.fin) - X(f.ini)), 4);
+    ctx.fillStyle = color; ctx.fillRect(xa, yVela + hVela * 0.1, wa, hVela * 0.8);
+    texto(ctx, pal, aV, 600, q.vela, yVela + hVela + 4, pal.tintaSec, 1.2);
+    // variación con signo y, si hace falta, la marca de datos parciales
+    const aVr = ajustar(ctx, pal, f.variacion, { peso: 900, max: tamVar, min: tamVar, ancho: wVar, lineas: 1 });
+    const aNota = f.nota ? ajustar(ctx, pal, f.nota, { peso: 600, max: f2, min: 10, ancho: wVar, lineas: 1 }) : null;
+    const yv = y + (g.rowH - alto(aVr, 1.2) - (aNota ? alto(aNota, 1.2) : 0)) / 2;
+    texto(ctx, pal, aVr, 900, q.vr + wVar, yv, f.cls === "neutro" ? pal.tinta : color, 1.2, "right");
+    if (aNota) texto(ctx, pal, aNota, 600, q.vr + wVar, yv + alto(aVr, 1.2), pal.tintaTenue, 1.2, "right");
+  });
+}
+
 function filasRanking(ctx: Ctx, r: Rect, L: LienzoDe<"ranking">, pal: Paleta, esc: number, horiz: boolean) {
   const n = L.filas.length, g = rejilla(r, n, "ranking", horiz), { f1, f2 } = tamFila(g.rowH, esc), pad = 14;
   const iw = g.cw - pad * 2, fr = { pu: 0.08, nom: 0.3, bar: 0.34, sc: 0.1, ind: 0.18 };
@@ -579,6 +623,7 @@ function lienzoFilas(ctx: Ctx, r: Rect, d: DatosImagen, pal: Paleta, esc: number
   ctx.beginPath(); ctx.rect(r.x + 2, r.y + 2, r.w - 4, r.h - 4); ctx.clip();
   if (L.tipo === "barras") filasBarras(ctx, caja, L, pal, esc, horiz);
   else if (L.tipo === "variables") filasVariables(ctx, caja, L, pal, esc, horiz);
+  else if (L.tipo === "velas") filasVelas(ctx, caja, L, pal, esc, horiz);
   else filasRanking(ctx, caja, L, pal, esc, horiz);
   if (sin.length) {
     const a = ajustar(ctx, pal, `Sin datos: ${sin.join(", ")}`, { peso: 600, max: 22 * Math.max(esc, 0.9), min: 13, ancho: r.w - 40, lineas: 1 });

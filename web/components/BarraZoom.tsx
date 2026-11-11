@@ -20,8 +20,10 @@ function silueta(xs: number[], valores: (number | null)[]): string {
   return red.map(([x, v]) => `${(((x - x0) / dx) * 100).toFixed(2)},${(100 - ((v - lo) / dy) * 100).toFixed(2)}`).join(" ");
 }
 
-export function BarraZoom({ xs, valores, ventana, onCambio, paso, fmt }: {
+export function BarraZoom({ xs, valores, ventana, onCambio, paso, fmt, volver }: {
   xs: number[]; valores: (number | null)[]; ventana: Ventana | null; onCambio: (a: number, b: number) => void; paso: number; fmt: (v: number) => string;
+  /** "Volver" al período completo: junto a la barra, nunca encima del gráfico. Con `visible` falso conserva su lugar (la barra no cambia de ancho). */
+  volver?: { visible: boolean; onClick: () => void };
 }) {
   const x0 = xs[0], x1 = xs[xs.length - 1], total = Math.max(1e-9, x1 - x0);
   const [a, b] = ventana ?? [x0, x1];
@@ -64,7 +66,7 @@ export function BarraZoom({ xs, valores, ventana, onCambio, paso, fmt }: {
       aria-valuemin={min} aria-valuemax={max} aria-valuenow={v} aria-valuetext={fmt(v)}
       onPointerDown={empezar(modo)} onPointerMove={mover} onPointerUp={soltar} onPointerCancel={soltar} onKeyDown={tecla(modo)}><span /></button>
   );
-  return (
+  const barra = (
     <div className="bz" role="group" aria-label="Zoom del gráfico: período visible">
       <div className="bz-pista" ref={pista}>
         {puntos && <svg className="bz-silueta" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polyline points={puntos} vectorEffect="non-scaling-stroke" /></svg>}
@@ -76,6 +78,13 @@ export function BarraZoom({ xs, valores, ventana, onCambio, paso, fmt }: {
         {manija("a", a, x0, b, "Inicio del período visible")}
         {manija("b", b, a, x1, "Fin del período visible")}
       </div>
+    </div>
+  );
+  if (!volver) return barra;
+  return (
+    <div className="bz-fila">
+      {barra}
+      <button type="button" className="btn volver" onClick={volver.onClick} style={volver.visible ? undefined : { visibility: "hidden" }} tabIndex={volver.visible ? 0 : -1} aria-hidden={!volver.visible}>Volver</button>
     </div>
   );
 }

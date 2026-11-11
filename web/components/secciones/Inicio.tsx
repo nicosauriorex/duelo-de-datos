@@ -87,15 +87,28 @@ function Carrusel({ plantillas }: { plantillas: Plantilla[] }) {
   const [encima, setEncima] = useState(false);        // mouse arriba
   const [conFoco, setConFoco] = useState(false);      // foco del teclado adentro
   const [enPantalla, setEnPantalla] = useState(false);
+  const [quieta, setQuieta] = useState(true);         // la página no se está deslizando
+  const [reinicio, setReinicio] = useState(0);        // cambia cada vez que hay que volver a contar el intervalo desde cero
   const destino = useRef<{ k: number; hasta: number } | null>(null);   // placa a la que se está yendo por código
   const n = items.length;
 
+  // R6: el contador solo corre con la placa en pantalla (mitad o más) y la página quieta; al aparecer o al terminar de deslizar la página vuelve a cero.
   useEffect(() => {
-    const el = raiz.current;
+    const el = pista.current;
     if (!el || typeof IntersectionObserver === "undefined") return;
-    const io = new IntersectionObserver((es) => setEnPantalla(es.some((x) => x.isIntersecting)), { threshold: 0.5 });
+    const io = new IntersectionObserver((es) => { const v = es.some((x) => x.isIntersecting); setEnPantalla(v); if (v) setReinicio((r) => r + 1); }, { threshold: 0.5 });
     io.observe(el);
     return () => io.disconnect();
+  }, []);
+  useEffect(() => {
+    let t = 0, moviendo = false;
+    const alDeslizarPagina = () => {
+      if (!moviendo) { moviendo = true; setQuieta(false); }
+      window.clearTimeout(t);
+      t = window.setTimeout(() => { moviendo = false; setQuieta(true); setReinicio((r) => r + 1); }, 300);
+    };
+    window.addEventListener("scroll", alDeslizarPagina, { passive: true });
+    return () => { window.removeEventListener("scroll", alDeslizarPagina); window.clearTimeout(t); };
   }, []);
 
   const izquierdaDe = (k: number) => {
@@ -125,7 +138,7 @@ function Carrusel({ plantillas }: { plantillas: Plantilla[] }) {
     if (p.scrollLeft >= p.scrollWidth - p.clientWidth - 2) mejor = Math.max(mejor, activa);   // al final de la pista las últimas no llegan al borde izquierdo
     if (mejor !== activa) setActiva(mejor);
   };
-  const corre = listo && !pausa && !encima && !conFoco && enPantalla;
+  const corre = listo && !pausa && !encima && !conFoco && enPantalla && quieta;
 
   return (
     <div className="carrusel" ref={raiz} aria-roledescription="carrusel" aria-label="Los datos más buscados"
@@ -144,7 +157,7 @@ function Carrusel({ plantillas }: { plantillas: Plantilla[] }) {
       <div className="ancho segmentos" data-corre={corre}>
         {items.map((it, k) => (
           <button key={it.d.titulo} type="button" aria-label={`Ir al dato ${k + 1} de ${n}: ${it.d.titulo}`} aria-current={k === activa ? "true" : undefined} onClick={() => ir(k)}>
-            <span className="seg-fondo">{k === activa && <span key={activa} className="seg-lleno" onAnimationEnd={() => ir(activa + 1)} />}</span>
+            <span className="seg-fondo">{k === activa && <span key={`${activa}-${reinicio}`} className="seg-lleno" onAnimationEnd={() => ir(activa + 1)} />}</span>
           </button>
         ))}
       </div>
@@ -196,7 +209,6 @@ function FilaTema({ t, S }: { t: Tema; S: Record<string, SerieMeta> }) {
           </div>
           <footer>
             <Link prefetch={false} className="btn" href={`/tema/${t.slug}/`}>Ir a la página del tema</Link>
-            <button type="button" className="btn" onClick={cerrar}>Cerrar</button>
           </footer>
         </Modal>
       )}

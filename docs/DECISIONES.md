@@ -190,3 +190,10 @@ Una entrada por decisión de arquitectura. Formato: contexto, decisión, por qu�
 **Decisión**: el workflow corre a las 16:10 y a las 17:15 en días hábiles (IPC de INDEC y parte del BCRA), además de las 21:00. Si la API de INDEC no responde, el IPC nacional se completa con la última copia guardada de esa API, siempre que coincida con datos.gob.ar en los meses comunes (`ipc_nacional_de_cache`). Las cotizaciones diarias sueltas que se apartan más de 30 % de sus vecinas se descartan antes de calcular mínimos y máximos (`_sin_datos_sueltos`). Los controles de cordura cortan la corrida antes de publicar un dato malo (canastas).
 
 **Consecuencias**: tres corridas completas por día hábil (unos 10 minutos cada una). El parte diario del BCRA como bloque propio queda pendiente: necesita datos diarios y hoy todo el sitio es mensual.
+
+## D-016 · El botón Atrás cierra la capa abierta, desde un solo lugar — DECIDIDO (2026-11-11)
+**Contexto**: en celular, Atrás con una ventana o un menú abierto salía de la página. Había dos arreglos sueltos (selector de variables y gráfico expandido) y el resto de las capas no tenía ninguno.
+
+**Decisión** (spec `ajustes-tanda-4.md`): un solo hook, `useAtras` en `web/components/ui.tsx`, que usan `Modal`, `Desplegable`, `Selector` y las capas propias (hueco de las oraciones, vista previa completa de la imagen, gráfico expandido). Cada capa abierta agrega una entrada al historial con la misma URL; un único `popstate` cierra la de arriba. `Modal` dibuja siempre su cruz de 44 px y `Desplegable` la suya.
+
+**Consecuencias**: una capa nueva no maneja el historial por su cuenta: usa `Modal`/`Desplegable`/`Selector` o llama a `useAtras`. Los filtros se siguen guardando en la URL con `replaceState`; si cambian con una capa abierta, al cerrarla la URL nueva se lleva a la entrada de abajo (`llevarUrl`), para que el link no pierda el cambio. El `popstate` propio corre en captura, antes que el de Next, que si no vuelve a escribir la URL vieja. Si se cambia de ruta con una capa abierta queda una entrada de más en el historial (un Atrás sin efecto visible): aceptado.

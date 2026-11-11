@@ -1,12 +1,13 @@
 // Cómo se lee Histórico desde la URL: parámetros de cada gráfico y del período. Lo usan la sección y la imagen de compartir.
 import { desdePreferido, type DesdePref } from "./config";
-import { nf0, nf1, ok } from "./formato";
+import { claseVariacion } from "./estadisticas";
+import { nf0, nf1, ok, redondeadoComo, restaLimpia } from "./formato";
 import type { Expr, Motor } from "./motor";
 import { decExpr, lista as listaUrl, unoDe } from "./url";
 
 export const TODOS_MESES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 export const REFS_VALIDAS = ["ult", "prom", "med", "max", "min", "mk_ult", "mk_max", "mk_min"];
-export const REFS_DEF = "ult,prom,med,mk_ult,mk_max,mk_min";
+export const REFS_DEF = "ult,prom,mk_ult,mk_max,mk_min";   // sin mediana por defecto; un link con `r=` conserva sus líneas
 export const MAX_MISMA_UNIDAD = 4; // en modo valor: hasta 4 variables si todas tienen la misma unidad (si no, 2)
 
 /** Parámetros de cada gráfico. El 1.º usa estos nombres; del 2.º al 4.º llevan el número al final (`v2`, `m2`… `t4`). */
@@ -88,14 +89,25 @@ export function textoTemporalidad(o: { freq: "M" | "T" | "A"; ag: "promedio" | "
 }
 
 /** La frase de las tarjetas de resumen: cuánto está el último dato por encima o por debajo de `desde`.
- *  "El último está 7,2 % abajo" (o "2,1 puntos arriba" si el dato es un porcentaje). Vacía si falta algún dato. */
-export function fraseUltimoVs(pct: boolean, desde: number | null | undefined, hasta: number | null | undefined): string {
+ *  "El último está 7,2 % abajo" (o "2,1 puntos arriba" si el dato es un porcentaje). Vacía si falta algún dato.
+ *  `mostrado` dice cómo se ve cada valor en pantalla (por ejemplo `(v) => m.fmtC(c, v)`): la cuenta se hace con esos valores
+ *  redondeados, para que cierre con lo que se lee (1,9 y 2,1 → "0,2 puntos"). Si la diferencia es cero ya redondeada: "El último es igual". */
+export function fraseUltimoVs(pct: boolean, desde: number | null | undefined, hasta: number | null | undefined, mostrado?: (v: number) => string): string {
   if (!ok(desde) || !ok(hasta)) return "";
+  const d = mostrado ? redondeadoComo(mostrado, desde) : desde, h = mostrado ? redondeadoComo(mostrado, hasta) : hasta;
+  const igual = "El último es igual";
   // contra un valor cero o negativo (un déficit) el porcentaje no dice nada: solo se informa si está arriba o abajo
-  if (!pct && desde <= 0) return hasta === desde ? "El último es igual" : `El último está ${hasta > desde ? "arriba" : "abajo"}`;
-  const mag = pct ? Math.abs(hasta - desde) : Math.abs(hasta / desde - 1) * 100;
-  if (mag < 0.05) return "El último es igual";
-  const dir = hasta > desde ? "arriba" : "abajo";
-  const txt = pct ? `${nf1.format(mag)} ${nf1.format(mag) === "1,0" ? "punto" : "puntos"}` : `${mag >= 1000 ? nf0.format(mag) : nf1.format(mag)} %`;
+  if (!pct && d <= 0) return h === d ? igual : `El último está ${h > d ? "arriba" : "abajo"}`;
+  const mag = pct ? Math.abs(restaLimpia(h, d)) : Math.abs(h / d - 1) * 100;
+  const txtMag = pct ? nf1.format(mag) : mag >= 1000 ? nf0.format(mag) : nf1.format(mag);
+  if (h === d || /^0(,0)?$/.test(txtMag)) return igual;
+  const dir = h > d ? "arriba" : "abajo";
+  const txt = pct ? `${txtMag} ${txtMag === "1,0" ? "punto" : "puntos"}` : `${txtMag} %`;
   return `El último está ${txt} ${dir}`;
+}
+
+/** Clase de color (bueno / malo / neutro) del cambio entre dos valores tal como se ven: si redondeados son iguales, neutro. */
+export function claseVariacionMostrada(dir: number | null | undefined, pct: boolean, desde: number | null | undefined, hasta: number | null | undefined, mostrado: (v: number) => string): "bueno" | "malo" | "neutro" {
+  if (!ok(desde) || !ok(hasta)) return "neutro";
+  return claseVariacion(dir, pct, redondeadoComo(mostrado, desde), redondeadoComo(mostrado, hasta));
 }

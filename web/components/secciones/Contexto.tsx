@@ -10,7 +10,7 @@ import { baseDeConfig } from "@/lib/config";
 import { PALETA } from "../util";
 import { CeldaPres, Valor } from "./comunes";
 import { columnaComparable, periodoMandato } from "@/lib/tablas";
-import { nf0, nf1, ok } from "@/lib/formato";
+import { nf0, nf1, ok, r1 } from "@/lib/formato";
 import { PRES_DEF, crearPres, franjasPres, nombreCorto, type Pres } from "@/lib/estadisticas";
 import {
   ARG, COMPARAR, ESPERADO, GRUPOS_CMP, GRUPOS_EXTRA, MARCA_TXT, PAISES, VEC, VECINOS, VIENTOS,
@@ -23,6 +23,10 @@ import { PreciosMundo } from "./PreciosMundo";
 
 const f1 = (v: number | null | undefined) => (ok(v) ? nf1.format(v) : "—");
 const signo = (v: number) => { const r = Math.round(v * 10) / 10; return (r > 0 ? "+" : r < 0 ? "−" : "") + nf1.format(Math.abs(r)); };
+/** Resta de dos valores como se muestran (con un decimal): 1,94 y 2,06 se ven 1,9 y 2,1, y la diferencia que se informa es 0,2. */
+const difMostrada = (a: number | null | undefined, b: number | null | undefined): number | null => (ok(a) && ok(b) ? r1(r1(a) - r1(b)) : null);
+/** Sorpresa de un año = real - proyectado, con los dos valores tal como se muestran en la fila; si falta alguno, la que trae la fila. */
+const sorpresaMostrada = (real: number | null | undefined, proy: number | null | undefined, original: number | null | undefined) => difMostrada(real, proy) ?? original;
 const resaltar = (on: boolean) => (on ? { background: "color-mix(in srgb, var(--series-1) 14%, transparent)" } : undefined);
 const tonoSig = (v: number | null | undefined, dir: number) => (ok(v) && dir && v * dir !== 0 ? (v * dir > 0 ? "bueno" : "malo") as "bueno" | "malo" : null);
 const nDe = (p: { n: number; de: number }) => (p.n < p.de ? <small>{p.n} de {p.de} años</small> : null);
@@ -130,7 +134,7 @@ function Esperado({ datos, grupo, nombreGrupo, p, set, resalta }: { datos: Datos
             {anios.length && s.n ? <>
               <Valor tono={colS.arg.tono[k]} f={colS.arg.frac[k]} modo="centro" neg={(s.sArg ?? 0) < 0} marca={colS.arg.marca[k]} sub={s.n < anios.length ? <small>{s.n} de {anios.length} años</small> : null}>{ok(s.sArg) ? signo(s.sArg) : "—"}</Valor>
               <Valor tono={colS.grp.tono[k]} f={colS.grp.frac[k]} modo="centro" neg={(s.sGrp ?? 0) < 0} marca={colS.grp.marca[k]}>{ok(s.sGrp) ? signo(s.sGrp) : "—"}</Valor>
-              <Valor tono={colS.dif.tono[k]} f={colS.dif.frac[k]} modo="centro" neg={(s.dif ?? 0) < 0} marca={colS.dif.marca[k]}>{ok(s.dif) ? signo(s.dif) : "—"}</Valor>
+              <Valor tono={colS.dif.tono[k]} f={colS.dif.frac[k]} modo="centro" neg={(s.dif ?? 0) < 0} marca={colS.dif.marca[k]}>{ok(s.dif) ? signo(difMostrada(s.sArg, s.sGrp) ?? s.dif) : "—"}</Valor>
             </> : <td colSpan={3} style={{ textAlign: "center", color: "var(--text-muted)" }}>{anios.length ? "sin proyección de abril para esos años" : "sin años completos"}</td>}
           </tr>
         ))}</tbody>
@@ -138,7 +142,7 @@ function Esperado({ datos, grupo, nombreGrupo, p, set, resalta }: { datos: Datos
       <p className="note" style={{ marginTop: "var(--e-2)" }}>Sorpresa promedio por año, en puntos. {dir > 0 ? "Verde: mejor de lo esperado." : "Que salga más alto es peor: verde = más bajo de lo esperado."} La barra muestra la magnitud frente al mayor de la columna (a la derecha si es positiva, a la izquierda si es negativa) y las marcas “mejor” y “peor” señalan los extremos.</p>
       <ul className="note" style={{ paddingLeft: 18 }}>
         {porPres.filter(({ s, anios }) => anios.length && ok(s.sArg) && ok(s.sGrp) && ok(s.dif)).map(({ x, s }) => (
-          <li key={x.id}>Con {x.n}, la Argentina rindió {frase(s.sArg as number)} por año; {nombre}, {frase(s.sGrp as number)}. Diferencia: {signo(s.dif as number)} puntos.</li>
+          <li key={x.id}>Con {x.n}, la Argentina rindió {frase(s.sArg as number)} por año; {nombre}, {frase(s.sGrp as number)}. Diferencia: {signo(difMostrada(s.sArg, s.sGrp) ?? (s.dif as number))} puntos.</li>
         ))}
       </ul>
       <details>
@@ -146,8 +150,8 @@ function Esperado({ datos, grupo, nombreGrupo, p, set, resalta }: { datos: Datos
         <div className="tablewrap alto fija"><table>
           <thead><tr><th>Año</th><th>Arg. proyectado</th><th>Arg. real</th><th>Sorpresa Arg.</th><th>{nombreGrupo} proyectado</th><th>{nombreGrupo} real</th><th>Sorpresa {nombreGrupo}</th><th>Diferencia</th></tr></thead>
           <tbody>{filas.filter((f) => f.y >= 1995 && (f.pArg != null || f.rArg != null)).map((f) => (
-            <tr key={f.y}><td>{f.y}{f.y > hasta ? <small>estimado</small> : null}</td><td>{f1(f.pArg)}</td><td>{f1(f.rArg)}</td><Valor tono={tonoSig(f.sArg, dir)}>{ok(f.sArg) ? signo(f.sArg) : "—"}</Valor>
-              <td>{f1(f.pGrp)}</td><td>{f1(f.rGrp)}</td><Valor tono={tonoSig(f.sGrp, dir)}>{ok(f.sGrp) ? signo(f.sGrp) : "—"}</Valor><Valor tono={tonoSig(f.dif, dir)}>{ok(f.dif) ? signo(f.dif) : "—"}</Valor></tr>
+            <tr key={f.y}><td>{f.y}{f.y > hasta ? <small>estimado</small> : null}</td><td>{f1(f.pArg)}</td><td>{f1(f.rArg)}</td><Valor tono={tonoSig(f.sArg, dir)}>{ok(f.sArg) ? signo(sorpresaMostrada(f.rArg, f.pArg, f.sArg) as number) : "—"}</Valor>
+              <td>{f1(f.pGrp)}</td><td>{f1(f.rGrp)}</td><Valor tono={tonoSig(f.sGrp, dir)}>{ok(f.sGrp) ? signo(sorpresaMostrada(f.rGrp, f.pGrp, f.sGrp) as number) : "—"}</Valor><Valor tono={tonoSig(f.dif, dir)}>{ok(f.dif) ? signo(difMostrada(sorpresaMostrada(f.rArg, f.pArg, f.sArg), sorpresaMostrada(f.rGrp, f.pGrp, f.sGrp)) ?? f.dif) : "—"}</Valor></tr>
           ))}</tbody>
         </table></div>
       </details>

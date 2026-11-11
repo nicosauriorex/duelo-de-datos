@@ -66,6 +66,8 @@ export function Mandato() {
   const play = !!anim?.play;
   useEffect(() => {
     if (!play) return;
+    // si el sistema pide reducir el movimiento (también si cambió con la animación andando), no avanza sola
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setAnim(null); return; }
     const id = window.setInterval(() => {
       setAnim((a) => (!a || !a.play ? a : a.t + 1 >= maxAnim ? { t: maxAnim, play: false } : { t: a.t + 1, play: true }));
     }, ms);
@@ -136,7 +138,8 @@ export function Mandato() {
                 crearVista={() => ({ tipo: "mandato", expr: eB, modo, presIds: D.pres.map((x) => x.id), anc: p.get("anc"), md: p.get("md"), mh: p.get("mh"), valorFinal, base: b })}><IconoCompartir />Compartir</BotonCompartir>
             </div>
             <div className="legend">{D.pres.map((x) => <span key={x.id} style={vcolor(x.color)}>{x.n}</span>)}</div>
-            <Grafico rows={rowsVista || D.rows} series={D.series} opts={D.opts} />
+            {/* tocar el gráfico pausa la animación */}
+            <div onPointerDown={() => { if (play) setAnim((a) => (a ? { ...a, play: false } : a)); }}><Grafico rows={rowsVista || D.rows} series={D.series} opts={D.opts} /></div>
             <div className="controls mand-meses">
               <label>Meses</label><label htmlFor="mm_desde">desde</label>
               <input type="range" id="mm_desde" min={0} max={D.maxMes - 1} step={1} value={D.desde} onChange={(ev) => { const d = +ev.target.value; set({ md: d ? String(d) : null, mh: d >= D.hasta ? String(d + 1) : undefined }); }} />

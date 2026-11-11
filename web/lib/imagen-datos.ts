@@ -8,6 +8,7 @@ import type { DatosImagen, TarjetaDato, TarjetaImg } from "./imagen";
 import { fmtMes, nf0, nf1, fmtNum, norm, ok } from "./formato";
 import type { Calculo, Expr, Motor } from "./motor";
 import { filasDeTabla, tablaATexto } from "./tabla-texto";
+import { variacionMostrada } from "./tablas";
 
 /** Lo que muestra un gráfico de Histórico y, por lo tanto, lo que lleva la imagen. */
 export interface VistaImg {
@@ -110,7 +111,7 @@ const signo = (d: number) => (d > 0 ? "+" : d < 0 ? "−" : "");
 function variacionDe(m: Motor, c: Calculo, ini: number | null, fin: number | null, conNegativos: boolean): string | null {
   if (ini == null || fin == null) return null;
   if (!c.pct && conNegativos) { const d = fin - ini; return `${signo(d)}${m.fmtC(c, Math.abs(d))}`; }
-  const t = m.variacionTxt(c, ini, fin);
+  const t = variacionMostrada(m, c, ini, fin);
   return t === "–" ? null : t;
 }
 const mesesIdx = (F: string[], desde: string, hasta: string) => {

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useDatos } from "../DatosProvider";
 import { useConfig } from "../ConfigProvider";
 import { Picker } from "../Variables";
-import { Modal, useCapa } from "../ui";
+import { Modal, useAtras, useCapa } from "../ui";
 import { IconoIr } from "../Iconos";
 import { buscarSeries, palabrasBusqueda, textoBusqueda } from "@/lib/catalogo";
 import { medidaInicial } from "@/lib/config";
@@ -28,9 +28,12 @@ function ListaHueco({ etiqueta, valor, opciones, onElegir }: { etiqueta: string;
   const [corrimiento, setCorrimiento] = useState(0);
   const raiz = useRef<HTMLSpanElement>(null), boton = useRef<HTMLButtonElement>(null), lista = useRef<HTMLUListElement>(null);
   const id = useId();
-  useCapa(abierto);
+  const esLaDeArriba = useCapa(abierto);
+  const cerrarAtras = useAtras(abierto, () => { setAbierto(false); boton.current?.focus(); });   // Atrás cierra solo esta capa
   const idx = Math.max(0, opciones.findIndex((o) => o[0] === valor));
-  const cerrar = useCallback((foco = true) => { setAbierto(false); if (foco) boton.current?.focus(); }, []);
+  const cerrarRef = useRef(cerrarAtras);
+  cerrarRef.current = cerrarAtras;
+  const cerrar = useCallback((foco = true) => { cerrarRef.current(); if (foco) boton.current?.focus(); }, []);
   const abrir = () => {
     const r = boton.current?.getBoundingClientRect();
     if (r) setArriba(window.innerHeight - r.bottom < 260 && r.top > window.innerHeight - r.bottom);
@@ -61,7 +64,7 @@ function ListaHueco({ etiqueta, valor, opciones, onElegir }: { etiqueta: string;
     else if (ev.key === "Home") { ev.preventDefault(); setActivo(0); }
     else if (ev.key === "End") { ev.preventDefault(); setActivo(n - 1); }
     else if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); elegir(activo); }
-    else if (ev.key === "Escape") { ev.preventDefault(); ev.stopPropagation(); cerrar(); }
+    else if (ev.key === "Escape") { ev.preventDefault(); ev.stopPropagation(); if (esLaDeArriba()) cerrar(); }
     else if (ev.key === "Tab") cerrar(false);
   };
   return (
@@ -73,6 +76,9 @@ function ListaHueco({ etiqueta, valor, opciones, onElegir }: { etiqueta: string;
       {abierto && (
         <ul ref={lista} id={id} className={`hueco-menu${arriba ? " arriba" : ""}`} role="listbox" tabIndex={-1} aria-label={etiqueta} aria-activedescendant={`${id}-${activo}`}
           style={corrimiento ? { transform: `translateX(${corrimiento}px)` } : undefined} onKeyDown={tecla}>
+          <li role="presentation" className="hueco-cerrar-fila">
+            <button type="button" className="hueco-cerrar" aria-label="Cerrar" tabIndex={-1} onClick={() => cerrar()}><span aria-hidden="true">×</span></button>
+          </li>
           {opciones.map(([v, t], i) => (
             <li key={v} id={`${id}-${i}`} data-i={i} role="option" aria-selected={v === valor} className={i === activo ? "activo" : undefined}
               onMouseEnter={() => setActivo(i)} onClick={() => elegir(i)}>{t}</li>
@@ -152,8 +158,8 @@ function Oracion({ children, href, enlace }: { children: React.ReactNode; href: 
       <span className="texto-oracion">{children}</span>
       <span className="acciones-oracion">
         <button type="button" className="btn" onClick={() => router.push(href)}>Ver<IconoIr /></button>
-        {enlace && <Link prefetch={false} className="enlace-oracion" href={enlace.href}>{enlace.texto}</Link>}
       </span>
+      {enlace && <Link prefetch={false} className="enlace-oracion" href={enlace.href}>{enlace.texto}</Link>}
     </li>
   );
 }

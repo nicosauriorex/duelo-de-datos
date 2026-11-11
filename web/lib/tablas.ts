@@ -1,7 +1,7 @@
 // Reglas comunes de las tablas del sitio: período del mandato, marcas "mejor" / "peor" y barras de magnitud.
 // Los componentes solo dibujan lo que sale de acá.
-import { fmtMes, ok } from "./formato";
-import { rankScores, type Pres } from "./estadisticas";
+import { fmtMes, nf1, ok } from "./formato";
+import { claseVariacion, rankScores, type Pres } from "./estadisticas";
 
 /** "dic-15 a nov-19"; el mandato en curso termina en "hoy". */
 // con guion que no corta ("nov‑07" no se parte en dos renglones)
@@ -16,9 +16,6 @@ export function datosDesde(F: string[], arr: ArrayLike<number | null | undefined
 
 export type Tono = "bueno" | "malo" | null;
 export type MarcaCol = "mejor" | "peor" | "más alto" | "más bajo" | null;
-/** Tono de una variación: verde si mejoró según la dirección efectiva de la serie, rojo si empeoró, ninguno si no hay dirección. */
-export const tonoDeCambio = (dir: number | null | undefined, cambio: number | null | undefined): Tono =>
-  !dir || !ok(cambio) || cambio === 0 ? null : cambio * dir > 0 ? "bueno" : "malo";
 
 /** Una columna comparable entre presidentes: tono, largo de barra (0 a 1), marca y puesto de cada fila.
  *  `modo`: "centro" = eje en cero al medio (hay valores positivos y negativos; la barra va a cada lado); "izq" = la barra arranca del borde izquierdo.
@@ -98,3 +95,12 @@ export function columnaComparable(vals: (number | null | undefined)[], dir: numb
 
 /** Texto para quien no ve el color: en qué mitad de la columna cae el valor. */
 export const lecturaTono = (t: Tono): string => (t === "bueno" ? "en la mitad mejor" : t === "malo" ? "en la mitad peor" : "");
+
+/** Variación entre dos valores tal como se muestran: es `variacionTxt` del motor (una sola cuenta para todo el sitio), aceptando datos faltantes. */
+export const variacionMostrada = (m: { variacionTxt: (c: { pct: boolean }, a: number | null, b: number | null) => string }, c: { pct: boolean }, ini: number | null | undefined, fin: number | null | undefined): string =>
+  m.variacionTxt(c, ini ?? null, fin ?? null);
+/** Tono de la variación entre dos valores, con el mismo redondeo que el texto: si se lee "0,0", no lleva color. */
+export const tonoDeVariacion = (c: { dir?: number | null; pct: boolean }, ini: number | null | undefined, fin: number | null | undefined): Tono => {
+  const k = claseVariacion(c.dir, c.pct, ini, fin);
+  return k === "neutro" ? null : k;
+};

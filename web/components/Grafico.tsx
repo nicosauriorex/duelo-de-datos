@@ -8,6 +8,7 @@ import { MESES, fmtMes, mesNum, ok } from "@/lib/formato";
 import { estadisticasRows } from "@/lib/estadisticas";
 import { useConfig } from "./ConfigProvider";
 import { BarraZoom } from "./BarraZoom";
+import { useAtras } from "./ui";
 
 export type Fila = Record<string, any>;
 export interface SerieG {
@@ -134,20 +135,19 @@ export function Grafico({ rows, series, opts, expandir }: { rows: Fila[]; series
 
 function Expandido({ expandir, ayuda, children }: { expandir: Expandir; ayuda: string; children: ReactNode }) {
   const raiz = useRef<HTMLDivElement>(null);
-  const { onCerrar } = expandir;
   const [vertical, setVertical] = useState(false);
   const coarse = useMedia("(pointer: coarse)");
+  // El botón Atrás del celular cierra la vista ampliada (no sale de la página); la cruz y Escape usan el mismo camino.
+  const cerrar = useAtras(true, expandir.onCerrar);
+  const cerrarRef = useRef(cerrar);
+  cerrarRef.current = cerrar;
   useEffect(() => {
-    const cerrado = { v: false }, fs = { v: false };
-    const cerrar = () => { if (!cerrado.v) { cerrado.v = true; onCerrar(); } };
-    window.history.pushState({ pldExp: true }, "");
+    const fs = { v: false };
     document.body.classList.add("sin-scroll");
-    const tecla = (ev: KeyboardEvent) => { if (ev.key === "Escape") { ev.preventDefault(); cerrar(); } };
-    const atras = () => cerrar();
-    const cambioFs = () => { if (fs.v && !document.fullscreenElement) cerrar(); };
+    const tecla = (ev: KeyboardEvent) => { if (ev.key === "Escape") { ev.preventDefault(); cerrarRef.current(); } };
+    const cambioFs = () => { if (fs.v && !document.fullscreenElement) cerrarRef.current(); };
     const medir = () => setVertical(window.innerHeight > window.innerWidth);
     document.addEventListener("keydown", tecla);
-    window.addEventListener("popstate", atras);
     document.addEventListener("fullscreenchange", cambioFs);
     window.addEventListener("resize", medir);
     medir();
@@ -156,21 +156,19 @@ function Expandido({ expandir, ayuda, children }: { expandir: Expandir; ayuda: s
     if (el && el.requestFullscreen) el.requestFullscreen().then(() => { fs.v = true; girar(); }).catch(girar);
     else girar();
     return () => {
-      cerrado.v = true;
-      document.removeEventListener("keydown", tecla); window.removeEventListener("popstate", atras);
+      fs.v = false;
+      document.removeEventListener("keydown", tecla);
       document.removeEventListener("fullscreenchange", cambioFs); window.removeEventListener("resize", medir);
       document.body.classList.remove("sin-scroll");
       if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
       try { (screen.orientation as any)?.unlock?.(); } catch { /* no se puede */ }
-      if (window.history.state && window.history.state.pldExp) window.history.back();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
     <div className="exp" ref={raiz} role="dialog" aria-modal="true" aria-label={expandir.titulo}>
       <div className="exp-cab">
         <h2>{expandir.titulo}</h2>
-        <button type="button" className="btn" aria-label="Cerrar vista ampliada" onClick={onCerrar}>✕</button>
+        <button type="button" className="btn exp-cerrar" aria-label="Cerrar vista ampliada" onClick={cerrar}>✕</button>
       </div>
       {expandir.leyenda}
       {coarse && vertical && <div className="aviso-giro" role="status">Girá el celular para verlo más grande</div>}
@@ -573,11 +571,14 @@ function GraficoBase({ rows, series, opts, lleno }: { rows: Fila[]; series: Seri
     <div className={`graf-todo${lleno ? " lleno" : ""}`}>
       <div className="graf-caja">
         <div ref={cont} className={`grafico${lleno ? " lleno" : ""}`} />
-        {vent && <button type="button" className="btn volver" onClick={() => reset.current()}>Volver</button>}
       </div>
-      {conBarra && (
+      {/* "Volver" va fuera del área del gráfico para no tapar el último punto ni su etiqueta */}
+      {conBarra ? (
         <BarraZoom xs={xs} valores={valoresSil} ventana={vent}
-          paso={(xs[xs.length - 1] - xs[0]) / (xs.length - 1)} fmt={mesTxt} onCambio={(a, b) => aplicarRef.current(a, b)} />
+          paso={(xs[xs.length - 1] - xs[0]) / (xs.length - 1)} fmt={mesTxt} onCambio={(a, b) => aplicarRef.current(a, b)}
+          volver={{ visible: !!vent, onClick: () => reset.current() }} />
+      ) : vent && (
+        <div className="bz-fila bz-solo"><button type="button" className="btn volver" onClick={() => reset.current()}>Volver</button></div>
       )}
     </div>
   );

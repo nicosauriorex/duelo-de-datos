@@ -8,7 +8,7 @@ import { ContextoMandato } from "./ContextoMandato";
 import { BotonCompartir } from "../PanelCompartir";
 import { IconoCompartir } from "../Iconos";
 import { CeldaPres, CeldaVar, LineaInicio, Valor, useBase } from "./comunes";
-import { columnaComparable, periodoMandato } from "@/lib/tablas";
+import { columnaComparable, periodoMandato, variacionMostrada } from "@/lib/tablas";
 import { fmtMes, nf0, nf1, ok } from "@/lib/formato";
 import { crearPres, mejorPeor, rankingPresidentes, tablasIndicadores, type CritRk, type FilaMP, type IndRk, type Pres, type TablaInd } from "@/lib/estadisticas";
 import { crearIndicadores } from "@/lib/catalogo";
@@ -43,7 +43,7 @@ function MejorPeor({ m, tablas, PRES, pres, crit }: { m: Motor; tablas: TablaInd
               <td>{m.fmtC(f.c, f.d.st.ini)}{mesC(f.d.st.iniI)}</td><td>{m.fmtC(f.c, f.d.st.fin)}{mesC(f.d.st.finI)}</td>
               <Valor tono={bueno ? "bueno" : "malo"} sub={<>
                 {m.difAbsTxt(f.c, f.d.st.ini ?? null, f.d.st.fin ?? null) ? <small>{m.difAbsTxt(f.c, f.d.st.ini ?? null, f.d.st.fin ?? null)}</small> : null}
-                {f.d.enPuntos ? (f.d.st.ini! > 0 && f.d.st.fin! >= 0 ? <small>{nf0.format((f.d.st.fin! / f.d.st.ini! - 1) * 100)} % relativo</small> : null) : <small>{nf1.format(f.d.mejora * 100)} % anual</small>}</>}>{menos(m.variacionTxt(f.c, f.d.st.ini ?? null, f.d.st.fin ?? null))}</Valor>
+                {f.d.enPuntos ? (f.d.st.ini! > 0 && f.d.st.fin! >= 0 ? <small>{nf0.format((f.d.st.fin! / f.d.st.ini! - 1) * 100)} % relativo</small> : null) : <small>{nf1.format(f.d.mejora * 100)} % anual</small>}</>}>{menos(variacionMostrada(m, f.c, f.d.st.ini, f.d.st.fin))}</Valor>
               <td>{m.fmtC(f.c, f.d.st.prom)}</td>
               {pu(f.d.m_puesto, f.d.m_de, f.d.m_pct)}{pu(f.d.n_puesto, f.d.n_de, f.d.n_pct)}
             </tr>
@@ -72,7 +72,7 @@ function Comparacion({ m, tablas, PRES, crit, conUnidad }: { m: Motor; tablas: T
       .filter((x): x is { k: number; d: DesRk; score: number } => !!x).sort((a, c) => c.score - a.score);
     return { t, orden };
   }).filter((f) => f.orden.length >= 2);
-  const cifra = (t: TablaInd, d: DesRk) => (crit === "nivel" ? `promedio ${m.fmtC(t.c, d.st.prom)}` : menos(m.variacionTxt(t.c, d.st.ini ?? null, d.st.fin ?? null)));
+  const cifra = (t: TablaInd, d: DesRk) => (crit === "nivel" ? `promedio ${m.fmtC(t.c, d.st.prom)}` : menos(variacionMostrada(m, t.c, d.st.ini, d.st.fin)));
   if (!filas.length) return <p className="note">No hay indicadores con datos de al menos dos presidentes para comparar.</p>;
   return (
     <div className="tablewrap fija"><table>
@@ -192,7 +192,7 @@ export function Ranking() {
                               <td>{m.fmtC(i.c, i.d.st.ini)}<small>{i.d.st.iniI != null ? fmtMes(F[i.d.st.iniI]) : ""}</small></td>
                               <td>{m.fmtC(i.c, i.d.st.fin)}<small>{i.d.st.finI != null ? fmtMes(F[i.d.st.finI]) : ""}</small></td>
                               <Valor tono={i.d.bueno ? "bueno" : i.d.malo ? "malo" : null}
-                                sub={m.difAbsTxt(i.c, i.d.st.ini ?? null, i.d.st.fin ?? null) ? <small>{m.difAbsTxt(i.c, i.d.st.ini ?? null, i.d.st.fin ?? null)}</small> : null}>{menos(m.variacionTxt(i.c, i.d.st.ini ?? null, i.d.st.fin ?? null))}</Valor>
+                                sub={m.difAbsTxt(i.c, i.d.st.ini ?? null, i.d.st.fin ?? null) ? <small>{m.difAbsTxt(i.c, i.d.st.ini ?? null, i.d.st.fin ?? null)}</small> : null}>{menos(variacionMostrada(m, i.c, i.d.st.ini, i.d.st.fin))}</Valor>
                               <Valor tono={i.pct > 50 ? "bueno" : i.pct < 50 ? "malo" : null}>{i.puesto}º de {i.de}</Valor>
                             </tr>
                           ))}</tbody>

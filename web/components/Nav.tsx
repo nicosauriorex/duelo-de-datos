@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { BotonConfig } from "./ConfigProvider";
 import { useDeslizable } from "./Movimiento";
 import { IconoAbajo, IconoVolver } from "./Iconos";
+import { ORGANISMOS } from "@/lib/fuentes";
 
 /** Las 5 secciones del menú: [carpeta, nombre]. */
 export const SECCIONES: [string, string][] = [
@@ -92,6 +93,20 @@ export function Barra() {
         </nav>
       )}
     </header>
+  );
+}
+
+/** Pie general con las fuentes. En la portada no va: ya está el bloque "Todo tiene fuente". El render estático de "/" sale sin pie. */
+export function PieSitio() {
+  const ruta = usePathname() || "/";
+  if (ruta === "/") return null;
+  return (
+    <footer className="pie">
+      <div className="ancho">
+        <p className="pie-fuentes"><b>Fuentes principales:</b> {ORGANISMOS.join(" · ")} y otras.</p>
+        <Link prefetch={false} href="/fuentes/" className="btn">Ver las fuentes</Link>
+      </div>
+    </footer>
   );
 }
 

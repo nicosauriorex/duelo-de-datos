@@ -1,19 +1,21 @@
 // Datos de la imagen de compartir para las secciones de presidentes (Por presidente, Meses de mandato y Ranking). No dibuja: eso es `imagen.ts`.
 // Usa los mismos cálculos que la página (statsMandato, claseVariacion, calcularMandato, rankingPresidentes) para que den lo mismo.
 import {
-  baseIdx, baseTxt, oracionInicio, calcularMandato, claseVariacion, crearPres, rankingPresidentes, statsMandato, TITULOS_MANDATO, nombreCorto, varNum,
+  baseIdx, baseTxt, oracionInicio, calcularMandato, claseVariacion, crearPres, rankingPresidentes, statsMandato, nivelComparable, TITULOS_MANDATO, nombreCorto, varNum,
   type BaseCfg, type CritRk, type IndRk, type ModoMandato,
 } from "./estadisticas";
-import type { DatosImagen, FilaBarra, FilaRank, FilaVariable } from "./imagen";
+import type { DatosImagen, FilaBarra, FilaRank, FilaVariable, FilaVela } from "./imagen";
 import type { FormatoImg } from "./config";
 import { fuenteLegible, fuentesTxt, limpiarComentario, notaInflacion, slug, tituloVariable } from "./imagen-datos";
 import { fmtMes, lastIdx, ok } from "./formato";
 import type { Expr, Motor } from "./motor";
 import { grupoDe } from "./catalogo";
+import { datosDesde, variacionMostrada } from "./tablas";
 
 /** Lo que muestra una sección de presidentes y, por lo tanto, lo que lleva la imagen. Todo viene tal como está en pantalla. */
 export type VistaPres =
   | { tipo: "barras"; expr: Expr; presIds: string[]; base: BaseCfg }                  // presIds en el orden en que está la tabla
+  | { tipo: "velas"; expr: Expr; presIds: string[]; base: BaseCfg }                   // las mismas velas que la pantalla
   | { tipo: "variables"; presId: string; exprs: Expr[]; base: BaseCfg }
   | { tipo: "mandato"; expr: Expr; modo: ModoMandato; presIds: string[]; anc: string | null; md: string | null; mh: string | null; valorFinal?: boolean; base: BaseCfg }
   | { tipo: "ranking"; crit: CritRk; inds: IndRk[]; usaVars: boolean; base: BaseCfg };
@@ -22,7 +24,7 @@ export interface OpcionesPres { formato: FormatoImg; comentario: string }
 export const esVistaPres = (v: unknown): v is VistaPres => !!v && typeof v === "object" && "tipo" in v;
 /** Ids de series que hay que tener cargadas para armar la imagen. */
 export const idsDeVistaPres = (v: VistaPres): string[] =>
-  v.tipo === "barras" || v.tipo === "mandato" ? (v.expr.rel ? [v.expr.id, v.expr.rel] : [v.expr.id])
+  v.tipo === "barras" || v.tipo === "velas" || v.tipo === "mandato" ? (v.expr.rel ? [v.expr.id, v.expr.rel] : [v.expr.id])
     : v.tipo === "variables" ? v.exprs.flatMap((e) => (e.rel ? [e.id, e.rel] : [e.id]))
       : v.inds.flatMap((i) => (i.ind.rel ? [i.ind.id, i.ind.rel] : [i.ind.id]));
 
@@ -62,7 +64,7 @@ export function armarImagenPres(m: Motor, v: VistaPres, o: OpcionesPres): DatosI
       if (!st.n || st.iniI === st.finI) { sin.push(p.n); return; }
       const ini = st.ini as number, fin = st.fin as number;
       filas.push({
-        id: p.id, nombre: p.n, valor: varNum(c, st), variacion: m.variacionTxt(c, ini, fin), cls: claseVariacion(c.dir, c.pct, ini, fin),
+        id: p.id, nombre: p.n, valor: varNum(c, st), variacion: variacionMostrada(m, c, ini, fin), cls: claseVariacion(c.dir, c.pct, ini, fin),
         ini: m.fmtC(c, ini), fin: m.fmtC(c, fin), nota: notaParcial(F, st, baseIdx(F, p, b), p.i1),
       });
     });
@@ -72,6 +74,31 @@ export function armarImagenPres(m: Motor, v: VistaPres, o: OpcionesPres): DatosI
     const color = !c.dir ? "Sin colores: para este dato no se califica si subir o bajar es favorable." : c.dir > 0 ? "Verde: subió; rojo: bajó." : "Verde: bajó; rojo: subió.";
     d.frases = [neutro(`Del inicio al cierre de cada mandato. ${color}`)];
     d.lienzo = { tipo: "barras", filas, sinDatos: sin };
+    d.unidad = c.unidad; d.fuente = "Fuente: " + fuenteLegible(c.serie.fuente); d.nota = notaInflacion([c], false);
+    return d;
+  }
+
+  if (v.tipo === "velas") {
+    // mismas reglas que la vista Velas de la pantalla: solo presidentes con datos y, en pesos corrientes, no hay escala común (no se dibuja)
+    const c = m.calc(v.expr);
+    if (!nivelComparable(m, v.expr)) return null;
+    const titulo = tituloVariable(m, v.expr, c);
+    const filas: FilaVela[] = [], sin: string[] = [];
+    v.presIds.forEach((id) => {
+      const p = PRES.find((x) => x.id === id); if (!p) return;
+      const st = statsMandato(F, c.v, p, b);
+      if (!st.n || st.ini == null || st.fin == null || st.min == null || st.max == null) { sin.push(p.n); return; }
+      filas.push({
+        id: p.id, nombre: p.n, periodo: `${fmtMes(F[st.iniI as number])} a ${fmtMes(F[st.finI as number])}`, ini: st.ini, fin: st.fin, min: st.min, max: st.max,
+        iniTxt: m.fmtC(c, st.ini), finTxt: m.fmtC(c, st.fin), minTxt: m.fmtC(c, st.min), maxTxt: m.fmtC(c, st.max),
+        variacion: varNum(c, st) == null ? "–" : variacionMostrada(m, c, st.ini, st.fin).replace(/^-/, "−"), cls: claseVariacion(c.dir, c.pct, st.ini, st.fin), nota: datosDesde(F, c.v, p),
+      });
+    });
+    if (!filas.length) return null;
+    const d = esqueleto(m, o, b, titulo, F[lastIdx(c.v)] ?? F[F.length - 1]);
+    const color = !c.dir ? "Sin colores: para este dato no se califica si subir o bajar es favorable." : c.dir > 0 ? "Verde: subió; rojo: bajó." : "Verde: bajó; rojo: subió.";
+    d.frases = [neutro(`Una vela por mandato: la línea fina va del mínimo al máximo; el cuerpo, del valor de inicio al de cierre. ${color} Misma escala para todos (${m.fmtC(c, Math.min(...filas.map((f) => f.min)))} a ${m.fmtC(c, Math.max(...filas.map((f) => f.max)))}).`)];
+    d.lienzo = { tipo: "velas", filas, sinDatos: sin };
     d.unidad = c.unidad; d.fuente = "Fuente: " + fuenteLegible(c.serie.fuente); d.nota = notaInflacion([c], false);
     return d;
   }
@@ -86,7 +113,7 @@ export function armarImagenPres(m: Motor, v: VistaPres, o: OpcionesPres): DatosI
       if (sinDatos) return { nombre, unidad, ini: null, fin: null, variacion: null, cls: "neutro", nota: null, spark: [] };
       const ini = st.ini as number, fin = st.fin as number, desde = ok(c.v[bi]) ? bi : (st.iniI as number);
       return {
-        nombre, unidad, ini: m.fmtC(c, ini), fin: m.fmtC(c, fin), variacion: m.variacionTxt(c, ini, fin), cls: claseVariacion(c.dir, c.pct, ini, fin),
+        nombre, unidad, ini: m.fmtC(c, ini), fin: m.fmtC(c, fin), variacion: variacionMostrada(m, c, ini, fin), cls: claseVariacion(c.dir, c.pct, ini, fin),
         nota: notaParcial(F, st, bi, p.i1), spark: c.v.slice(desde, p.i1 + 1),
       };
     });

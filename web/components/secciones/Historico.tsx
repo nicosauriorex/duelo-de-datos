@@ -7,11 +7,11 @@ import { Cargando, Desplegable, Modal, Selector, Seg, alternar } from "../ui";
 import { FilaVariable, RenglonVariable } from "../Variables";
 import { Grafico, hayDatos, type Fila, type Marca, type OpcionesG, type Ref, type SerieG, type TipoRef } from "../Grafico";
 import { PALETA, vcolor } from "../util";
-import { fmtMes, MESES, nf0, nf1, ok } from "@/lib/formato";
+import { fmtMes, MESES, nf0, nf1, ok, redondeadoComo, restaLimpia } from "@/lib/formato";
 import type { Calculo, Expr, Motor } from "@/lib/motor";
 import { PRES_DEF, aBase100, claseVariacion, estadisticasRows, etiqueta, filasGrafico, franjasPres, type EstRows } from "@/lib/estadisticas";
 import { admiteContexto, contextoDato } from "@/lib/contexto-dato";
-import { MAX_GRAFICOS, MAX_MISMA_UNIDAD, PG, TODOS_MESES, exprsUsadas, fraseUltimoVs, frecuenciaOrigen, leerComun, leerGrafico, sfx, textoTemporalidad, type Comun, type GEst } from "@/lib/historico";
+import { MAX_GRAFICOS, MAX_MISMA_UNIDAD, PG, TODOS_MESES, claseVariacionMostrada, exprsUsadas, fraseUltimoVs, frecuenciaOrigen, leerComun, leerGrafico, sfx, textoTemporalidad, type Comun, type GEst } from "@/lib/historico";
 import { fmtEjeDe, notaInflacion, tituloGrafico, type VistaImg } from "@/lib/imagen-datos";
 import { useConfig } from "../ConfigProvider";
 import { baseDeConfig, medidaPreferida } from "@/lib/config";
@@ -65,7 +65,8 @@ export function Historico() {
   const defExpr = useMemo((): Expr | null => {
     if (!listo) return null;
     const ex = (id: string) => metas.some((m) => m.id === id);
-    return ex("pp_gba_asado") && ex("sipa_prom") ? { id: "pp_gba_asado", med: "real", rel: "sipa_prom", modo: "compra", esc: "" } : { id: "sipa_prom", med: medidaPreferida(config), rel: null, modo: "compra", esc: "" };
+    // Sin parámetros abre la Inflación mensual (el dato más pedido); si no estuviera, la serie de salarios
+    return ex("ipc_empalme") ? { id: "ipc_empalme", med: "vm", rel: null, modo: "compra", esc: "" } : { id: "sipa_prom", med: medidaPreferida(config), rel: null, modo: "compra", esc: "" };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listo, metas, config.medida, config.dolar]);
 
@@ -336,8 +337,8 @@ function VentanaPers({ titulo, onCerrar, children }: { titulo: string; onCerrar:
 
 // ------------------------------------------------------------ tarjeta de gráfico: barra (Gráfico / Tabla, Configurar, expandir), gráfico o tabla
 type Vista = "grafico" | "tabla";
-function CardGrafico({ titulo, temporal, nota, leyenda, visibles, config, rows, series, opts, unidades, vista: vistaProp, onVista, simple }: {
-  titulo: string; temporal?: string; nota?: ReactNode; leyenda?: ReactNode; visibles?: ReactNode; config?: { cuenta: number; children: ReactNode }; simple?: boolean;
+function CardGrafico({ titulo, temporal, nota, leyenda, visibles, config, rows, series, opts, unidades, vista: vistaProp, onVista, simple, presidentes }: {
+  titulo: string; temporal?: string; nota?: ReactNode; leyenda?: ReactNode; visibles?: ReactNode; presidentes?: ReactNode; config?: { cuenta: number; children: ReactNode }; simple?: boolean;
   rows: Fila[]; series: SerieG[]; opts: OpcionesG; unidades?: Record<string, string>; vista?: Vista; onVista?: (v: Vista) => void;
 }) {
   const [vistaL, setVistaL] = useState<Vista>("grafico");
@@ -393,6 +394,7 @@ function CardGrafico({ titulo, temporal, nota, leyenda, visibles, config, rows, 
       </div>
       {cab}
       {tabla ?? <Grafico rows={rows} series={series} opts={opts} expandir={{ titulo, leyenda: cab, abierto: exp, onCerrar: () => setExp(false) }} />}
+      {presidentes && <div className="acciones-graf">{presidentes}</div>}
     </div>
   );
 }
@@ -475,6 +477,11 @@ function Principal({ m, E, set, version, compacto, simple }: { m: Motor; E: Esta
     // Los valores reales dependen del IPC empalmado: se avisa con qué índice se descontó la inflación.
     (notaInflacion(lista.map((o) => o.c), b100) ? " " + notaInflacion(lista.map((o) => o.c), b100) : "") + ` Fuente: ${[...new Set(lista.map((o) => o.c.serie.fuente))].join("; ")}.`;
   const grupo = (lbl: string, el: React.ReactNode) => <Fragment key={lbl}><label>{lbl}</label>{el}</Fragment>;
+  // Franjas de presidentes: botón propio junto al gráfico (el estado sigue en el parámetro `pf`)
+  const alternarFranjas = () => { const on = !conFranjas; set({ pf: on === cfg.franjas ? null : on ? "1" : "0" }); };
+  const botonPresidentes = (
+    <button type="button" className="btn" aria-pressed={conFranjas} onClick={alternarFranjas} title="Franjas de colores por presidente en el gráfico">Presidentes</button>
+  );
   const refsToggle = (k: string) => set({ r: [...alternar(E.refs, k, true)].join(",") || "-" });
 
   // Opciones de "Opciones del gráfico" distintas de las de por defecto
@@ -482,8 +489,8 @@ function Principal({ m, E, set, version, compacto, simple }: { m: Motor; E: Esta
     const act = ks.filter((k) => set0.has(k)).sort().join(","), d = def.slice().sort().join(",");
     return act === d;
   };
-  const cuenta = (conFranjas !== cfg.franjas ? 1 : 0) + (b100 ? 1 : 0) + (puedeLog && E.escala !== "lin" ? 1 : 0) + (dos && E.eje !== "propia" ? 1 : 0) + (hayBanda && E.banda !== "no" ? 1 : 0)
-    + (!b100 && !igualA(E.refs, REFS_H.map((r) => r.k), ["ult", "prom", "med"]) ? 1 : 0) + (!b100 && !igualA(E.refs, ["mk_ult", "mk_max", "mk_min"], ["mk_ult", "mk_max", "mk_min"]) ? 1 : 0);
+  const cuenta = (b100 ? 1 : 0) + (puedeLog && E.escala !== "lin" ? 1 : 0) + (dos && E.eje !== "propia" ? 1 : 0) + (hayBanda && E.banda !== "no" ? 1 : 0)
+    + (!b100 && !igualA(E.refs, REFS_H.map((r) => r.k), ["ult", "prom"]) ? 1 : 0) + (!b100 && !igualA(E.refs, ["mk_ult", "mk_max", "mk_min"], ["mk_ult", "mk_max", "mk_min"]) ? 1 : 0);
   const config = (
     <>
       <div className="controls" id="h_opciones">
@@ -492,10 +499,6 @@ function Principal({ m, E, set, version, compacto, simple }: { m: Motor; E: Esta
       <div className="controls">
         {puedeLog && grupo("Escala", <Seg valor={E.escala} opciones={[["lin", "Lineal"], ["log", "Logarítmica"]]} onElegir={(v) => set({ e: v === "lin" ? null : v })} />)}
         {dos && grupo("Eje derecho", <Seg valor={E.eje} opciones={[["propia", "Escala propia (adaptada a la serie)"], ["misma", "Misma escala que el izquierdo"]]} onElegir={(v) => set({ ej: v === "propia" ? null : v })} />)}
-      </div>
-      <div className="controls">
-        {grupo("Presidentes", <Seg valor={conFranjas ? "si" : "no"} opciones={[["no", "No"], ["si", "Franjas de colores por mandato"]]}
-          onElegir={(v) => { const on = v === "si"; set({ pf: on === cfg.franjas ? null : on ? "1" : "0" }); }} />)}
       </div>
       {!b100 && (
         <div className="controls">
@@ -521,11 +524,11 @@ function Principal({ m, E, set, version, compacto, simple }: { m: Motor; E: Esta
   const o0 = lista[0], s0 = st[0];
   const tarjeta = (def: DefResumen) => {
     if (!s0) return null;
-    const desde = def.val(s0), hasta = s0.ult[0], f = def.fecha?.(s0);
+    const desde = def.val(s0), hasta = s0.ult[0], f = def.fecha?.(s0), mostrado = (v: number) => m.fmtC(o0.c, v);
     return (
       <div className="tile" key={def.tit}><div className="k">{def.tit}</div>
         <div className="v">{m.fmtC(o0.c, desde)}</div>
-        <div className="d">{f ?? null}{def.ultimo ? null : <>{f ? <br /> : null}<b className={`var-${claseVariacion(o0.c.dir, o0.c.pct, desde, hasta)}`}>{fraseUltimoVs(o0.c.pct, desde, hasta) || "–"}</b></>}</div></div>
+        <div className="d">{f ?? null}{def.ultimo ? null : <>{f ? <br /> : null}<b className={`var-${claseVariacionMostrada(o0.c.dir, o0.c.pct, desde, hasta, mostrado)}`}>{fraseUltimoVs(o0.c.pct, desde, hasta, mostrado) || "–"}</b></>}</div></div>
     );
   };
   const resumen = b100 ? (
@@ -533,7 +536,7 @@ function Principal({ m, E, set, version, compacto, simple }: { m: Motor; E: Esta
       <div className="card" style={{ gridColumn: "1/-1", margin: 0 }}><h2>Resumen (de mayor a menor)</h2>
         <div className="tablewrap"><table><thead><tr><th>Variable</th><th>Base 100 en</th><th>Último</th><th>Variación</th><th>Máximo</th><th>Mínimo</th><th>Promedio</th></tr></thead><tbody>
           {lista.map((o, k) => ({ o, s: st[k] })).filter((x) => x.s).sort((a, b) => b.s!.ult[0] - a.s!.ult[0]).map(({ o, s }) => {
-            const d = s!.ult[0] - 100, cls = claseVariacion(o.c.dir, true, 100, s!.ult[0]);
+            const ultM = redondeadoComo(nf1.format, s!.ult[0]), d = restaLimpia(ultM, 100), cls = claseVariacion(o.c.dir, true, 100, ultM);   // la diferencia sale del valor tal como se ve
             return (
               <tr key={o.key}><td className="nombre"><span className="punto" style={vcolor(o.color)} /> {o.c.corto}<small>{o.c.unidad}</small></td><td>{o.base}</td>
                 <td>{nf1.format(s!.ult[0])}<small>{s!.ult[1]}</small></td><td className={`var-${cls}`}>{d > 0 ? "+" : ""}{nf1.format(d)} %</td>
@@ -575,9 +578,12 @@ function Principal({ m, E, set, version, compacto, simple }: { m: Motor; E: Esta
         </div>
         <CardGrafico simple titulo={titulo} nota={nota} leyenda={leyenda} rows={rows} series={series} opts={opts} unidades={unidades} vista={E.tabla} onVista={onVista} />
         <div className="vs-acciones">
+          <div className="vs-fila">
+            {botonPresidentes}
+            <button type="button" className="btn" aria-expanded={simple.abierto} aria-controls="vs-personalizar" onClick={simple.onAlternar}>Personalizar</button>
+          </div>
           <BotonCompartir className="btn primario" titulo={nombre} href={() => window.location.href} crearVista={() => vista}>
             <IconoCompartir />Compartir</BotonCompartir>
-          <button type="button" className="btn" aria-expanded={simple.abierto} aria-controls="vs-personalizar" onClick={simple.onAlternar}>Personalizar</button>
         </div>
         {simple.abierto && (
           <div className="vs-personalizar" id="vs-personalizar">
@@ -608,7 +614,7 @@ function Principal({ m, E, set, version, compacto, simple }: { m: Motor; E: Esta
   return (
     <>
       {resumen}
-      <CardGrafico titulo={titulo} temporal={temporal} nota={nota} leyenda={leyenda} config={{ cuenta, children: config }}
+      <CardGrafico titulo={titulo} temporal={temporal} nota={nota} leyenda={leyenda} config={{ cuenta, children: config }} presidentes={botonPresidentes}
         rows={rows} series={series} opts={opts} unidades={unidades} vista={E.tabla} onVista={onVista} />
     </>
   );

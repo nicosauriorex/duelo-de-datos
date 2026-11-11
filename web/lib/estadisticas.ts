@@ -1,6 +1,6 @@
 // Estadísticas de Histórico, mandatos, desempeño de presidentes y correlaciones de elecciones.
 // Port de src/app.js sin cambiar resultados. Todo recibe el motor y la configuración por parámetro.
-import { ok, mesNum, fmtNum, lastIdx, nf0, nf1 } from "./formato";
+import { ok, mesNum, fmtNum, lastIdx, nf0, nf1, r1 } from "./formato";
 import { kDe, txtT, type BaseCfg } from "./config";
 import { ES_VAR, type Calculo, type Expr, type Motor, type Vals } from "./motor";
 
@@ -295,7 +295,9 @@ export function pearson(xs: number[], ys: number[]) {
 export function claseVariacion(dir: number | null | undefined, pct: boolean, desde: number | null | undefined, hasta: number | null | undefined): "bueno" | "malo" | "neutro" {
   if (!dir || !ok(desde) || !ok(hasta)) return "neutro";
   if (!pct && desde === 0) return "neutro";
-  let d = hasta - desde;
+  // Mismo redondeo que `variacionTxt` del motor: si la variación se muestra como 0,0, el color es neutro.
+  let d = pct ? r1(hasta) - r1(desde) : hasta - desde;
+  if (!pct && Math.abs((hasta / desde - 1) * 100) < 0.05) d = 0;
   if (!pct && desde < 0) d = -d; // la variación % se calcula como cociente: con base negativa el signo se invierte
   const s = Math.sign(d) * Math.sign(dir);
   return s > 0 ? "bueno" : s < 0 ? "malo" : "neutro";

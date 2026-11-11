@@ -5,7 +5,7 @@ import { Modal } from "../ui";
 import { fmtMes, ok } from "@/lib/formato";
 import type { Calculo, Motor } from "@/lib/motor";
 import { AYUDA_T, PRES_DEF, baseIdx, baseTxt, crearPres, oracionInicio, varNum, type Pres, type StatsM } from "@/lib/estadisticas";
-import { colorPuesto, columnaPresidentes, datosDesde, lecturaTono, periodoMandato, tonoDeCambio, type ColComp, type MarcaCol, type Tono } from "@/lib/tablas";
+import { colorPuesto, columnaPresidentes, datosDesde, lecturaTono, periodoMandato, tonoDeVariacion, variacionMostrada, type ColComp, type MarcaCol, type Tono } from "@/lib/tablas";
 import { DEFECTO, txtT, baseDeConfig, baseDeUrl, encT0p, esBaseDeFabrica, limpiarBase, mismaBase, type BaseCfg } from "@/lib/config";
 
 export const COLS: [string, string][] = [["ini", "Inicio"], ["fin", "Cierre"], ["var", "Variación"], ["min", "Mínimo"], ["max", "Máximo"], ["prom", "Promedio"], ["med", "Mediana"], ["n", "Meses"]];
@@ -61,7 +61,6 @@ export function LineaInicio({ info, F, children, texto, sinAviso }: { info: Inic
             {children}
             <footer>
               <button type="button" className="btn" onClick={() => { setAbierto(false); abrirPanel(); }}>Configurar</button>
-              <button type="button" className="btn" onClick={() => setAbierto(false)}>Cerrar</button>
             </footer>
           </div>
         </Modal>
@@ -150,8 +149,8 @@ export function CeldasStats({ m, c, st, cols, comp }: { m: Motor; c: Calculo; st
   const cel: Record<string, React.ReactNode> = {
     ini: nivel("ini", st.iniI),
     fin: nivel("fin", st.finI),
-    var: <Valor key="var" tono={cv && comp ? cv.tono[comp.k] : tonoDeCambio(c.dir, d)} f={comp ? cv?.frac[comp.k] : undefined} modo={cv?.modo} pos={comp ? cv?.pos[comp.k] : null} neg={(d ?? 0) < 0} marca={comp ? cv?.marca[comp.k] : null}
-      sub={dif ? <small>{dif}</small> : null}>{menos(m.variacionTxt(c, st.ini ?? null, st.fin ?? null))}</Valor>,
+    var: <Valor key="var" tono={cv && comp ? cv.tono[comp.k] : tonoDeVariacion(c, st.ini, st.fin)} f={comp ? cv?.frac[comp.k] : undefined} modo={cv?.modo} pos={comp ? cv?.pos[comp.k] : null} neg={(d ?? 0) < 0} marca={comp ? cv?.marca[comp.k] : null}
+      sub={dif ? <small>{dif}</small> : null}>{menos(variacionMostrada(m, c, st.ini, st.fin))}</Valor>,
     min: nivel("min", st.minI),
     max: nivel("max", st.maxI),
     prom: nivel("prom", undefined),

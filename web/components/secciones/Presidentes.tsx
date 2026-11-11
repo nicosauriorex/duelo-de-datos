@@ -14,7 +14,7 @@ import { INFO_CORTA } from "@/lib/info";
 import { CeldaPresMandato, CeldaVar, CeldasStats, COLS, Cabecera, LineaInicio, comparativaDe, siguienteOrden, useBase, valorCol, type Orden } from "./comunes";
 import { fmtMes } from "@/lib/formato";
 import { baseIdx, claseVariacion, crearPres, nivelComparable, ordenar, statsMandato, varNum, type Pres } from "@/lib/estadisticas";
-import { datosDesde } from "@/lib/tablas";
+import { datosDesde, variacionMostrada } from "@/lib/tablas";
 import { grupoDe, medidaPara, ordenarGrupos, textoBusqueda } from "@/lib/catalogo";
 import { norm } from "@/lib/formato";
 import type { Expr } from "@/lib/motor";
@@ -67,13 +67,16 @@ export function Presidentes() {
     velas.push({
       id: x.id, nombre: x.n, periodo: `${fmtMes(F[st.iniI as number])} a ${fmtMes(F[st.finI as number])}`, ini: st.ini, fin: st.fin, min: st.min, max: st.max,
       iniTxt: m.fmtC(c, st.ini), finTxt: m.fmtC(c, st.fin), minTxt: m.fmtC(c, st.min), maxTxt: m.fmtC(c, st.max),
-      variacion: varNum(c, st) == null ? "–" : menos(m.variacionTxt(c, st.ini, st.fin)), cls: claseVariacion(c.dir, c.pct, st.ini, st.fin), nota: datosDesde(F, c.v, x),
+      variacion: varNum(c, st) == null ? "–" : menos(variacionMostrada(m, c, st.ini, st.fin)), cls: claseVariacion(c.dir, c.pct, st.ini, st.fin), nota: datosDesde(F, c.v, x),
     });
   });
+  // Compartir comparte lo que se ve: la tabla, o las velas. Si las velas no se pueden dibujar (pesos corrientes o sin datos), no hay nada para compartir.
+  const sinVelas = vista === "velas" && (!niv || velas.length === 0);
   const compartirB = (
-    <BotonCompartir className="btn" titulo={`Primero los Datos: ${c.corto} por presidente`} href={() => window.location.href} deshabilitado={filasB.length === 0}
-      title="Armar una imagen de esta tabla para compartir" aria-label="Compartir como imagen: una variable, todos los presidentes"
-      crearVista={() => ({ tipo: "barras", expr: eB, presIds: filasB.map((o) => o.x.id), base: b })}><IconoCompartir />Compartir</BotonCompartir>
+    <BotonCompartir className="btn" titulo={`Primero los Datos: ${c.corto} por presidente${vista === "velas" ? " (velas)" : ""}`} href={() => window.location.href} deshabilitado={filasB.length === 0 || sinVelas}
+      title={sinVelas ? "Las velas no se pueden armar con estos datos: no hay nada para compartir" : vista === "velas" ? "Armar una imagen de estas velas para compartir" : "Armar una imagen de esta tabla para compartir"}
+      aria-label={`Compartir como imagen: una variable, todos los presidentes, en ${vista === "velas" ? "velas" : "tabla"}`}
+      crearVista={() => ({ tipo: vista === "velas" ? "velas" : "barras", expr: eB, presIds: filasB.map((o) => o.x.id), base: b })}><IconoCompartir />Compartir</BotonCompartir>
   );
 
   // ---- tabla A: un presidente, todas las variables

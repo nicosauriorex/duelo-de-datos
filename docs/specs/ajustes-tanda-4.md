@@ -1,6 +1,6 @@
 # Ajustes de la tanda 4 y barrido de errores parecidos
 
-Estado: lista para implementar (el usuario pidió no implementar todavía, 2026-11-11)
+Estado: implementada (2026-11-11)
 Ideas: Ajustes pedidos al recorrer la página, tanda 4 (2026-11-11).
 
 ## Objetivo
@@ -59,7 +59,7 @@ Antes de implementar los casos, se corre este barrido y todo lo que aparezca se 
 Sin cambios en el pipeline. Ninguna URL existente cambia de significado: los links con parámetros siguen abriendo lo mismo; solo cambian los valores por defecto (requisitos 3 y 5).
 
 ## Casos borde
-- Link viejo al Histórico sin `r=` (líneas): pasa a mostrar Último y Promedio. Es el único cambio visible en links existentes y es intencional.
+- Link viejo al Histórico sin `r=` (líneas): pasa a mostrar Último y Promedio. Es el único cambio visible en links existentes y es intencional. Confirmado por el usuario (2026-11-11): los links viejos sin `r=` no le importan.
 - Diferencia exactamente cero después de redondear: "el último es igual".
 - Ventana abierta sobre otra ventana: Atrás cierra solo la de arriba.
 - Página abierta directamente (sin historial previo) con una ventana abierta: Atrás cierra la ventana y no sale del sitio.

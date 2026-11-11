@@ -149,7 +149,6 @@ function Panel({ onCerrar, guardado }: { onCerrar: () => void; guardado: boolean
       </div>
       <footer>
         <button type="button" className="btn" onClick={reiniciar}>Volver a lo de fábrica</button>
-        <button type="button" className="btn" onClick={onCerrar}>Cerrar</button>
       </footer>
     </Modal>
   );

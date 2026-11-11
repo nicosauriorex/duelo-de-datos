@@ -3,7 +3,7 @@
 // "contra el promedio / el inicio del período", que usan el período que se pasa en `periodo`.
 // Devuelve TODAS las frases calculables (cada una con su clave) y cuáles son las dos que salen solas.
 // Reutiliza `distanciaRecord` e `interanualTxt` (los mismos números de la portada y de las plantillas).
-import { fmtMes, lastIdx, mesNum, nf1, ok } from "./formato";
+import { fmtMes, lastIdx, mesNum, nf1, ok, redondeadoComo, restaLimpia } from "./formato";
 import { claseVariacion } from "./estadisticas";
 import type { ClaveFrase } from "./config";
 import type { Expr, Motor } from "./motor";
@@ -40,6 +40,8 @@ export function contextoDato(m: Motor, e: Expr, conFrases = true, opc: OpcionesC
   const c = m.calc(e), F = m.F, u = lastIdx(c.v);
   if (u < 0) return null;
   const ultV = c.v[u] as number;
+  // Las diferencias se calculan con los valores redondeados como se muestran (R1: 1,9 y 2,1 → 0,2 y nunca "0,0")
+  const red = (x: number) => redondeadoComo((v) => m.fmtC(c, v), x);
   const out: ContextoDato = {
     valor: m.fmtC(c, ultV), mes: fmtMes(F[u]), fecha: F[u],
     ultimoDisponible: mesNum(F[F.length - 1]) - mesNum(F[u]) > 6, frases: [], todas: [], defecto: [],
@@ -75,9 +77,10 @@ export function contextoDato(m: Motor, e: Expr, conFrases = true, opc: OpcionesC
     if (cand.length) agregar("desde", `El valor más ${cand[0].t} desde ${fmtMes(F[cand[0].j])}.`);
     // 3. distancia al récord
     if (c.pct) {
-      if (max - ultV >= 0.05) agregar("record", `${nf1.format(max - ultV)} p.p. por debajo de su récord de ${fmtMes(F[iMax])}.`);
+      const dif = restaLimpia(red(max), red(ultV));
+      if (dif >= 0.05) agregar("record", `${nf1.format(dif)} p.p. por debajo de su récord de ${fmtMes(F[iMax])}.`);
     } else if (min > 0) {
-      const dif = distanciaRecord(m, e);
+      const dif = distanciaRecord(m, e) == null ? null : red(ultV) / red(max) - 1;
       if (dif != null && dif <= -0.005) agregar("record", `${nf1.format(-dif * 100)} % por debajo de su récord de ${fmtMes(F[iMax])}.`);
     } else {
       agregar("record", `Máximo: ${m.fmtC(c, max)} (${fmtMes(F[iMax])}). Mínimo: ${m.fmtC(c, min)} (${fmtMes(F[iMin])}).`);
@@ -101,9 +104,10 @@ export function contextoDato(m: Motor, e: Expr, conFrases = true, opc: OpcionesC
   // 5. contra su mínimo (si el último no es el mínimo)
   if (!esMin) {
     if (c.pct) {
-      if (ultV - min >= 0.05) agregar("minimo", `${nf1.format(ultV - min)} p.p. por encima de su mínimo de ${fmtMes(F[iMin])}.`);
-    } else if (min > 0 && (ultV / min - 1) * 100 >= 0.05) {
-      agregar("minimo", `${nf1.format((ultV / min - 1) * 100)} % por encima de su mínimo de ${fmtMes(F[iMin])}.`);
+      const dif = restaLimpia(red(ultV), red(min));
+      if (dif >= 0.05) agregar("minimo", `${nf1.format(dif)} p.p. por encima de su mínimo de ${fmtMes(F[iMin])}.`);
+    } else if (min > 0 && red(min) > 0 && (red(ultV) / red(min) - 1) * 100 >= 0.05) {
+      agregar("minimo", `${nf1.format((red(ultV) / red(min) - 1) * 100)} % por encima de su mínimo de ${fmtMes(F[iMin])}.`);
     }
   }
   // 6 y 7. contra el promedio y contra el inicio del período elegido
@@ -117,11 +121,12 @@ export function contextoDato(m: Motor, e: Expr, conFrases = true, opc: OpcionesC
       const rango = `${fmtMes(F[idxP[0]])} a ${fmtMes(F[idxP[idxP.length - 1]])}`;
       const contra = (ref: number, que: string, igual: string, clave: ClaveFrase) => {
         if (!c.pct && ref <= 0) return;   // contra un valor cero o negativo el porcentaje no dice nada
-        const mag = c.pct ? Math.abs(ultV - ref) : Math.abs(ultV / ref - 1) * 100;
-        const cls = claseVariacion(c.dir, c.pct, ref, ultV);
-        if (mag < 0.05) { agregar(clave, `${igual}.`, cls); return; }
+        if (!c.pct && red(ref) <= 0) return;
+        const mag = c.pct ? Math.abs(restaLimpia(red(ultV), red(ref))) : Math.abs(red(ultV) / red(ref) - 1) * 100;
+        const cls = claseVariacion(c.dir, c.pct, red(ref), red(ultV));
+        if (mag < 0.05 || red(ultV) === red(ref)) { agregar(clave, `${igual}.`, cls); return; }
         const t = c.pct ? `${nf1.format(mag)} ${nf1.format(mag) === "1,0" ? "punto" : "puntos"}` : `${nf1.format(mag)} %`;
-        agregar(clave, `${t} por ${ultV > ref ? "encima" : "debajo"} ${que}.`, cls);
+        agregar(clave, `${t} por ${red(ultV) > red(ref) ? "encima" : "debajo"} ${que}.`, cls);
       };
       contra(prom, `del promedio del período (${rango})`, `Igual al promedio del período (${rango})`, "promedio");
       contra(ini, `del valor de ${fmtMes(F[idxP[0]])}, inicio del período`, `Igual al valor de ${fmtMes(F[idxP[0]])}, inicio del período`, "inicio");
