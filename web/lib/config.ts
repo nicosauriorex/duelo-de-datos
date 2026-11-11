@@ -10,6 +10,7 @@ export type Dolar = (typeof FX_KEYS)[number];
 export type MedidaPref = "real" | "corr" | "usdr" | "usd";
 export type DesdePref = "todo" | "1995" | "2003" | "2011" | "2017" | "2023" | "ultimo";
 export type TemaPref = "auto" | "claro" | "oscuro";
+export type FormatoImg = "1x1" | "4x5" | "16x9";
 
 export interface Config {
   v: number;
@@ -21,13 +22,16 @@ export interface Config {
   tema: TemaPref;
   franjas: boolean;              // franjas de presidentes en todos los gráficos
   colPres: Record<string, string>; // color elegido por presidente (id → #rrggbb)
+  personalizar: boolean;         // Histórico: el panel "Personalizar" de la vista simple quedó abierto
+  formatoImagen: FormatoImg;     // último formato elegido para la imagen de compartir
 }
-export const DEFECTO: Config = { v: VERSION, t0: -1, t0p: {}, dolar: "oficial", medida: "real", desde: "2003", tema: "oscuro", franjas: false, colPres: {} };
+export const DEFECTO: Config = { v: VERSION, t0: -1, t0p: {}, dolar: "oficial", medida: "real", desde: "2003", tema: "oscuro", franjas: false, colPres: {}, personalizar: false, formatoImagen: "1x1" };
 
 export const DOLARES: [Dolar, string][] = [["oficial", "Oficial"], ["blue", "Blue"], ["mep", "MEP"], ["ccl", "CCL"]];
 export const MEDIDAS: [MedidaPref, string][] = [["real", "Pesos reales"], ["corr", "Pesos corrientes"], ["usdr", "Dólares reales"], ["usd", "Dólares corrientes"]];
 export const DESDES: [DesdePref, string][] = [["todo", "Todo"], ["1995", "1995"], ["2003", "2003"], ["2011", "2011"], ["2017", "2017"], ["2023", "2023"], ["ultimo", "Último año"]];
 export const TEMAS: [TemaPref, string][] = [["oscuro", "Oscuro"], ["claro", "Claro"], ["auto", "Automático"]];
+export const FORMATOS_IMG: [FormatoImg, string][] = [["1x1", "Cuadrada 1:1"], ["4x5", "Vertical 4:5"], ["16x9", "Horizontal 16:9"]];
 
 const unoDe = <T extends string>(x: unknown, validos: readonly [T, string][], def: T): T =>
   validos.some((v) => v[0] === x) ? (x as T) : def;
@@ -46,7 +50,7 @@ export function normalizar(raw: unknown): Config {
     for (const [id, c] of Object.entries(r.colPres as Record<string, unknown>)) if (/^[a-z0-9]+$/.test(id) && typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c)) colPres[id] = c.toLowerCase();
   }
   return {
-    franjas: r.franjas === true, colPres,
+    franjas: r.franjas === true, colPres, personalizar: r.personalizar === true, formatoImagen: unoDe(r.formatoImagen, FORMATOS_IMG, DEFECTO.formatoImagen),
     v: VERSION, t0: entero(r.t0) ?? DEFECTO.t0, t0p,
     dolar: unoDe(r.dolar, DOLARES, DEFECTO.dolar), medida: unoDe(r.medida, MEDIDAS, DEFECTO.medida),
     desde: unoDe(r.desde, DESDES, DEFECTO.desde), tema: unoDe(r.tema, TEMAS, DEFECTO.tema),

@@ -1,6 +1,6 @@
 # Responder con una imagen
 
-Estado: lista para implementar
+Estado: implementada (2026-11-10)
 Ideas: Compartir gráficos; Responder y verificar afirmaciones en redes (etapa 1: "mejor dato desde X" + imagen). Sale de la auditoría `docs/AUDITORIA-2026-11-10.md` (C1, A1, A3).
 
 ## Objetivo

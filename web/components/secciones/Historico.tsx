@@ -1,20 +1,24 @@
 "use client";
 import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useSeccion } from "../useSeccion";
-import { BarraPlantilla } from "./BarraPlantilla";
+import { BarraPlantilla, usePlantillaVista } from "./BarraPlantilla";
+import { BotonCompartir } from "../PanelCompartir";
 import { Cargando, Desplegable, Selector, Seg, alternar } from "../ui";
 import { FilaVariable, RenglonVariable } from "../Variables";
 import { Grafico, hayDatos, type Fila, type Marca, type OpcionesG, type Ref, type SerieG, type TipoRef } from "../Grafico";
 import { PALETA, vcolor } from "../util";
 import { useDeslizable } from "../Movimiento";
-import { fmtMes, MESES, nf0, nf1, fmtNum, ok } from "@/lib/formato";
+import { fmtMes, MESES, nf0, nf1, ok } from "@/lib/formato";
 import type { Calculo, Expr, Motor } from "@/lib/motor";
-import { PRES_DEF, agrupar, claseVariacion, estadisticasRows, etiqueta, franjasPres, recortar, type EstRows } from "@/lib/estadisticas";
+import { PRES_DEF, aBase100, claseVariacion, estadisticasRows, etiqueta, filasGrafico, franjasPres, type EstRows } from "@/lib/estadisticas";
+import { admiteContexto, contextoDato } from "@/lib/contexto-dato";
+import { MAX_GRAFICOS, MAX_MISMA_UNIDAD, PG, TODOS_MESES, exprsUsadas, leerComun, leerGrafico, sfx, type Comun, type GEst } from "@/lib/historico";
+import { fmtEjeDe, notaInflacion, tituloGrafico, type VistaImg } from "@/lib/imagen-datos";
 import { useConfig } from "../ConfigProvider";
-import { baseDeConfig, desdePreferido, medidaPreferida } from "@/lib/config";
-import { decExpr, encExpr, lista as listaUrl, unoDe, useParams } from "@/lib/url";
+import { baseDeConfig, medidaPreferida } from "@/lib/config";
+import { encExpr, useParams } from "@/lib/url";
+import { IconoCompartir } from "../Iconos";
 
-const TODOS_MESES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 const REFS_H = [
   { k: "ult", letra: "U", nom: "Último", btn: "U · Último", dash: "1 3", val: (s: EstRows): [number, string?] => s.ult },
   { k: "prom", letra: "P", nom: "Promedio", btn: "P · Promedio", dash: "6 4", val: (s: EstRows): [number, string?] => [s.prom] },
@@ -22,42 +26,21 @@ const REFS_H = [
   { k: "max", letra: "↑", nom: "Máximo", btn: "↑ Máximo", dash: "4 2", val: (s: EstRows): [number, string?] => s.max },
   { k: "min", letra: "↓", nom: "Mínimo", btn: "↓ Mínimo", dash: "4 2", val: (s: EstRows): [number, string?] => s.min },
 ];
-const REFS_DEF = "ult,prom,med,mk_ult,mk_max,mk_min";
-const MAX_MISMA_UNIDAD = 4; // en modo valor: hasta 4 variables si todas tienen la misma unidad (si no, 2)
 
-/** Parámetros de cada gráfico. El 1.º usa estos nombres; del 2.º al 4.º llevan el número al final (`v2`, `m2`… `t4`). */
-const PG = ["v", "m", "e", "bd", "ej", "r", "t", "pf"] as const;
-const MAX_GRAFICOS = 4;
-const sfx = (k: number) => (k === 0 ? "" : String(k + 1));
-
-type Comun = {
-  F: string[]; ult: string; desde: string; hasta: string; meses: Set<number>; freq: "M" | "T" | "A"; ag: "promedio" | "cierre";
-};
-type GEst = {
-  modo: "valor" | "b100"; exprs: Expr[]; todas: Expr[]; escala: "lin" | "log"; banda: "no" | "si"; eje: "propia" | "misma"; refs: Set<string>; tabla: "grafico" | "tabla"; pf: "1" | "0" | "";
-};
 type Estado = Comun & GEst;
 type SetFn = (c: Record<string, string | null | undefined>) => void;
 
-/** Lee un gráfico de la URL. `null` = ese gráfico no está en el link (el 1.º siempre existe: arranca con `def`). */
-function leerGrafico(p: URLSearchParams, k: number, existe: (id: string) => boolean, def: Expr): GEst | null {
-  const s = sfx(k);
-  let exprs = listaUrl(p.get("v" + s)).map((x) => decExpr(x, existe)).filter(Boolean) as Expr[];
-  if (!exprs.length) { if (k > 0) return null; exprs = [def]; }
-  const modo = unoDe(p.get("m" + s), ["valor", "b100"] as const, "valor");
-  return {
-    modo, exprs: modo === "b100" ? exprs.slice(0, 10) : exprs.slice(0, MAX_MISMA_UNIDAD), todas: exprs,
-    escala: unoDe(p.get("e" + s), ["lin", "log"] as const, "lin"), banda: unoDe(p.get("bd" + s), ["no", "si"] as const, "no"), eje: unoDe(p.get("ej" + s), ["propia", "misma"] as const, "propia"),
-    refs: new Set(listaUrl(p.has("r" + s) ? p.get("r" + s) : REFS_DEF).filter((x) => [...REFS_H.map((r) => r.k), "mk_ult", "mk_max", "mk_min"].includes(x))),
-    tabla: unoDe(p.get("t" + s), ["grafico", "tabla"] as const, "grafico"),
-    pf: unoDe(p.get("pf" + s), ["1", "0"] as const, "" as "1" | "0" | ""),
-  };
+/** Lo que cambia entre la vista completa y la vista simple (un solo gráfico): los controles se juntan en "Personalizar". */
+interface Simple {
+  titulo: string | null;          // el de la plantilla, si la vista viene de una
+  abierto: boolean; onAlternar: () => void;
+  barra: ReactNode; acciones: ReactNode; agregar: ReactNode;   // lo que va dentro de Personalizar
 }
 
 export function Historico() {
   const [p, set, montado] = useParams();
   const base = useSeccion([]);
-  const { config } = useConfig();
+  const { config, cambiar: cambiarConfig } = useConfig();
   const { listo, motor, metas, version } = base;
   const existe = (id: string) => metas.some((m) => m.id === id);
   const [ancha, setAncha] = useState(false); // ≥ 1024 px: los gráficos van en 2 columnas
@@ -67,6 +50,7 @@ export function Historico() {
     f(); mq.addEventListener("change", f);
     return () => mq.removeEventListener("change", f);
   }, []);
+  const info = usePlantillaVista(p);
   const [vacios, setVacios] = useState(0); // gráficos agregados que todavía no tienen variable (no están en la URL)
 
   // Cualquier cambio del usuario hace que la vista deje de ser "la plantilla": se saca el encabezado.
@@ -82,18 +66,7 @@ export function Historico() {
 
   const E = useMemo((): Comun | null => {
     if (!listo || !motor || !montado) return null;
-    const F = motor.F, ult = F[F.length - 1];
-    let desde = /^\d{4}-\d{2}$/.test(p.get("d") || "") ? (p.get("d") as string) : desdePreferido(config.desde, F);
-    let hasta = /^\d{4}-\d{2}$/.test(p.get("h") || "") ? (p.get("h") as string) : ult;
-    desde = desde < F[0] ? F[0] : desde > ult ? ult : desde;
-    hasta = hasta > ult ? ult : hasta < F[0] ? F[0] : hasta;
-    if (desde > hasta) desde = hasta; // rango inválido: se corrige al más cercano
-    const ms = new Set(listaUrl(p.get("ms")).map(Number).filter((n) => n >= 1 && n <= 12));
-    return {
-      F, ult, desde, hasta,
-      meses: ms.size ? ms : new Set(TODOS_MESES),
-      freq: unoDe(p.get("f"), ["M", "T", "A"] as const, "M"), ag: unoDe(p.get("ag"), ["promedio", "cierre"] as const, "promedio"),
-    };
+    return leerComun(p, motor.F, config.desde);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listo, motor, montado, p, config.desde]);
 
@@ -135,9 +108,25 @@ export function Historico() {
   };
   const elegirEnVacio = (x: Expr) => { setVacios(Math.max(0, vacios - 1)); cambiar({ ["v" + sfx(G.length)]: encExpr(x) }); };
 
+  const agregarBtn = total < MAX_GRAFICOS && (
+    <p><button type="button" className="btn" onClick={() => setVacios(vacios + 1)}>+ Agregar gráfico ({total} de {MAX_GRAFICOS})</button></p>
+  );
+  if (total === 1) {
+    // Vista simple: el dato, su contexto y el gráfico; los controles de siempre quedan en "Personalizar".
+    const simple: Simple = {
+      titulo: info.titulo, abierto: config.personalizar, onAlternar: () => cambiarConfig({ personalizar: !config.personalizar }),
+      barra: <Barra E={E} set={cambiar} F={m.F} fija={false} />,
+      acciones: <BarraPlantilla p={p} set={set} info={info} simple />, agregar: agregarBtn,
+    };
+    return (
+      <section className="vista-simple">
+        <BloqueGrafico i={0} total={1} compacto={false} g={G[0].g} E={E} m={m} set={cambiar} version={version} onQuitar={() => quitar(0)} simple={simple} />
+      </section>
+    );
+  }
   return (
     <section>
-      <BarraPlantilla p={p} set={set} />
+      <BarraPlantilla p={p} set={set} info={info} />
       <Barra E={E} set={cambiar} F={m.F} fija={total > 1} />
       <div className={`grilla-graf${total > 1 ? " multi" : ""}`}>
         {G.map(({ g }, i) => (
@@ -148,27 +137,21 @@ export function Historico() {
             onQuitar={() => quitar(G.length + j)} onElegir={elegirEnVacio} />
         ))}
       </div>
-      {total < MAX_GRAFICOS && (
-        <p><button type="button" className="btn" onClick={() => setVacios(vacios + 1)}>+ Agregar gráfico ({total} de {MAX_GRAFICOS})</button></p>
-      )}
+      {agregarBtn}
     </section>
   );
 }
 
 /** Un gráfico de Histórico: sus variables, su resumen y su gráfico. Carga sus propios datos: si falla, los demás se ven. */
-function BloqueGrafico({ i, total, compacto, g, E, m, set, version, onQuitar, onElegir }: {
-  i: number; total: number; compacto: boolean; g: GEst | null; E: Comun; m: Motor; set: SetFn; version: number; onQuitar: () => void; onElegir?: (x: Expr) => void;
+function BloqueGrafico({ i, total, compacto, g, E, m, set, version, onQuitar, onElegir, simple }: {
+  i: number; total: number; compacto: boolean; g: GEst | null; E: Comun; m: Motor; set: SetFn; version: number; onQuitar: () => void; onElegir?: (x: Expr) => void; simple?: Simple;
 }) {
   const ids = useMemo(() => (g ? g.exprs.flatMap((e) => (e.rel ? [e.id, e.rel] : [e.id])) : []), [g]);
   const sec = useSeccion(ids);
   // En modo valor entran 2 variables, o hasta 4 si todas tienen la misma unidad (con la medida aplicada).
-  const usadas = useMemo(() => {
-    if (!g || g.modo === "b100" || g.exprs.length <= 2) return g ? g.exprs : [];
-    const cargadas = g.exprs.every((e) => m.SER[e.id] && (!e.rel || m.SER[e.rel]));
-    const igual = cargadas && new Set(g.exprs.map((e) => m.calc(e).unidad)).size === 1;
-    return igual ? g.exprs : g.exprs.slice(0, 2);
+  const usadas = useMemo(() => (g ? exprsUsadas(m, g) : []),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [g, m, version]);
+    [g, m, version]);
   // Solo las variables ya cargadas: si una falla, las demás se siguen viendo.
   const disp = useMemo(() => usadas.filter((e) => m.SER[e.id] && (!e.rel || m.SER[e.rel])),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -176,6 +159,11 @@ function BloqueGrafico({ i, total, compacto, g, E, m, set, version, onQuitar, on
   const cab = (
     <div className="cab-graf">
       {total > 1 ? <h3>Gráfico {i + 1}</h3> : <span />}
+      {g && (
+        <BotonCompartir className="btn" titulo={`Primero los Datos: ${total > 1 ? `gráfico ${i + 1}` : "Histórico"}`} href={() => window.location.href}
+          deshabilitado={disp.length === 0} title="Armar una imagen de este gráfico para compartir" aria-label={`Compartir como imagen: gráfico ${i + 1}`}
+          crearVista={() => vistaImg(E, g, disp)}><IconoCompartir />Compartir</BotonCompartir>
+      )}
       {i > 0 && <button type="button" className="btn quitar" onClick={onQuitar}>Quitar gráfico</button>}
     </div>
   );
@@ -201,27 +189,38 @@ function BloqueGrafico({ i, total, compacto, g, E, m, set, version, onQuitar, on
   const Ed: Estado = { ...E, ...g, exprs: disp };
   const mismaU = !b100 && usadas.length >= 2 && (usadas.length > 2 || (g.exprs.length === 2 && disp.length === 2 && m.calc(disp[0]).unidad === m.calc(disp[1]).unidad));
   const aviso = !b100 && g.exprs.length > usadas.length && g.exprs.every((e) => m.SER[e.id] && (!e.rel || m.SER[e.rel])); // sin aviso mientras cargan
+  const vars = (
+    <div className="vars-graf">
+      {usadas.map((e, k) => (
+        <RenglonVariable key={k} e={e} color={PALETA[k]} quitable={b100 ? g.exprs.length > 1 : k >= 1} onChange={(x) => setExpr(k, x)} />
+      ))}
+      {!b100 && usadas.length < 2 && <FilaVariable e={null} agregable onChange={(x) => x && guardarExprs([...base, x])} />}
+      {!b100 && mismaU && usadas.length < MAX_MISMA_UNIDAD && (
+        <FilaVariable e={null} agregable textoAgregar={`+ Agregar variable (misma unidad, ${usadas.length} de ${MAX_MISMA_UNIDAD})`} onChange={(x) => x && guardarExprs([...base, x])} />
+      )}
+      {b100 && g.exprs.length < 10 && (
+        <FilaVariable e={null} agregable textoAgregar={`+ Agregar variable (${g.exprs.length} de 10)`} onChange={(x) => x && guardarExprs([...g.todas, x])} />
+      )}
+      {aviso && <p className="note" role="status">Con unidades distintas entran 2 variables.</p>}
+    </div>
+  );
+  const falla = hayError && !sec.ocupado ? <p className="error">Las variables elegidas no se pudieron cargar. Probá otra o recargá la página.</p> : <Cargando />;
+  if (simple) {
+    return disp.length > 0
+      ? <Principal m={m} E={Ed} set={setG} version={version} compacto={false} simple={{ ...simple, variables: vars }} />
+      : <div className={clase}>{vars}{falla}</div>;
+  }
   return (
     <div className={clase}>{cab}
-      <div className="vars-graf">
-        {usadas.map((e, k) => (
-          <RenglonVariable key={k} e={e} color={PALETA[k]} quitable={b100 ? g.exprs.length > 1 : k >= 1} onChange={(x) => setExpr(k, x)} />
-        ))}
-        {!b100 && usadas.length < 2 && <FilaVariable e={null} agregable onChange={(x) => x && guardarExprs([...base, x])} />}
-        {!b100 && mismaU && usadas.length < MAX_MISMA_UNIDAD && (
-          <FilaVariable e={null} agregable textoAgregar={`+ Agregar variable (misma unidad, ${usadas.length} de ${MAX_MISMA_UNIDAD})`} onChange={(x) => x && guardarExprs([...base, x])} />
-        )}
-        {b100 && g.exprs.length < 10 && (
-          <FilaVariable e={null} agregable textoAgregar={`+ Agregar variable (${g.exprs.length} de 10)`} onChange={(x) => x && guardarExprs([...g.todas, x])} />
-        )}
-        {aviso && <p className="note" role="status">Con unidades distintas entran 2 variables.</p>}
-      </div>
-      {disp.length > 0
-        ? <Principal m={m} E={Ed} set={setG} version={version} compacto={compacto} />
-        : (hayError && !sec.ocupado ? <p className="error">Las variables elegidas no se pudieron cargar. Probá otra o recargá la página.</p> : <Cargando />)}
+      {vars}
+      {disp.length > 0 ? <Principal m={m} E={Ed} set={setG} version={version} compacto={compacto} /> : falla}
     </div>
   );
 }
+
+/** La vista de un gráfico tal como se ve (variables ya cargadas, período y frecuencia), para armar la imagen de compartir. */
+const vistaImg = (E: Comun, g: GEst, exprs: Expr[], titulo?: string): VistaImg =>
+  ({ exprs, modo: g.modo, eje: g.eje, desde: E.desde, hasta: E.hasta, meses: E.meses, freq: E.freq, ag: E.ag, titulo });
 
 // ------------------------------------------------------------ barra fija: período + Mes / Trimestre / Año
 const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -287,8 +286,8 @@ function Barra({ E, set, F, fija }: { E: Comun; set: SetFn; F: string[]; fija: b
 
 // ------------------------------------------------------------ tarjeta de gráfico: barra (Gráfico / Tabla, Configurar, expandir), gráfico o tabla
 type Vista = "grafico" | "tabla";
-function CardGrafico({ titulo, nota, leyenda, visibles, config, rows, series, opts, unidades, vista: vistaProp, onVista }: {
-  titulo: string; nota?: ReactNode; leyenda?: ReactNode; visibles?: ReactNode; config?: { cuenta: number; children: ReactNode };
+function CardGrafico({ titulo, nota, leyenda, visibles, config, rows, series, opts, unidades, vista: vistaProp, onVista, simple }: {
+  titulo: string; nota?: ReactNode; leyenda?: ReactNode; visibles?: ReactNode; config?: { cuenta: number; children: ReactNode }; simple?: boolean;
   rows: Fila[]; series: SerieG[]; opts: OpcionesG; unidades?: Record<string, string>; vista?: Vista; onVista?: (v: Vista) => void;
 }) {
   const [vistaL, setVistaL] = useState<Vista>("grafico");
@@ -297,6 +296,29 @@ function CardGrafico({ titulo, nota, leyenda, visibles, config, rows, series, op
   const elegirVista = (v: string) => (onVista ? onVista(v as Vista) : setVistaL(v as Vista));
   const hay = hayDatos(rows, series, opts);
   const cab = leyenda ?? null;
+  const tabla = vista === "tabla"
+    ? (rows.length && hay ? (
+      <div className="tablewrap tabla-graf"><table>
+        <thead><tr><th>Período</th>{series.map((se) => <th key={se.key}>{se.name}{unidades?.[se.key] && <small>{unidades[se.key]}</small>}</th>)}</tr></thead>
+        <tbody>{rows.slice().reverse().map((r) => (
+          <tr key={r.fecha + (r.per || "")}><td>{etiqueta(r)}</td>{series.map((se) => <td key={se.key}>{ok(r[se.key]) ? (se.fmt || opts.fmtTip)(r[se.key]) : "–"}</td>)}</tr>
+        ))}</tbody>
+      </table></div>
+    ) : <p className="note">Sin datos para esta selección.</p>)
+    : null;
+  if (simple) {
+    // Vista simple: el gráfico y debajo la unidad, la fuente y Expandir (los controles están en "Personalizar").
+    return (
+      <div className="card card-simple">
+        {cab}
+        {tabla ?? <Grafico rows={rows} series={series} opts={opts} expandir={{ titulo, leyenda: cab, abierto: exp, onCerrar: () => setExp(false) }} />}
+        <div className="pie-graf">
+          {nota && <p className="note">{nota}</p>}
+          {vista === "grafico" && hay && <button type="button" className="btn expandir" onClick={() => setExp(true)} aria-label="Expandir el gráfico a pantalla completa">Expandir</button>}
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="card">
       <h2>{titulo}</h2>{nota && <p className="note">{nota}</p>}
@@ -310,16 +332,7 @@ function CardGrafico({ titulo, nota, leyenda, visibles, config, rows, series, op
         {vista === "grafico" && hay && <button type="button" className="btn expandir" onClick={() => setExp(true)} aria-label="Expandir el gráfico a pantalla completa">Expandir</button>}
       </div>
       {cab}
-      {vista === "tabla"
-        ? (rows.length && hay ? (
-          <div className="tablewrap tabla-graf"><table>
-            <thead><tr><th>Período</th>{series.map((se) => <th key={se.key}>{se.name}{unidades?.[se.key] && <small>{unidades[se.key]}</small>}</th>)}</tr></thead>
-            <tbody>{rows.slice().reverse().map((r) => (
-              <tr key={r.fecha + (r.per || "")}><td>{etiqueta(r)}</td>{series.map((se) => <td key={se.key}>{ok(r[se.key]) ? (se.fmt || opts.fmtTip)(r[se.key]) : "–"}</td>)}</tr>
-            ))}</tbody>
-          </table></div>
-        ) : <p className="note">Sin datos para esta selección.</p>)
-        : <Grafico rows={rows} series={series} opts={opts} expandir={{ titulo, leyenda: cab, abierto: exp, onCerrar: () => setExp(false) }} />}
+      {tabla ?? <Grafico rows={rows} series={series} opts={opts} expandir={{ titulo, leyenda: cab, abierto: exp, onCerrar: () => setExp(false) }} />}
     </div>
   );
 }
@@ -342,7 +355,7 @@ const DEFS_RES: DefResumen[] = [
 ];
 
 // ------------------------------------------------------------ gráfico principal
-function Principal({ m, E, set, version, compacto }: { m: Motor; E: Estado; set: SetFn; version: number; compacto: boolean }) {
+function Principal({ m, E, set, version, compacto, simple }: { m: Motor; E: Estado; set: SetFn; version: number; compacto: boolean; simple?: Simple & { variables: ReactNode } }) {
   const { F } = m;
   const { config: cfg } = useConfig();
   const b100 = E.modo === "b100";
@@ -358,20 +371,8 @@ function Principal({ m, E, set, version, compacto }: { m: Motor; E: Estado; set:
     const dos = !b100 && lista.length === 2;
     const hayBanda = !b100 && lista.some((o) => o.c.lo);
     const bd = hayBanda && E.banda === "si";
-    const enFiltro = (f: string) => f >= E.desde && f <= E.hasta && E.meses.has(+f.slice(5, 7));
-    let rows: Fila[] = F.map((f, i) => {
-      if (!enFiltro(f)) return null;
-      const r: Fila = { fecha: f };
-      lista.forEach((o) => { r[o.key] = o.c.v[i]; if (bd && o.c.lo && o.c.hi) { r[o.key + "_lo"] = o.c.lo[i]; r[o.key + "_hi"] = o.c.hi[i]; } });
-      return r;
-    }).filter(Boolean) as Fila[];
-    rows = recortar(agrupar(rows, E.freq, E.meses, new Set(lista.filter((o) => o.flujo).map((o) => o.key)), new Set(lista.filter((o) => o.ultimo).map((o) => o.key)), E.ag === "cierre"), lista.map((o) => o.key));
-    if (b100) lista.forEach((o) => {
-      const r0 = rows.find((r) => ok(r[o.key]) && r[o.key] !== 0);
-      o.base = r0 ? etiqueta(r0) : "–";
-      const f = r0 ? 100 / r0[o.key] : null;
-      rows.forEach((r) => { r[o.key] = f && ok(r[o.key]) ? r[o.key] * f : null; });
-    });
+    const rows: Fila[] = filasGrafico(F, lista, { desde: E.desde, hasta: E.hasta, meses: E.meses, freq: E.freq, cierre: E.ag === "cierre", banda: bd });
+    if (b100) { const bases = aBase100(rows, lista.map((o) => o.key)); lista.forEach((o) => { o.base = bases[o.key]; }); }
     const puedeLog = rows.every((r) => lista.every((o) => !ok(r[o.key]) || r[o.key] > 0));
     const st = lista.map((o) => estadisticasRows(rows, o.key));
     const fmtDe = (o: { c: Calculo }) => b100 ? (v: number) => nf1.format(v) : (v: number) => m.fmtC(o.c, v);
@@ -386,7 +387,7 @@ function Principal({ m, E, set, version, compacto }: { m: Motor; E: Estado; set:
     });
     const tiposMk = new Set(["ult", "max", "min"].filter((k) => E.refs.has("mk_" + k)));
     const marcas: Marca[] = b100 || !tiposMk.size ? [] : lista.map((o) => ({ key: o.key, axis: misma ? 0 : o.axis, color: o.color, fmt: fmtDe(o), tipos: tiposMk }));
-    const ejeFmt = (c: { pct: boolean }) => (v: number) => c.pct ? nf0.format(v) + " %" : (Math.abs(v) >= 1e6 ? nf1.format(v / 1e6) + " M" : Math.abs(v) >= 1e4 ? nf0.format(v / 1e3) + " mil" : fmtNum(v));
+    const ejeFmt = fmtEjeDe;
     const series: SerieG[] = lista.map((o) => ({ key: o.key, name: o.c.corto, short: o.c.corto.length > 18 ? o.c.corto.slice(0, 17) + "…" : o.c.corto, color: o.color, axis: o.axis, band: bd && !!o.c.lo, fmt: fmtDe(o) }));
     const opts = {
       log: E.escala === "log" && puedeLog, log2: E.escala === "log" && puedeLog, refs, marcas, mismaEscala: misma, refLine: b100 ? 100 : null, endLabels: b100 && lista.length > 1,
@@ -410,13 +411,12 @@ function Principal({ m, E, set, version, compacto }: { m: Motor; E: Estado; set:
     ? ` (los flujos se suman y los % del PIB toman el último mes del período; períodos incompletos de flujos quedan vacíos; el resto es ${agTxt}).`
     : E.freq !== "M" ? ` (${agTxt}).` : "";
   const multi = lista.length > 1;
-  const titulo = b100 ? `Comparación en base 100: ${lista.map((o) => o.c.corto).join(", ")}` : lista.length > 2 ? lista.map((o) => o.c.corto).join(", ") : dos ? `${lista[0].c.corto} y ${lista[1].c.corto}` : lista[0].c.nombre;
+  const titulo = tituloGrafico(lista, b100);
   const nota = (b100 ? "Cada serie vale 100 en su primer dato del período: la línea muestra cuánto subió o bajó desde ahí."
     : (lista.length > 2 ? lista[0].c.unidad : lista.map((o, k) => `${dos ? (k ? "Derecha: " : "Izquierda: ") : ""}${o.c.unidad}`).join(" · ")) + ".") + porFreq + sumaTxt +
     (bd ? " La sombra va del mínimo al máximo." : "") +
     // Los valores reales dependen del IPC empalmado: se avisa con qué índice se descontó la inflación.
-    (!b100 && lista.some((o) => o.c.serie.id !== "ipc_empalme" && /\$ de [a-z]{3}-\d\d|descontada la inflación|relativo al IPC|% real/.test(o.c.unidad))
-      ? " Inflación descontada con el IPC de INDEC (de 2007 a 2016, con los de San Luis y la Ciudad de Buenos Aires)." : "") + ` Fuente:${[...new Set(lista.map((o) => o.c.serie.fuente))].join("; ")}.`;
+    (notaInflacion(lista.map((o) => o.c), b100) ? " " + notaInflacion(lista.map((o) => o.c), b100) : "") + ` Fuente: ${[...new Set(lista.map((o) => o.c.serie.fuente))].join("; ")}.`;
   const grupo = (lbl: string, el: React.ReactNode) => <Fragment key={lbl}><label>{lbl}</label>{el}</Fragment>;
   const refsToggle = (k: string) => set({ r: [...alternar(E.refs, k, true)].join(",") || "-" });
 
@@ -458,7 +458,7 @@ function Principal({ m, E, set, version, compacto }: { m: Motor; E: Estado; set:
     const hasta = s.ult[0], desde = def.desde(s);
     return { txt: m.fmtC(o.c, def.val(s)), f: def.fecha?.(s), vs: def.vs(s), vr: m.variacionTxt(o.c, desde, hasta), cls: claseVariacion(o.c.dir, o.c.pct, desde, hasta) };
   };
-  return (
+  const resumen = (
     <>
       {b100 ? (
         <div className="tiles">
@@ -509,8 +509,58 @@ function Principal({ m, E, set, version, compacto }: { m: Motor; E: Estado; set:
           </FilaResumen>
         </>
       )}
+    </>
+  );
+  const onVista = (v: Vista) => set({ t: v === "tabla" ? "tabla" : null });
+
+  if (simple) {
+    // Contexto del dato: solo con una variable, en mensual y sin base 100 (admiteContexto); si no, la cifra de cada variable.
+    const ctx = lista.length === 1 && !b100 ? contextoDato(m, E.exprs[0], admiteContexto({ variables: 1, modo: E.modo, freq: E.freq })) : null;
+    const nombre = simple.titulo ?? titulo;
+    const vista = { exprs: E.exprs, modo: E.modo, eje: E.eje, desde: E.desde, hasta: E.hasta, meses: E.meses, freq: E.freq, ag: E.ag, titulo: simple.titulo ?? undefined } satisfies VistaImg;
+    return (
+      <>
+        <div className="vs-cab">
+          <h2 className="vs-titulo">{nombre}</h2>
+          {ctx ? (
+            <>
+              <p className="vs-cifra"><span className="v">{ctx.valor}</span><span className="mes">{ctx.mes}{ctx.ultimoDisponible ? " · Último dato disponible" : ""}</span></p>
+              {ctx.frases.map((f) => <p key={f.texto} className={`vs-frase${f.cls ? " var-" + f.cls : ""}`}>{f.texto}</p>)}
+            </>
+          ) : (lista.length > 1 || b100) && (
+            <ul className="vs-leyenda">{lista.map((o, k) => {
+              const s0 = st[k];
+              return <li key={o.key}><span className="punto" style={vcolor(o.color)} /> <span className="n">{o.c.corto}</span> <b>{s0 ? (b100 ? nf1.format(s0.ult[0]) : m.fmtC(o.c, s0.ult[0])) : "–"}</b></li>;
+            })}</ul>
+          )}
+        </div>
+        <CardGrafico simple titulo={titulo} nota={nota} leyenda={leyenda} rows={rows} series={series} opts={opts} unidades={unidades} vista={E.tabla} onVista={onVista} />
+        <div className="vs-acciones">
+          <BotonCompartir className="btn primario" titulo={nombre} href={() => window.location.href} crearVista={() => vista}>
+            <IconoCompartir />Compartir</BotonCompartir>
+          <button type="button" className="btn" aria-expanded={simple.abierto} aria-controls="vs-personalizar" onClick={simple.onAlternar}>Personalizar</button>
+        </div>
+        {simple.abierto && (
+          <div className="vs-personalizar" id="vs-personalizar">
+            {simple.barra}
+            {simple.variables}
+            <div className="barra-graf">
+              <Seg valor={E.tabla} opciones={[["grafico", "Gráfico"], ["tabla", "Tabla"]]} onElegir={(v) => onVista(v as Vista)} />
+              <Desplegable etiqueta={cuenta ? `Opciones del gráfico (${cuenta})` : "Opciones del gráfico"}>{config}</Desplegable>
+            </div>
+            {simple.acciones}
+            {simple.agregar}
+          </div>
+        )}
+        {resumen}
+      </>
+    );
+  }
+  return (
+    <>
+      {resumen}
       <CardGrafico titulo={titulo} nota={nota} leyenda={leyenda} config={{ cuenta, children: config }}
-        rows={rows} series={series} opts={opts} unidades={unidades} vista={E.tabla} onVista={(v) => set({ t: v === "tabla" ? "tabla" : null })} />
+        rows={rows} series={series} opts={opts} unidades={unidades} vista={E.tabla} onVista={onVista} />
     </>
   );
 }

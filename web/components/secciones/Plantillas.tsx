@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useDatos } from "../DatosProvider";
 import { Cargando } from "../ui";
 import { Sparkline } from "../Sparkline";
+import { BotonCompartir } from "../PanelCompartir";
+import { useConfig } from "../ConfigProvider";
+import { vistaDeParams } from "@/lib/imagen-datos";
 import { IconoCompartir } from "../Iconos";
 import { avisoCompartir, compartir } from "@/lib/compartir";
 import { useMisPlantillas } from "@/lib/misPlantillas";
@@ -15,7 +18,8 @@ const POR_GRUPO = 12;
 interface PropsTarjeta { pl: Plantilla; onAviso: (t: string | null) => void; onRenombrar?: (pl: Plantilla) => void; onBorrar?: (pl: Plantilla) => void }
 /** Los datos se piden recién cuando la tarjeta entra en pantalla; mientras tanto ocupa el mismo alto. */
 export const Tarjeta = memo(function Tarjeta({ pl, onAviso, onRenombrar, onBorrar }: PropsTarjeta) {
-  const { motor, cargar, archivosDe, version } = useDatos();
+  const { motor, cargar, archivosDe, version, metas } = useDatos();
+  const { config } = useConfig();
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const [terminado, setTerminado] = useState(false);
@@ -55,8 +59,15 @@ export const Tarjeta = memo(function Tarjeta({ pl, onAviso, onRenombrar, onBorra
           <div className="d">{pl.href ? pl.desc : visible && terminado ? "Sin vista previa" : " "}</div>
         )}
       </Link>
-      <button type="button" className="btn comp" title="Compartir esta plantilla" aria-label={`Compartir: ${pl.titulo}`}
-        onClick={async () => onAviso(avisoCompartir(await compartir(href, pl.titulo)))}><IconoCompartir /></button>
+      {pl.href || !pl.e ? (
+        // las que abren otra sección (Precios en el mundo, Congreso) no tienen imagen: se comparte el link
+        <button type="button" className="btn comp" title="Copiar el link de esta plantilla" aria-label={`Compartir: ${pl.titulo}`}
+          onClick={async () => onAviso(avisoCompartir(await compartir(href, pl.titulo)))}><IconoCompartir /></button>
+      ) : (
+        <BotonCompartir className="btn comp" title="Compartir esta plantilla como imagen" aria-label={`Compartir: ${pl.titulo}`} titulo={pl.titulo} href={href}
+          crearVista={() => (motor ? vistaDeParams(motor, new URLSearchParams(ev?.vista ?? pl.vista), (id) => metas.some((x) => x.id === id), config.desde, pl.titulo) : null)}>
+          <IconoCompartir /></BotonCompartir>
+      )}
       {pl.propia && (
         <div className="acciones-plantilla">
           <button type="button" className="enlace" onClick={() => onRenombrar?.(pl)}>Renombrar</button>

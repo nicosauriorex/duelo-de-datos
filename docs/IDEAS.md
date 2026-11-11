@@ -76,9 +76,9 @@ Las primeras seis → spec: docs/specs/medidas-y-opciones.md (implementadas 2026
 ## Compartir gráficos
 → spec: docs/specs/responder-con-imagen.md (bloque 7a: botón Compartir con imagen, título, texto de contexto automático, marca del sitio) y docs/specs/imagen-presidentes.md (bloque 7b: Por presidente, Ranking y Meses de mandato). Quedan afuera: el pedido de donación, publicar en Comunidad y el video.
 - Todos los gráficos, indicadores y tablas tienen un botón **Compartir** que abre un panel para descargar lo que se está viendo.
-- Título que explique lo que se ve + subtítulo con los filtros aplicados.
-- Texto explicativo sugerido automáticamente (ej. "viene mejorando un x%"), que se puede ocultar o reemplazar por uno propio.
-- Todo lo descargable (imagen, video) lleva **marca de agua** de la página.
+- ~~Título que explique lo que se ve + subtítulo con los filtros aplicados.~~ ✅ 2026-11-10 (Histórico y Plantillas; falta Por presidente: 7b)
+- ~~Texto explicativo sugerido automáticamente (ej. "viene mejorando un x%"), que se puede ocultar o reemplazar por uno propio.~~ ✅ 2026-11-10 (contexto automático neutro + comentario propio aparte; el texto automático no se edita, decisión D-012)
+- ~~Todo lo descargable (imagen, video) lleva **marca de agua** de la página.~~ ✅ 2026-11-10 (imagen; el video queda para 7c)
 - Antes de compartir: "¿Te sirve la información? Podés ayudar donando".
 - Opción de publicarlo en la pestaña **Comunidad** con título, comentario y si el dato le parece positivo, negativo o neutro.
 - Pensado para compartir en Twitter/X y otras redes.
@@ -87,7 +87,7 @@ Las primeras seis → spec: docs/specs/medidas-y-opciones.md (implementadas 2026
 → spec: docs/specs/responder-con-imagen.md (solo "imagen lista para pegar" y "mejor dato desde…"; sin sello ni cita del tuit). El resto sigue pendiente (bloque 7c).
 Uso central: alguien escribe en redes "Milei fundió la economía" y otra persona responde con la página.
 - **Link que lleva a la vista justa**: la respuesta apunta a un gráfico o página ya armado con los filtros del caso (ej. el mandato desde T con las variables clave).
-- **Imagen lista para pegar en la respuesta** (la gente no entra a los links): se genera sola, con los datos, marca de agua y el link. Formato a elegir (cuadrado 1:1, vertical 4:5, horizontal 16:9).
+- ~~**Imagen lista para pegar en la respuesta** (la gente no entra a los links): se genera sola, con los datos, marca de agua y el link. Formato a elegir (cuadrado 1:1, vertical 4:5, horizontal 16:9).~~ ✅ 2026-11-10 (desde Histórico y Plantillas; desde Por presidente, Ranking y Meses de mandato: 7b)
 - **Modo "Contestar un relato"** (en el inicio o sección propia): se escribe la frase ("la ley X destruyó el salario") y la página arma la info para responderla. La imagen sale así:
   - Arriba, la cita del comentario original (con usuario y red social, opcional).
   - Abajo, los datos que lo contrastan.
@@ -195,6 +195,9 @@ Son ajustes a lo ya hecho, no ideas nuevas.
 
 ## Hecho
 (Ideas implementadas y verificadas; se tachan acá con su fecha. Ver CLAUDE.md.)
+
+### Responder con una imagen (bloque 7a, implementado, spec responder-con-imagen)
+- ~~Imagen para compartir (1:1, 4:5, 16:9) con el dato, su contexto automático, el gráfico, la fuente y la marca; "Comparar presidentes"; comentario propio; vista simple del Histórico.~~ ✅ 2026-11-10 (las ideas "Compartir gráficos" y "Responder y verificar afirmaciones" siguen abiertas en lo que toca a 7b y 7c)
 
 ### Diseño visual y animación (implementado, spec diseno-visual)
 - ~~Portada contada al bajar, tipografía nueva, links como botones, flecha Volver, verde/rojo según bueno/malo, renglones sin partir y tarjetas de resumen deslizables.~~ ✅ 2026-11-10

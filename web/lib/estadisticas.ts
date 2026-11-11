@@ -61,6 +61,31 @@ export const recortar = (rows: Fila[], keys: string[]): Fila[] => {
   return a < 0 ? [] : rows.slice(a, b + 1);
 };
 
+/** Una columna del gráfico: la serie calculada y cómo se agrupa al pasar a trimestres o años. */
+export interface ColGraf { key: string; c: { v: Vals; lo?: Vals; hi?: Vals }; flujo: boolean; ultimo: boolean }
+/** Las filas que dibuja un gráfico: el período visible, los meses elegidos y la frecuencia (una sola fuente de verdad para el gráfico y la imagen). */
+export function filasGrafico(F: string[], cols: ColGraf[], o: { desde: string; hasta: string; meses: Set<number>; freq: string; cierre: boolean; banda: boolean }): Fila[] {
+  const enFiltro = (f: string) => f >= o.desde && f <= o.hasta && o.meses.has(+f.slice(5, 7));
+  const rows = F.map((f, i) => {
+    if (!enFiltro(f)) return null;
+    const r: Fila = { fecha: f };
+    cols.forEach((x) => { r[x.key] = x.c.v[i]; if (o.banda && x.c.lo && x.c.hi) { r[x.key + "_lo"] = x.c.lo[i]; r[x.key + "_hi"] = x.c.hi[i]; } });
+    return r;
+  }).filter(Boolean) as Fila[];
+  return recortar(agrupar(rows, o.freq, o.meses, new Set(cols.filter((x) => x.flujo).map((x) => x.key)), new Set(cols.filter((x) => x.ultimo).map((x) => x.key)), o.cierre), cols.map((x) => x.key));
+}
+/** Pasa cada columna a base 100 (primer dato del período = 100). Modifica las filas y devuelve, por columna, el período que vale 100. */
+export function aBase100(rows: Fila[], keys: string[]): Record<string, string> {
+  const base: Record<string, string> = {};
+  keys.forEach((k) => {
+    const r0 = rows.find((r) => ok(r[k]) && r[k] !== 0);
+    base[k] = r0 ? etiqueta(r0) : "–";
+    const f = r0 ? 100 / r0[k] : null;
+    rows.forEach((r) => { r[k] = f && ok(r[k]) ? r[k] * f : null; });
+  });
+  return base;
+}
+
 // ---------------------------------------------------------------- Presidentes
 export interface Pres { id: string; n: string; ini: string; color: string; dash?: boolean; i0: number; i1: number }
 export const PRES_DEF = [
