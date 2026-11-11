@@ -511,14 +511,19 @@ def propias(m):
         S("soja_ros", "Soja en Rosario (pizarra)", ["Sector externo", "Soja"], "ars", "$ por tonelada", m["soja_ros"], 1, "Bolsa de Comercio de Rosario",
           "Precio pizarra de la Cámara Arbitral de Rosario.", m["soja_ros_min"], m["soja_ros_max"]),
     ]
+    # Fuente de cada dólar, con el organismo o el sitio que publica la cotización (el detalle de los empalmes está en Fuentes).
+    fuente_fx = {"oficial": "BCRA (tipo de cambio mayorista, Com. A 3500)", "blue": "Ámbito y Bluelytics (cotización informal)",
+                 "mep": "argentinadatos.com (dólar MEP)", "ccl": "argentinadatos.com (contado con liquidación)"}
     for k, n in F.items():
-        out.append(S(f"fx_{k}", f"Dólar {n}", ["Dólar y tipo de cambio"], "fx", "$ por US$", m[f"fx_{k}"], -1, "ver Fuentes",
+        out.append(S(f"fx_{k}", f"Dólar {n}", ["Dólar y tipo de cambio"], "fx", "$ por US$", m[f"fx_{k}"], -1, fuente_fx.get(k, "ver Fuentes"),
                      f"Cotización del dólar {n}, promedio mensual.", m[f"fx_{k}_min"], m[f"fx_{k}_max"]))
         if k != "oficial":
             out.append(S(f"brecha_{k}", f"Brecha {n} / oficial", ["Dólar y tipo de cambio", "Brechas"], "none", "%",
-                         (m[f"fx_{k}"] / m["fx_oficial"] - 1) * 100, -1, "cálculo propio", f"Cuánto más caro está el dólar {n} que el oficial."))
+                         (m[f"fx_{k}"] / m["fx_oficial"] - 1) * 100, -1,
+                         f"Cálculo propio con {fuente_fx.get(k, 'el dólar ' + n)} y {fuente_fx['oficial']}", f"Cuánto más caro está el dólar {n} que el oficial."))
         out.append(S(f"soja_ratio_{k}", f"Soja: Rosario / Chicago (al {n})", ["Sector externo", "Soja"], "none", "%",
-                     m["soja_ros"] / m[f"fx_{k}"] / m["soja_chi"] * 100, 1, "cálculo propio",
+                     m["soja_ros"] / m[f"fx_{k}"] / m["soja_chi"] * 100, 1,
+                     f"Cálculo propio con Bolsa de Comercio de Rosario, CBOT vía Yahoo Finance y {fuente_fx.get(k, 'el dólar ' + n)}",
                      f"Precio en Rosario pasado a dólares al {n}, como % del precio en Chicago."))
     return out
 

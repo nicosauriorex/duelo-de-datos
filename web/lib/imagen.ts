@@ -1,6 +1,7 @@
 // Dibujo de la imagen para compartir, en un canvas. Recibe datos ya calculados (`DatosImagen`) y una paleta ya leída: no toca la página.
 // Siempre con el aspecto oscuro de la marca. Los textos largos bajan de tamaño hasta un mínimo y después se cortan con puntos suspensivos.
-import { fmtMes } from "./formato";
+import { fmtMes, nf0 } from "./formato";
+import { nombreCorto } from "./estadisticas";
 import type { FormatoImg } from "./config";
 import type { Frase } from "./contexto-dato";
 
@@ -15,8 +16,25 @@ export interface Paleta {
   series: string[];                 // en el orden de PALETA de components/util.ts
   pres: Record<string, string>;     // color de cada presidente (id → color)
 }
-export interface SerieImg { nombre: string; color: number; axis: 0 | 1; v: (number | null)[] }
+export interface SerieImg {
+  nombre: string; color: number; axis: 0 | 1; v: (number | null)[];
+  presId?: string;                   // si es de un presidente, se dibuja con su color
+  etiqueta?: string;                 // nombre escrito al final de la línea
+  trazo?: "continuo" | "corto" | "largo";
+}
 export interface PresImg { id: string; nombre: string; ini: string | null; fin: string | null; variacion: string | null; cls: "bueno" | "malo" | "neutro" }
+type Cls = "bueno" | "malo" | "neutro";
+/** Una fila de "una variable, todos los presidentes". */
+export interface FilaBarra { id: string; nombre: string; valor: number | null; variacion: string | null; cls: Cls; ini: string | null; fin: string | null; nota: string | null }
+/** Una fila de "un presidente, varias variables". */
+export interface FilaVariable { nombre: string; unidad: string; ini: string | null; fin: string | null; variacion: string | null; cls: Cls; nota: string | null; spark: (number | null)[] }
+export interface FilaRank { puesto: number; id: string; nombre: string; score: number; indicadores: number }
+/** Contenido de la imagen cuando no es un gráfico de líneas. */
+export type Lienzo =
+  | { tipo: "barras"; filas: FilaBarra[]; sinDatos: string[] }
+  | { tipo: "variables"; filas: FilaVariable[]; presId: string }
+  | { tipo: "ranking"; filas: FilaRank[]; sinDatos: string[] };
+
 export interface DatosImagen {
   formato: FormatoImg;
   titulo: string;
@@ -31,6 +49,11 @@ export interface DatosImagen {
   comentario: string;
   unidad: string; fuente: string; nota: string; fecha: string;
   archivo: string;                   // nombre del archivo, sin extensión
+  lienzo?: Lienzo;                   // si está, se dibuja esto en lugar del gráfico de líneas
+  ejeX?: "fecha" | "mes";            // "mes": el eje X son meses de mandato (0, 6, 12…)
+  log?: boolean;                     // eje Y logarítmico
+  refLinea?: number | null;          // línea horizontal de referencia
+  fuenteCorta?: string;              // si la fuente no entra en dos renglones, esta
 }
 
 const SITIO = "primerolosdatos.com.ar";
@@ -64,7 +87,7 @@ function recortarPuntos(ctx: Ctx, s: string, ancho: number): string {
   while (t.length > 1 && ctx.measureText(t.trimEnd() + "…").width > ancho) t = t.slice(0, -1);
   return t.trimEnd() + "…";
 }
-interface Ajustado { lineas: string[]; tam: number }
+interface Ajustado { lineas: string[]; tam: number; cortado?: boolean }
 /** Entra en `ancho` y `lineas` renglones bajando el tamaño de `max` a `min`; si no entra ni al mínimo, corta el último renglón con puntos suspensivos. */
 function ajustar(ctx: Ctx, pal: Paleta, texto: string, o: { peso: number; max: number; min: number; ancho: number; lineas: number }): Ajustado {
   const limpio = texto.replace(/\s+/g, " ").trim();
@@ -78,7 +101,7 @@ function ajustar(ctx: Ctx, pal: Paleta, texto: string, o: { peso: number; max: n
   const ls = partir(ctx, limpio, o.ancho);
   const cortadas = ls.slice(0, o.lineas);
   if (ls.length > o.lineas) cortadas[o.lineas - 1] = [cortadas[o.lineas - 1], ...ls.slice(o.lineas)].join(" ");
-  return { lineas: cortadas.map((l) => recortarPuntos(ctx, l, o.ancho)), tam: t };
+  return { lineas: cortadas.map((l) => recortarPuntos(ctx, l, o.ancho)), tam: t, cortado: true };
 }
 const alto = (a: Ajustado, inter = 1.18) => a.lineas.length * a.tam * inter;
 function texto(ctx: Ctx, pal: Paleta, a: Ajustado, peso: number, x: number, y: number, color: string, inter = 1.18, alinear: CanvasTextAlign = "left") {
@@ -95,7 +118,30 @@ function ticksY(min: number, max: number, n: number): number[] {
   for (let v = Math.ceil(min / paso - 1e-9) * paso; v <= max + paso * 1e-9; v += paso) out.push(+v.toFixed(10));
   return out;
 }
+function ticksLog(min: number, max: number): number[] {
+  const out: number[] = [];
+  for (const mult of [[1, 2, 5], [1, 2, 3, 4, 5, 6, 7, 8, 9]]) {
+    out.length = 0;
+    for (let e = Math.floor(Math.log10(min)); e <= Math.ceil(Math.log10(max)); e++) for (const k of mult) { const v = k * Math.pow(10, e); if (v >= min && v <= max) out.push(v); }
+    if (out.length >= 3) break;
+  }
+  return out;
+}
 interface Rect { x: number; y: number; w: number; h: number }
+const DASH = { continuo: [] as number[], corto: [10, 8], largo: [22, 12] };
+
+/** Nombre de la franja de un mandato: entero si entra; si no, abreviado; si no, girado en vertical (así ningún mandato queda sin nombre). */
+function nombreFranja(ctx: Ctx, pal: Paleta, nombre: string, x0: number, x1: number, y: number, hMax: number, fs: number) {
+  const ancho = x1 - x0, cx = (x0 + x1) / 2;
+  ctx.fillStyle = pal.tintaSec; ctx.font = fuenteDe(pal, 700, px(fs * 0.82));
+  const cand = [nombre, nombreCorto(nombre)].map((t) => t.toUpperCase());
+  const h = cand.find((t) => ctx.measureText(t).width + 10 < ancho);
+  if (h) { ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.fillText(h, cx, y + 6); return; }
+  if (ancho < fs * 0.82 + 4) return;
+  const v = recortarPuntos(ctx, cand.find((t) => ctx.measureText(t).width + 12 < hMax) ?? cand[1], hMax - 16);
+  ctx.save(); ctx.translate(cx, y + 8 + ctx.measureText(v).width); ctx.rotate(-Math.PI / 2); ctx.textAlign = "left"; ctx.textBaseline = "middle";
+  ctx.fillText(v, 0, 0); ctx.restore();
+}
 
 function grafico(ctx: Ctx, r: Rect, d: DatosImagen, pal: Paleta, esc: number) {
   const fs = px(22 * esc), pad = px(14 * esc);
@@ -103,21 +149,34 @@ function grafico(ctx: Ctx, r: Rect, d: DatosImagen, pal: Paleta, esc: number) {
   ctx.strokeStyle = pal.borde; ctx.lineWidth = 2; ctx.strokeRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
   const vis = d.series.map((s, k) => ({ s, k })).filter(({ s }) => s.v.some((x) => x != null));
   if (!vis.length || !d.x.length) return;
+  const log = !!d.log, modoMes = d.ejeX === "mes";
   const rango = (axis: number) => {
     let mn = Infinity, mx = -Infinity;
-    vis.filter(({ s }) => s.axis === axis).forEach(({ s }) => s.v.forEach((x) => { if (x != null) { mn = Math.min(mn, x); mx = Math.max(mx, x); } }));
+    vis.filter(({ s }) => s.axis === axis).forEach(({ s }) => s.v.forEach((x) => { if (x != null && (!log || x > 0)) { mn = Math.min(mn, x); mx = Math.max(mx, x); } }));
     if (!isFinite(mn)) return null;
+    if (log) return { mn: mn / 1.2, mx: mx * 1.25 };
     const sp = (mx - mn) || Math.abs(mx) * 0.1 || 1;
     return { mn: mn - sp * 0.08, mx: mx + sp * 0.08 };
   };
   const R0 = rango(0), R1 = rango(1);
   const x0 = Math.min(...d.x), x1 = Math.max(...d.x) === x0 ? x0 + 1 : Math.max(...d.x);
   ctx.font = fuenteDe(pal, 600, fs);
-  const ancho = (fmt: (v: number) => string, R: { mn: number; mx: number }) => Math.max(...ticksY(R.mn, R.mx, 4).map((t) => ctx.measureText(fmt(t)).width), 0);
-  const izq = pad + (R0 ? ancho(d.fmtEje, R0) : 0) + pad, der = R1 && d.fmtEje2 ? ancho(d.fmtEje2, R1) + pad * 2 : pad * 1.6;
+  const marcasY = (R: { mn: number; mx: number }, n: number) => (log ? ticksLog(R.mn, R.mx) : ticksY(R.mn, R.mx, n));
+  const ancho = (fmt: (v: number) => string, R: { mn: number; mx: number }) => Math.max(...marcasY(R, 4).map((t) => ctx.measureText(fmt(t)).width), 0);
+  // nombres al final de cada línea: enteros si caben en un quinto del ancho; si no, abreviados
+  const conEtq = vis.filter(({ s }) => s.etiqueta);
+  ctx.font = fuenteDe(pal, 800, px(fs * 0.95));
+  const wEtq = (f: (t: string) => string) => Math.max(0, ...conEtq.map(({ s }) => ctx.measureText(f(s.etiqueta!)).width));
+  const abrevia = wEtq((t) => t) > r.w * 0.2;
+  const nomEtq = (t: string) => (abrevia ? nombreCorto(t) : t);
+  const reservaEtq = conEtq.length ? wEtq(nomEtq) + pad * 1.4 : 0;
+  ctx.font = fuenteDe(pal, 600, fs);
+  const izq = pad + (R0 ? ancho(d.fmtEje, R0) : 0) + pad, der = Math.max(R1 && d.fmtEje2 ? ancho(d.fmtEje2, R1) + pad * 2 : pad * 1.6, reservaEtq);
   const pl = { x: r.x + izq, y: r.y + pad, w: r.w - izq - der, h: r.h - pad * 2 - fs - px(10 * esc) };
   const X = (n: number) => pl.x + ((n - x0) / (x1 - x0)) * pl.w;
-  const Yde = (R: { mn: number; mx: number }) => (v: number) => pl.y + pl.h - ((v - R.mn) / (R.mx - R.mn)) * pl.h;
+  const Yde = (R: { mn: number; mx: number }) => (log
+    ? (v: number) => pl.y + pl.h - ((Math.log(Math.max(v, R.mn)) - Math.log(R.mn)) / (Math.log(R.mx) - Math.log(R.mn))) * pl.h
+    : (v: number) => pl.y + pl.h - ((v - R.mn) / (R.mx - R.mn)) * pl.h);
 
   ctx.save();
   ctx.beginPath(); ctx.rect(r.x + 2, r.y + 2, r.w - 4, r.h - 4); ctx.clip();
@@ -127,30 +186,37 @@ function grafico(ctx: Ctx, r: Rect, d: DatosImagen, pal: Paleta, esc: number) {
     if (b <= a) return;
     ctx.globalAlpha = 0.2; ctx.fillStyle = pal.pres[f.id] ?? pal.eje; ctx.fillRect(X(a), pl.y, X(b) - X(a), pl.h);
     ctx.globalAlpha = 1;
-    ctx.font = fuenteDe(pal, 700, px(fs * 0.82));
-    const nom = f.nombre.toUpperCase();
-    if (ctx.measureText(nom).width + 10 < X(b) - X(a)) { ctx.fillStyle = pal.tintaSec; ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.fillText(nom, (X(a) + X(b)) / 2, pl.y + 6); }
+    nombreFranja(ctx, pal, f.nombre, X(a), X(b), pl.y, pl.h, fs);
   });
   // grilla y eje Y izquierdo
   ctx.textBaseline = "middle"; ctx.font = fuenteDe(pal, 600, fs);
+  const nTicks = Math.max(2, Math.round(pl.h / (70 * esc)));
   if (R0) {
     const Y = Yde(R0);
-    ticksY(R0.mn, R0.mx, Math.max(2, Math.round(pl.h / (70 * esc)))).forEach((t) => {
+    marcasY(R0, nTicks).forEach((t) => {
       const y = Y(t); if (y < pl.y - 1 || y > pl.y + pl.h + 1) return;
       ctx.strokeStyle = pal.grilla; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(pl.x, y); ctx.lineTo(pl.x + pl.w, y); ctx.stroke();
       ctx.fillStyle = pal.tintaTenue; ctx.textAlign = "right"; ctx.fillText(d.fmtEje(t), pl.x - pad * 0.6, y);
     });
+    if (d.refLinea != null && (!log || d.refLinea > 0)) {
+      const y = Y(d.refLinea);
+      if (y >= pl.y && y <= pl.y + pl.h) { ctx.strokeStyle = pal.tintaTenue; ctx.lineWidth = 2; ctx.setLineDash([8, 8]); ctx.beginPath(); ctx.moveTo(pl.x, y); ctx.lineTo(pl.x + pl.w, y); ctx.stroke(); ctx.setLineDash([]); }
+    }
   }
   if (R1 && d.fmtEje2) {
     const Y = Yde(R1), col = pal.series[vis.find(({ s }) => s.axis === 1)!.s.color];
-    ticksY(R1.mn, R1.mx, Math.max(2, Math.round(pl.h / (70 * esc)))).forEach((t) => {
+    marcasY(R1, nTicks).forEach((t) => {
       const y = Y(t); if (y < pl.y - 1 || y > pl.y + pl.h + 1) return;
       ctx.fillStyle = col; ctx.textAlign = "left"; ctx.fillText(d.fmtEje2!(t), pl.x + pl.w + pad * 0.6, y);
     });
   }
-  // eje X: años (o meses si el período es corto)
+  // eje X: años, meses o meses de mandato
   const span = x1 - x0, marcas: { n: number; t: string }[] = [];
-  if (span > 36) {
+  if (modoMes) {
+    const porMes = pl.w / span;
+    const paso = [1, 2, 3, 6, 12, 24, 48].find((p) => porMes * p >= 70 * esc) ?? 48;
+    for (let n = Math.ceil(x0); n <= x1; n++) if (n % paso === 0) marcas.push({ n, t: n === 0 ? "Mes 0" : String(n) });
+  } else if (span > 36) {
     const porAnio = (pl.w * 12) / span;
     const paso = [1, 2, 5, 10, 20].find((p) => porAnio * p >= 90 * esc) ?? 20;
     for (let a = Math.ceil(x0 / 12); a * 12 <= x1; a++) if (a % paso === 0) marcas.push({ n: a * 12, t: String(a) });
@@ -168,27 +234,248 @@ function grafico(ctx: Ctx, r: Rect, d: DatosImagen, pal: Paleta, esc: number) {
   });
   ctx.strokeStyle = pal.eje; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(pl.x, pl.y + pl.h); ctx.lineTo(pl.x + pl.w, pl.y + pl.h); ctx.stroke();
   // líneas, con corte donde falta el dato, y el último punto marcado
+  const puntas: { s: SerieImg; x: number; y: number; col: string }[] = [];
   ctx.save();
   ctx.beginPath(); ctx.rect(pl.x - 2, pl.y - 6, pl.w + 4, pl.h + 12); ctx.clip();
   vis.forEach(({ s }) => {
-    const R = s.axis === 1 && R1 ? R1 : R0!, Y = Yde(R), col = pal.series[s.color] ?? pal.acento;
-    ctx.strokeStyle = col; ctx.lineWidth = px(4.5 * esc); ctx.lineJoin = "round"; ctx.lineCap = "round";
+    const R = s.axis === 1 && R1 ? R1 : R0!, Y = Yde(R), col = s.presId ? (pal.pres[s.presId] ?? pal.acento) : (pal.series[s.color] ?? pal.acento);
+    ctx.strokeStyle = col; ctx.lineWidth = px(4.5 * esc); ctx.lineJoin = "round"; ctx.lineCap = s.trazo && s.trazo !== "continuo" ? "butt" : "round";
+    ctx.setLineDash(DASH[s.trazo ?? "continuo"].map((n) => n * esc));
     let abierto = false, ultimo = null as [number, number] | null;
     ctx.beginPath();
     s.v.forEach((v, i) => {
-      if (v == null) { abierto = false; return; }
+      if (v == null || (log && v <= 0)) { abierto = false; return; }
       const xx = X(d.x[i]), yy = Y(v);
       if (abierto) ctx.lineTo(xx, yy); else { ctx.moveTo(xx, yy); abierto = true; }
       ultimo = [xx, yy];
     });
-    ctx.stroke();
+    ctx.stroke(); ctx.setLineDash([]);
     if (ultimo) {
       const [ux, uy] = ultimo;
       ctx.fillStyle = col; ctx.strokeStyle = pal.superficie; ctx.lineWidth = px(3 * esc);
       ctx.beginPath(); ctx.arc(ux, uy, px(9 * esc), 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      puntas.push({ s, x: ux, y: uy, col });
     }
   });
   ctx.restore();
+  // nombre al final de cada línea (sin pisarse entre sí)
+  if (conEtq.length) {
+    const ft = px(fs * 0.95), alto = ft * 1.25;
+    ctx.font = fuenteDe(pal, 800, ft); ctx.textBaseline = "middle"; ctx.textAlign = "left";
+    const items = puntas.filter((p) => p.s.etiqueta).map((p) => {
+      const t = nomEtq(p.s.etiqueta!), w = ctx.measureText(t).width;
+      return { t, w, x: Math.min(p.x + px(14 * esc), r.x + r.w - w - 6), y: p.y, col: p.col };
+    }).sort((a, b) => a.y - b.y);
+    const colocados: typeof items = [];
+    items.forEach((it) => {
+      colocados.forEach((o) => { if (it.x < o.x + o.w + 4 && o.x < it.x + it.w + 4 && Math.abs(it.y - o.y) < alto) it.y = o.y + alto; });
+      it.y = Math.min(it.y, pl.y + pl.h - alto / 2);
+      colocados.push(it);
+    });
+    items.forEach((it) => {
+      ctx.globalAlpha = 0.85; ctx.fillStyle = pal.superficie; ctx.fillRect(it.x - 4, it.y - alto / 2, it.w + 8, alto); ctx.globalAlpha = 1;
+      ctx.fillStyle = it.col; ctx.fillText(it.t, it.x, it.y + 1);
+    });
+  }
+  ctx.restore();
+}
+
+// ---------------------------------------------------------------- filas: una variable entre presidentes, un presidente con varias variables, ranking
+type LienzoDe<T extends Lienzo["tipo"]> = Extract<Lienzo, { tipo: T }>;
+const MIN_FILA = { barras: 44, variables: 50, ranking: 42 } as const;   // alto mínimo legible de una fila (en px del lienzo)
+const MAX_FILA = { barras: 100, variables: 118, ranking: 96 } as const;
+const ALTO_ENC = 32;      // renglón de encabezados de columnas
+const ALTO_SIN = 36;      // renglón "Sin datos: …"
+const sinDatosDe = (l: Lienzo): string[] => (l.tipo === "variables" ? [] : l.sinDatos);
+
+/** Alto mínimo del contenido: con él se elige la escala de texto con la que todo entra. En horizontal las filas pueden ir en dos columnas. */
+function minLienzo(l: Lienzo, horiz: boolean): number {
+  const n = l.filas.length;
+  return (horiz ? Math.ceil(n / 2) : n) * MIN_FILA[l.tipo] + ALTO_ENC + (sinDatosDe(l).length ? ALTO_SIN : 0) + 16;
+}
+
+/** Reparte las filas: una columna; en horizontal, si no entran con el alto mínimo, dos columnas (primero la de la izquierda). */
+function rejilla(r: Rect, n: number, tipo: Lienzo["tipo"], horiz: boolean) {
+  const gap = 32, h = r.h - ALTO_ENC;
+  const cols = horiz && n > 1 && h / n < MIN_FILA[tipo] ? 2 : 1, per = Math.ceil(n / cols);
+  return { cols, per, gap, cw: (r.w - gap * (cols - 1)) / cols, rowH: Math.min(h / per, MAX_FILA[tipo]), y0: r.y + ALTO_ENC };
+}
+const tamFila = (rowH: number, esc: number) => { const f1 = Math.max(15, Math.min(30 * Math.max(esc, 0.9), rowH * 0.4)); return { f1, f2: Math.max(12, f1 * 0.74) }; };
+
+/** Mayor tamaño (hasta `max`) con el que todos los textos entran en `ancho`: así una columna de números se ve pareja. */
+function tamComun(ctx: Ctx, pal: Paleta, textos: string[], o: { peso: number; max: number; min: number; ancho: number }): number {
+  for (let t = px(o.max); t > px(o.min); t--) {
+    ctx.font = fuenteDe(pal, o.peso, t);
+    if (textos.every((x) => ctx.measureText(x).width <= o.ancho)) return t;
+  }
+  return px(o.min);
+}
+function encabezado(ctx: Ctx, pal: Paleta, esc: number, y: number, items: { t: string; x: number; w: number; alinear?: CanvasTextAlign }[]) {
+  const a = (t: string, w: number) => ajustar(ctx, pal, t.toUpperCase(), { peso: 800, max: 15 * Math.max(esc, 0.9), min: 11, ancho: w, lineas: 1 });
+  items.forEach((it) => { const aj = a(it.t, it.w); texto(ctx, pal, aj, 800, it.alinear === "right" ? it.x + it.w : it.x, y, pal.tintaTenue, 1.2, it.alinear ?? "left"); });
+}
+function separador(ctx: Ctx, pal: Paleta, x: number, y: number, w: number) {
+  ctx.fillStyle = pal.grilla; ctx.fillRect(x, y, w, 2);
+}
+function minigrafico(ctx: Ctx, v: (number | null)[], x: number, y: number, w: number, h: number, color: string, fondo: string) {
+  const vals = v.filter((a): a is number => a != null);
+  if (vals.length < 2) return;
+  const mn = Math.min(...vals), mx = Math.max(...vals), sp = mx - mn || 1;
+  const X = (i: number) => x + (i / (v.length - 1)) * w, Y = (a: number) => y + h - ((a - mn) / sp) * h;
+  ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.lineJoin = "round"; ctx.lineCap = "round";
+  // los datos trimestrales o anuales tienen huecos entre puntos: se unen igual
+  let abierto = false, ult: [number, number] | null = null;
+  ctx.beginPath();
+  v.forEach((a, i) => { if (a == null) return; if (abierto) ctx.lineTo(X(i), Y(a)); else { ctx.moveTo(X(i), Y(a)); abierto = true; } ult = [X(i), Y(a)]; });
+  ctx.stroke();
+  if (ult) { ctx.fillStyle = color; ctx.strokeStyle = fondo; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(ult[0], ult[1], 4.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+}
+
+function filasBarras(ctx: Ctx, r: Rect, L: LienzoDe<"barras">, pal: Paleta, esc: number, horiz: boolean) {
+  const n = L.filas.length, g = rejilla(r, n, "barras", horiz), { f1, f2 } = tamFila(g.rowH, esc), pad = 14;
+  // escala común: un tope para que un valor enorme no aplaste al resto (la barra se corta y el número va completo)
+  const abs = L.filas.flatMap((f) => (f.valor == null ? [] : [Math.abs(f.valor)])).sort((a, b) => a - b);
+  const maxAbs = abs[abs.length - 1] ?? 0, q = abs[Math.floor(0.75 * (abs.length - 1))] ?? 0;
+  const tope = abs.length >= 5 && q > 0 && maxAbs > q * 3 ? q * 3 : maxAbs;
+  const pos = Math.min(tope, Math.max(0, ...L.filas.map((f) => f.valor ?? 0))), neg = Math.min(tope, Math.max(0, ...L.filas.map((f) => -(f.valor ?? 0))));
+  const iw = g.cw - 8 - pad * 2, wA = iw * 0.4, wBar = iw * 0.26, wV = iw * 0.32;
+  const tamR = tamComun(ctx, pal, L.filas.map((f) => (f.ini != null && f.fin != null ? `${f.ini} → ${f.fin}` : "sin datos")), { peso: 600, max: f2, min: 10, ancho: wA });
+  const tamV = tamComun(ctx, pal, L.filas.map((f) => f.variacion ?? "–"), { peso: 900, max: f1 * 1.15, min: 12, ancho: wV });
+  const geom = (cx: number) => { const left = cx + 8 + pad; return { left, xBar: left + wA + iw * 0.02, xV: left + iw - wV, v: left + iw }; };
+  for (let c = 0; c < g.cols; c++) {
+    const cx = r.x + c * (g.cw + g.gap), q0 = geom(cx);
+    encabezado(ctx, pal, esc, r.y + 9, [{ t: "Presidente", x: q0.left, w: wA }, { t: "Variación en el mandato", x: q0.xBar, w: wBar + wV + iw * 0.02, alinear: "left" }]);
+    const unidad = pos + neg > 0 ? wBar / (pos + neg) : 0, x0 = q0.xBar + neg * unidad;
+    if (neg > 0) { ctx.fillStyle = pal.eje; ctx.fillRect(x0 - 1, g.y0, 2, g.rowH * g.per); }
+  }
+  L.filas.forEach((f, k) => {
+    const c = Math.floor(k / g.per), i = k % g.per, cx = r.x + c * (g.cw + g.gap), y = g.y0 + i * g.rowH, q0 = geom(cx);
+    if (i > 0) separador(ctx, pal, cx + pad, y, g.cw - pad * 2);
+    ctx.fillStyle = pal.pres[f.id] ?? pal.eje; ctx.fillRect(cx + 8, y + 7, 6, g.rowH - 14);
+    const color = f.cls === "neutro" ? pal.acento : colorCls(pal, f.cls);
+    const aN = ajustar(ctx, pal, f.nombre, { peso: 800, max: f1, min: 12, ancho: wA, lineas: 1 });
+    const aR = ajustar(ctx, pal, f.ini != null && f.fin != null ? `${f.ini} → ${f.fin}` : "sin datos", { peso: 600, max: tamR, min: tamR, ancho: wA, lineas: 1 });
+    const yt = y + (g.rowH - alto(aN, 1.2) - alto(aR, 1.2)) / 2;
+    texto(ctx, pal, aN, 800, q0.left, yt, pal.tinta, 1.2); texto(ctx, pal, aR, 600, q0.left, yt + alto(aN, 1.2), pal.tintaSec, 1.2);
+    // barra
+    const unidad = pos + neg > 0 ? wBar / (pos + neg) : 0, x0 = q0.xBar + neg * unidad, v = f.valor;
+    if (v != null && unidad > 0) {
+      const largo = Math.max(3, Math.min(Math.abs(v), tope) * unidad), bh = Math.min(g.rowH * 0.4, 30), by = y + (g.rowH - bh) / 2;
+      const bx = v >= 0 ? x0 : x0 - largo;
+      ctx.fillStyle = color; ctx.fillRect(bx, by, largo, bh);
+      if (Math.abs(v) > tope) {   // cortada: dos marcas en el extremo
+        const ex = v >= 0 ? bx + largo - 12 : bx + 12;
+        ctx.strokeStyle = pal.superficie; ctx.lineWidth = 3;
+        [0, 8].forEach((o) => { ctx.beginPath(); ctx.moveTo(ex + o - 4, by + bh + 2); ctx.lineTo(ex + o + 4, by - 2); ctx.stroke(); });
+      }
+    }
+    // variación con signo y, si hace falta, la marca de datos parciales
+    const aV = ajustar(ctx, pal, f.variacion ?? "–", { peso: 900, max: tamV, min: tamV, ancho: wV, lineas: 1 });
+    const aNota = f.nota ? ajustar(ctx, pal, f.nota, { peso: 600, max: f2, min: 10, ancho: wV, lineas: 1 }) : null;
+    const yv = y + (g.rowH - alto(aV, 1.2) - (aNota ? alto(aNota, 1.2) : 0)) / 2;
+    texto(ctx, pal, aV, 900, q0.v, yv, f.variacion ? color : pal.tintaTenue, 1.2, "right");
+    if (aNota) texto(ctx, pal, aNota, 600, q0.v, yv + alto(aV, 1.2), pal.tintaTenue, 1.2, "right");
+  });
+}
+
+function filasVariables(ctx: Ctx, r: Rect, L: LienzoDe<"variables">, pal: Paleta, esc: number, horiz: boolean) {
+  const n = L.filas.length, g = rejilla(r, n, "variables", horiz), { f1, f2 } = tamFila(g.rowH, esc), pad = 14;
+  const iw = g.cw - pad * 2, fr = { nom: 0.31, ini: 0.15, fin: 0.15, vr: 0.2, sp: 0.19 };
+  const col = (cx: number) => { const x = cx + pad; return { nom: x, ini: x + iw * fr.nom, fin: x + iw * (fr.nom + fr.ini), vr: x + iw * (fr.nom + fr.ini + fr.fin), sp: x + iw * (1 - fr.sp) }; };
+  const color = pal.pres[L.presId] ?? pal.acento;
+  // tamaños comunes: nombres y columnas de números parejos entre filas
+  const wNom = iw * fr.nom - 10, dosOk = g.rowH >= 60, tam2 = Math.min(f1, (g.rowH - 8) / (2 * 1.2 + (f2 / f1) * 1.2));
+  const tamNom = Math.min(...L.filas.map((f) => {
+    let a = ajustar(ctx, pal, f.nombre, { peso: 800, max: f1, min: f1 * 0.8, ancho: wNom, lineas: 1 });
+    if (a.cortado) a = dosOk ? ajustar(ctx, pal, f.nombre, { peso: 800, max: tam2, min: Math.min(tam2, 13), ancho: wNom, lineas: 2 }) : ajustar(ctx, pal, f.nombre, { peso: 800, max: f1, min: 13, ancho: wNom, lineas: 1 });
+    return a.tam;
+  }));
+  const con = L.filas.filter((f) => f.ini != null && f.fin != null);
+  const tamIni = tamComun(ctx, pal, con.map((f) => f.ini!), { peso: 600, max: f1 * 0.95, min: 11, ancho: iw * fr.ini - 8 });
+  const tamFin = tamComun(ctx, pal, con.map((f) => f.fin!), { peso: 600, max: f1 * 0.95, min: 11, ancho: iw * fr.fin - 8 });
+  const tamVar = tamComun(ctx, pal, con.map((f) => f.variacion ?? "–"), { peso: 900, max: f1 * 1.05, min: 11, ancho: iw * fr.vr - 8 });
+  for (let c = 0; c < g.cols; c++) {
+    const q = col(r.x + c * (g.cw + g.gap));
+    encabezado(ctx, pal, esc, r.y + 9, [
+      { t: "Variable", x: q.nom, w: iw * fr.nom }, { t: "Inicio", x: q.ini, w: iw * fr.ini - 8, alinear: "right" }, { t: "Cierre", x: q.fin, w: iw * fr.fin - 8, alinear: "right" },
+      { t: "Variación", x: q.vr, w: iw * fr.vr - 8, alinear: "right" }, { t: "Mandato", x: q.sp + 8, w: iw * fr.sp - 8 },
+    ]);
+  }
+  L.filas.forEach((f, k) => {
+    const c = Math.floor(k / g.per), i = k % g.per, cx = r.x + c * (g.cw + g.gap), y = g.y0 + i * g.rowH, q = col(cx);
+    if (i > 0) separador(ctx, pal, cx + pad, y, g.cw - pad * 2);
+    // el nombre va en un renglón; si para eso habría que achicarlo mucho y la fila es alta, en dos renglones (con un tamaño que deje lugar a la unidad)
+    const aN = ajustar(ctx, pal, f.nombre, { peso: 800, max: tamNom, min: tamNom, ancho: wNom, lineas: dosOk ? 2 : 1 });
+    const aU = ajustar(ctx, pal, f.unidad, { peso: 400, max: f2, min: 10, ancho: iw * fr.nom - 10, lineas: 1 });
+    const yt = y + (g.rowH - alto(aN, 1.2) - alto(aU, 1.2)) / 2;
+    texto(ctx, pal, aN, 800, q.nom, yt, pal.tinta, 1.2); texto(ctx, pal, aU, 400, q.nom, yt + alto(aN, 1.2), pal.tintaTenue, 1.2);
+    if (f.ini == null || f.fin == null) {
+      const aS = ajustar(ctx, pal, "sin datos en este mandato", { peso: 600, max: f1, min: 11, ancho: iw * (1 - fr.nom) - 8, lineas: 1 });
+      texto(ctx, pal, aS, 600, q.ini, y + (g.rowH - alto(aS, 1.2)) / 2, pal.tintaTenue, 1.2);
+      return;
+    }
+    const cel = (txt: string, x: number, w: number, peso: number, tinta: string, tam: number) => {
+      const a = ajustar(ctx, pal, txt, { peso, max: tam, min: tam, ancho: w - 8, lineas: 1 });
+      texto(ctx, pal, a, peso, x + w - 8, y + (g.rowH - alto(a, 1.2)) / 2, tinta, 1.2, "right");
+    };
+    cel(f.ini, q.ini, iw * fr.ini, 600, pal.tintaSec, tamIni); cel(f.fin, q.fin, iw * fr.fin, 600, pal.tinta, tamFin);
+    const colorV = f.cls === "neutro" ? pal.tinta : colorCls(pal, f.cls);
+    const aV = ajustar(ctx, pal, f.variacion ?? "–", { peso: 900, max: tamVar, min: tamVar, ancho: iw * fr.vr - 8, lineas: 1 });
+    const aNota = f.nota ? ajustar(ctx, pal, f.nota, { peso: 600, max: f2, min: 10, ancho: iw * fr.vr - 8, lineas: 1 }) : null;
+    const yv = y + (g.rowH - alto(aV, 1.2) - (aNota ? alto(aNota, 1.2) : 0)) / 2;
+    texto(ctx, pal, aV, 900, q.vr + iw * fr.vr - 8, yv, colorV, 1.2, "right");
+    if (aNota) texto(ctx, pal, aNota, 600, q.vr + iw * fr.vr - 8, yv + alto(aV, 1.2), pal.tintaTenue, 1.2, "right");
+    const sh = Math.min(g.rowH * 0.5, 40);
+    minigrafico(ctx, f.spark, q.sp + 12, y + (g.rowH - sh) / 2, iw * fr.sp - 24, sh, color, pal.superficie);
+  });
+}
+
+function filasRanking(ctx: Ctx, r: Rect, L: LienzoDe<"ranking">, pal: Paleta, esc: number, horiz: boolean) {
+  const n = L.filas.length, g = rejilla(r, n, "ranking", horiz), { f1, f2 } = tamFila(g.rowH, esc), pad = 14;
+  const iw = g.cw - pad * 2, fr = { pu: 0.08, nom: 0.3, bar: 0.34, sc: 0.1, ind: 0.18 };
+  const col = (cx: number) => { const x = cx + pad; return { pu: x, nom: x + iw * fr.pu, bar: x + iw * (fr.pu + fr.nom), sc: x + iw * (fr.pu + fr.nom + fr.bar), ind: x + iw * (1 - fr.ind) }; };
+  for (let c = 0; c < g.cols; c++) {
+    const q = col(r.x + c * (g.cw + g.gap));
+    encabezado(ctx, pal, esc, r.y + 9, [{ t: "#", x: q.pu, w: iw * fr.pu }, { t: "Presidente", x: q.nom, w: iw * fr.nom }, { t: "Puntaje de 0 a 100", x: q.bar, w: iw * (fr.bar + fr.sc) },
+      { t: "Indicadores", x: q.ind, w: iw * fr.ind, alinear: "right" }]);
+  }
+  L.filas.forEach((f, k) => {
+    const c = Math.floor(k / g.per), i = k % g.per, cx = r.x + c * (g.cw + g.gap), y = g.y0 + i * g.rowH, q = col(cx), color = pal.pres[f.id] ?? pal.acento;
+    if (i > 0) separador(ctx, pal, cx + pad, y, g.cw - pad * 2);
+    const mid = (a: Ajustado) => y + (g.rowH - alto(a, 1.2)) / 2;
+    const aP = ajustar(ctx, pal, String(f.puesto), { peso: 900, max: f1 * 1.2, min: 12, ancho: iw * fr.pu - 4, lineas: 1 });
+    texto(ctx, pal, aP, 900, q.pu, mid(aP), pal.tinta, 1.2);
+    ctx.fillStyle = color; ctx.fillRect(q.nom - 2, y + 8, 6, g.rowH - 16);
+    const aN = ajustar(ctx, pal, f.nombre, { peso: 800, max: f1, min: 12, ancho: iw * fr.nom - 16, lineas: 1 });
+    texto(ctx, pal, aN, 800, q.nom + 12, mid(aN), pal.tinta, 1.2);
+    const wb = iw * fr.bar - 12, bh = Math.min(g.rowH * 0.42, 28), by = y + (g.rowH - bh) / 2;
+    ctx.fillStyle = pal.grilla; ctx.fillRect(q.bar, by, wb, bh);
+    ctx.fillStyle = color; ctx.fillRect(q.bar, by, Math.max(3, (wb * Math.max(0, Math.min(100, f.score))) / 100), bh);
+    const aS = ajustar(ctx, pal, nf0.format(f.score), { peso: 900, max: f1 * 1.1, min: 12, ancho: iw * fr.sc - 4, lineas: 1 });
+    texto(ctx, pal, aS, 900, q.sc, mid(aS), pal.tinta, 1.2);
+    const aI = ajustar(ctx, pal, `${f.indicadores} ${f.indicadores === 1 ? "indicador" : "indicadores"}`, { peso: 600, max: f2 * 1.1, min: 10, ancho: iw * fr.ind, lineas: 1 });
+    texto(ctx, pal, aI, 600, q.ind + iw * fr.ind, mid(aI), pal.tintaSec, 1.2, "right");
+  });
+}
+
+/** El contenido de la imagen cuando no es un gráfico de líneas: el marco, las filas y la línea de "Sin datos". */
+function lienzoFilas(ctx: Ctx, r: Rect, d: DatosImagen, pal: Paleta, esc: number, horiz: boolean) {
+  const L = d.lienzo!;
+  const sin = sinDatosDe(L), hSin = sin.length ? ALTO_SIN : 0;
+  const g = rejilla({ ...r, h: r.h - hSin }, L.filas.length, L.tipo, horiz);
+  r = { ...r, h: Math.min(r.h, ALTO_ENC + g.per * g.rowH + hSin + 6) };   // el marco se ajusta a las filas: sin vacío debajo
+  const caja = { x: r.x, y: r.y, w: r.w, h: r.h - hSin };
+  ctx.fillStyle = pal.superficie; ctx.fillRect(r.x, r.y, r.w, r.h);
+  ctx.strokeStyle = pal.borde; ctx.lineWidth = 2; ctx.strokeRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
+  ctx.save();
+  ctx.beginPath(); ctx.rect(r.x + 2, r.y + 2, r.w - 4, r.h - 4); ctx.clip();
+  if (L.tipo === "barras") filasBarras(ctx, caja, L, pal, esc, horiz);
+  else if (L.tipo === "variables") filasVariables(ctx, caja, L, pal, esc, horiz);
+  else filasRanking(ctx, caja, L, pal, esc, horiz);
+  if (sin.length) {
+    const a = ajustar(ctx, pal, `Sin datos: ${sin.join(", ")}`, { peso: 600, max: 22 * Math.max(esc, 0.9), min: 13, ancho: r.w - 40, lineas: 1 });
+    texto(ctx, pal, a, 600, r.x + 20, r.y + r.h - hSin + (hSin - alto(a, 1.2)) / 2, pal.tintaSec, 1.2);
+  }
   ctx.restore();
 }
 
@@ -198,6 +485,7 @@ interface Resultado { holgura: number }
 /** Compone toda la imagen. Con `pintar` en falso solo mide (para elegir la escala de texto con la que todo entra). */
 function componer(ctx: Ctx, d: DatosImagen, pal: Paleta, esc: number, pintar: boolean): Resultado {
   const { w: W, h: H } = FORMATOS[d.formato], horiz = d.formato === "16x9";
+  const filas = !!d.lienzo, lat = horiz && !filas;   // `lat`: texto a la izquierda y gráfico a la derecha
   const m = 56, S = (n: number) => n * esc;
   const hMarca = 64;
   if (pintar) {
@@ -208,13 +496,15 @@ function componer(ctx: Ctx, d: DatosImagen, pal: Paleta, esc: number, pintar: bo
     ctx.fillStyle = pal.sobreAcento; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText("PRIMERO LOS DATOS", m, hMarca / 2 + 1);
     ctx.fillStyle = pal.acento; ctx.fillRect(0, hMarca, W, 4);
   }
-  const wCol = horiz ? 520 : W - 2 * m, xCol = m;
-  const xGraf = horiz ? m + wCol + 48 : m, wGraf = horiz ? W - xGraf - m : W - 2 * m;
+  const wCol = lat ? 520 : W - 2 * m, xCol = m;
+  const xGraf = lat ? m + wCol + 48 : m, wGraf = lat ? W - xGraf - m : W - 2 * m;
 
   // ----- pie (se mide primero: queda pegado abajo)
   const fPie = px(S(24)), minPie = px(S(17));
   const aUnidad = ajustar(ctx, pal, d.unidad, { peso: 600, max: fPie, min: minPie, ancho: W - 2 * m, lineas: 1 });
-  const aFuente = ajustar(ctx, pal, `Fuente: ${d.fuente}${d.nota ? ". " + d.nota : ""}`, { peso: 400, max: fPie, min: minPie, ancho: W - 2 * m, lineas: 2 });
+  const notaPie = d.nota ? ". " + d.nota : "";
+  let aFuente = ajustar(ctx, pal, `${d.fuente}${notaPie}`, { peso: 400, max: fPie, min: minPie, ancho: W - 2 * m, lineas: 2 });
+  if (aFuente.cortado && d.fuenteCorta) aFuente = ajustar(ctx, pal, `${d.fuenteCorta}${notaPie}`, { peso: 400, max: fPie, min: minPie, ancho: W - 2 * m, lineas: 2 });
   const aInicio = d.inicioTxt ? ajustar(ctx, pal, d.inicioTxt, { peso: 600, max: fPie, min: minPie, ancho: W - 2 * m, lineas: 1 }) : null;
   const fBase = px(S(26));
   const hPie = alto(aUnidad, 1.25) + alto(aFuente, 1.25) + (aInicio ? alto(aInicio, 1.25) : 0) + fBase * 1.3 + S(30);
@@ -232,7 +522,7 @@ function componer(ctx: Ctx, d: DatosImagen, pal: Paleta, esc: number, pintar: bo
 
   // ----- texto de arriba (título, cifra, contexto)
   let y = hMarca + S(34);
-  const aTit = ajustar(ctx, pal, d.titulo, { peso: 800, max: S(horiz ? 46 : 58), min: S(horiz ? 28 : 34), ancho: wCol, lineas: 2 });
+  const aTit = ajustar(ctx, pal, d.titulo, { peso: 800, max: S(filas ? (horiz ? 42 : 46) : horiz ? 46 : 58), min: S(horiz ? 28 : 34), ancho: wCol, lineas: 2 });
   if (pintar) texto(ctx, pal, aTit, 800, xCol, y, pal.tinta, 1.12);
   y += alto(aTit, 1.12) + S(14);
   if (d.cifra) {
@@ -261,7 +551,8 @@ function componer(ctx: Ctx, d: DatosImagen, pal: Paleta, esc: number, pintar: bo
     y += d.leyenda.length * fila + S(10);
   }
   d.frases.forEach((f) => {
-    const a = ajustar(ctx, pal, f.texto, { peso: 600, max: S(horiz ? 32 : 36), min: S(22), ancho: wCol, lineas: 2 });
+    const a = filas ? ajustar(ctx, pal, f.texto, { peso: 600, max: S(horiz ? 26 : 30), min: S(17), ancho: wCol, lineas: 2 })
+      : ajustar(ctx, pal, f.texto, { peso: 600, max: S(horiz ? 32 : 36), min: S(22), ancho: wCol, lineas: d.ejeX === "mes" ? 4 : 2 });
     if (pintar) texto(ctx, pal, a, 600, xCol, y, colorFrase(pal, f), 1.2);
     y += alto(a, 1.2) + S(10);
   });
@@ -269,7 +560,7 @@ function componer(ctx: Ctx, d: DatosImagen, pal: Paleta, esc: number, pintar: bo
 
   // ----- comentario propio (una sola línea, con su etiqueta)
   let hCom = 0, aCom: Ajustado | null = null, aEtq: Ajustado | null = null;
-  const wCom = horiz ? wCol : wGraf;
+  const wCom = lat ? wCol : wGraf;
   if (d.comentario) {
     aEtq = ajustar(ctx, pal, ETQ_COMENTARIO.toUpperCase(), { peso: 800, max: S(18), min: S(14), ancho: wCom - S(28), lineas: 1 });
     aCom = ajustar(ctx, pal, `“${d.comentario}”`, { peso: 600, max: S(32), min: S(18), ancho: wCom - S(28), lineas: 1 });
@@ -285,13 +576,22 @@ function componer(ctx: Ctx, d: DatosImagen, pal: Paleta, esc: number, pintar: bo
 
   // ----- presidentes (una tarjeta por mandato): su texto baja menos que el resto, para que se siga leyendo
   const pres = d.presidentes, St = (n: number) => n * Math.max(esc, 0.92);
-  let hPres = 0;
-  if (pres?.length) hPres = St(horiz ? 176 : 190);
+  let hPres = 0, tamNom = 0, lineasNom = 1;
+  if (pres?.length) {
+    // un mismo tamaño de nombre para todas las tarjetas: los largos ("Alberto Fernández") van en dos renglones en vez de achicarse
+    const gap = St(8), tw = (wGraf - gap * (pres.length - 1)) / pres.length, pw = tw - St(16), tMin = px(St(15));
+    const cabe = (t: number) => { ctx.font = fuenteDe(pal, 800, t); return pres.every((p) => { const ls = partir(ctx, p.nombre, pw); return ls.length <= 2 && ls.every((l) => ctx.measureText(l).width <= pw); }); };
+    tamNom = px(St(24));
+    while (tamNom > tMin && !cabe(tamNom)) tamNom -= 2;
+    ctx.font = fuenteDe(pal, 800, tamNom);
+    lineasNom = Math.min(2, Math.max(...pres.map((p) => partir(ctx, p.nombre, pw).length)));
+    hPres = St(horiz ? 176 : 190) + (lineasNom - 1) * tamNom * 1.2;
+  }
 
   // ----- región del gráfico
   const sep = S(18);
   let yGraf: number, hGraf: number, yPres: number, yComBajo = 0;
-  if (horiz) {
+  if (lat) {
     const base = yPie - sep;
     hGraf = base - (hMarca + 4 + S(26)) - (hPres ? hPres + sep : 0);
     yGraf = hMarca + 4 + S(26);
@@ -306,21 +606,22 @@ function componer(ctx: Ctx, d: DatosImagen, pal: Paleta, esc: number, pintar: bo
     yGraf = yFinTexto + S(6);
     hGraf = tope - yGraf;
   }
-  const minGraf = S(horiz ? 260 : 250);
-  const holgura = Math.min(hGraf - minGraf, horiz && aCom ? yPie - sep - (yComBajo + hCom) : Infinity);
+  const minGraf = d.lienzo ? minLienzo(d.lienzo, horiz) : S(horiz ? 260 : 250);
+  const holgura = Math.min(hGraf - minGraf, lat && aCom ? yPie - sep - (yComBajo + hCom) : Infinity);
   if (!pintar) return { holgura };
 
-  grafico(ctx, { x: xGraf, y: yGraf, w: wGraf, h: hGraf }, d, pal, esc);
-  if (aCom) dibujarComentario(horiz ? xCol : m, yComBajo);
+  if (d.lienzo) lienzoFilas(ctx, { x: xGraf, y: yGraf, w: wGraf, h: hGraf }, d, pal, esc, horiz);
+  else grafico(ctx, { x: xGraf, y: yGraf, w: wGraf, h: hGraf }, d, pal, esc);
+  if (aCom) dibujarComentario(lat ? xCol : m, yComBajo);
   if (pres?.length) {
-    const gap = St(8), tw = (wGraf - gap * (pres.length - 1)) / pres.length, xp = horiz ? xGraf : m;
+    const gap = St(8), tw = (wGraf - gap * (pres.length - 1)) / pres.length, xp = lat ? xGraf : m;
     pres.forEach((p, k) => {
       const tx = xp + k * (tw + gap), pw = tw - St(16), color = pal.pres[p.id] ?? pal.eje;
       ctx.fillStyle = pal.superficie; ctx.fillRect(tx, yPres, tw, hPres);
       ctx.fillStyle = color; ctx.fillRect(tx, yPres, tw, St(8));
       let yy = yPres + St(18);
-      const aN = ajustar(ctx, pal, p.nombre, { peso: 800, max: St(24), min: St(13), ancho: pw, lineas: 1 });
-      texto(ctx, pal, aN, 800, tx + St(8), yy, pal.tinta, 1.2); yy += alto(aN, 1.2) + St(6);
+      const aN = ajustar(ctx, pal, p.nombre, { peso: 800, max: tamNom, min: tamNom, ancho: pw, lineas: 2 });
+      texto(ctx, pal, aN, 800, tx + St(8), yy, pal.tinta, 1.2); yy += lineasNom * tamNom * 1.2 + St(6);
       if (p.ini == null || p.fin == null) {
         const aS = ajustar(ctx, pal, "sin datos", { peso: 600, max: St(22), min: St(13), ancho: pw, lineas: 1 });
         texto(ctx, pal, aS, 600, tx + St(8), yy, pal.tintaTenue, 1.2);

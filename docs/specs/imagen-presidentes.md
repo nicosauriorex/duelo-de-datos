@@ -1,6 +1,6 @@
 # Imagen desde las secciones de presidentes
 
-Estado: lista para implementar (después de `responder-con-imagen.md`)
+Estado: implementada (2026-11-10)
 Ideas: Compartir gráficos (todos los gráficos, indicadores y tablas tienen Compartir).
 
 ## Objetivo

@@ -5,6 +5,8 @@ import { useSeccion } from "../useSeccion";
 import { Cargando, Seg, alternar } from "../ui";
 import { FilaVariable } from "../Variables";
 import { ContextoMandato } from "./ContextoMandato";
+import { BotonCompartir } from "../PanelCompartir";
+import { IconoCompartir } from "../Iconos";
 import { LineaInicio, useBase } from "./comunes";
 import { tinte, tinteRelativo } from "../util";
 import { fmtMes, nf0, nf1, ok } from "@/lib/formato";
@@ -123,6 +125,11 @@ export function Ranking() {
           {res?.incompletas && usaVars ? " Algunas variables no tienen datos para todos los presidentes." : ""}</p>
         {!res ? <p className="note">Elegí al menos {MIN_V} variables para armar el ranking.</p> : (
           <>
+          <div className="controls">
+            <BotonCompartir className="btn" titulo="Primero los Datos: ranking de presidentes" href={() => window.location.href} deshabilitado={!res.filas.length}
+              title="Armar una imagen del ranking para compartir" aria-label="Compartir como imagen: ranking de presidentes"
+              crearVista={() => ({ tipo: "ranking", crit, inds, usaVars, base: b })}><IconoCompartir />Compartir</BotonCompartir>
+          </div>
           {abiertos.length > 0 && <div className="rk-abiertos"><button type="button" className="btn" onClick={() => set({ rka: null })}>Cerrar todos</button></div>}
           <div className="tablewrap"><table>
             <thead><tr><th>#</th><th>Presidente</th><th>Puntaje</th><th>Indicadores</th><th style={{ textAlign: "left" }}>Mejor en</th><th style={{ textAlign: "left" }}>Peor en</th></tr></thead>

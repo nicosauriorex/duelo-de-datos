@@ -4,6 +4,8 @@ import { useSeccion } from "../useSeccion";
 import { Cargando, Desplegable, Selector, Seg, alternar } from "../ui";
 import { BotonInfo, FilaVariable, RenglonVariable } from "../Variables";
 import { Sparkline } from "../Sparkline";
+import { BotonCompartir } from "../PanelCompartir";
+import { IconoCompartir } from "../Iconos";
 import { ContextoMandato } from "./ContextoMandato";
 import { GobiernoCongreso } from "./GobiernoCongreso";
 import { INFO_CORTA } from "@/lib/info";
@@ -108,6 +110,11 @@ export function Presidentes() {
       <div className="card">
         <h2>Una variable, todos los presidentes</h2><p className="note">Tocá un encabezado para ordenar.</p>
         <FilaVariable e={eB} onChange={(e) => e && set({ pv: encExpr(e) })} />
+        <div className="controls">
+          <BotonCompartir className="btn" titulo={`Primero los Datos: ${c.corto} por presidente`} href={() => window.location.href} deshabilitado={filasB.length === 0}
+            title="Armar una imagen de esta tabla para compartir" aria-label="Compartir como imagen: una variable, todos los presidentes"
+            crearVista={() => ({ tipo: "barras", expr: eB, presIds: filasB.map((o) => o.x.id), base: b })}><IconoCompartir />Compartir</BotonCompartir>
+        </div>
         <div className="tablewrap"><table>
           <thead><tr><th>Presidente</th><th style={{ textAlign: "left" }}>Mandato</th><Cabecera cols={cols} ord={ordB} onOrden={(k) => setOrdB(siguienteOrden(ordB, k))} /></tr></thead>
           <tbody>{filasB.map(({ x, k }) => (
@@ -151,6 +158,11 @@ export function Presidentes() {
               })}</tbody>
             </table></div>
             {mis.length < 10 && <FilaVariable e={null} agregable textoAgregar="+ Agregar variable" onChange={(e) => e && setMis([...mis, e])} />}
+            <div className="controls">
+              <BotonCompartir className="btn" titulo={`Primero los Datos: ${paPres.n}`} href={() => window.location.href} deshabilitado={mis.length === 0}
+                title="Armar una imagen de estas variables para compartir" aria-label={`Compartir como imagen: ${paPres.n}, variables elegidas`}
+                crearVista={() => ({ tipo: "variables", presId: paPres.id, exprs: mis, base: b })}><IconoCompartir />Compartir</BotonCompartir>
+            </div>
           </>
         ) : (
         <div className="tablewrap"><table>

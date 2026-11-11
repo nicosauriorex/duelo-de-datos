@@ -36,7 +36,28 @@ export const notaInflacion = (calcs: Calculo[], b100: boolean): string =>
   !b100 && calcs.some((c) => c.serie.id !== "ipc_empalme" && /\$ de [a-z]{3}-\d\d|descontada la inflación|relativo al IPC|% real/.test(c.unidad))
     ? "Inflación descontada con el IPC de INDEC (de 2007 a 2016, con los de San Luis y la Ciudad de Buenos Aires)." : "";
 
-const slug = (s: string) => norm(s).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48);
+/** Título de una imagen de una sola variable: el nombre y, entre paréntesis, cómo se mide. */
+export function tituloVariable(m: Motor, e: Expr, c: Calculo): string {
+  if (e.rel || e.esc) return c.nombre;
+  const r = m.resumenMedida(c.serie, e.med ?? m.medDefault(c.serie));
+  return r ? `${c.nombre} (${r})` : c.nombre;
+}
+/** Texto de fuentes de una imagen con varias variables: la lista sin repetir y, si no entra, una versión corta con el enlace al detalle. */
+/** Algunas series traen "ver Fuentes" como fuente (el detalle está en la página de fuentes): en la imagen, que no tiene botones, va la dirección. */
+export const fuenteLegible = (f: string): string => (/^ver fuentes$/i.test(f.trim()) ? `ver ${SITIO_FUENTES}` : f);
+export function fuentesTxt(fuentes: string[]): { fuente: string; fuenteCorta: string } {
+  const u = [...new Set(fuentes.filter(Boolean).map(fuenteLegible))];
+  // instituciones: cada fuente puede traer varias separadas por ";" y aclaraciones ("INDEC (IPC)", "… vía datos.gob.ar", "de 2007 a 2016, …")
+  const inst0 = [...new Set(u.flatMap((f) => f.split(";")).map((x) => x.trim()).filter((x) => /^[A-ZÁÉÍÓÚÑ]/.test(x)).map((x) => x.replace(/\s*(\(| vía |,| - | – ).*$/, "")))];
+  const inst = inst0.length ? inst0 : u;
+  return {
+    fuente: `${u.length > 1 ? "Fuentes" : "Fuente"}: ${u.join("; ")}`,
+    fuenteCorta: `Fuentes: ${inst.length > 2 ? `${inst[0]}, ${inst[1]} y otras` : inst.join(" y ")}; detalle en ${SITIO_FUENTES}`,
+  };
+}
+const SITIO_FUENTES = "primerolosdatos.com.ar/fuentes";
+
+export const slug = (s: string) => norm(s).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48);
 
 /** La vista de un gráfico a partir de parámetros de URL (las plantillas son eso). Null si no tiene variables. */
 export function vistaDeParams(m: Motor, p: URLSearchParams, existe: (id: string) => boolean, desdeCfg: DesdePref, titulo?: string): VistaImg | null {
@@ -60,9 +81,7 @@ export function armarImagen(m: Motor, v: VistaImg, o: OpcionesImg): DatosImagen 
   const ultimaFila = (key: string) => { for (let i = rows.length - 1; i >= 0; i--) if (ok(rows[i][key])) return rows[i][key] as number; return null; };
 
   const ctx = unico && !b100 ? contextoDato(m, v.exprs[0], admiteContexto({ variables: 1, modo: v.modo, freq: v.freq })) : null;
-  const titulo = v.titulo ?? (unico && !v.exprs[0].rel && !v.exprs[0].esc && !b100
-    ? (() => { const r = m.resumenMedida(calcs[0].serie, v.exprs[0].med ?? m.medDefault(calcs[0].serie)); return r ? `${calcs[0].nombre} (${r})` : calcs[0].nombre; })()
-    : tituloGrafico(lista, b100));
+  const titulo = v.titulo ?? (unico && !b100 ? tituloVariable(m, v.exprs[0], calcs[0]) : tituloGrafico(lista, b100));
 
   const comparar = o.comparar && unico && !b100;
   let presidentes: PresImg[] | null = null, franjas: DatosImagen["franjas"] = [];
@@ -96,7 +115,7 @@ export function armarImagen(m: Motor, v: VistaImg, o: OpcionesImg): DatosImagen 
     franjas, presidentes, inicioTxt: presidentes ? `Inicio de mandato: ${baseResumen(o.base)}` : null,
     comentario: limpiarComentario(o.comentario),
     unidad: b100 ? "Base 100: primer dato del período = 100" : [...new Set(calcs.map((c) => c.unidad))].join(" · "),
-    fuente: [...new Set(calcs.map((c) => c.serie.fuente))].join("; "), nota: notaInflacion(calcs, b100),
+    fuente: "Fuente: " + [...new Set(calcs.map((c) => fuenteLegible(c.serie.fuente)))].join("; "), nota: notaInflacion(calcs, b100),
     fecha: hoy.toLocaleDateString("es-AR"),
     archivo: `primerolosdatos-${slug(titulo)}-${mesUlt.slice(0, 7)}`,
   };

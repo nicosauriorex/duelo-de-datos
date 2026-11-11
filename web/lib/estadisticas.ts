@@ -1,6 +1,6 @@
 // Estadísticas de Histórico, mandatos, desempeño de presidentes y correlaciones de elecciones.
 // Port de src/app.js sin cambiar resultados. Todo recibe el motor y la configuración por parámetro.
-import { ok, mesNum } from "./formato";
+import { ok, mesNum, fmtNum, lastIdx, nf0, nf1 } from "./formato";
 import { kDe, txtT, type BaseCfg } from "./config";
 import { ES_VAR, type Calculo, type Expr, type Motor, type Vals } from "./motor";
 
@@ -399,3 +399,69 @@ export function estimarVoto(m: Motor, F: string[], PRES: Pres[], metrica: string
   if (!fuerte && ponderada == null) return null;
   return { vars, fuertes: fu.length, fuerte, ponderada, corte };
 }
+
+// ---------------------------------------------------------------- Meses de mandato
+export type ModoMandato = "teorico" | "var" | "indice" | "valor";
+export interface ParamsMandato {
+  expr: Expr; modo: ModoMandato; banda: boolean; b: BaseCfg;
+  presIds: Set<string>; anc: string | null; md: string | null; mh: string | null;   // md/mh: parámetros de URL tal cual
+}
+const entEn = (s: string | null, min: number, max: number, def: number): number => {
+  const n = s == null || s === "" ? NaN : Number(s);
+  return Number.isFinite(n) ? Math.max(min, Math.min(max, Math.round(n))) : def;
+};
+/** Todo lo que muestra el gráfico de Meses de mandato: una sola fuente de verdad para la página y la imagen. Null si faltan datos. */
+export function calcularMandato(m: Motor, PRES: Pres[], PRES_T0: Pres[], q: ParamsMandato) {
+  const eB = q.expr, b = q.b, modo = q.modo;
+  if (!m.SER[eB.id] || (eB.rel && !m.SER[eB.rel])) return null;
+  const F = m.F;
+  const c = m.calc(eB), arr = c.v;
+  const bnd = q.banda && c.lo && c.hi ? [c.lo, c.hi] : null;
+  const pres = PRES_T0.filter((x) => q.presIds.has(x.id));
+  const teo = modo === "teorico";
+  const li = lastIdx(arr);
+  const ancOpc: [string, string][] = [["ultimo", `Último dato (${fmtMes(F[li])})`], ...PRES_T0.slice().reverse().map((x): [string, string] => [x.id, `Mes 0 de ${x.n}`])];
+  const anc = ancOpc.some((o) => o[0] === q.anc) ? (q.anc as string) : "milei";
+  let ancla: number | null = null, ancTxt = "";
+  if (anc === "ultimo") { ancla = arr[li]; ancTxt = `el último dato (${fmtMes(F[li])})`; }
+  else { const x = PRES.find((r) => r.id === anc)!, bi = baseIdx(F, x, b); ancla = bi >= 0 ? arr[bi] : null; ancTxt = `el mes 0 de ${x.n} (${bi >= 0 ? fmtMes(F[bi]) : "–"})`; }
+  const conv = (xv: number | null, x0: number | null) => {
+    if (!ok(x0) || !ok(xv) || x0 === 0) return null;
+    if (c.pct && modo !== "valor") return xv - x0 + (teo && ok(ancla) ? ancla : 0);
+    if (modo === "indice") return xv / x0 * 100;
+    if (modo === "var") return (xv / x0 - 1) * 100;
+    if (teo) return ok(ancla) ? ancla * xv / x0 : null;
+    return xv;
+  };
+  const maxMes = Math.max(1, ...pres.map((x) => x.i1 - baseIdx(F, x, b)));
+  const todas: Fila[] = Array.from({ length: maxMes + 1 }, (_, t) => ({ t }));
+  pres.forEach((x) => {
+    const bi = baseIdx(F, x, b), x0 = arr[bi];
+    for (let t = 0; t <= x.i1 - bi; t++) {
+      todas[t][x.id] = conv(arr[bi + t], x0);
+      if (bnd) { todas[t][x.id + "_lo"] = conv(bnd[0][bi + t], x0); todas[t][x.id + "_hi"] = conv(bnd[1][bi + t], x0); }
+      todas[t]["_f_" + x.id] = F[bi + t];
+    }
+  });
+  const hasta = Math.min(maxMes, entEn(q.mh, 1, 10000, maxMes));
+  const desde = Math.min(entEn(q.md, 0, 10000, 0), hasta - 1);
+  const rows = todas.slice(desde, hasta + 1);
+  let fmtAxis: (v: number) => string, fmtTip: (v: number) => string, ref: number | null = null;
+  if (c.pct && modo !== "valor") { fmtAxis = (v) => nf0.format(v); fmtTip = (v) => nf1.format(v) + " %"; ref = teo ? ancla : 0; }
+  else if (modo === "indice") { fmtAxis = (v) => nf0.format(v); fmtTip = (v) => nf1.format(v); ref = 100; }
+  else if (modo === "var") { fmtAxis = (v) => nf0.format(v) + " %"; fmtTip = (v) => (v > 0 ? "+" : "") + nf1.format(v) + " %"; ref = 0; }
+  else { fmtAxis = (v) => c.pct ? nf0.format(v) + " %" : (Math.abs(v) >= 1e6 ? nf1.format(v / 1e6) + " M" : Math.abs(v) >= 1e4 ? nf0.format(v / 1e3) + " mil" : fmtNum(v)); fmtTip = (v) => m.fmtC(c, v); ref = teo ? ancla : null; }
+  const vals = rows.flatMap((r) => pres.map((x) => r[x.id])).filter((v) => ok(v) && v > 0) as number[];
+  const usarLog = !c.pct && modo !== "var" && vals.length > 1 && Math.max(...vals) / Math.min(...vals) > 30 && rows.every((r) => pres.every((x) => !ok(r[x.id]) || r[x.id] > 0));
+  const paso = (hasta - desde) > 36 ? 6 : (hasta - desde) > 12 ? 3 : 1;
+  const cel = (x: Pres, t: number) => { const r = todas[t]; return r && ok(r[x.id]) ? fmtTip(r[x.id]) : "–"; };
+  const nota = (teo ? `Partiendo de ${ancTxt}: ${m.fmtC(c, ancla)} (${c.unidad}), y aplicando ${c.pct ? "los cambios en puntos" : "las variaciones"} de cada mandato. `
+    : `Unidad: ${modo === "indice" ? "índice" : modo === "var" && !c.pct ? "%" : c.unidad}. `) + `Mes 0 = ${baseTxt(b)}.` +
+    (c.pct ? " En porcentajes se suman los cambios en puntos, no se multiplican." : "") + (bnd ? " La sombra va del mínimo al máximo diario de cada mes." : "") +
+    (q.banda && !c.lo ? " (Esta variable no tiene datos diarios: no hay rango.)" : "");
+  return { c, pres, teo, ancOpc, anc, ancTxt, ancla, maxMes, desde, hasta, rows, fmtAxis, fmtTip, ref, usarLog, paso, nota, cel, todas, bnd };
+}
+
+export const TITULOS_MANDATO: Record<ModoMandato, string> = { teorico: "precio teórico", indice: "índice, mes 0 = 100", var: "variación % desde el mes 0", valor: "valor" };
+/** Nombre abreviado de un presidente para espacios chicos ("Néstor Kirchner" → "Kirchner", "Alberto Fernández" → "A. Fernández"). */
+export const nombreCorto = (n: string): string => n.replace("Néstor ", "").replace("Alberto Fernández", "A. Fernández");

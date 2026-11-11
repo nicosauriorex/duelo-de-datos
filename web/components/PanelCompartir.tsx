@@ -13,14 +13,17 @@ import {
 } from "@/lib/compartir";
 import { dibujarImagen, esperarFuentes } from "@/lib/imagen";
 import { armarImagen, MAX_COMENTARIO, type VistaImg } from "@/lib/imagen-datos";
+import { armarImagenPres, esVistaPres, idsDeVistaPres, type VistaPres } from "@/lib/imagen-presidentes";
 import { leerPaleta } from "@/lib/imagen-paleta";
 
-interface Props { vista: VistaImg; href: string; titulo: string; onCerrar: () => void }
+export type VistaCompartir = VistaImg | VistaPres;
+interface Props { vista: VistaCompartir; href: string; titulo: string; onCerrar: () => void }
 
 export function PanelCompartir({ vista, href, titulo, onCerrar }: Props) {
   const { motor, archivosDe, version } = useDatos();
   const { config, cambiar } = useConfig();
-  const ids = vista.exprs.flatMap((e) => (e.rel ? [e.id, e.rel] : [e.id]));
+  const pres = esVistaPres(vista);
+  const ids = pres ? idsDeVistaPres(vista) : vista.exprs.flatMap((e) => (e.rel ? [e.id, e.rel] : [e.id]));
   const cargado = useCargar(archivosDe(ids));
   const [comparar, setComparar] = useState(false);
   const [comentario, setComentario] = useState("");
@@ -30,7 +33,7 @@ export function PanelCompartir({ vista, href, titulo, onCerrar }: Props) {
   const [archivo, setArchivo] = useState<File | null>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const formato: FormatoImg = config.formatoImagen;
-  const puedeComparar = vista.exprs.length === 1 && vista.modo !== "b100";
+  const puedeComparar = !pres && vista.exprs.length === 1 && vista.modo !== "b100";
   const conComparar = comparar && puedeComparar;
   const kBase = `${config.t0}|${JSON.stringify(config.t0p)}`;
 
@@ -45,10 +48,12 @@ export function PanelCompartir({ vista, href, titulo, onCerrar }: Props) {
       let datos = null;
       setArchivo(null);   // hasta terminar de dibujar no hay imagen nueva: no se ofrece la vieja
       try {
-        datos = armarImagen(motor, { ...vista, exprs: exprsUsadas(motor, vista) }, {
-          formato, comparar: conComparar, comentario: comentarioAplicado,
-          base: baseDeConfig(config, PRES_DEF.map((p) => p.id)), colPres: config.colPres,
-        });
+        datos = esVistaPres(vista)
+          ? armarImagenPres(motor, vista, { formato, comentario: comentarioAplicado })
+          : armarImagen(motor, { ...vista, exprs: exprsUsadas(motor, vista) }, {
+            formato, comparar: conComparar, comentario: comentarioAplicado,
+            base: baseDeConfig(config, PRES_DEF.map((p) => p.id)), colPres: config.colPres,
+          });
       } catch { datos = null; }
       if (!vivo) return;
       if (!datos) { setEstado("sin-datos"); setArchivo(null); return; }
@@ -106,9 +111,9 @@ export function PanelCompartir({ vista, href, titulo, onCerrar }: Props) {
 
 /** Botón que abre el panel de compartir. `crearVista` y `href` se evalúan al abrir (así sirven también donde los datos se cargan recién ahí). */
 export function BotonCompartir({ crearVista, href, titulo, className, children, deshabilitado, ...resto }: {
-  crearVista: () => VistaImg | null; href: string | (() => string); titulo: string; className?: string; children: ReactNode; deshabilitado?: boolean; title?: string; "aria-label"?: string;
+  crearVista: () => VistaCompartir | null; href: string | (() => string); titulo: string; className?: string; children: ReactNode; deshabilitado?: boolean; title?: string; "aria-label"?: string;
 }) {
-  const [abierto, setAbierto] = useState<{ vista: VistaImg; href: string } | null>(null);
+  const [abierto, setAbierto] = useState<{ vista: VistaCompartir; href: string } | null>(null);
   const abrir = () => {
     const vista = crearVista();
     if (vista) setAbierto({ vista, href: typeof href === "function" ? href() : href });
