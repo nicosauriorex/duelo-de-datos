@@ -18,8 +18,6 @@ import { encExpr, useParams } from "@/lib/url";
 
 const POR_NIVEL = 30;   // más series que esto en un bloque: se despliegan por niveles (región, rubro…)
 const MAX_PLANTILLAS = 8;
-/** Cómo se ofrece el IPC empalmado en "Todos los datos": [medida, nombre]. */
-const INFLACION: [string, string][] = [["vm", "Inflación mensual"], ["via", "Inflación interanual"]];
 const COLS_PRES: [string, string][] = [["ini", "Inicio"], ["fin", "Cierre"], ["var", "Variación"]];
 
 function Texto({ t }: { t: Tema }) {
@@ -43,10 +41,8 @@ function Series({ series, nivel, href }: { series: SerieMeta[]; nivel: number; h
   return (
     <ul className="lista-series">
       {[...grupos.m].map(([k, ss]) => <Desplegado key={k} titulo={k} cuenta={ss.length}><Series series={ss} nivel={nivel + 1} href={href} /></Desplegado>)}
-      {grupos.sueltas.map((s) => s.id === "ipc_empalme" ? (
-        // El índice (nivel) sigue existiendo para los cálculos; acá la inflación se ofrece ya como variación.
-        INFLACION.map(([med, nombre]) => <li key={s.id + med}><Link prefetch={false} href={hrefHistorico({ id: s.id, med, rel: null, modo: "compra", esc: "" })}>{nombre}</Link> <span className="unidad">%</span> <BotonInfo id={s.id} /></li>)
-      ) : (
+      {/* El índice (nivel) sigue existiendo para los cálculos; acá la inflación ya está como "Inflación mensual" e "Inflación interanual". */}
+      {grupos.sueltas.filter((s) => s.id !== "ipc_empalme").map((s) => (
         <li key={s.id}><Link prefetch={false} href={href(s)}>{s.n}</Link> <span className="unidad">{s.u}</span> <BotonInfo id={s.id} /></li>
       ))}
     </ul>

@@ -29,7 +29,7 @@ export function ContextoMandato({ m, pres }: { m: Motor; pres: Pres }) {
   return (
     <details className="callout contexto-plegado">
       <summary><b>Contexto del mandato</b>{" "}
-        <span className="resumen">{pres.n}{ok(r.crecArg.v) && ok(r.crecGrp.v) ? `: crece ${nf1.format(r.crecArg.v)} % por año contra ${nf1.format(r.crecGrp.v)} % de ${grupo[1].toLowerCase() === "mundo" ? "el mundo" : grupo[1]}` : ""}</span></summary>
+        <span className="resumen">{pres.n}{ok(r.crecArg.v) && ok(r.crecGrp.v) ? `: crece ${nf1.format(r.crecArg.v)} % por año contra ${nf1.format(r.crecGrp.v)} % ${grupo[1].toLowerCase() === "mundo" ? "del mundo" : "de " + grupo[1]}` : ""}</span></summary>
       <span style={{ color: "var(--text-muted)" }}>({pres.n}, {textoAnios(r.anios)}; comparado con {grupo[1].toLowerCase() === "mundo" ? "el mundo" : grupo[1]})</span>
       {!r.anios.length ? <p className="note">Sin años completos en el mandato.</p> : (
         <ul style={{ margin: "6px 0", paddingLeft: 18 }}>

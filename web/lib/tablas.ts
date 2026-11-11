@@ -4,7 +4,9 @@ import { fmtMes, ok } from "./formato";
 import { rankScores, type Pres } from "./estadisticas";
 
 /** "dic-15 a nov-19"; el mandato en curso termina en "hoy". */
-export const periodoMandato = (F: string[], x: Pres): string => `${fmtMes(x.ini)} a ${x.i1 >= F.length - 1 ? "hoy" : fmtMes(F[x.i1])}`;
+// con guion que no corta ("nov‑07" no se parte en dos renglones)
+const mesSinCorte = (f: string) => fmtMes(f).replace("-", "‑");
+export const periodoMandato = (F: string[], x: Pres): string => `${mesSinCorte(x.ini)} a ${x.i1 >= F.length - 1 ? "hoy" : mesSinCorte(F[x.i1])}`;
 
 /** "datos desde ene-95" cuando la serie empieza después del inicio del mandato; si no, null. */
 export function datosDesde(F: string[], arr: ArrayLike<number | null | undefined>, x: Pres): string | null {

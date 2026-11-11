@@ -613,10 +613,11 @@ th small { display: block; font-size: var(--t-micro); font-weight: 400; color: v
 .cab-graf .btn { padding-inline: var(--e-2); }
 
 /* Panel de compartir como imagen */
-.comp-cuerpo { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--e-3); padding: var(--e-4); overflow-y: auto; }
+/* grid-auto-rows: max-content: al abrir las opciones las filas no se comprimen (la vista previa conserva su alto y la imagen no se sale de su recuadro) */
+.comp-cuerpo { display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-rows: max-content; gap: var(--e-3); padding: var(--e-4); overflow-y: auto; overflow-x: hidden; }
 .comp-cuerpo h2 { margin: 0; font-size: var(--t-lg); }
-.comp-previa { position: relative; display: flex; justify-content: center; align-items: center; min-height: 160px; background: var(--surface-2); border: 1px solid var(--border); }
-.comp-previa canvas { display: block; max-width: 100%; max-height: 46vh; width: auto; height: auto; }
+.comp-previa { position: relative; display: flex; justify-content: center; align-items: center; height: min(46vh, 520px); background: var(--surface-2); border: 1px solid var(--border); overflow: hidden; }   /* alto fijo: la imagen (cuadrada, vertical u horizontal) se acomoda adentro y nunca se sale */
+.comp-previa canvas { display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; }
 .comp-estado { position: absolute; margin: 0; }
 .comp-opciones { display: grid; gap: var(--e-2); }
 .comp-opciones .controls { margin: 0; }
@@ -633,7 +634,7 @@ th small { display: block; font-size: var(--t-micro); font-weight: 400; color: v
 .comp-datos { display: grid; gap: var(--e-1); }
 @media (max-width: 700px) {
   .comp-previa { position: sticky; top: calc(-1 * var(--e-4)); z-index: 2; }
-  .comp-previa canvas { max-height: 28vh; }
+  .comp-previa { height: 30vh; }
 }
 
 /* Miniaturas: un solo color (el acento), o verde / rojo según la tendencia. Se dibujan de izquierda a derecha, una vez. */

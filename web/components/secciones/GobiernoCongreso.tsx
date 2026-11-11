@@ -71,7 +71,6 @@ function Cuerpo({ d, ultimo, p, set }: { d: DatosCap; ultimo: string; p: URLSear
 
   return (
     <div className="card" id="congreso">
-      <h2>Gobierno y Congreso</h2>
       <p className="note">Cuánto respaldo tuvo cada presidente en el Congreso y cómo gobernó con él: números crudos, sin puntaje. Tocá un presidente para ver su detalle.</p>
       <p className="note cg-cargado"><b>Qué hay cargado.</b> {queHayCargado(d, M).replace(/^Hay cargado: /, "")}</p>
 

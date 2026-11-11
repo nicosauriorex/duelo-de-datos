@@ -121,7 +121,6 @@ export function Ranking() {
       )}
       <LineaInicio info={info} F={F} />
       <div className="card">
-        <h2>Ranking de presidentes</h2>
         <p className="note">Para cada indicador se ordena a los presidentes según <b>{CRIT_TXT[crit]}</b> y se pasa a un puntaje de 0 (el peor) a 100 (el mejor). Se promedia dentro de cada grupo y después entre grupos, para que ningún grupo pese más por tener más series. <b>Ojo:</b> muchos datos empiezan en 2003, 2012 o 2016, así que Menem, De la Rúa y Duhalde se evalúan con pocos indicadores; Milei, con un mandato en curso; y el contexto internacional y la herencia de cada uno no entran en el número. <b>Cada presidente se evalúa con los mismos indicadores y el mismo criterio.</b> En la tabla, la barra del puntaje va de 0 a 100, verde es la mitad de arriba y rojo la de abajo, y las marcas “mejor” y “peor” señalan los extremos.
           {res?.incompletas && usaVars ? " Algunas variables no tienen datos para todos los presidentes." : ""}</p>
         {!res ? <p className="note">Elegí al menos {MIN_V} variables para armar el ranking.</p> : (

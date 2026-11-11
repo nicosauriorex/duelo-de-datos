@@ -464,7 +464,7 @@ export function calcularMandato(m: Motor, PRES: Pres[], PRES_T0: Pres[], q: Para
   const usarLog = !c.pct && modo !== "var" && vals.length > 1 && Math.max(...vals) / Math.min(...vals) > 30 && rows.every((r) => pres.every((x) => !ok(r[x.id]) || r[x.id] > 0));
   const paso = (hasta - desde) > 36 ? 6 : (hasta - desde) > 12 ? 3 : 1;
   const cel = (x: Pres, t: number) => { const r = todas[t]; return r && ok(r[x.id]) ? fmtTip(r[x.id]) : "–"; };
-  const nota = (teo ? `Partiendo de ${ancTxt}: ${m.fmtC(c, ancla)} (${c.unidad}), y aplicando ${c.pct ? "los cambios en puntos" : "las variaciones"} de cada mandato. `
+  const nota = (teo ? `Partiendo de ${ancTxt}: `.replace("de el ", "del ") + `${m.fmtC(c, ancla)} (${c.unidad}), y aplicando ${c.pct ? "los cambios en puntos" : "las variaciones"} de cada mandato. `
     : `Unidad: ${modo === "indice" ? "índice" : modo === "var" && !c.pct ? "%" : c.unidad}. `) + `Mes 0 = ${baseTxt(b)}.` +
     (c.pct ? " En porcentajes se suman los cambios en puntos, no se multiplican." : "") + (bnd ? " La sombra va del mínimo al máximo diario de cada mes." : "") +
     (q.banda && !c.lo ? " (Esta variable no tiene datos diarios: no hay rango.)" : "");

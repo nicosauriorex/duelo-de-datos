@@ -329,7 +329,7 @@ export function crearMotor(F: string[]) {
   const fmtC = (c: { pct: boolean }, x: number | null | undefined) => !ok(x) ? "–" : c.pct ? nf1.format(x) + " %" : fmtNum(x);
   const variacionTxt = (c: { pct: boolean }, desde: number | null, hasta: number | null) => {
     if (!ok(desde) || !ok(hasta)) return "–";
-    if (c.pct) { const d = hasta - desde; return `${d > 0 ? "+" : ""}${nf1.format(d)} p.p.`; }
+    if (c.pct) { const d = Math.abs(hasta - desde) < 0.05 ? 0 : hasta - desde; return `${d > 0 ? "+" : ""}${nf1.format(d)} p.p.`; }   // sin "-0,0"
     if (desde === 0) return "–";
     const d = (hasta / desde - 1) * 100;
     return `${d > 0 ? "+" : ""}${Math.abs(d) >= 1000 ? nf0.format(d) : nf1.format(d)} %`;
