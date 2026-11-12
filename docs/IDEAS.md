@@ -259,6 +259,7 @@ Idea del usuario, con cuatro ejemplos de consultoras (Max Capital, Econviews, un
 - A resolver: (1) faltan muchas fuentes (ADEFA, Cámara del Acero, AFCP, Construya, CAME, patentamientos, CAMMESA, escrituras, Secretaría de Energía, agro): usar el agente `investigador-datos`; (2) la desestacionalización es propia en los ejemplos: decidir si se usa la serie oficial sin estacionalidad donde existe y la interanual donde no, o si se desestacionaliza en el pipeline; (3) cada fila con su fecha (publican con distinta demora, como el parte del BCRA).
 
 ## Herencia: recibido contra entregado (2026-11-12)
+→ spec: docs/specs/herencia.md (fase 1 lista; fases 2 y 3 con pendientes).
 Idea del usuario: una sección dentro de Presidentes que compare lo que cada presidente recibió con lo que entregó, con los datos de los que los presidentes se suelen quejar. Sin spec; no implementar sin que se pida.
 - Lista pedida: deuda con importadores, SIRA, déficit fiscal y cuasifiscal, brecha cambiaria, reservas netas negativas, precios congelados, tarifas atrasadas, Leliq y pases (pasivos remunerados), puts de los bancos, dividendos retenidos, acuerdo con el FMI incumplido.
 - Lo que ya hay en el sitio: resultado fiscal, cuasifiscal y pasivos remunerados (BCRA), brecha, reservas brutas. Es el mismo cálculo que "Por presidente" (valor al inicio y al cierre del mandato) con otro armado.
@@ -266,7 +267,8 @@ Idea del usuario: una sección dentro de Presidentes que compare lo que cada pre
 - Cuidado con D-012: mostrar recibido y entregado con su fuente, sin calificar la herencia.
 
 ## Gasto e impuestos de las provincias y la Nación (2026-11-12)
-Idea del usuario. Sin spec; no implementar sin que se pida.
+→ specs: docs/specs/gasto-nacion.md (Nación por partida y por entidad, con universidades) y docs/specs/provincias.md (bloqueada en parte: el sitio de la DNAP no carga).
+Idea del usuario. Agregado el mismo día: ver el presupuesto de cada entidad pública (por ejemplo en qué gastan las universidades) y aclarar si lo tienen sin rendir.
 - Gasto de la Nación y de las provincias por partida presupuestaria.
 - Qué provincias cobran más impuestos (por ejemplo Ingresos Brutos), contemplando exenciones.
 - Un ranking de provincias.

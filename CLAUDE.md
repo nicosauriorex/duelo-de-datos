@@ -17,6 +17,7 @@ Todo en español: código, comentarios, nombres de variables, commits y textos d
 # Estructura que no se deduce sola
 - `web/public/datos/` es GENERADO por el pipeline (no versionado): nunca editarlo. `datos/cache/compilado.json` también es generado (respaldo para `--solo-json`): no leerlo entero.
 - El frontend vive en `web/`: cálculos en `web/lib/` (una sola fuente de verdad), una sección por ruta en `web/components/secciones/`, estado de filtros en la URL (`web/lib/url.ts`).
+- Dos archivos de datos van aparte del motor mensual y cada dato lleva su propia fecha: `diario_bcra.json` (parte del Banco Central, `pipeline/diario.py`, página `/bcra/`) y `semaforo.json` (semáforo de actividad, `pipeline/semaforo.py`, página `/semaforo/`; `python pipeline/semaforo.py --bajar` rebaja solo sus series). Los dos se rearman con `--solo-json` desde `datos/cache/`.
 - `datos/cache/` es el respaldo de cada fuente: si una API falla se usa la última copia. Se versiona en git, no borrar.
 - Para mirar un archivo de `datos/cache/` usar solo `python pipeline/ver_cache.py <nombre>` (columnas, tamaño y pocas filas; sin argumentos lista los archivos). Leerlos de otra forma está bloqueado a propósito: son enormes.
 - `--solo-json` reutiliza valores y textos ya calculados (`compilado.json`): un cambio en cálculos o en `fuente`/`desc` del pipeline se ve recién con la corrida completa.
