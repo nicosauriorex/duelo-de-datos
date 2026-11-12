@@ -22,6 +22,10 @@ export const mul = (...xs: (number | null | undefined)[]): number | null =>
   xs.some((v) => !ok(v)) ? null : (xs as number[]).reduce((a, b) => a * b, 1);
 export const norm = (s: string): string => String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 export const mesNum = (f: string): number => +f.slice(0, 4) * 12 + (+f.slice(5, 7) - 1);
+/** Rótulo del dato anterior para las comparaciones: `inmediato` ("Mes anterior", "Trimestre anterior"…) si está justo `paso` meses antes;
+ *  si hay un hueco en la serie, "Período anterior" (la fecha ya se muestra al lado). Lo usan la cabecera de Histórico y las placas de la portada. */
+export const rotuloAnterior = (fechaAntes: string, fechaAhora: string, inmediato: string, paso = 1): string =>
+  mesNum(fechaAhora) - mesNum(fechaAntes) === paso ? inmediato : "Período anterior";
 
 /** Formato es-AR con una cantidad fija de decimales (para animar un número sin que cambie de forma). */
 const _nfDec = new Map<number, Intl.NumberFormat>();

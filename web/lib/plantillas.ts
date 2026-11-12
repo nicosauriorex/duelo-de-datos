@@ -1,6 +1,6 @@
 // Plantillas: gráficos ya armados de Histórico. Las curadas se escriben a mano (o vienen de Datos curiosos y de los indicadores);
 // las generadas salen solas del catálogo. Una plantilla es un conjunto de parámetros de Histórico (`vista`) más texto para buscarla.
-import { fmtMes, lastIdx, norm, ok } from "./formato";
+import { fmtMes, lastIdx, norm, ok, rotuloAnterior } from "./formato";
 import { NOMBRE_LEGADO, crearIndicadoresDe, palabrasBusqueda, textoBusqueda } from "./catalogo";
 import { defCurios, type DefCurio } from "./curiosidades";
 import { claseVariacion } from "./estadisticas";
@@ -216,6 +216,36 @@ export function plantillasDeTema(pls: Plantilla[], S: Record<string, SerieMeta>,
   const deCat = (p: Plantilla) => !!p.e && !!S[p.e.id] && t.cats.includes(S[p.e.id].cat[0]);
   return pls.filter((p) => !p.propia && (t.porCat ? deCat(p) && (!t.grupos.length || t.grupos.includes(p.grupo)) : t.grupos.includes(p.grupo)))
     .sort((a, b) => Number(b.curada) - Number(a.curada));
+}
+
+// ------------------------------------------------------------ comparaciones de las placas de la portada
+/** Una comparación del último dato contra un momento anterior: el valor de entonces y cuánto cambió hasta hoy (texto del motor, ya redondeado como se muestra). */
+export interface Comparacion { rotulo: string; fecha: string; valor: string; variacion: string; cls: "bueno" | "malo" | "neutro" }
+export interface Comparaciones { anterior: Comparacion | null; anio: Comparacion | null }
+/** Último dato contra el período anterior (el mes anterior si la serie es mensual; si no, el último dato previo que exista, rotulado con su fecha)
+ *  y contra un año atrás. Si la placa es en sí un porcentaje, la variación sale en puntos porcentuales (lo resuelve `variacionTxt`).
+ *  Una comparación que no se puede calcular queda en null. Los datos curiosos (que traen su propio valor) no se comparan. */
+export function comparaciones(m: Motor, p: Plantilla): Comparaciones | null {
+  const e = p.e;
+  if (!e || p.def || !m.SER[e.id] || (e.rel && !m.SER[e.rel])) return null;
+  try {
+    const c = m.calc(e), u = lastIdx(c.v);
+    if (u < 0 || !ok(c.v[u])) return null;
+    const ahora = c.v[u] as number;
+    const armar = (j: number, rotulo: string): Comparacion | null => {
+      const antes = c.v[j];
+      if (j < 0 || !ok(antes)) return null;
+      const variacion = m.variacionTxt(c, antes as number, ahora);
+      if (variacion === "–") return null;
+      return { rotulo, fecha: fmtMes(m.F[j]), valor: m.fmtC(c, antes as number), variacion, cls: claseVariacion(c.dir, c.pct, antes as number, ahora) };
+    };
+    let j = u - 1;
+    while (j >= 0 && !ok(c.v[j])) j--;
+    // serie anual: el período anterior es justo el de un año atrás; no se repite
+    const anterior = j < 0 || j === u - 12 ? null : armar(j, rotuloAnterior(m.F[j], m.F[u], "Mes anterior"));
+    const anio = u >= 12 ? armar(u - 12, "Un año atrás") : null;
+    return anterior || anio ? { anterior, anio } : null;
+  } catch { return null; }
 }
 
 // ------------------------------------------------------------ líneas de contexto de las cifras de la portada

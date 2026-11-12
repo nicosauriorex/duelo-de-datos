@@ -2,6 +2,7 @@
 // Encabezado "Gráfico listo: …" de Histórico y botones Guardar en Mis gráficos / Compartir / Ver gráficos listos.
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useDatos } from "../DatosProvider";
 import { avisoCompartir, compartir } from "@/lib/compartir";
 import { MAX_NOMBRE, useMisPlantillas } from "@/lib/misPlantillas";
@@ -28,7 +29,12 @@ export function usePlantillaVista(p: URLSearchParams): InfoVista {
 
 /** Encabezado "Gráfico listo: …" y botones Guardar en Mis gráficos / Compartir / Ver gráficos listos. En la vista simple (`simple`) solo van
  *  Guardar en Mis gráficos y Ver gráficos listos, dentro de "Personalizar" (el título y Compartir los pone la vista). */
-export function BarraPlantilla({ p, set, info, simple }: { p: URLSearchParams; set: SetFn; info: InfoVista; simple?: boolean }) {
+export function BarraPlantilla({ p, set, info, simple, cerrarAntes }: {
+  p: URLSearchParams; set: SetFn; info: InfoVista; simple?: boolean;
+  /** Dentro de una ventana: cierra la ventana y recién después sigue (D-016: no se cierra una capa y se cambia de página en el mismo momento). */
+  cerrarAntes?: (luego: () => void) => void;
+}) {
+  const router = useRouter();
   const mis = useMisPlantillas();
   const [nombre, setNombre] = useState<string | null>(null); // null = formulario cerrado
   const [aviso, setAviso] = useState<string | null>(null);
@@ -62,7 +68,10 @@ export function BarraPlantilla({ p, set, info, simple }: { p: URLSearchParams; s
       <div className={`acciones-vista${simple ? " secundarias" : ""}`}>
         <button type="button" className={simple ? "enlace" : "btn"} onClick={() => setNombre(nombre == null ? "" : null)} aria-expanded={nombre != null}>Guardar en Mis gráficos</button>
         {!simple && <button type="button" className="btn primario" onClick={abrirCompartir} title="El link muestra exactamente esta vista">Compartir</button>}
-        <Link prefetch={false} href="/plantillas/" className={simple ? "enlace" : "btn"}>Ver gráficos listos</Link>
+        <Link prefetch={false} href="/plantillas/" className={simple ? "enlace" : "btn"}
+          onClick={cerrarAntes ? (ev) => {
+            if (ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;   // nueva pestaña o ventana: el enlace anda normal
+            ev.preventDefault(); cerrarAntes(() => router.push("/plantillas/")); } : undefined}>Ver gráficos listos</Link>
       </div>
       {nombre != null && (
         <form className="form-guardar" onSubmit={(ev) => { ev.preventDefault(); guardar(); }}>

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useCargar, useDatos } from "../DatosProvider";
-import { CardValor } from "../CardValor";
+import { Sparkline } from "../Sparkline";
 import { Contador, Entrada } from "../Movimiento";
 import { IconoDerecha, IconoIzquierda, IconoPausa, IconoSeguir } from "../Iconos";
 import { Modal } from "../ui";
@@ -11,9 +11,10 @@ import { Redireccion } from "../Redireccion";
 import { Buscar, Oraciones } from "./Oraciones";
 import { Tarjeta } from "./Plantillas";
 import { nf1 } from "@/lib/formato";
+import type { Comparacion, Comparaciones } from "@/lib/plantillas";
 import { ORGANISMOS } from "@/lib/fuentes";
 import type { Expr, Motor, SerieMeta } from "@/lib/motor";
-import { crearPlantillas, distanciaRecord, evaluar, interanualTxt, hrefPlantilla, plantillaDeExpr, plantillaSuelta, type Evaluada, type Plantilla } from "@/lib/plantillas";
+import { comparaciones, crearPlantillas, distanciaRecord, evaluar, interanualTxt, hrefPlantilla, plantillaDeExpr, plantillaSuelta, type Evaluada, type Plantilla } from "@/lib/plantillas";
 import { TEMAS, hrefHistorico, idsDe, principalesDe, type Tema } from "@/lib/temas";
 import { useParams } from "@/lib/url";
 
@@ -32,11 +33,11 @@ interface DefCifra {
   contexto?: (m: Motor, p: Plantilla, ev: Evaluada) => Extra | null;
 }
 const ID_EMAE = "dg_143_3_no_pr_2004_a_31";
-/** Las cuatro placas de la portada (fijas): inflación del último mes, salario mediano contra su récord, actividad económica y dólar blue de hoy. */
+/** Las cuatro placas de la portada (fijas): inflación del último mes, salario mediano en pesos de hoy, actividad económica y dólar blue de hoy. */
 const CIFRAS: DefCifra[] = [
   { titulo: "Inflación del último mes", e: ex("ipc_empalme", { med: "vm" }), sinCurio: true, fuente: "INDEC",
     contexto: (m) => { const t = interanualTxt(m); return t ? { texto: `Interanual: ${t}`, cls: null } : null; } },
-  { titulo: "Salario mediano contra su récord", e: ex("sipa_med", { med: "real" }), fuente: "Secretaría de Trabajo (SIPA)",
+  { titulo: "Salario mediano, en pesos de hoy", e: ex("sipa_med", { med: "real" }), sinCurio: true, fuente: "Secretaría de Trabajo (SIPA)",
     contexto: (m, p) => {
       const dif = p.e && !p.def ? distanciaRecord(m, p.e) : null;      // el dato curioso ya trae su propio texto
       return dif == null ? null : { texto: dif > -0.005 ? "En su récord histórico" : `${nf1.format(-dif * 100)} % por debajo de su récord`, cls: null };
@@ -44,6 +45,19 @@ const CIFRAS: DefCifra[] = [
   { titulo: "Actividad económica", e: ex(ID_EMAE, { med: "via" }), sinCurio: true, alt: ex(ID_EMAE, { med: "asis" }), fuente: "INDEC (EMAE)",
     contexto: (_m, p) => ({ texto: p.e?.med === "via" ? "Variación interanual del EMAE" : "Nivel del EMAE, índice 2004 = 100", cls: null }) },
   { titulo: "Dólar blue, en pesos de hoy", e: ex("fx_blue", { med: "real" }), fuente: "Ámbito y Bluelytics" },
+];
+
+/** Las demás secciones del sitio, para quien quiere buscar sus propias variables o combinarlas: [carpeta, nombre, para qué sirve].
+ *  El orden de Presidentes es el del menú (Por presidente, Meses de mandato, Ranking, Elecciones, Congreso). */
+const SECCIONES_INICIO: [string, string, string][] = [
+  ["historico", "Histórico", "Elegí cualquier dato y mirá cómo cambió en el tiempo, solo o comparado con otros."],
+  ["presidentes", "Por presidente", "Fijate qué pasó con un dato en el mandato de cada presidente."],
+  ["mandato", "Meses de mandato", "Poné a todos los presidentes en la misma largada y compará mes a mes."],
+  ["ranking", "Ranking", "Ordená a los presidentes según cómo cambió cada dato en su mandato."],
+  ["elecciones", "Elecciones", "Mirá qué datos de la economía se movieron junto con el voto en cada elección."],
+  ["congreso", "Gobierno y Congreso", "Bancas, leyes, decretos y vetos de cada gobierno."],
+  ["contexto", "Contexto internacional", "Compará a la Argentina con otros países y con los precios del mundo."],
+  ["plantillas", "Gráficos listos", "Gráficos ya armados para abrir, cambiar y compartir."],
 ];
 
 /** Verdadero cuando el elemento entra (o está por entrar) en pantalla. */
@@ -61,7 +75,18 @@ function useVisible() {
   return { ref, visible };
 }
 
-interface ItemCifra { d: DefCifra; p: Plantilla; ev: Evaluada | null; extra: Extra | null }
+interface ItemCifra { d: DefCifra; p: Plantilla; ev: Evaluada | null; extra: Extra | null; comp: Comparaciones | null }
+
+/** Una comparación de la placa: de cuándo es, el valor de entonces y cuánto cambió hasta hoy (con signo, texto y color). */
+function FilaComp({ c }: { c: Comparacion }) {
+  return (
+    <li className="placa-comp" aria-label={`${c.rotulo}, ${c.fecha}: ${c.valor}. Cambio hasta hoy: ${c.variacion}`}>
+      <span className="placa-comp-rot">{c.rotulo} ({c.fecha})</span>
+      <b>{c.valor}</b>
+      <span className={`placa-var ${c.cls}`}>{c.variacion}</span>
+    </li>
+  );
+}
 
 /** Los datos más buscados: placas grandes en un carrusel que avanza solo de a una.
  *  El avance lo marca la animación del segmento activo: al terminar pasa a la siguiente, y pausarla (mouse, foco, toque, fuera de pantalla) pausa el carrusel.
@@ -72,12 +97,13 @@ function Carrusel({ plantillas }: { plantillas: Plantilla[] }) {
   const ids = useMemo(() => (catalogo ? [...defs.flatMap(({ p }) => p.ids), "ipc_empalme"] : []), [defs, catalogo]);
   const listo = useCargar(archivosDe(ids)) && catalogo;
   const items = useMemo<ItemCifra[]>(() => defs.map(({ d, p }) => {
-    if (!motor || !listo) return { d, p, ev: null, extra: null };
+    if (!motor || !listo) return { d, p, ev: null, extra: null, comp: null };
     let ef = p, ev = evaluar(motor, p);
     if (!ev && d.alt) { ef = plantillaSuelta("c-" + d.alt.id, d.titulo, d.alt); ev = evaluar(motor, ef); }   // sin dato interanual: el nivel y el mes
     let extra: Extra | null = null;
     try { extra = ev ? d.contexto?.(motor, ef, ev) ?? null : null; } catch { extra = null; }
-    return { d, p: ef, ev, extra };
+    const comp = ev ? comparaciones(motor, ef) : null;
+    return { d, p: ef, ev, extra, comp };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [motor, listo, defs, version]);
 
@@ -162,11 +188,22 @@ function Carrusel({ plantillas }: { plantillas: Plantilla[] }) {
         ))}
       </div>
       <ol className="pista" ref={pista} aria-busy={!listo} onScroll={alDeslizar} onPointerDown={(ev) => { destino.current = null; if (ev.pointerType !== "mouse") setPausa(true); }}>
-        {items.map(({ d, p, ev, extra }, k) => (
+        {items.map(({ d, p, ev, extra, comp }, k) => (
           <li key={d.titulo} className="placa" aria-current={k === activa ? "true" : undefined} aria-roledescription="diapositiva" aria-label={`${k + 1} de ${n}`}>
             {ev ? (
-              <CardValor titulo={d.titulo} ev={ev} href={p.id.startsWith("c-") && p.e ? hrefHistorico(p.e) : hrefPlantilla(p, ev.vista)} motor={motor} grande
-                texto={extra?.texto} cls={extra ? extra.cls : undefined} fuente={d.fuente} />
+              <Link prefetch={false} href={p.id.startsWith("c-") && p.e ? hrefHistorico(p.e) : hrefPlantilla(p, ev.vista)} className="placa-link" aria-label={`Abrir en Histórico: ${d.titulo}, ${ev.val}`}>
+                <h3 className="placa-titulo">{d.titulo}</h3>
+                <div className="placa-num" style={{ ["--n" as string]: Math.max(4, ev.val.length) }}><Contador texto={ev.val} /></div>
+                {extra && <p className="placa-ctx">{extra.texto}</p>}
+                {comp && (
+                  <ul className="placa-comps">
+                    {comp.anterior && <FilaComp c={comp.anterior} />}
+                    {comp.anio && <FilaComp c={comp.anio} />}
+                  </ul>
+                )}
+                <p className="placa-pie"><span>{ev.fecha}</span><span className="placa-fuente">{d.fuente}</span></p>
+                <Sparkline v={ev.v} desde={motor ? motor.idxDe("2003-01") : 0} />
+              </Link>
             ) : (
               <div className="placa-link">
                 <h3 className="placa-titulo">{d.titulo}</h3>
@@ -252,13 +289,26 @@ export function Inicio() {
         {listo ? <Oraciones S={S} /> : <p className="note oraciones-espera">Cargando…</p>}
       </Entrada>
 
+      <Entrada className="bloque ancho">
+        <h2 id="secciones">Armá tu propia consulta</h2>
+        <p className="bajada-bloque">Para quien quiere buscar sus propias variables o combinarlas: cada sección sirve para algo distinto.</p>
+        <ul className="secciones-inicio">
+          {SECCIONES_INICIO.map(([carpeta, nombre, para]) => (
+            <li key={carpeta}>
+              <h3>{nombre}</h3>
+              <p>{para}</p>
+              <Link prefetch={false} className="btn" href={`/${carpeta}/`} aria-label={`Abrir ${nombre}`}>Abrir</Link>
+            </li>
+          ))}
+        </ul>
+      </Entrada>
+
       {destacadas.length > 0 && (
         <Entrada className="bloque ancho">
           <h2>Gráficos listos destacados</h2>
           <p className="bajada-bloque">Gráficos ya armados para abrir y compartir.</p>
           {aviso && <p className="aviso-link" role="status">{aviso}</p>}
           <div className="curios">{destacadas.map((pl) => <Tarjeta key={pl.id} pl={pl} onAviso={mostrar} />)}</div>
-          <p className="acciones-vista"><Link prefetch={false} className="btn" href="/plantillas/">Ver todos los gráficos listos</Link></p>
         </Entrada>
       )}
 

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSeccion } from "../useSeccion";
 import { Cargando, Selector, Seg, alternar } from "../ui";
 import { FilaVariable } from "../Variables";
+import { VentanaConfig } from "./VentanaConfig";
 import { BotonCompartir } from "../PanelCompartir";
 import { IconoCompartir } from "../Iconos";
 import { Grafico, type Fila, type SerieG } from "../Grafico";
@@ -10,6 +11,7 @@ import { CeldaPresMandato, LineaInicio, useBase } from "./comunes";
 import { fmtMes } from "@/lib/formato";
 import { baseIdx, calcularMandato, crearPres, nombreCorto, TITULOS_MANDATO as TITULOS, type ModoMandato } from "@/lib/estadisticas";
 import type { Expr } from "@/lib/motor";
+import { MODO_MANDATO_DEF, PRES_MANDATO_DEF } from "@/lib/ficha";
 import { decExpr, enteroEn, encExpr, lista, unoDe, useParams } from "@/lib/url";
 import { vcolor } from "../util";
 
@@ -20,8 +22,7 @@ const AYUDA: Record<string, string> = {
   var: "Cuánto subió desde el mes 0.",
   valor: "El dato tal cual, sin transformar.",
 };
-type Panel = "var" | "modo" | "pres";
-const DEF_PRES = "nk,cfk1,cfk2,macri,af,milei";
+const DEF_PRES = PRES_MANDATO_DEF.join(",");
 
 export function Mandato() {
   const [p, set, montado] = useParams();
@@ -36,12 +37,11 @@ export function Mandato() {
 
   // animación: mes actual y si avanza; cualquier cambio de filtro la corta
   const [anim, setAnim] = useState<{ t: number; play: boolean } | null>(null);
-  const [panel, setPanel] = useState<Panel | null>(null);
   const [valorFinal, setValorFinal] = useState(false);   // opción de la imagen: el valor de cada presidente en el último mes visible
   const clave = p.toString() + JSON.stringify(b);
   useEffect(() => { setAnim(null); }, [clave]);
 
-  const modoUrl = unoDe(p.get("mmo"), ["teorico", "var", "indice", "valor"] as const, "teorico");
+  const modoUrl = unoDe(p.get("mmo"), ["teorico", "var", "indice", "valor"] as const, MODO_MANDATO_DEF);
   const modo: ModoMandato = modoUrl === "indice" ? "var" : modoUrl;
   const selIds = new Set(lista(p.has("mp") ? p.get("mp") : DEF_PRES).filter((id) => PRES_T0.some((x) => x.id === id)));
   const banda = unoDe(p.get("mbd"), ["no", "si"] as const, "no");
@@ -86,43 +86,34 @@ export function Mandato() {
   const errs = Object.values(sec.errores);
   const HITOS = [6, 12, 24, 36, 48];
 
-  const abrir = (k: Panel) => setPanel(panel === k ? null : k);
-  const BOTONES: [Panel, string][] = [["var", "Variable"], ["modo", "Cómo mostrar"], ["pres", "Presidentes"]];
 
   return (
     <section>
       <p className="sub">Cada línea arranca en el mes 0 de un presidente y sigue mes a mes durante su mandato.</p>
       <LineaInicio info={info} F={m.F} />
       <div className="mand-barra" role="group" aria-label="Configuración del gráfico">
-        {BOTONES.map(([k, t]) => (
-          <button key={k} type="button" className="btn drop" aria-expanded={panel === k} aria-controls={`mand-panel-${k}`} onClick={() => abrir(k)}><span className="et">{t}</span></button>
-        ))}
-      </div>
-      {panel && (
-        <div className="mand-panel" id={`mand-panel-${panel}`}>
-          {panel === "var" && <FilaVariable e={eB} onChange={(e) => e && set({ mv: encExpr(e) })} />}
-          {panel === "modo" && (
-            <>
-              <div className="modos" role="radiogroup" aria-label="Cómo mostrar">
-                {MODOS.map(([k, t]) => (
-                  <div key={k} className="modo">
-                    <label className="radio"><input type="radio" name="mmo" checked={modo === k} onChange={() => set({ mmo: k === "teorico" ? null : k })} /> {t}</label>
-                    <p className="note">{AYUDA[k]}</p>
-                    {k === "teorico" && modo === "teorico" && D && (
-                      <div className="sangria"><label>Partiendo de</label>
-                        <Selector etiqueta="Partiendo de" valor={D.anc} opciones={D.ancOpc.map((o) => [o[0], o[1]] as [string, string])} onElegir={(v) => set({ anc: v === "milei" ? null : v })} /></div>
-                    )}
-                  </div>
-                ))}
+        <VentanaConfig etiqueta={D ? D.c.corto : "Variable"} titulo="Variable">
+          <FilaVariable e={eB} onChange={(e) => e && set({ mv: encExpr(e) })} />
+        </VentanaConfig>
+        <VentanaConfig etiqueta="Cómo mostrar" titulo="Cómo mostrar">
+          <div className="modos" role="radiogroup" aria-label="Cómo mostrar">
+            {MODOS.map(([k, t]) => (
+              <div key={k} className="modo">
+                <label className="radio"><input type="radio" name="mmo" checked={modo === k} onChange={() => set({ mmo: k === "teorico" ? null : k })} /> {t}</label>
+                <p className="note">{AYUDA[k]}</p>
+                {k === "teorico" && modo === "teorico" && D && (
+                  <div className="sangria"><label>Partiendo de</label>
+                    <Selector etiqueta="Partiendo de" valor={D.anc} opciones={D.ancOpc.map((o) => [o[0], o[1]] as [string, string])} onElegir={(v) => set({ anc: v === "milei" ? null : v })} /></div>
+                )}
               </div>
-              <div className="controls"><label>Rango del mes</label><Seg valor={banda} opciones={[["no", "Solo promedio"], ["si", "Promedio + mín/máx"]]} onElegir={(v) => set({ mbd: v === "no" ? null : v })} /></div>
-            </>
-          )}
-          {panel === "pres" && (
-            <div className="controls"><Seg valor={selIds} opciones={PRES_T0.map((x) => [x.id, x.n] as [string, string])} onElegir={(v) => set({ mp: [...alternar(selIds, v)].join(",") })} /></div>
-          )}
-        </div>
-      )}
+            ))}
+          </div>
+          <div className="controls"><label>Rango del mes</label><Seg valor={banda} opciones={[["no", "Solo promedio"], ["si", "Promedio + mín/máx"]]} onElegir={(v) => set({ mbd: v === "no" ? null : v })} /></div>
+        </VentanaConfig>
+        <VentanaConfig etiqueta="Presidentes" titulo="Presidentes">
+          <div className="controls"><Seg valor={selIds} opciones={PRES_T0.map((x) => [x.id, x.n] as [string, string])} onElegir={(v) => set({ mp: [...alternar(selIds, v)].join(",") })} /></div>
+        </VentanaConfig>
+      </div>
       {!D ? (errs.length ? null : <Cargando />) : (
         <>
           <div className="card mand-grafico">

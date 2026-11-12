@@ -2,7 +2,7 @@
 import { FX_KEYS, FX_NOM, type Expr, type SerieMeta } from "./motor";
 import { PRES_DEF } from "./estadisticas";
 import { encExpr } from "./url";
-import { todosLosPrincipales, hrefHistorico, type Principal } from "./temas";
+import { todosLosPrincipales, hrefDato, hrefHistorico, type Principal } from "./temas";
 
 export type Opcion = [string, string];
 const minus = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
@@ -57,31 +57,19 @@ export const anios = (hasta: number): Opcion[] => Array.from({ length: hasta - 1
 const e = (id: string, extra: Partial<Expr> = {}): Expr => ({ id, rel: null, modo: "compra", esc: "", ...extra });
 
 // ---- los links de cada oración
-/** ¿Cuánto [producto] compra un [salario]? */
+// Una pregunta sobre una sola variable abre la ficha del dato (/dato/: Histórico, Por presidente y Meses de mandato, R11).
+// Con un período ("desde [año]") o con dos variables se queda en Histórico, que es la vista que responde eso.
+/** ¿Cuánto [producto] compra un [salario]? Una variable (el producto medido en salarios): la ficha. */
 export const hrefCompra = (producto: string, salario: string) =>
-  hrefHistorico(e(producto, { rel: salario, med: "corr" }));
-/** Mes anterior a uno "AAAA-MM". */
-const mesAntes = (m: string): string => { const [a, k] = m.split("-").map(Number); return k === 1 ? `${a - 1}-12` : `${a}-${String(k - 1).padStart(2, "0")}`; };
-/** Período de un mandato: desde su primer mes hasta el mes anterior al del siguiente presidente (el último llega hasta el último dato: sin `h`). */
-export function periodoDe(presidente: string): { d: string; h?: string } {
-  const k = PRES_DEF.findIndex((p) => p.id === presidente);
-  if (k < 0) return { d: "" };
-  const sig = PRES_DEF[k + 1];
-  return sig ? { d: PRES_DEF[k].ini, h: mesAntes(sig.ini) } : { d: PRES_DEF[k].ini };
-}
-/** ¿Cómo le fue a [indicador] con [presidente]? Histórico de esa variable recortado a su mandato, con las franjas de presidentes. */
-export const hrefPresidente = (p: Principal, presidente: string) => {
-  const { d, h } = periodoDe(presidente);
-  return hrefHistorico(p, { ...(d ? { d } : {}), ...(h ? { h } : {}), pf: "1" });
-};
-/** Enlace de acompañamiento: la tabla por presidente de ese indicador. */
-export const hrefTablaPresidente = (p: Principal, presidente: string) =>
-  `/presidentes/?${new URLSearchParams({ pv: encExpr(p), pr: presidente }).toString()}`;
-/** ¿Cómo cambió [indicador] desde [año]? */
+  hrefDato(e(producto, { rel: salario, med: "corr" }));
+/** ¿Cómo le fue a [indicador] con [presidente]? La ficha de esa variable con el presidente resaltado en la tabla y sumado a Meses de mandato. */
+export const hrefPresidente = (p: Principal, presidente: string) =>
+  hrefDato(p, PRES_DEF.some((x) => x.id === presidente) ? { pd: presidente } : {});
+/** ¿Cómo cambió [indicador] desde [año]? Histórico desde ese año (la ficha no recorta el período). */
 export const hrefDesde = (p: Principal, anio: string) => hrefHistorico(p, { d: `${anio}-01` });
-/** ¿Cómo evolucionó [monto] en [medida]? */
-export const hrefMedida = (id: string, med: string) => hrefHistorico(e(id, { med }));
-/** ¿Qué subió más: [a] o [b]? Base 100, contra la inflación. */
+/** ¿Cómo evolucionó [monto] en [medida]? Una variable con su medida: la ficha. */
+export const hrefMedida = (id: string, med: string) => hrefDato(e(id, { med }));
+/** ¿Qué subió más: [a] o [b]? Dos variables: Histórico en base 100, contra la inflación. */
 export const hrefSubio = (a: string, b: string) =>
   `/historico/?${new URLSearchParams({ v: [e(a, { med: "real" }), e(b, { med: "real" })].map(encExpr).join(","), m: "b100" }).toString()}`;
 

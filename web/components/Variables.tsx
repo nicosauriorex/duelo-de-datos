@@ -111,6 +111,9 @@ function IntroCategoria({ nombre, reco, onReco }: { nombre: string; reco: { id: 
   );
 }
 
+/** R12: ¿el aparato tiene mouse/teclado? Solo ahí una ventana puede poner el foco en un campo de texto sin abrir el teclado de pantalla. */
+export const conPunteroFino = () => typeof window !== "undefined" && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
 export interface PickerPedido { cb: (id: string, med?: string, esc?: string) => void; filtro?: (s: SerieMeta) => boolean; titulo?: string }
 
 export function Picker({ pedido, onCerrar }: { pedido: PickerPedido; onCerrar: () => void }) {
@@ -125,7 +128,12 @@ function PickerInterior({ pedido }: { pedido: PickerPedido }) {
   const [todo, setTodo] = useState(false);
   const inp = useRef<HTMLInputElement>(null);
   const primero = useRef<string | undefined>(undefined);
-  useEffect(() => { inp.current?.focus(); }, []);
+  // R12: en pantallas táctiles el teclado no se abre solo; el foco queda en la ventana (la ventana del Modal), no en el buscador
+  useEffect(() => {
+    if (conPunteroFino()) { inp.current?.focus(); return; }
+    const ventana = inp.current?.closest<HTMLElement>("[role=dialog]");   // táctil: el foco va a la ventana, así el lector de pantalla y el teclado externo siguen ubicados
+    if (ventana) { ventana.tabIndex = -1; ventana.focus({ preventScroll: true }); }
+  }, []);
   // `sub`: lo que el pedido permite; el árbol lista una sola serie por rubro o producto (la región se elige después en "Configurar variable")
   const sub = useMemo(() => (pedido.filtro ? metas.filter(pedido.filtro) : metas), [metas, pedido.filtro]);
   const raiz = useMemo(() => armarArbol(ordenarListado(listables(sub), (s) => catListado(s, sub)), (s) => catListado(s, sub)), [sub]);
@@ -183,7 +191,7 @@ function PickerInterior({ pedido }: { pedido: PickerPedido }) {
         )}
         {[...nodo.hijos.values()].map((h) => (
           <li key={h.nombre} className="carpeta">
-            <button type="button" onClick={() => { setCamino([...camino, h.nombre]); setTodo(false); setQ(""); inp.current?.focus(); }}>
+            <button type="button" onClick={() => { setCamino([...camino, h.nombre]); setTodo(false); setQ(""); if (conPunteroFino()) inp.current?.focus(); }}>
               <span>{h.nombre}{INFO_CAT[h.nombre] ? <span className="tiene-info" title="Tiene explicación"> ⓘ</span> : null}</span>
               <span className="cuenta">{h.total}</span>
             </button>

@@ -30,6 +30,7 @@
     const ancho = document.documentElement.clientWidth;
     const h = { ruta: location.pathname + location.search, ancho, paginaDesborda: false, fueraDePantalla: [], textoCortado: [], fijos: [], enlacesRepetidos: [], botonesChicos: [], desalineados: [], capa: null, error: false };
 
+    const capa = [...document.querySelectorAll('[role="dialog"], .desplegable .panel, .sel-lista')].filter(visible).pop();
     // B3 · la página no se desliza de costado y nada visible queda fuera del ancho
     h.paginaDesborda = document.documentElement.scrollWidth > ancho + 1;
     // El enlace "Saltar al contenido" vive fuera de pantalla a propósito y la barra de navegación es fija por diseño.
@@ -71,8 +72,7 @@
       if (new Set(xs).size > 1 && ancho >= 900) h.desalineados.push(nombre(lista) + " → " + xs.join(", "));
     }
 
-    // B2 · capa abierta: tiene cruz de 44 px
-    const capa = [...document.querySelectorAll('[role="dialog"], .desplegable .panel, .sel-lista')].filter(visible).pop();
+    // B2 · capa abierta: tiene cruz de 44 px (se calcula antes de B10, que la usa)
     if (capa) {
       const cruz = capa.querySelector('button[aria-label="Cerrar"]');
       const r = cruz && cruz.getBoundingClientRect();
@@ -93,6 +93,26 @@
     // B8 · con qué arranca la sección (para revisar que el arranque sin parámetros sea el dato más pedido)
     const tit = document.querySelector("main h2, main h1");
     if (op.arranque) h.arranque = (tit ? tit.textContent.trim() : "") + (location.search ? " [con parámetros]" : "");
+
+    // B9 · botones con el texto cortado a lo alto (nombre largo en un botón de alto fijo o con límite de renglones) y sin `title` que lo complete
+    h.botonCortado = [...new Set([...document.querySelectorAll("button, a.btn")].filter(visible)
+      .filter((b) => b.scrollHeight > b.clientHeight + 2 && !b.title && !b.getAttribute("aria-label")).map(nombre))].slice(0, 15);
+
+    // B10 · en pantallas táctiles, con una capa abierta el foco no está en un campo de texto (si no, se abre el teclado solo)
+    const foco = document.activeElement;
+    h.focoEnCampo = !!(capa && matchMedia("(pointer: coarse)").matches && foco && /^(INPUT|TEXTAREA)$/.test(foco.tagName));
+
+    // B12 · un botón o enlace que sigue a una tabla o a un gráfico queda a menos de 8 px
+    h.pegados = [];
+    for (const blo of document.querySelectorAll("main .tablewrap, main .graf-todo")) {
+      if (!visible(blo)) continue;
+      let sig = blo.nextElementSibling;
+      while (sig && !visible(sig)) sig = sig.nextElementSibling;
+      const btn = sig && (sig.matches("a.btn, button.btn") ? sig : sig.querySelector("a.btn, button.btn"));
+      if (!btn || !visible(btn)) continue;
+      const d = btn.getBoundingClientRect().top - blo.getBoundingClientRect().bottom;
+      if (d >= 0 && d < 8) h.pegados.push(nombre(btn) + " a " + Math.round(d) + " px");
+    }
 
     // Pantalla de error de la aplicación
     h.error = /Algo salió mal|Application error/i.test(document.body.innerText);

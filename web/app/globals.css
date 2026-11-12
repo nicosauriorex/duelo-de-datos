@@ -375,11 +375,6 @@ td.c-mis { min-width: 0; }
 .principales .plantilla { margin: 0; height: 100%; display: flex; flex-direction: column; }
 @media (min-width: 600px) { .principales { grid-template-columns: repeat(var(--c-med, 2), minmax(0, 1fr)); } }
 @media (min-width: 1024px) { .principales { grid-template-columns: repeat(var(--c-ancho, 4), minmax(0, 1fr)); } }
-/* Botones de variable de "Por presidente": un solo renglón que se desliza de costado dentro de su contenedor (la página no); un nombre largo usa hasta dos líneas dentro de su botón. */
-.elegir-principal { margin: 0 0 var(--e-2); max-width: 100%; min-width: 0; overflow-x: auto; overscroll-behavior-x: contain; padding-bottom: var(--e-1); }
-.elegir-principal .seg { display: flex; flex-wrap: nowrap; width: max-content; gap: var(--e-1); border: 0; background: none; overflow: visible; }
-.elegir-principal .seg button { flex: 0 0 auto; width: 9.5rem; min-height: var(--alto-toque); white-space: normal; text-align: left; line-height: 1.25; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; border: 1px solid var(--border-fuerte); border-radius: var(--r-2); background: var(--surface-1); }
-.elegir-principal .seg button[aria-pressed="true"] { border-color: var(--acento); background: var(--acento); color: var(--sobre-acento); }
 /* Congreso */
 .cg-cargado { max-width: 80ch; }
 .cg-ind { max-width: 100%; }
@@ -552,6 +547,7 @@ th small { display: block; font-size: var(--t-micro); font-weight: 400; color: v
   background: none; color: var(--text-secondary); cursor: pointer; }
 .cruz-capa:hover { background: var(--acento-suave); color: var(--text-primary); }
 .modal { position: relative; }
+.modal[tabindex="-1"]:focus { outline: none; }   /* R12: en táctil el foco inicial va a la ventana, sin recuadro */
 .modal-cruz { position: absolute; top: 0; right: 0; z-index: 2; }
 .modal > .modal-cruz + * { padding-right: 48px; }
 .panel-cruz { display: flex; justify-content: flex-end; margin: calc(-1 * var(--e-2)) calc(-1 * var(--e-2)) calc(-1 * var(--e-2)) 0; }
@@ -626,21 +622,50 @@ th small { display: block; font-size: var(--t-micro); font-weight: 400; color: v
 .vs-fila .btn { flex: 1 1 0; justify-content: center; min-height: 44px; }
 .vs-acciones .btn.primario { width: 100%; justify-content: center; min-height: 44px; }
 .acciones-graf { display: flex; flex-wrap: wrap; gap: var(--e-2); margin-top: var(--e-2); }
-.vs-personalizar { display: grid; gap: var(--e-3); margin-bottom: var(--e-4); padding: var(--e-3); background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--r-2); }
-.vs-personalizar > p { margin: 0; }
-.vs-personalizar .barra-hist { position: relative; top: auto; height: auto; margin: 0; padding: 0; background: none; border: 0; }
-.vs-personalizar .barra-hist .desplegable .panel { left: 0; right: 0; }
-.vs-personalizar .barra-graf { margin: 0; }
-.vs-botones { display: flex; flex-wrap: wrap; gap: var(--e-2); }
-.vs-botones .btn { flex: 1 1 auto; justify-content: center; min-height: 44px; }
-.vs-fabrica { display: flex; }
-.vs-fabrica .btn { min-height: 44px; }
 .tabla-acciones { display: flex; align-items: center; gap: var(--e-2); flex-wrap: wrap; margin-bottom: var(--e-2); }
 .tabla-acciones .btn { min-height: 44px; }
 .comp-elegir-botones { display: flex; flex-wrap: wrap; gap: var(--e-2); }
 .comp-elegir-botones .btn { flex: 1 1 auto; justify-content: center; min-height: 44px; }
-.vs-secundarios .acciones-vista { margin: 0; gap: var(--e-1) var(--e-4); }
-.vs-secundarios .aviso-link, .vs-secundarios .form-guardar { margin-top: var(--e-2); }
+/* Ventana de Personalizar (R15): una sola ventana con secciones plegables. En computadora (≥ 900 px) es un panel al costado derecho:
+   el fondo no se oscurece ni bloquea, el gráfico sigue a la vista (la página deja lugar a la derecha) y se ve cambiar. En celular, ventana completa. */
+.pers-panel { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; }
+.modal > .modal-cruz + .pers-panel { padding-right: 0; }
+.pers-panel > header { padding-right: 48px; }
+.pers-sec { border-bottom: 1px solid var(--border); }
+.pers-sec h3 { margin: 0; font-size: var(--t-base); }
+.pers-sec-btn { display: flex; align-items: center; justify-content: space-between; gap: var(--e-2); width: 100%; min-height: 44px; padding: var(--e-2) 0; border: 0; background: none; color: var(--text-primary); font: inherit; font-weight: 800; text-align: left; cursor: pointer; }
+.pers-sec-flecha { flex: none; font-size: var(--t-lg); color: var(--text-secondary); }
+.pers-sec-cuerpo { display: grid; gap: var(--e-3); padding: 0 0 var(--e-3); min-width: 0; }
+.pers-sec-cuerpo > p { margin: 0; }
+.pers-sec-cuerpo .acciones-vista { margin: 0; gap: var(--e-1) var(--e-4); }
+.pers-sec-cuerpo .acciones-vista .enlace, .pers-sec-cuerpo .acciones-vista a.enlace { display: inline-flex; align-items: center; min-height: 44px; }
+.pers-sec-cuerpo .aviso-link, .pers-sec-cuerpo .form-guardar { margin-top: 0; }
+.modal-fondo:has(> .modal > .pers-panel) { padding: 0; }
+.modal-fondo:has(> .modal > .pers-panel) > .modal { width: 100%; max-height: 100dvh; height: 100dvh; border-radius: 0; border-width: 0; }
+@media (min-width: 900px) {
+  .modal-fondo:has(> .modal > .pers-panel) { background: none; pointer-events: none; justify-content: flex-end; align-items: stretch; padding: var(--e-3); }
+  .modal-fondo:has(> .modal > .pers-panel) > .modal { pointer-events: auto; width: min(440px, 100%); height: auto; max-height: none; border-width: 1px; border-radius: var(--r-2); }
+  body:has(.modal-fondo > .modal > .pers-panel) main { padding-right: calc(440px + var(--e-6, 32px)); }
+}
+
+/* Cabecera del dato de Histórico: el dato y, a su derecha (debajo en celular), sus comparaciones en el mismo estilo tipográfico */
+.vs-dato { display: grid; gap: var(--e-3); min-width: 0; }
+.vs-dato > * { min-width: 0; }
+.vs-comps-caja { min-width: 0; max-width: 100%; }
+.vs-comps-de { margin: 0 0 var(--e-1); }
+.vs-comps { list-style: none; margin: 0; padding: 0 0 var(--e-1); display: flex; gap: var(--e-3); overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scrollbar-width: thin; }
+.vs-comp { flex: 0 0 10.5rem; display: flex; flex-direction: column; gap: 2px; scroll-snap-align: start; min-width: 0; padding-left: var(--e-2); border-left: var(--linea) solid var(--border-fuerte); }
+.vs-comp .k { font-size: var(--t-xs); font-weight: 700; text-transform: uppercase; font-stretch: var(--ancho-semi); letter-spacing: .02em; color: var(--text-secondary); }
+.vs-comp .v { font-size: clamp(1.25rem, 5vw, 1.75rem); font-weight: 900; font-stretch: var(--ancho-cifra); line-height: 1.1; overflow-wrap: anywhere; }
+.vs-comp .mes { font-size: var(--t-sm); font-weight: 600; color: var(--text-secondary); }
+.vs-comp .fr { font-size: var(--t-sm); font-weight: 700; line-height: 1.3; }
+@media (min-width: 900px) {
+  .vs-dato { grid-template-columns: auto minmax(0, 1fr); column-gap: var(--e-6, 32px); align-items: end; }
+  .vs-comps { display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); overflow: visible; row-gap: var(--e-3); }
+  .vs-comp { flex: none; }
+  /* con el panel de Personalizar abierto la página se angosta: el dato arriba y las comparaciones debajo, en varias columnas */
+  body:has(.modal-fondo > .modal > .pers-panel) .vs-dato { grid-template-columns: minmax(0, 1fr); }
+}
 
 /* Línea de temporalidad bajo el título */
 .temporal { margin: 0 0 var(--e-2); font-size: var(--t-sm); color: var(--text-secondary); }
@@ -781,7 +806,7 @@ svg.mini-bueno { color: var(--bueno); } svg.mini-malo { color: var(--malo); }
 .pista::after { content: ""; flex: 0 0 60%; }
 @media (min-width: 768px) { .placa[aria-current] { box-shadow: inset 0 6px 0 var(--sobre-acento); } }
 .pista::-webkit-scrollbar, .subtabs::-webkit-scrollbar, .chips::-webkit-scrollbar, .tiles.res::-webkit-scrollbar { display: none; }
-.placa { flex: 0 0 min(86%, 440px); height: 320px; scroll-snap-align: start; container-type: inline-size; background: var(--acento); color: var(--sobre-acento);
+.placa { flex: 0 0 min(86%, 440px); height: 400px; scroll-snap-align: start; container-type: inline-size; background: var(--acento); color: var(--sobre-acento);
   clip-path: polygon(0 0, calc(100% - var(--corte-placa)) 0, 100% var(--corte-placa), 100% 100%, 0 100%); }
 .placa-link { display: flex; flex-direction: column; height: 100%; padding: var(--e-5) var(--e-5) 0; color: inherit; text-decoration: none; }
 .placa-link:focus-visible { outline: 3px solid var(--sobre-acento); outline-offset: -8px; }
@@ -797,6 +822,23 @@ svg.mini-bueno { color: var(--bueno); } svg.mini-malo { color: var(--malo); }
 .placa-fuente { text-align: left; }
 .placa svg.mini { flex: none; width: calc(100% + 2 * var(--e-5)); height: 56px; margin: var(--e-2) calc(-1 * var(--e-5)) 0; color: var(--sobre-acento); }
 .placa svg.mini path { stroke-width: 3; }
+/* Comparaciones de la placa: período anterior y un año atrás. La variación va con signo y texto, y en un recuadro de color que contrasta sobre el fondo de la placa. */
+.placa-comps { list-style: none; margin: var(--e-2) 0 0; padding: 0; display: grid; gap: var(--e-1); font-size: var(--t-sm); }
+.placa-comp { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: var(--e-2); row-gap: 0; line-height: 1.3; min-width: 0; }
+.placa-comp-rot { font-weight: 600; }
+.placa-comp b { font-weight: 800; }
+.placa-var { padding: 0 var(--e-1); font-weight: 800; white-space: nowrap; border: 1px solid transparent; border-radius: var(--r-1); }
+.placa-var.bueno { background: var(--bueno-f4); color: var(--sobre-bueno-4); }
+.placa-var.malo { background: var(--malo-f4); color: var(--sobre-malo-4); }
+.placa-var.neutro { border-color: currentColor; }
+/* Presentación de las demás secciones en la portada */
+.secciones-inicio { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr; gap: var(--e-3); }
+@media (min-width: 640px) { .secciones-inicio { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .secciones-inicio { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.secciones-inicio li { display: flex; flex-direction: column; align-items: flex-start; gap: var(--e-2); min-width: 0; padding: var(--e-3); border: 1px solid var(--border); border-top: var(--linea) solid var(--text-primary); }
+.secciones-inicio h3 { margin: 0; font-size: var(--t-lg); font-weight: 800; font-stretch: var(--ancho-cond); text-transform: uppercase; line-height: 1.15; overflow-wrap: anywhere; }
+.secciones-inicio p { margin: 0; color: var(--text-secondary); font-size: var(--t-sm); flex: 1 1 auto; }
+.secciones-inicio .btn { min-height: var(--alto-toque); justify-content: center; min-width: var(--alto-toque); }
 @media (hover: hover) { .placa-link:hover .placa-titulo { text-decoration: underline; text-underline-offset: .2em; } }
 @media (max-width: 767.98px) { .carrusel-ctrl .btn-icono:not(.pausa) { display: none; } }
 /* En pantallas anchas las placas entran todas: grilla fija dentro de la columna, sin avance automático ni controles. */
@@ -806,7 +848,7 @@ svg.mini-bueno { color: var(--bueno); } svg.mini-malo { color: var(--malo); }
   .pista { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: visible; scroll-snap-type: none;
     max-width: var(--ancho-pagina); margin: 0 auto; padding: 0 var(--e-4); }
   .pista::after { content: none; }
-  .placa { height: 340px; }
+  .placa { height: 400px; }
   .placa[aria-current] { box-shadow: none; }
   .placa-titulo { white-space: normal; min-height: 2.4em; padding-right: var(--corte-placa); }
 }
@@ -834,22 +876,20 @@ svg.mini-bueno { color: var(--bueno); } svg.mini-malo { color: var(--malo); }
 /* Preguntale a los datos */
 .oraciones { list-style: none; margin: 0 0 var(--e-4); padding: 0; border-top: var(--linea) solid var(--text-primary); }
 .oraciones-espera { min-height: 320px; }
-/* Grilla: en pantallas anchas el botón "Ver" de las cinco oraciones queda en la misma columna (96 px) y el enlace extra va debajo, ocupando todo el ancho. */
+/* Grilla: en pantallas anchas el botón "Ver" de las cinco oraciones queda en la misma columna (96 px). */
 .oracion { display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; gap: var(--e-2) var(--e-3); padding: var(--e-3) 0; border-bottom: 1px solid var(--border); font-size: var(--t-md); line-height: 1.9; }
 .texto-oracion { min-width: 0; overflow-wrap: anywhere; }
 @media (min-width: 640px) {
   .oracion { grid-template-columns: minmax(0, 1fr) 96px; }
   .acciones-oracion .btn { width: 100%; }
-  .oracion .enlace-oracion { grid-column: 1 / -1; justify-self: start; }
 }
 .hueco { display: inline-block; vertical-align: baseline; max-width: 100%; }
 .hueco > .sel-btn { max-width: 100%; height: auto; white-space: normal; text-align: left; overflow-wrap: anywhere; }
 .hueco .sel-btn { background: none; border: 0; border-radius: 0; padding: 0 2px; font: inherit; font-weight: 800; color: var(--acento-texto); box-shadow: inset 0 -2px 0 var(--acento-texto); }
 .hueco .sel-btn::after { border-color: var(--acento-texto); margin-left: 6px; }
 .acciones-oracion { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-1) var(--e-3); line-height: 1.3; }
-.acciones-oracion .btn { min-width: 72px; height: 40px; justify-content: center; }
+.acciones-oracion .btn { min-width: 72px; height: var(--alto-toque); justify-content: center; }
 .acciones-oracion .btn .icono { width: 16px; height: 16px; }
-.enlace-oracion { display: inline-flex; align-items: center; min-height: var(--alto-toque); font-size: var(--t-sm); color: var(--acento-texto); text-decoration: underline; text-underline-offset: .2em; }
 /* Desplegable de un hueco: pegado a su botón (se mueve con la página) */
 .hueco-lista { position: relative; }
 .hueco-menu { position: absolute; z-index: 30; top: 100%; left: 0; margin: 4px 0 0; padding: var(--e-1); list-style: none; min-width: 100%; width: max-content; max-width: min(22rem, calc(100vw - 2 * var(--e-3)));
@@ -976,10 +1016,11 @@ tr.clic.abierto > td { font-weight: 700; }
 /* Meses de mandato: tres botones en una fila, cada uno con su panel; el gráfico queda a la vista */
 .mand-barra { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--e-2); margin: var(--e-2) 0; }
 .mand-barra .btn.drop { width: 100%; min-width: 0; min-height: var(--alto-toque); justify-content: space-between; }
-.mand-panel { background: var(--surface-1); border: 1px solid var(--border-fuerte); border-radius: var(--r-2); padding: var(--e-3); margin-bottom: var(--e-3); max-width: 100%; overflow-wrap: anywhere; }
-.mand-panel .controls:last-child, .mand-panel .modos { margin-bottom: 0; }
 .mand-grafico { padding-top: var(--e-2); }
 .mand-meses input[type="range"] { flex: 1 1 100px; min-width: 0; }
+.mand-meses { margin-top: var(--e-3); }   /* R14: los controles que siguen al gráfico no quedan pegados */
+.sigue-tabla { margin-top: var(--e-3); }   /* R14: botón que sigue a una tabla */
+tr.nota-grupo td { background: var(--surface-0); color: var(--text-secondary); text-align: left; white-space: normal; }   /* R13: una sola nota por grupo cuando la moneda no cambia nada */
 .mand-valor { display: flex; align-items: flex-start; gap: var(--e-2); min-height: var(--alto-toque); font-size: var(--t-sm); color: var(--text-secondary); }
 @media (max-width: 480px) { .mand-barra .btn.drop { padding-inline: var(--e-2); font-size: var(--t-sm); } }
 .rk-abiertos { display: flex; gap: var(--e-2); align-items: center; margin-bottom: var(--e-2); }
@@ -1038,3 +1079,30 @@ tr.clic.abierto > td { font-weight: 700; }
   .pista { flex-wrap: wrap; overflow: visible; }
   .placa, .todo-fuente { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* Ficha del dato (FichaDato: página de cada tema y ruta /dato/). Tres bloques uno debajo del otro, en cualquier ancho. */
+.ficha-tema { scroll-margin-top: calc(var(--nav-h) + var(--e-3)); }
+.ficha-nombre { overflow-wrap: anywhere; text-wrap: balance; }
+.tema-pagina .ficha-nombre { font-size: var(--t-xl); line-height: 1.2; }
+.ficha-nombre:focus { outline: none; }
+.ficha-nombre:focus-visible { outline: var(--linea) solid var(--foco); outline-offset: 4px; }
+.ficha-dato { display: flex; flex-direction: column; gap: var(--e-6); min-width: 0; }
+.ficha-bloque { min-width: 0; border-top: var(--linea) solid var(--border-fuerte); padding-top: var(--e-3); }
+.ficha-cab { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--e-2) var(--e-3); margin: 0 0 var(--e-2); }
+.ficha-cab .ficha-titulo { margin: 0; font-size: var(--t-lg); font-weight: 800; line-height: 1.2; }
+.ficha-cab .seg button { min-height: var(--alto-toque); padding: 0 var(--e-3); }
+.ficha-cifra .vs-cifra .v { font-size: clamp(2rem, 10vw, 3.25rem); }
+.ficha-bloque .card-simple { margin-bottom: 0; }
+/* R14: lo que sigue a una tabla o un gráfico queda separado; Compartir y "Abrir completo" siempre al pie del bloque */
+.ficha-acciones { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-2); margin-top: var(--e-3); }
+.ficha-acciones .btn { min-height: var(--alto-toque); }
+.ficha-acciones a.btn { color: var(--text-primary); }
+/* Principales de un tema: la tarjeta es un botón que pone su variable en la ficha. El nombre largo baja de renglón (R5), no se corta. */
+.plantilla-link.ficha-elegir { width: 100%; height: 100%; padding-right: 14px; text-align: left; background: none; border: 0; font: inherit; color: inherit; cursor: pointer; }
+.ficha-elegir > span { display: block; }
+.principales .plantilla .ficha-elegir .k { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+.ficha-elegir:focus-visible { outline: var(--linea) solid var(--foco); outline-offset: -4px; }
+.plantilla.ficha-elegida { border-color: var(--acento); border-top-color: var(--acento); box-shadow: inset 0 0 0 1px var(--acento); }
+/* "Todos los datos": cada serie es un botón que la pone en la ficha; la elegida, en negrita */
+.lista-series .ficha-serie { min-height: var(--alto-toque); max-width: 100%; text-align: left; overflow-wrap: anywhere; }
+.lista-series .ficha-serie[aria-pressed="true"] { font-weight: 800; text-decoration-thickness: 2px; }

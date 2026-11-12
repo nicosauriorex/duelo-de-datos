@@ -30,14 +30,6 @@ export const grupoDe = (s: { cat: string[] }) => s.cat[1] && s.cat[0] !== "Salar
 export function ordenarGrupos(grupos: string[]): string[] {
   return grupos.slice().sort((a, b) => ORDEN_RAIZ.indexOf(a.split(" › ")[0]) - ORDEN_RAIZ.indexOf(b.split(" › ")[0]) || (a.includes("›") ? 1 : 0) - (b.includes("›") ? 1 : 0));
 }
-export function medidaPara(s: Serie, med: string): string {
-  if (s.tipo === "none" || s.tipo === "tasa") return "asis";
-  if (s.tipo === "idx") return s.dir === 1 && med === "real" ? "real" : "corr";
-  if (s.tipo === "ars") return med;
-  if (s.tipo === "fx") return med.startsWith("usdr") ? "real" : med.startsWith("usd") ? "corr" : med;
-  if (s.tipo === "usd") return med === "real" ? "real" : med === "corr" ? "arscorr" : med.startsWith("usdr") ? "usdr" : "corr";
-  return "asis";
-}
 
 export interface Indic extends Expr { grupo: string; nombre: string }
 

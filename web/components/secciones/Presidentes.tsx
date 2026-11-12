@@ -3,26 +3,26 @@ import { listables } from "@/lib/regiones";
 import { esOculta } from "@/lib/nombres";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { useSeccion } from "../useSeccion";
-import { Cargando, Desplegable, Selector, Seg, alternar } from "../ui";
+import { Cargando, Selector, Seg, alternar } from "../ui";
+import { VentanaConfig } from "./VentanaConfig";
 import { BotonInfo, FilaVariable, RenglonVariable } from "../Variables";
 import { Sparkline } from "../Sparkline";
-import { Velas, type VelaDato } from "../Velas";
+import { Velas } from "../Velas";
 import { BotonCompartir } from "../PanelCompartir";
 import { IconoCompartir } from "../Iconos";
 import { ContextoMandato } from "./ContextoMandato";
 import { INFO_CORTA } from "@/lib/info";
 import { CeldaPresMandato, CeldaVar, CeldasStats, COLS, Cabecera, LineaInicio, comparativaDe, siguienteOrden, useBase, valorCol, type Orden } from "./comunes";
 import { fmtMes } from "@/lib/formato";
-import { baseIdx, claseVariacion, crearPres, nivelComparable, ordenar, statsMandato, varNum, type Pres } from "@/lib/estadisticas";
-import { datosDesde, variacionMostrada } from "@/lib/tablas";
-import { grupoDe, medidaPara, ordenarGrupos, textoBusqueda } from "@/lib/catalogo";
+import { baseIdx, crearPres, nivelComparable, ordenar, statsMandato, type Pres } from "@/lib/estadisticas";
+import { velasDe } from "@/lib/ficha";
+import { grupoDe, ordenarGrupos, textoBusqueda } from "@/lib/catalogo";
+import { monedaEnSerie } from "@/lib/monedas";
 import { norm } from "@/lib/formato";
 import type { Expr } from "@/lib/motor";
 import { useConfig } from "../ConfigProvider";
 import { medidaPreferida, paramSi } from "@/lib/config";
 import { decExpr, encExpr, lista, unoDe, useParams } from "@/lib/url";
-
-const menos = (t: string) => t.replace(/^-/, "−");
 
 export function Presidentes() {
   const [p, set, montado] = useParams();
@@ -60,16 +60,7 @@ export function Presidentes() {
     + " Barra: crece desde la izquierda según el valor entre el menor y el mayor de la columna (en Variación, con subas y bajas, sale del cero hacia cada lado)" + (dir ? "; su color va del rojo (el peor) al verde (el mejor), pasando por el amarillo." : "; en gris.");
   const vista = unoDe(p.get("pvista"), ["tabla", "velas"] as const, "tabla");
   // velas: solo presidentes con datos; el resto se lista al pie
-  const velas: VelaDato[] = [], velasSin: string[] = [];
-  filasB.forEach(({ x, k }) => {
-    const st = sts[k];
-    if (!st.n || st.ini == null || st.fin == null || st.min == null || st.max == null) { velasSin.push(x.n); return; }
-    velas.push({
-      id: x.id, nombre: x.n, periodo: `${fmtMes(F[st.iniI as number])} a ${fmtMes(F[st.finI as number])}`, ini: st.ini, fin: st.fin, min: st.min, max: st.max,
-      iniTxt: m.fmtC(c, st.ini), finTxt: m.fmtC(c, st.fin), minTxt: m.fmtC(c, st.min), maxTxt: m.fmtC(c, st.max),
-      variacion: varNum(c, st) == null ? "–" : menos(variacionMostrada(m, c, st.ini, st.fin)), cls: claseVariacion(c.dir, c.pct, st.ini, st.fin), nota: datosDesde(F, c.v, x),
-    });
-  });
+  const { velas, sin: velasSin } = velasDe(m, c, filasB.map(({ x, k }) => ({ x, st: sts[k] })));
   // Compartir comparte lo que se ve: la tabla, o las velas. Si las velas no se pueden dibujar (pesos corrientes o sin datos), no hay nada para compartir.
   const sinVelas = vista === "velas" && (!niv || velas.length === 0);
   const compartirB = (
@@ -121,10 +112,14 @@ export function Presidentes() {
       </tr>,
     );
     if (!ab) return;
-    const items = ordenar(ss.map((s) => { const cc = m.calc({ id: s.id, med: medidaPara(s, paMed), rel: null }); return { s, c: cc, st: statsMandato(F, cc.v, paPres, b) }; }),
+    // R13: si la moneda no cambia nada en todo el grupo, una sola nota; si solo en algunas filas, la marca va en cada una
+    const items = ordenar(ss.map((s) => { const mo = monedaEnSerie(s, paMed), cc = m.calc({ id: s.id, med: mo.med, rel: null }); return { s, c: cc, aplica: mo.aplica, st: statsMandato(F, cc.v, paPres, b) }; }),
       ordA, (o) => valorCol(o.c, o.st, ordA.k));
-    items.forEach(({ s, c: cc, st }) => filasA.push(
-      <tr key={s.id}><CeldaVar nombre={s.n} unidad={cc.unidad} info={<BotonInfo id={s.id} />} extra={rango(st)} /><CeldasStats m={m} c={cc} st={st} cols={cols} /></tr>,
+    const grupoSinMoneda = items.length > 0 && items.every((o) => !o.aplica);
+    if (grupoSinMoneda) filasA.push(<tr key={"n" + g} className="nota-grupo"><td colSpan={nc}><small className="c-per">La moneda elegida no cambia estas variables: se muestran tal cual.</small></td></tr>);
+    items.forEach(({ s, c: cc, st, aplica }) => filasA.push(
+      <tr key={s.id}><CeldaVar nombre={s.n} unidad={cc.unidad} info={<BotonInfo id={s.id} />}
+        extra={<>{rango(st)}{!aplica && !grupoSinMoneda && <small className="c-per">la moneda no aplica a esta variable</small>}</>} /><CeldasStats m={m} c={cc} st={st} cols={cols} /></tr>,
     ));
   });
 
@@ -134,10 +129,10 @@ export function Presidentes() {
   return (
     <section>
       <div className="controls">
-        <Desplegable etiqueta="Presidentes y columnas">
+        <VentanaConfig etiqueta="Presidentes y columnas" titulo="Presidentes y columnas">
           <div className="controls"><label>Presidentes</label><Seg valor={presSel} opciones={PRES.map((x) => [x.id, x.n] as [string, string])} onElegir={(v) => set({ pr: [...alternar(presSel, v)].join(",") })} /></div>
           {columnas}
-        </Desplegable>
+        </VentanaConfig>
       </div>
       <div className="card">
         <h2>Una variable, todos los presidentes</h2>
@@ -174,11 +169,11 @@ export function Presidentes() {
         </div>
         <div className="controls">
           <Selector etiqueta="Presidente" valor={paPres.id} opciones={PRES.slice().reverse().map((x) => [x.id, x.n] as [string, string])} onElegir={(v) => set({ pap: v === "milei" ? null : v })} />
-          <Desplegable etiqueta="Personalizar">
+          <VentanaConfig etiqueta="Personalizar" titulo="Personalizar la tabla">
             {modoA === "todas" && <div className="controls"><label>Moneda</label><Selector etiqueta="Medida" valor={paMed} opciones={medsArs.map((o) => [o[0], o[1]] as [string, string])} onElegir={(v) => set({ pam: paramSi(v, "real", medPref) })} /></div>}
-            {modoA === "todas" && <p className="note">La medida se aplica a los montos en pesos; los dólares no se pasan a dólares y los índices y porcentajes quedan como son.</p>}
+            {modoA === "todas" && <p className="note">La moneda cambia los montos en pesos y en dólares. Un índice de precios muestra cuánto subió en el mandato: en pesos reales, contra la inflación general; en corrientes, tal cual. Los porcentajes, las tasas y las cantidades no dependen de la moneda: la tabla lo avisa.</p>}
             {columnas}
-          </Desplegable>
+          </VentanaConfig>
         </div>
         {modoA === "todas" && (
           <>
@@ -217,8 +212,8 @@ export function Presidentes() {
                 );
               })}</tbody>
             </table></div>
-            {enEdicion && mis.length < 10 && <FilaVariable e={null} agregable textoAgregar="+ Agregar variable" onChange={(e) => e && setMis([...mis, e])} />}
-            <div className="controls">
+            {enEdicion && mis.length < 10 && <div className="sigue-tabla"><FilaVariable e={null} agregable textoAgregar="+ Agregar variable" onChange={(e) => e && setMis([...mis, e])} /></div>}
+            <div className="controls sigue-tabla">
               {enEdicion
                 ? <button type="button" className="btn primario" onClick={() => setEditando(false)}>Guardar</button>
                 : <button type="button" className="btn" onClick={() => setEditando(true)}>Editar mis variables</button>}

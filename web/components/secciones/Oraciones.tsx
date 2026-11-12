@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useDatos } from "../DatosProvider";
 import { useConfig } from "../ConfigProvider";
-import { Picker } from "../Variables";
+import { Picker, conPunteroFino } from "../Variables";
 import { Modal, useAtras, useCapa } from "../ui";
 import { IconoIr } from "../Iconos";
 import { buscarSeries, palabrasBusqueda, textoBusqueda } from "@/lib/catalogo";
@@ -14,7 +14,7 @@ import { medDefaultDe, type SerieMeta } from "@/lib/motor";
 import { rutaPublica } from "@/lib/nombres";
 import { filtrar, hrefPlantilla, type Plantilla } from "@/lib/plantillas";
 import {
-  MEDIDAS_DOLAR, PRESIDENTES, SALARIOS, anios, contraer, hrefCompra, hrefDesde, hrefMedida, hrefPresidente, hrefSubio, hrefTablaPresidente,
+  MEDIDAS_DOLAR, PRESIDENTES, SALARIOS, anios, contraer, hrefCompra, hrefDesde, hrefMedida, hrefPresidente, hrefSubio,
   idsCompra, idsMontos, idsPrecios, rotulo, seccionesCompra, todosLosPrincipales, type Opcion,
 } from "@/lib/oraciones";
 import { TEMAS, hrefHistorico } from "@/lib/temas";
@@ -93,7 +93,7 @@ function ListaHueco({ etiqueta, valor, opciones, onElegir }: { etiqueta: string;
 function ListaProductos({ S, ids, valor, onElegir, onCerrar }: { S: Record<string, SerieMeta>; ids: string[]; valor: string; onElegir: (id: string) => void; onCerrar: () => void }) {
   const [q, setQ] = useState("");
   const inp = useRef<HTMLInputElement>(null);
-  useEffect(() => { inp.current?.focus(); }, []);
+  useEffect(() => { if (conPunteroFino()) inp.current?.focus(); }, []);   // en táctil el teclado no se abre solo
   const secciones = useMemo(() => seccionesCompra(S, ids), [S, ids]);
   const toks = useMemo(() => (q.trim() ? palabrasBusqueda(q) : []), [q]);
   const visibles = useMemo(() => secciones.map((sec) => ({
@@ -151,7 +151,8 @@ function Hueco({ valor, opciones, onElegir, etiqueta, ids, S, compra }: {
   return <ListaHueco etiqueta={etiqueta} valor={valor} opciones={opciones ?? []} onElegir={onElegir} />;
 }
 
-function Oracion({ children, href, enlace }: { children: React.ReactNode; href: string; enlace?: { texto: string; href: string } }) {
+/** Una pregunta y su "Ver" (adónde lleva cada una: ver los `href…` de `web/lib/oraciones.ts`). */
+function Oracion({ children, href }: { children: React.ReactNode; href: string }) {
   const router = useRouter();
   return (
     <li className="oracion">
@@ -159,7 +160,6 @@ function Oracion({ children, href, enlace }: { children: React.ReactNode; href: 
       <span className="acciones-oracion">
         <button type="button" className="btn" onClick={() => router.push(href)}>Ver<IconoIr /></button>
       </span>
-      {enlace && <Link prefetch={false} className="enlace-oracion" href={enlace.href}>{enlace.texto}</Link>}
     </li>
   );
 }
@@ -190,7 +190,7 @@ export function Oraciones({ S }: { S: Record<string, SerieMeta> }) {
           <Hueco valor={salario} opciones={salarios} etiqueta="Salario" onElegir={setSalario} S={S} />?
         </Oracion>
       )}
-      <Oracion href={hrefPresidente(p2, pres)} enlace={{ texto: "Ver la tabla por presidente", href: hrefTablaPresidente(p2, pres) }}>
+      <Oracion href={hrefPresidente(p2, pres)}>
         ¿Cómo le fue <Hueco valor={ind2} opciones={opcPrincipalesA} etiqueta="Indicador" onElegir={setInd2} S={S} /> con{" "}
         <Hueco valor={pres} opciones={PRESIDENTES} etiqueta="Presidente" onElegir={setPres} S={S} />?
       </Oracion>

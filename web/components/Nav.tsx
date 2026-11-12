@@ -14,7 +14,7 @@ export const SECCIONES: [string, string][] = [
 ];
 /** Subsecciones de Presidentes: [carpeta, ancla, nombre]. Las URLs son las de siempre. */
 const SUBSECCIONES: [string, string, string][] = [
-  ["presidentes", "", "Por presidente"], ["ranking", "", "Ranking"], ["mandato", "", "Meses de mandato"],
+  ["presidentes", "", "Por presidente"], ["mandato", "", "Meses de mandato"], ["ranking", "", "Ranking"],
   ["elecciones", "", "Elecciones"], ["congreso", "", "Congreso"],
 ];
 // Curiosidades ya no está en el menú, pero la página sigue en la misma URL y cuenta como parte de Presidentes.
@@ -24,7 +24,7 @@ const TITULOS: Record<string, string> = {
   curiosidades: "Curiosidades", congreso: "Gobierno y Congreso", elecciones: "Elecciones", contexto: "Contexto internacional", plantillas: "Gráficos listos", fuentes: "Fuentes",
 };
 /** Páginas donde aparece "Volver" si se llegó desde otra página del sitio. */
-const CON_VOLVER = new Set(["historico", "tema", ...GRUPO_PRES]);
+const CON_VOLVER = new Set(["historico", "tema", "dato", ...GRUPO_PRES]);
 
 const carpetaDe = (ruta: string) => ruta.split("/")[1] ?? "";
 

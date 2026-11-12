@@ -1,7 +1,7 @@
 // Cómo se lee Histórico desde la URL: parámetros de cada gráfico y del período. Lo usan la sección y la imagen de compartir.
 import { desdePreferido, type DesdePref } from "./config";
-import { claseVariacion } from "./estadisticas";
-import { nf0, nf1, ok, redondeadoComo, restaLimpia } from "./formato";
+import { claseVariacion, etiqueta, type EstRows, type Fila } from "./estadisticas";
+import { mesNum, nf0, nf1, ok, redondeadoComo, restaLimpia, rotuloAnterior } from "./formato";
 import type { Expr, Motor } from "./motor";
 import { decExpr, lista as listaUrl, unoDe } from "./url";
 
@@ -104,6 +104,50 @@ export function fraseUltimoVs(pct: boolean, desde: number | null | undefined, ha
   const dir = h > d ? "arriba" : "abajo";
   const txt = pct ? `${txtMag} ${txtMag === "1,0" ? "punto" : "puntos"}` : `${txtMag} %`;
   return `El último está ${txt} ${dir}`;
+}
+
+/** Una comparación de la cabecera del dato: el último dato contra otro valor (mes anterior, un año atrás, promedio…). */
+export interface Comparacion { clave: string; titulo: string; valor: number; fecha?: string; frase: string; cls: "bueno" | "malo" | "neutro" }
+
+const ANTERIOR: Record<FrecOrigen, string> = { M: "Mes anterior", T: "Trimestre anterior", S: "Semestre anterior", A: "Año anterior" };
+
+/** Las comparaciones de la cabecera del dato, en este orden: período anterior, un año atrás, inicio del período, promedio, mediana, máximo y mínimo.
+ *  - `rows`: las filas que se ven (período, meses y frecuencia elegidos); de ahí salen el último dato y las estadísticas (`est`).
+ *  - `hist`: la misma serie y frecuencia con toda la historia hasta el fin del período y todos los meses, para el período anterior y el año atrás
+ *    aunque el filtro de fechas los deje afuera.
+ *  Las cuentas usan los valores como se muestran (`mostrado`), igual que el resumen que reemplazan. Si no hay dato anterior o de hace un año,
+ *  esa comparación no se incluye (con frecuencia anual, "un año atrás" es el período anterior y no se repite). */
+export function comparacionesCabecera(o: {
+  rows: Fila[]; hist: Fila[]; key: string; est: EstRows; freq: "M" | "T" | "A"; origen: FrecOrigen; meses: Set<number>;
+  dir: number | null | undefined; pct: boolean; mostrado: (v: number) => string;
+}): Comparacion[] {
+  const { rows, hist, key, est, freq, origen, meses, dir, pct, mostrado } = o;
+  const hasta = est.ult[0];
+  const fila = (valor: number, clave: string, titulo: string, fecha?: string): Comparacion | null => {
+    const frase = fraseUltimoVs(pct, valor, hasta, mostrado);
+    return frase ? { clave, titulo, valor, fecha, frase, cls: claseVariacionMostrada(dir, pct, valor, hasta, mostrado) } : null;
+  };
+  const out: (Comparacion | null)[] = [];
+  const ultima = [...rows].reverse().find((r) => ok(r[key]));
+  const i = ultima ? hist.findIndex((r) => r.fecha === ultima.fecha) : -1;
+  // Con un filtro de meses sueltos, `hist` (todos los meses) y `rows` agregan distinto: no se compara contra el período anterior ni contra un año atrás.
+  if (ultima && i >= 0 && meses.size >= 12) {
+    let j = i - 1;
+    while (j >= 0 && !ok(hist[j][key])) j--;
+    const normal = freq === "A" ? ANTERIOR.A : freq === "T" ? ANTERIOR.T : ANTERIOR[origen];
+    const paso = freq === "A" ? 12 : freq === "T" ? 3 : { M: 1, T: 3, S: 6, A: 12 }[origen];
+    if (j >= 0) out.push(fila(hist[j][key], "anterior", rotuloAnterior(hist[j].fecha, ultima.fecha, normal, paso), etiqueta(hist[j])));
+    if (freq !== "A") {
+      const hace = hist.find((r) => mesNum(r.fecha) === mesNum(ultima.fecha) - 12 && ok(r[key]));
+      if (hace) out.push(fila(hace[key], "anio", "Un año atrás", etiqueta(hace)));
+    }
+  }
+  out.push(fila(est.pri[0], "inicio", "Inicio del período", est.pri[1]));
+  out.push(fila(est.prom, "prom", "Promedio"));
+  out.push(fila(est.med, "med", "Mediana"));
+  out.push(fila(est.max[0], "max", "Máximo", est.max[1]));
+  out.push(fila(est.min[0], "min", "Mínimo", est.min[1]));
+  return out.filter((c): c is Comparacion => !!c);
 }
 
 /** Clase de color (bueno / malo / neutro) del cambio entre dos valores tal como se ven: si redondeados son iguales, neutro. */

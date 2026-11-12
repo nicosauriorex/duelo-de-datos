@@ -33,6 +33,9 @@ const ORDEN: ClaveFrase[] = ["desde", "record", "minimo", "anio", "promedio", "i
 export interface OpcionesContexto {
   periodo?: { desde: string; hasta: string };   // para las frases contra el promedio y el inicio del período
   elegidas?: ClaveFrase[] | null;               // las que quiere quien comparte (hasta 2); sin esto, las de por defecto
+  // Cabecera de Histórico: ahí el máximo y la comparación con hace un año ya salen como comparaciones al lado del dato, no se repiten como frase
+  sinRecord?: boolean;                          // no calcula la frase del récord ("X por debajo de su récord de…")
+  sinContraAnio?: boolean;                      // no calcula "X % contra hace un año" (el "Interanual" de la inflación mensual sí, es otra medida)
 }
 
 /** Cifra de hoy y, si `conFrases` y la serie alcanza, el contexto. Devuelve null si no hay ningún dato. */
@@ -60,7 +63,10 @@ export function contextoDato(m: Motor, e: Expr, conFrases = true, opc: OpcionesC
   }
   const esMax = ultV >= max, esMin = ultV <= min;
   const frases: Frase[] = [];
-  const agregar = (clave: ClaveFrase, texto: string, cls: Frase["cls"] = null) => frases.push({ texto, cls, clave });
+  const agregar = (clave: ClaveFrase, texto: string, cls: Frase["cls"] = null) => {
+    if (clave === "record" && opc.sinRecord) return;
+    frases.push({ texto, cls, clave });
+  };
 
   // 1. máximo o mínimo de toda la serie
   if (esMax !== esMin) agregar("desde", `El valor más ${esMax ? "alto" : "bajo"} desde que hay datos (${fmtMes(F[idx[0]])}).`);
@@ -92,7 +98,7 @@ export function contextoDato(m: Motor, e: Expr, conFrases = true, opc: OpcionesC
     if (t) agregar("anio", `Interanual: ${t}.`);
   } else {
     const antes = c.v[u - 12];
-    if (u >= 12 && ok(antes)) {
+    if (u >= 12 && ok(antes) && !opc.sinContraAnio) {
       const v = m.variacionTxt(c, antes, ultV);
       if (v !== "–") agregar("anio", `${v} contra hace un año.`, claseVariacion(c.dir, c.pct, antes, ultV));
     }

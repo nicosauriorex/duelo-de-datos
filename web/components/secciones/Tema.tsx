@@ -1,25 +1,25 @@
 "use client";
-// Página de un tema: explicación, principales, todos los datos, por presidente y plantillas.
-import { useMemo, useState } from "react";
+// Página de un tema: explicación, principales, la ficha del dato elegido, todos los datos y plantillas.
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSeccion } from "../useSeccion";
-import { Cargando, Seg } from "../ui";
+import { Cargando } from "../ui";
 import { BotonInfo } from "../Variables";
 import { CardValor } from "../CardValor";
+import { FichaDato } from "../FichaDato";
 import { useConfig } from "../ConfigProvider";
-import { CeldaPresMandato, CeldasStats, LineaInicio, useBase } from "./comunes";
+import { useBase } from "./comunes";
 import { Tarjeta } from "./Plantillas";
-import { crearPres, statsMandato } from "@/lib/estadisticas";
 import { medidaInicial } from "@/lib/config";
-import { medDefaultDe, type SerieMeta } from "@/lib/motor";
+import { tituloVariable } from "@/lib/imagen-datos";
+import { medDefaultDe, type Expr, type SerieMeta } from "@/lib/motor";
 import { crearPlantillas, evaluar, plantillaSuelta, plantillasDeTema, type Evaluada } from "@/lib/plantillas";
 import { catListado, esNivelGeneralIpc, listables, ordenarListado } from "@/lib/regiones";
 import { hrefHistorico, idsDe, principalesDe, seriesDe, subgrupoDe, type Principal, type Tema } from "@/lib/temas";
-import { encExpr, enteroEn, useParams } from "@/lib/url";
+import { decExpr, encExpr, enteroEn, useParams } from "@/lib/url";
 
 const POR_NIVEL = 30;   // más series que esto en un bloque: se despliegan por niveles (región, rubro…)
 const MAX_PLANTILLAS = 8;
-const COLS_PRES: [string, string][] = [["ini", "Inicio"], ["fin", "Cierre"], ["var", "Variación"]];
 
 function Texto({ t }: { t: Tema }) {
   const [largo, setLargo] = useState(false);
@@ -32,8 +32,9 @@ function Texto({ t }: { t: Tema }) {
   );
 }
 
-/** Lista de series; si son muchas, se abre por niveles según la categoría (sin el nivel de región). Los hijos se dibujan recién al abrir. */
-function Series({ series, nivel, href, cat }: { series: SerieMeta[]; nivel: number; href: (s: SerieMeta) => string; cat: (s: SerieMeta) => string[] }) {
+/** Lista de series; si son muchas, se abre por niveles según la categoría (sin el nivel de región). Los hijos se dibujan recién al abrir.
+ *  Tocar una serie la pone en la ficha del dato (`onElegir`); la elegida queda marcada. */
+function Series({ series, nivel, onElegir, elegida, cat }: { series: SerieMeta[]; nivel: number; onElegir: (s: SerieMeta) => void; elegida: string | null; cat: (s: SerieMeta) => string[] }) {
   const grupos = useMemo(() => {
     const m = new Map<string, SerieMeta[]>(), sueltas: SerieMeta[] = [];
     if (series.length > POR_NIVEL) series.forEach((s) => { const k = cat(s)[nivel]; if (k) { if (!m.has(k)) m.set(k, []); m.get(k)!.push(s); } else sueltas.push(s); });
@@ -41,9 +42,12 @@ function Series({ series, nivel, href, cat }: { series: SerieMeta[]; nivel: numb
   }, [series, nivel, cat]);
   return (
     <ul className="lista-series">
-      {[...grupos.m].map(([k, ss]) => <Desplegado key={k} titulo={k} cuenta={ss.length}><Series series={ss} nivel={nivel + 1} href={href} cat={cat} /></Desplegado>)}
+      {[...grupos.m].map(([k, ss]) => <Desplegado key={k} titulo={k} cuenta={ss.length}><Series series={ss} nivel={nivel + 1} onElegir={onElegir} elegida={elegida} cat={cat} /></Desplegado>)}
       {grupos.sueltas.map((s) => (
-        <li key={s.id}><Link prefetch={false} href={href(s)}>{s.n}</Link> <span className="unidad">{s.u}</span> <BotonInfo id={s.id} /></li>
+        <li key={s.id}>
+          <button type="button" className="enlace ficha-serie" aria-pressed={s.id === elegida} onClick={() => onElegir(s)}>{s.n}</button>
+          {" "}<span className="unidad">{s.u}</span> <BotonInfo id={s.id} />
+        </li>
       ))}
     </ul>
   );
@@ -71,9 +75,10 @@ export function TemaPagina({ t }: { t: Tema }) {
   const { listo, metas, motor: m, errorGeneral, version } = base;
   const S = useMemo(() => Object.fromEntries(metas.map((s) => [s.id, s])), [metas, listo]);   // eslint-disable-line react-hooks/exhaustive-deps
   const principales = useMemo(() => (listo ? principalesDe(t, S) : []), [listo, t, S]);
-  // Solo se bajan los datos de los principales (la tabla por presidente usa el primero).
+  // Para las tarjetas se bajan los datos de los principales; la ficha pide los de su variable.
   const sec = useSeccion(principales.flatMap(idsDe));
   const info = useBase(p, set, montado);
+  const fichaRef = useRef<HTMLElement>(null), tituloFicha = useRef<HTMLHeadingElement>(null);
   const plantillas = useMemo(() => (listo ? crearPlantillas(metas) : []), [listo, metas]);
   const delTemaTodas = useMemo(() => seriesDe(t, metas), [t, metas]);
   const catDe = useMemo(() => (s: SerieMeta) => catListado(s, delTemaTodas), [delTemaTodas]);
@@ -99,37 +104,27 @@ export function TemaPagina({ t }: { t: Tema }) {
   if (errorGeneral) return <p className="error" role="alert">{errorGeneral}</p>;
   if (!listo || !m || !montado) return <Cargando />;
 
-  const hrefSerie = (s: SerieMeta) => hrefHistorico({ id: s.id, med: medidaInicial(s.tipo, medDefaultDe(s), config), rel: null, modo: "compra", esc: "" });
-  // Tabla "Por presidente": la variable elegida con los botones (arranca en el primero; no cambia sola). Se guarda en la URL (`pt`, posición entre los principales).
-  const iPres = enteroEn(p.get("pt"), 0, Math.max(0, principales.length - 1), 0);
-  const primero = principales[iPres];
-  let presidentes: React.ReactNode = null;
-  if (primero && !sec.ocupado) {
-    const PRES = crearPres(m.F);
-    const c = m.calc(primero);
-    const filas = PRES.map((x) => ({ x, st: statsMandato(m.F, c.v, x, info.b) })).filter((f) => f.st.n > 0);
-    presidentes = (
-      <section aria-label="Por presidente">
-        <h2>Por presidente</h2>
-        {principales.length > 1 && (
-          <div className="elegir-principal">
-            <Seg valor={String(iPres)} opciones={principales.map((pr, i) => [String(i), pr.nombre] as [string, string])} onElegir={(v) => set({ pt: v === "0" ? null : v })} />
-          </div>
-        )}
-        <p className="note">{primero.nombre}. Unidad: {c.unidad}.</p>
-        <LineaInicio info={info} F={m.F} />
-        {filas.length ? (
-          <div className="tablewrap fija"><table>
-            <thead><tr><th>Presidente</th>{COLS_PRES.map(([k, n]) => <th key={k}>{n}</th>)}</tr></thead>
-            <tbody>{filas.map(({ x, st }) => (
-              <tr key={x.id}><CeldaPresMandato x={x} F={m.F} arr={c.v} /><CeldasStats m={m} c={c} st={st} cols={COLS_PRES} /></tr>
-            ))}</tbody>
-          </table></div>
-        ) : <p className="note">Sin datos de este indicador en los mandatos.</p>}
-        <p className="acciones-vista"><Link prefetch={false} className="btn" href={`/presidentes/?${new URLSearchParams({ pv: encExpr(primero) }).toString()}`}>Ver todos los indicadores por presidente</Link></p>
-      </section>
-    );
-  }
+  const exprSerie = (s: SerieMeta): Expr => ({ id: s.id, med: medidaInicial(s.tipo, medDefaultDe(s), config), rel: null, modo: "compra", esc: "" });
+  // Variable de la ficha del dato. Se guarda en la URL: `dv` (la variable, igual que `v` de Histórico). Un link viejo con `pt`
+  // (posición entre los principales, de la tabla por presidente de antes) abre ese principal. Sin ninguno, el primer principal.
+  const existe = (id: string) => metas.some((s) => s.id === id);
+  // `elegida` es un objeto nuevo en cada render: la ficha compara por su contenido (encExpr), no por referencia.
+  const elegida: Expr | undefined = decExpr(p.get("dv"), existe) ?? principales[enteroEn(p.get("pt"), 0, Math.max(0, principales.length - 1), 0)];
+  const clave = elegida ? encExpr(elegida) : "";
+  const principalElegido = principales.find((pr) => encExpr(pr) === clave);
+  const elegir = (x: Expr) => {
+    const k = encExpr(x);
+    set({ dv: principales[0] && encExpr(principales[0]) === k ? null : k, pt: null });
+    // Lleva la vista hasta la ficha (sin animación si se pidió reducir el movimiento) y deja ahí el foco, para el teclado y los lectores de pantalla.
+    window.setTimeout(() => {
+      const quieto = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      fichaRef.current?.scrollIntoView({ behavior: quieto ? "auto" : "smooth", block: "start" });
+      tituloFicha.current?.focus({ preventScroll: true });
+    }, 0);
+  };
+  // Nombre de la ficha: el del principal (como en su tarjeta) o el nombre público con la medida.
+  const nombreFicha = !elegida ? "" : principalElegido ? principalElegido.nombre
+    : m.SER[elegida.id] && (!elegida.rel || m.SER[elegida.rel]) ? tituloVariable(m, elegida, m.calc(elegida)) : metas.find((s) => s.id === elegida.id)?.n ?? "";
 
   return (
     <section className="tema-pagina">
@@ -141,21 +136,33 @@ export function TemaPagina({ t }: { t: Tema }) {
       {tarjetas.length > 0 && (
         <section aria-label="Principales">
           <h2>Principales</h2>
+          {tarjetas.length > 1 && <p className="note">Tocá uno para verlo abajo de tres formas: su historia, por presidente y por mes de mandato.</p>}
           <div className="principales" style={{ ["--n" as string]: tarjetas.length, ["--c-med" as string]: columnasMedio(tarjetas.length), ["--c-ancho" as string]: columnasAncho(tarjetas.length) }}>
-            {tarjetas.map(({ pr, ev }) => <CardValor key={pr.nombre} titulo={pr.nombre} ev={ev} href={hrefHistorico(pr)} motor={m} />)}
+            {tarjetas.map(({ pr, ev }) => (
+              <CardValor key={pr.nombre} titulo={pr.nombre} ev={ev} href={hrefHistorico(pr)} motor={m} onElegir={() => elegir(pr)} elegido={pr === principalElegido} />
+            ))}
           </div>
+        </section>
+      )}
+
+      {elegida && (
+        <section aria-labelledby="ficha-tema-titulo" className="ficha-tema" ref={fichaRef}>
+          <h2 id="ficha-tema-titulo" className="ficha-nombre" ref={tituloFicha} tabIndex={-1}>{nombreFicha}</h2>
+          <FichaDato e={elegida} info={info} p={p} set={set} />
         </section>
       )}
 
       <section aria-label="Todos los datos">
         <h2>Todos los datos</h2>
-        <p className="note">{series.length} series. Tocá un bloque para ver sus series y una serie para abrirla en Histórico.</p>
+        <p className="note">{series.length} series. Tocá un bloque para ver sus series, y una serie para verla arriba, igual que los principales.</p>
         <ul className="lista-series raiz">
-          {subgrupos.map(([nombre, ss]) => <Desplegado key={nombre} titulo={nombre} cuenta={ss.length}><Series series={ss} nivel={2} href={hrefSerie} cat={catDe} /></Desplegado>)}
+          {subgrupos.map(([nombre, ss]) => (
+            <Desplegado key={nombre} titulo={nombre} cuenta={ss.length}>
+              <Series series={ss} nivel={2} onElegir={(s) => elegir(exprSerie(s))} elegida={principalElegido ? null : elegida?.id ?? null} cat={catDe} />
+            </Desplegado>
+          ))}
         </ul>
       </section>
-
-      {presidentes}
 
       {delTema.length > 0 && (
         <section aria-label="Gráficos listos del tema">

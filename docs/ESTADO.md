@@ -1,6 +1,6 @@
 # Estado del proyecto
 
-Para retomar el trabajo en una sesión nueva. Actualizar al cerrar cada tanda. Última actualización: 2026-11-11.
+Para retomar el trabajo en una sesión nueva. Actualizar al cerrar cada tanda. Última actualización: 2026-11-12.
 
 ## Dónde estamos
 El sitio pasó de ser un explorador de series a una herramienta para responder en redes con una imagen (auditoría: `docs/AUDITORIA-2026-11-10.md`). Publicado en https://primerolosdatos.com.ar.
@@ -11,6 +11,7 @@ Hecho y publicado (detalle en `docs/ROADMAP.md`):
 - Nombres públicos de las series, inflación como una sola entrada, región como filtro, "Gráficos listos".
 - Tablas con primera columna fija, barras con degradado, vista de velas, Congreso con página propia.
 - Tanda 4 (2026-11-11, `docs/specs/ajustes-tanda-4.md`): el botón Atrás cierra la ventana o el menú abierto y todas las capas tienen cruz (`useAtras` en `ui.tsx`, D-016); las cuentas cierran con los valores que se ven (un solo redondeo, `r1` en `formato.ts`); el Histórico arranca en Inflación con las líneas Último y Promedio, botón "Presidentes" bajo el gráfico y "Volver" del zoom fuera del gráfico; imagen de las velas; botones "Ver" alineados; sin pie genérico en la portada.
+- Tanda 5 (2026-11-12, `docs/specs/ajustes-tanda-5.md`): la ficha del dato (D-017) en `/dato/`, en los temas y en "Ver" de las preguntas; comparaciones (mes anterior, año atrás, inicio, promedio, mediana, máximo, mínimo) en la cabecera del Histórico; Personalizar como una sola ventana (panel al costado en computadora); ventanas de configuración en Por presidente y Meses de mandato; el IPC por rubros responde a la moneda y avisa cuando no aplica; placas de la portada con mes anterior y año atrás; bloque que presenta las secciones; el teclado no se abre solo.
 - Datos: canastas corregidas; respaldo del IPC cuando la API de INDEC no responde; filtro de cotizaciones sueltas; corridas a las 16:10, 17:15 y 21:00 (hora argentina, las dos primeras solo en días hábiles); publicación rápida cuando el push no toca el pipeline.
 
 ## Qué sigue, en orden
@@ -20,6 +21,10 @@ Hecho y publicado (detalle en `docs/ROADMAP.md`):
 4. **Mantenimiento del pipeline** (auditoría, etapa 4): descargas duplicadas o sin caché al inicio de `obtener_datos.py`, serie de UTDT cortada en 2005, series sin uso, helpers repetidos.
 
 ## Sin verificar (revisar antes de dar por cerrado)
+De la tanda 5 (lo demás se midió en el navegador a 360 y 1280 px):
+- El desplazamiento hasta la ficha al elegir un dato en un tema; que el gráfico se achique cuando el panel de Personalizar angosta la página (≥ 900 px); el foco sin teclado en un celular real; las imágenes de Compartir desde la ficha. La pestaña de prueba no entrega animaciones ni cambios de tamaño.
+- Con el panel de Personalizar abierto en computadora, el panel tapa el extremo derecho del menú (botón de configuración): revisar si molesta.
+
 De la tanda 4 (lo demás se midió en el navegador a 360 y 1280 px):
 - El carrusel de "Los datos más buscados" (espera a estar en pantalla y quieto), la pausa de la animación de Meses de mandato al tocar el gráfico y el paseo de las filas deslizables: revisados por código; el navegador de prueba no dispara `IntersectionObserver`.
 - El botón Atrás en un celular real con cada tipo de ventana (se probó con `history.back()` en el navegador de escritorio).
@@ -46,6 +51,7 @@ Durante la tanda 3 las capturas del navegador fallaron: se comprobó contenido y
 - `python pipeline/ver_cache.py <nombre>`: mira un archivo de `datos/cache/` sin volcarlo (columnas y pocas filas). Es la única forma permitida de leer el caché.
 - Flujo elegido: spec e implementación en la misma sesión, orquestando subagentes (`CLAUDE.md`, `docs/COMO-TRABAJAMOS.md`).
 - Barrido después de cada tanda: `cd web && npx tsx scripts/barrido-cuentas.ts` (las cuentas cierran) y `web/scripts/barrido-navegador.js` (desbordes, capas con cruz y Atrás, repetidos, ceros con signo; se carga en la página y se llama a `barridoPLD()`; las instrucciones están en el encabezado). Ojo: el navegador de prueba guarda en caché el HTML de cada ruta; después de compilar, pedir cada ruta con `fetch(ruta, { cache: "reload" })` antes de medir.
+- La vista previa de links en redes (7c) parte de la ruta `/dato/` (D-017).
 - Pendiente de herramientas: regenerar `DESIGN.md` con el documentador de Impeccable.
 
 ## Cómo se trabajó (y funcionó)

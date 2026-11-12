@@ -234,6 +234,19 @@ Decisiones del usuario (2026-11-11): los nombres públicos los propone Claude y 
 - Por presidente: compartir también el gráfico de velas; en celular hay textos que se salen del menú (la recomendación al entrar a Salarios en el selector).
 - Tabla por presidente de los temas: las variables en un solo renglón deslizable, con nombres largos en dos líneas.
 
+## ~~Ajustes pedidos al recorrer la página, tanda 5 (2026-11-12)~~ ✅ 2026-11-12
+→ spec: docs/specs/ajustes-tanda-5.md (bloque 5k). Se resolvió con la "ficha del dato" (D-017) en lugar del cartel que pregunta a dónde ir.
+- Preguntale a los datos: "Ver la tabla por presidente" queda feo; sacarlo o que "Ver" ya muestre esa tabla resumida.
+- ¿Qué datos te interesan? (temas): en Por presidente hay nombres que no entran en dos líneas ("Salario mediano real (trabajadores registrados)"). "Ver todos los indicadores por presidente" queda pegado a la tabla.
+- Al tocar un dato de "Todos los datos": preguntar a dónde ir (Histórico, Por presidente, Meses de mandato). O mejor (preferida por el usuario): potenciar la sección trayendo Histórico, Por presidente y Meses de mandato, y que tocar cualquier variable (principal o de "Todos los datos") la aplique a los tres. Lo mismo para "Preguntale a los datos". Con Compartir y personalización. En ese caso, ver si la tabla por presidente resumida de hoy sobra.
+- Menú de Presidentes: Por presidente, Meses de mandato, Ranking, Elecciones, Congreso.
+- Debajo de "Preguntale a los datos": explicar y promocionar las otras secciones, con su link (para quien quiere buscar o mezclar variables).
+- Los datos más buscados: sumar el mes anterior y el año pasado con sus variaciones ("datos novedosos": ver enseguida si el dato nuevo fue bueno o malo).
+- Histórico, cabecera del dato: a la derecha, en el mismo estilo, las comparaciones del resumen (inicio, promedio, mediana, máximo, mínimo) más mes anterior y año anterior, tipo carrusel; en celular revisar o sacar la frase del récord.
+- Histórico: Personalizar y esos botones como ventana, con el fondo oscuro o borroso.
+- En celular, al abrir "agregar una variable" se abre el teclado enseguida.
+- Un presidente, todas las variables: en "IPC por rubros" (índices) la moneda no cambia nada.
+
 ## Correcciones pedidas (2026-11-09)
 → spec: docs/specs/correcciones-historico.md
 Son ajustes a lo ya hecho, no ideas nuevas.
