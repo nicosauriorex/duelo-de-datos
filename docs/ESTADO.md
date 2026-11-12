@@ -13,15 +13,19 @@ Hecho y publicado (detalle en `docs/ROADMAP.md`):
 - Tanda 4 (2026-11-11, `docs/specs/ajustes-tanda-4.md`): el botón Atrás cierra la ventana o el menú abierto y todas las capas tienen cruz (`useAtras` en `ui.tsx`, D-016); las cuentas cierran con los valores que se ven (un solo redondeo, `r1` en `formato.ts`); el Histórico arranca en Inflación con las líneas Último y Promedio, botón "Presidentes" bajo el gráfico y "Volver" del zoom fuera del gráfico; imagen de las velas; botones "Ver" alineados; sin pie genérico en la portada.
 - Tanda 5 (2026-11-12, `docs/specs/ajustes-tanda-5.md`): la ficha del dato (D-017) en `/dato/`, en los temas y en "Ver" de las preguntas; comparaciones (mes anterior, año atrás, inicio, promedio, mediana, máximo, mínimo) en la cabecera del Histórico; Personalizar como una sola ventana (panel al costado en computadora); ventanas de configuración en Por presidente y Meses de mandato; el IPC por rubros responde a la moneda y avisa cuando no aplica; placas de la portada con mes anterior y año atrás; bloque que presenta las secciones; el teclado no se abre solo.
 - Vista previa en redes (2026-11-12, `docs/specs/vista-previa-links.md`, D-018): 28 páginas fijas `/dato/<slug>/` con título con la cifra e imagen generada al publicar (`npm run previas`), imagen general del sitio, `sitemap.xml` y `robots.txt`.
+- Parte diario del Banco Central (2026-11-12, `docs/specs/parte-diario-bcra.md`, D-019): `/bcra/` con ocho variables diarias, variaciones, contexto, gráfico, imagen, texto para copiar y vista previa en redes; bloque en la portada.
 - Datos: canastas corregidas; respaldo del IPC cuando la API de INDEC no responde; filtro de cotizaciones sueltas; corridas a las 16:10, 17:15 y 21:00 (hora argentina, las dos primeras solo en días hábiles); publicación rápida cuando el push no toca el pipeline.
 
 ## Qué sigue, en orden
-1. **Relatos, posts y video** (bloque 7c-2, sin spec): "contestar un relato", posts automáticos, video de la animación.
-2. **Parte diario del BCRA** (idea en `docs/IDEAS.md`, sin spec): compra de divisas del día, reservas, tipo de cambio minorista y tasas, como lo publica el banco a las 16:45–17:00. Necesita datos diarios; hoy todo el sitio es mensual. El usuario lo quiere para difundir el sitio en ese momento.
-3. **Datos de Congreso** (bloque 6d): cargar a mano bancas, bloques y totales de vetos en `datos/manual/`.
-4. **Mantenimiento del pipeline** (auditoría, etapa 4): descargas duplicadas o sin caché al inicio de `obtener_datos.py`, serie de UTDT cortada en 2005, series sin uso, helpers repetidos.
+1. **Relatos, posts y video** (bloque 7c-3, sin spec): "contestar un relato", publicar solo en X, video de la animación. Necesita decisiones del usuario: cuenta y clave de la API de X; si "contestar un relato" lleva sello verdadero/falso (choca con D-012).
+2. **Datos de Congreso** (bloque 6d): cargar a mano bancas, bloques y totales de vetos en `datos/manual/`.
+3. **Mantenimiento del pipeline** (auditoría, etapa 4): descargas duplicadas o sin caché al inicio de `obtener_datos.py`, serie de UTDT cortada en 2005, series sin uso, helpers repetidos.
 
 ## Sin verificar (revisar antes de dar por cerrado)
+Del parte del Banco Central:
+- La corrida completa con red (que el archivo diario salga con el caché recién actualizado) y cuánto atraso real traen reservas y compras a la tarde: el 12-11 al mediodía eran del 04-11 y del 03-11. Si siguen una semana atrás, buscar otra fuente (la planilla Series.xlsm del BCRA o el informe monetario diario).
+- Copiar texto y copiar link al portapapeles, el modo claro y el botón Atrás en un celular real.
+
 De la vista previa en redes:
 - Cómo se ve la tarjeta de verdad al pegar un link en WhatsApp, X, Telegram y Facebook (lo prueba el usuario).
 - La imagen compartible del navegador para series trimestrales o semestrales (pobreza, PIB) ahora une los puntos (regla en `armarImagen`); se vio en las vistas previas, no en el panel Compartir. Si la vista mezcla una serie mensual con una que no lo es, la no mensual sigue saliendo como puntos sueltos.

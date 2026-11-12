@@ -9,6 +9,7 @@ import { IconoDerecha, IconoIzquierda, IconoPausa, IconoSeguir } from "../Iconos
 import { Modal } from "../ui";
 import { Redireccion } from "../Redireccion";
 import { Buscar, Oraciones } from "./Oraciones";
+import { BloqueParte } from "./BloqueParte";
 import { Tarjeta } from "./Plantillas";
 import { nf1 } from "@/lib/formato";
 import type { Comparacion, Comparaciones } from "@/lib/plantillas";
@@ -280,6 +281,8 @@ export function Inicio() {
         <h2 id="temas">¿Qué datos te interesan?</h2>
         <div className="temas">{TEMAS.map((t) => <FilaTema key={t.slug} t={t} S={S} />)}</div>
       </Entrada>
+
+      <BloqueParte />
 
       <Entrada className="bloque ancho">
         <h2>Preguntale a los datos</h2>

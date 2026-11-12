@@ -214,7 +214,7 @@ function PanelImagen({ vista, href, titulo, onCerrar }: Props) {
 }
 
 /** La imagen entera (contenida) sobre fondo oscuro. Un toque, el botón o Escape la cierran; Escape cierra solo esta capa, no la ventana de abajo. */
-function VistaCompleta({ archivo, titulo, onCerrar }: { archivo: File; titulo: string; onCerrar: () => void }) {
+export function VistaCompleta({ archivo, titulo, onCerrar }: { archivo: File; titulo: string; onCerrar: () => void }) {
   const [url, setUrl] = useState<string | null>(null);
   const boton = useRef<HTMLButtonElement>(null);
   const esLaDeArriba = useCapa(true);

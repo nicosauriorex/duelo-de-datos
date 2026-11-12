@@ -39,7 +39,8 @@ Del 1 al 5 no necesitan backend ni datos nuevos: se pueden ir publicando de a un
 | 5j | Ajustes de la tanda 4 y barrido de errores parecidos | Ajustes pedidos al recorrer la página, tanda 4 (2026-11-11): diez reglas de interfaz, 13 casos y un barrido por código para encontrar errores del mismo tipo | No | Hecho (2026-11-11) — [spec](specs/ajustes-tanda-4.md) |
 | 5k | La ficha del dato y ajustes de la tanda 5 | Ajustes pedidos, tanda 5 (2026-11-12): un dato elegido se ve en Histórico, Por presidente y Meses de mandato a la vez (temas, preguntas y ruta propia); comparaciones en la cabecera del Histórico; Personalizar como ventana; teclado, opciones sin efecto y barrido | No | Hecho (2026-11-12) — [spec](specs/ajustes-tanda-5.md) |
 | 7c-1 | Vista previa de los links en redes | Página fija por dato (`/dato/<slug>/`) con título con la cifra e imagen generada al publicar; imagen general del sitio; sitemap | No | Hecho (2026-11-12) — [spec](specs/vista-previa-links.md) |
-| 7c-2 | Relatos, posts y video | "Contestar un relato"; posts automáticos; video de la animación | A definir | Sin spec |
+| 7c-2 | Parte diario del Banco Central | Página `/bcra/` con los datos del día (reservas, compra de dólares, dólar, tasas, base y depósitos), su variación y contexto, imagen, texto para copiar y vista previa en redes; primer contenido diario del sitio | No (datos diarios que el pipeline ya bajaba) | Hecho (2026-11-12) — [spec](specs/parte-diario-bcra.md) |
+| 7c-3 | Relatos, posts y video | "Contestar un relato"; posts automáticos; video de la animación | A definir | Sin spec |
 | 8 | Cuentas y comunidad | Comunidad: posts, votos, comentarios, ratios, rankings, moderación | Sí | Sin spec |
 | 9 | Novedades, calendario y predicciones | Novedades, calendario y predicciones | Sí | Sin spec |
 

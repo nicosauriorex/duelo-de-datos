@@ -21,7 +21,9 @@ import { paletaDe } from "../lib/imagen-paleta";
 import { historicoFicha } from "../lib/ficha";
 import { baseDeConfig, DEFECTO, IMAGEN_DEFECTO } from "../lib/config";
 import { PRES_DEF } from "../lib/estadisticas";
-import { CARPETA_PREVIAS, DESCRIPCION_SITIO, PREVIA, textosPrevia, type DatosPrevias, type PreviaDato } from "../lib/previas";
+import { CARPETA_PREVIAS, DESCRIPCION_SITIO, PREVIA, textosPrevia, type DatosPrevias, type PreviaDato, type PreviaParte } from "../lib/previas";
+import { armarParte, decodificar, isoDeDia, textosPreviaParte, type DiarioCrudo } from "../lib/diario";
+import { armarImagenParte } from "../lib/imagen-parte";
 
 const RAIZ = path.resolve(__dirname, "..");
 const DATOS = path.join(RAIZ, "public", "datos");
@@ -114,6 +116,27 @@ function aPng(dibujar: (c: LienzoCanvas) => void, tam: { w: number; h: number })
   return chica.toBuffer("image/png");
 }
 
+/** Imagen y textos del parte diario del Banco Central (/bcra/): `previas/bcra.png` y `previas/bcra.json`. Si falta `diario_bcra.json`, avisa y sigue. */
+function previaDelParte(pal: ReturnType<typeof paletaDe>): boolean {
+  const archivo = path.join(DATOS, "diario_bcra.json");
+  if (!fs.existsSync(archivo)) { avisar("no está diario_bcra.json: se saltea la imagen del parte del Banco Central (/bcra/ usa la imagen general)"); return false; }
+  try {
+    const parte = armarParte(decodificar(JSON.parse(fs.readFileSync(archivo, "utf8")) as DiarioCrudo));
+    if (!parte) { avisar("diario_bcra.json no trae datos: se saltea la imagen del parte del Banco Central"); return false; }
+    const datos = armarImagenParte(parte, "16x9");
+    fs.writeFileSync(path.join(SALIDA, "bcra.png"), aPng((cv) => dibujarImagen(cv, datos, pal, DIBUJO), DIBUJO));
+    const { titulo, descripcion } = textosPreviaParte(parte), fecha = isoDeDia(parte.dia);
+    const previa: PreviaParte = { titulo, descripcion, fecha, imagen: `/${CARPETA_PREVIAS}/bcra.png?v=${fecha}` };
+    fs.writeFileSync(path.join(SALIDA, "bcra.json"), JSON.stringify(previa, null, 1));
+    console.log(`bcra: ${titulo}
+  ${descripcion}`);
+    return true;
+  } catch (err) {
+    avisar(`parte del Banco Central: ${(err as Error).message}`);
+    return false;
+  }
+}
+
 function main() {
   registrarFuente();
   const pal = paletaDe(tokensOscuros(), FAMILIA, {});
@@ -161,13 +184,14 @@ function main() {
   const n = Object.keys(salida.datos).length;
   if (!n) fallar("no se pudo generar ninguna imagen");
   fs.writeFileSync(path.join(SALIDA, "_datos.json"), JSON.stringify(salida, null, 1));
+  const conParte = previaDelParte(pal);
   fs.writeFileSync(path.join(SALIDA, "sitio.png"), aPng((cv) => dibujarImagenSitio(cv, pal, {
     titulo: "Datos de Argentina, en debate.",
     bajada: DESCRIPCION_SITIO.replace(/^Datos de Argentina, en debate\.\s*/, ""),
     temas: TEMAS.map((t) => t.nombre),
     pie: "Datos oficiales: INDEC, BCRA, Secretaría de Trabajo y otras fuentes",
   }, PREVIA), PREVIA));
-  console.log(`\nPrevias: ${n} de ${DATOS_FIJOS.length} datos fijos, más sitio.png, en ${((Date.now() - inicio) / 1000).toFixed(1)} s.${avisos.length ? ` Avisos: ${avisos.length}.` : ""}`);
+  console.log(`\nPrevias: ${n} de ${DATOS_FIJOS.length} datos fijos, más sitio.png${conParte ? " y bcra.png" : ""}, en ${((Date.now() - inicio) / 1000).toFixed(1)} s.${avisos.length ? ` Avisos: ${avisos.length}.` : ""}`);
 }
 
 main();

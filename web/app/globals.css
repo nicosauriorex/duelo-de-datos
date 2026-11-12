@@ -1106,3 +1106,71 @@ tr.nota-grupo td { background: var(--surface-0); color: var(--text-secondary); t
 /* "Todos los datos": cada serie es un botón que la pone en la ficha; la elegida, en negrita */
 .lista-series .ficha-serie { min-height: var(--alto-toque); max-width: 100%; text-align: left; overflow-wrap: anywhere; }
 .lista-series .ficha-serie[aria-pressed="true"] { font-weight: 800; text-decoration-thickness: 2px; }
+
+/* Parte del Banco Central (/bcra/, bloque de la portada y enlace en los temas). Verde/rojo solo con signo o texto; el resto va sin color. */
+.parte { min-width: 0; }
+.parte-cab { margin-bottom: var(--e-4); }
+.parte-del { margin: 0 0 var(--e-1); font-size: var(--t-lg); color: var(--text-secondary); }
+.parte-del b { color: var(--text-primary); font-weight: 800; }
+.parte-compartir { display: flex; flex-wrap: wrap; gap: var(--e-2); }
+.parte-compartir .btn { min-height: var(--alto-toque); justify-content: center; }
+.parte-grilla { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--e-3); margin-bottom: var(--e-4); }
+@media (min-width: 700px) { .parte-grilla { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.parte-card { position: relative; display: flex; flex-direction: column; min-width: 0; background: var(--surface-1); border: 1px solid var(--border);
+  border-top: var(--linea) solid var(--border-fuerte); padding: var(--e-3) var(--e-4) 0; }
+.parte-card:hover { border-color: var(--acento); }
+.parte-card:has(.parte-abrir:focus-visible) { outline: var(--linea) solid var(--foco); outline-offset: 2px; }
+.parte-nombre { margin: 0; font-size: var(--t-md); font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
+.parte-unidad { margin: 0 0 var(--e-2); font-size: var(--t-xs); color: var(--text-muted); }
+.parte-valor-fila { margin: 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--e-2); }
+.parte-valor { font-size: var(--t-xl); font-weight: 800; font-stretch: var(--ancho-semi); line-height: 1.2; overflow-wrap: anywhere; }
+.parte-etq { font-size: var(--t-sm); font-weight: 800; text-transform: uppercase; }
+.parte-dato { margin: 2px 0 var(--e-2); font-size: var(--t-sm); color: var(--text-muted); }
+.parte-filas, .parte-frases { list-style: none; margin: 0; padding: 0; }
+.parte-fila { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--e-3); padding: 6px 0; border-top: 1px solid var(--border); font-size: var(--t-sm); }
+.parte-fila-rot { min-width: 0; color: var(--text-secondary); }
+.parte-fila-rot small, .parte-fila-val small { display: block; font-size: var(--t-xs); overflow-wrap: anywhere; }
+.parte-fila-rot small { color: var(--text-muted); }
+.parte-fila-val { flex: none; max-width: 55%; text-align: right; font-weight: 700; overflow-wrap: anywhere; }
+.parte-fila-val small { font-weight: 600; }
+.parte-frases li { padding: 3px 0; font-size: var(--t-sm); color: var(--text-secondary); }
+.parte-card svg.mini { width: 100%; height: 36px; margin-top: var(--e-2); }
+.parte-abrir { margin: var(--e-2) calc(-1 * var(--e-4)) 0; min-height: var(--alto-toque); padding: 0 var(--e-4); background: none; border: 0; border-top: 1px solid var(--border);
+  color: var(--acento-texto); font-weight: 700; text-align: left; cursor: pointer; }
+.parte-abrir::after { content: ""; position: absolute; inset: 0; }   /* toda la tarjeta es el botón */
+.parte-abrir:focus-visible { outline: none; }
+/* Gráfico grande */
+.parte-modal { display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-rows: max-content; gap: var(--e-3); padding: var(--e-4); overflow-y: auto; overflow-x: hidden; min-width: 0; }
+.parte-modal h2 { margin: 0; font-size: var(--t-lg); font-weight: 800; }
+.parte-modal .note { margin: 0; }
+.parte-modal .seg button { min-height: var(--alto-toque); padding: 0 var(--e-3); }
+.parte-graf { width: 100%; min-width: 0; }
+.parte-graf-dato { margin: 0 0 var(--e-1); display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--e-3); min-height: 1.6em; }
+.parte-graf-dato b { font-size: var(--t-lg); }
+.parte-graf-dato span { font-size: var(--t-sm); color: var(--text-muted); }
+.parte-svg { display: block; max-width: 100%; touch-action: pan-y; cursor: crosshair; }
+.parte-svg:focus-visible { outline: var(--linea) solid var(--foco); outline-offset: 2px; }
+.parte-reja { stroke: var(--grid); stroke-width: 1; }
+.parte-cero { stroke: var(--axis); stroke-width: 1; }
+.parte-linea { fill: none; stroke: var(--series-1); stroke-width: 2; stroke-linejoin: round; }
+.parte-barra { stroke: var(--series-1); }
+.parte-sel { stroke: var(--text-muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.parte-punto { fill: var(--series-1); stroke: var(--surface-1); stroke-width: 2; }
+.parte-extremos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--e-3); margin: 0; }
+.parte-extremos dt { font-size: var(--t-xs); color: var(--text-muted); }
+.parte-extremos dd { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+.parte-extremos dd small { display: block; font-weight: 400; font-size: var(--t-xs); color: var(--text-muted); }
+/* Bloque de la portada y enlace desde los temas */
+.parte-bloque-caja { min-height: 120px; }
+.parte-bloque { display: flex; flex-direction: column; gap: var(--e-3); padding: var(--e-4); background: var(--surface-1); border: 1px solid var(--border);
+  border-top: var(--linea) solid var(--border-fuerte); color: inherit; text-decoration: none; }
+.parte-bloque:hover { border-color: var(--acento); }
+.parte-bloque:focus-visible { outline: var(--linea) solid var(--foco); outline-offset: 2px; }
+.parte-bloque-fecha { font-size: var(--t-sm); font-weight: 700; color: var(--text-secondary); }
+.parte-bloque-cifras { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: var(--e-3); }
+.parte-bloque-cifras li { display: flex; flex-direction: column; min-width: 0; }
+.parte-bloque-n { font-size: var(--t-xs); font-weight: 700; text-transform: uppercase; color: var(--text-secondary); }
+.parte-bloque-cifras b { font-size: var(--t-xl); font-weight: 800; font-stretch: var(--ancho-semi); line-height: 1.2; overflow-wrap: anywhere; }
+.parte-bloque-cifras small { font-size: var(--t-xs); color: var(--text-muted); }
+.parte-bloque-ir { display: inline-flex; align-items: center; min-height: var(--alto-toque); font-weight: 700; color: var(--acento-texto); text-decoration: underline; }
+.enlace-parte { display: inline-flex; align-items: center; min-height: var(--alto-toque); font-weight: 600; }

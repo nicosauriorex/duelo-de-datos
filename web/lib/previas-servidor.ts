@@ -3,7 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { DATOS_FIJOS, type DatoFijo } from "./datos-fijos";
-import { CARPETA_PREVIAS, type DatosPrevias, type PreviaDato } from "./previas";
+import { CARPETA_PREVIAS, type DatosPrevias, type PreviaDato, type PreviaParte } from "./previas";
 
 const PUBLICO = path.join(process.cwd(), "public");
 
@@ -34,3 +34,6 @@ export function fijosPublicables(): DatoFijo[] {
   const S = idsCatalogo();
   return S ? DATOS_FIJOS.filter((d) => S.has(d.e.id) && (!d.e.rel || S.has(d.e.rel))) : DATOS_FIJOS;
 }
+
+/** Título, descripción e imagen del parte del Banco Central (null si `npm run previas` no lo generó: la página usa los textos generales). */
+export const previaParte = (): PreviaParte | null => leerJson<PreviaParte>(CARPETA_PREVIAS, "bcra.json");

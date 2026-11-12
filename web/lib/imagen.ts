@@ -33,13 +33,15 @@ export interface MarcaExt { tipo: "max" | "min"; x: number; valor: number; texto
 export interface FilaBarra { id: string; nombre: string; valor: number | null; variacion: string | null; cls: Cls; ini: string | null; fin: string | null; nota: string | null }
 /** Una fila de "un presidente, varias variables". */
 export interface FilaVariable { nombre: string; unidad: string; ini: string | null; fin: string | null; variacion: string | null; cls: Cls; nota: string | null; spark: (number | null)[] }
+/** Títulos de las columnas de las filas con variables, si no son los de un mandato (el parte diario del Banco Central usa otros). */
+export interface EncVariables { ini: string; fin: string; sp: string; sinDato: string }
 /** Una vela de "una variable, todos los presidentes": valores numéricos (para el dibujo) y ya formateados (para el texto). */
 export interface FilaVela { id: string; nombre: string; periodo: string; ini: number; fin: number; min: number; max: number; iniTxt: string; finTxt: string; minTxt: string; maxTxt: string; variacion: string; cls: Cls; nota: string | null }
 export interface FilaRank { puesto: number; id: string; nombre: string; score: number; indicadores: number }
 /** Contenido de la imagen cuando no es un gráfico de líneas. */
 export type Lienzo =
   | { tipo: "barras"; filas: FilaBarra[]; sinDatos: string[] }
-  | { tipo: "variables"; filas: FilaVariable[]; presId: string }
+  | { tipo: "variables"; filas: FilaVariable[]; presId: string; enc?: EncVariables }
   | { tipo: "velas"; filas: FilaVela[]; sinDatos: string[] }
   | { tipo: "ranking"; filas: FilaRank[]; sinDatos: string[] };
 
@@ -510,8 +512,8 @@ function filasVariables(ctx: Ctx, r: Rect, L: LienzoDe<"variables">, pal: Paleta
   for (let c = 0; c < g.cols; c++) {
     const q = col(r.x + c * (g.cw + g.gap));
     encabezado(ctx, pal, esc, r.y + 9, [
-      { t: "Variable", x: q.nom, w: iw * fr.nom }, { t: "Inicio", x: q.ini, w: iw * fr.ini - 8, alinear: "right" }, { t: "Cierre", x: q.fin, w: iw * fr.fin - 8, alinear: "right" },
-      { t: "Variación", x: q.vr, w: iw * fr.vr - 8, alinear: "right" }, { t: "Mandato", x: q.sp + 8, w: iw * fr.sp - 8 },
+      { t: "Variable", x: q.nom, w: iw * fr.nom }, { t: L.enc?.ini ?? "Inicio", x: q.ini, w: iw * fr.ini - 8, alinear: "right" }, { t: L.enc?.fin ?? "Cierre", x: q.fin, w: iw * fr.fin - 8, alinear: "right" },
+      { t: "Variación", x: q.vr, w: iw * fr.vr - 8, alinear: "right" }, { t: L.enc?.sp ?? "Mandato", x: q.sp + 8, w: iw * fr.sp - 8 },
     ]);
   }
   L.filas.forEach((f, k) => {
@@ -523,7 +525,7 @@ function filasVariables(ctx: Ctx, r: Rect, L: LienzoDe<"variables">, pal: Paleta
     const yt = y + (g.rowH - alto(aN, 1.2) - alto(aU, 1.2)) / 2;
     texto(ctx, pal, aN, 800, q.nom, yt, pal.tinta, 1.2); texto(ctx, pal, aU, 400, q.nom, yt + alto(aN, 1.2), pal.tintaTenue, 1.2);
     if (f.ini == null || f.fin == null) {
-      const aS = ajustar(ctx, pal, "sin datos en este mandato", { peso: 600, max: f1, min: 11, ancho: iw * (1 - fr.nom) - 8, lineas: 1 });
+      const aS = ajustar(ctx, pal, L.enc?.sinDato ?? "sin datos en este mandato", { peso: 600, max: f1, min: 11, ancho: iw * (1 - fr.nom) - 8, lineas: 1 });
       texto(ctx, pal, aS, 600, q.ini, y + (g.rowH - alto(aS, 1.2)) / 2, pal.tintaTenue, 1.2);
       return;
     }

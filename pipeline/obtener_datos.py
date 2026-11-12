@@ -27,6 +27,7 @@ import pandas as pd
 import capacidad
 import catalogo
 import contexto
+import diario
 import macro
 import precios_mundo
 import salarios
@@ -282,6 +283,13 @@ def escribir_json_web(datos, ctx=None, pm=None, cap=None):
         txt = json.dumps(cap, ensure_ascii=False, separators=(",", ":"))
         (destino / "capacidad.json").write_text(txt, encoding="utf-8")
         h.update(txt.encode("utf-8"))
+    # Parte diario del BCRA: sale de los CSV de datos/cache/ (sin red). Va fuera del hash: cambia todos los días y no es parte de los datos mensuales.
+    # Si falla (CSV roto, columna distinta) no corta la corrida: la web queda sin el parte.
+    try:
+        txt = json.dumps(diario.construir_json(), ensure_ascii=False, separators=(",", ":"))
+        (destino / "diario_bcra.json").write_text(txt, encoding="utf-8")
+    except Exception as e:
+        print(f"Parte diario del BCRA: no se pudo armar, se sigue sin diario_bcra.json ({e}).")
     # "version" cambia con cada dato nuevo: la web la agrega a cada pedido para no mezclar cachés viejos y nuevos.
     (destino / "catalogo.json").write_text(
         json.dumps({"version": h.hexdigest()[:10], "fechas": datos["fechas"], "series": meta}, ensure_ascii=False, separators=(",", ":")),

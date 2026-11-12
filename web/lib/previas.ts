@@ -21,6 +21,9 @@ export interface PreviaDato {
   fecha: string;         // mes del último dato ("2026-09"): renueva la imagen en las redes cuando sale un dato nuevo
   imagen: string;        // ruta de la imagen, con `?v=<fecha>`
 }
+/** La vista previa del parte diario del Banco Central (`previas/bcra.json`, lo escribe el mismo script): título y descripción con las cifras del día. */
+export interface PreviaParte { titulo: string; descripcion: string; fecha: string; imagen: string }
+export const DESCRIPCION_PARTE = "Los datos del día del Banco Central: compra de dólares, reservas, dólar minorista y mayorista, tasas, base monetaria y depósitos.";
 export interface DatosPrevias { generado: string; datos: Record<string, PreviaDato> }
 
 /** Open Graph y Twitter de una página. `imagen` puede ser relativa (se completa con `metadataBase`) o absoluta. */
