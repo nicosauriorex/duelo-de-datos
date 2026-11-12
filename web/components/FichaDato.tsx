@@ -17,19 +17,26 @@ import { COLS, CeldaPres, CeldasStats, LineaInicio, type InicioMandato } from ".
 import { unoDe } from "@/lib/url";
 import { baseDeConfig } from "@/lib/config";
 import { contextoDato } from "@/lib/contexto-dato";
-import { PRES_DEF, TITULOS_MANDATO, crearPres, etiqueta, filasGrafico, franjasPres, nivelComparable, nombreCorto, statsMandato } from "@/lib/estadisticas";
-import { fmtMes, ok } from "@/lib/formato";
-import { frecuenciaOrigen, leerComun, textoTemporalidad } from "@/lib/historico";
+import { PRES_DEF, TITULOS_MANDATO, crearPres, etiqueta, franjasPres, nivelComparable, nombreCorto, statsMandato } from "@/lib/estadisticas";
+import { fmtMes } from "@/lib/formato";
+import { frecuenciaOrigen, textoTemporalidad } from "@/lib/historico";
+import { datoFijoDe, hrefFijo } from "@/lib/datos-fijos";
 import { fmtEjeDe, notaInflacion } from "@/lib/imagen-datos";
 import type { Expr, Motor } from "@/lib/motor";
 import { datosDesde, periodoMandato } from "@/lib/tablas";
 import { hrefHistorico, idsDe } from "@/lib/temas";
-import { hrefMandatoDe, hrefPresidentesDe, mandatoFicha, paramsInicio, sinMandatoTxt, velasDe } from "@/lib/ficha";
+import { historicoFicha, hrefMandatoDe, hrefPresidentesDe, mandatoFicha, paramsInicio, sinMandatoTxt, velasDe } from "@/lib/ficha";
 
 type SetFn = (cambios: Record<string, string | null | undefined>) => void;
 type Titulo = "h2" | "h3";
 const COLS_PRES = COLS.slice(0, 3);   // Inicio, Cierre y Variación
 const absoluto = (href: string) => () => window.location.origin + href;
+/** Link que dan Compartir y "Copiar link": si la variable es un dato fijo, su página propia (/dato/<slug>/, con vista previa en redes)
+ *  con lo que se está viendo (vista, presidente resaltado, inicio de mandato); si no, la sección con la variable. */
+const linkCompartir = (e: Expr, seccion: string, extra: Record<string, string> = {}) => {
+  const fijo = datoFijoDe(e);
+  return absoluto(fijo ? hrefFijo(fijo.slug, extra) : seccion);
+};
 
 /** La ficha de una variable. `p`/`set` son los de la página (la vista Tabla o Velas se guarda en `pvista`, como en Por presidente).
  *  `info`: inicio de mandato de la página (`useBase`). `pd`: presidente que se resalta en la tabla y se suma a Meses de mandato. `nivel`: de qué nivel son los títulos de los bloques. */
@@ -81,13 +88,8 @@ function BloqueHistorico({ m, e, version, H }: { m: Motor; e: Expr; version: num
   const { config } = useConfig();
   const kE = `${e.id}~${e.med}~${e.rel}~${e.modo}~${e.esc}`;
   const D = useMemo(() => {
-    const c = m.calc(e), F = m.F;
-    const col = [{ key: "s0", c, flujo: !!c.flujo, ultimo: !!c.ultimo }];
-    // El período de la vista simple de Histórico (el "desde" de la configuración); si ahí no hay datos (serie que terminó antes), toda la serie.
-    let E = leerComun(new URLSearchParams(), F, config.desde);
-    const filas = (d: string) => filasGrafico(F, col, { desde: d, hasta: E.hasta, meses: E.meses, freq: "M", cierre: false, banda: false });
-    let rows = filas(E.desde);
-    if (!rows.some((r) => ok(r.s0)) && E.desde > F[0]) { E = { ...E, desde: F[0] }; rows = filas(F[0]); }
+    const c = m.calc(e);
+    const { E, rows } = historicoFicha(m, c, config.desde);
     const fmt = (v: number) => m.fmtC(c, v);
     const series: SerieG[] = [{ key: "s0", name: c.corto, color: PALETA[0], fmt }];
     const opts: OpcionesG = { fmtAxis: fmtEjeDe(c), fmtTip: fmt, tipTitle: etiqueta, label: c.corto,
@@ -107,7 +109,7 @@ function BloqueHistorico({ m, e, version, H }: { m: Motor; e: Expr; version: num
   return (
     <Bloque H={H} titulo="Histórico" acciones={
       <Acciones donde="Histórico" href={href} compartir={
-        <BotonCompartir className="btn" titulo={c.nombre} href={absoluto(href)} title="Armar una imagen de este gráfico para compartir" aria-label="Compartir como imagen: histórico"
+        <BotonCompartir className="btn" titulo={c.nombre} href={linkCompartir(e, href)} title="Armar una imagen de este gráfico para compartir" aria-label="Compartir como imagen: histórico"
           crearVista={() => ({ exprs: [e], modo: "valor", eje: "propia", desde: E.desde, hasta: E.hasta, meses: E.meses, freq: "M", ag: "promedio" })}><IconoCompartir />Compartir</BotonCompartir>} />}>
       {ctx && (
         <div className="vs-cab ficha-cifra">
@@ -143,7 +145,7 @@ function BloquePresidentes({ m, e, info, H, pd, inicio, velas: enVelas, onVista 
     <Bloque H={H} titulo="Por presidente"
       extra={<Seg valor={enVelas ? "velas" : "tabla"} opciones={[["tabla", "Tabla"], ["velas", "Velas"]]} onElegir={(v) => onVista(v === "velas")} />}
       acciones={<Acciones donde="Por presidente" href={href} compartir={
-        <BotonCompartir className="btn" titulo={`Primero los Datos: ${c.corto} por presidente${enVelas ? " (velas)" : ""}`} href={absoluto(href)} deshabilitado={sinVelas}
+        <BotonCompartir className="btn" titulo={`Primero los Datos: ${c.corto} por presidente${enVelas ? " (velas)" : ""}`} href={linkCompartir(e, href, { ...inicio, ...(enVelas ? { pvista: "velas" } : {}), ...(pd ? { pd } : {}) })} deshabilitado={sinVelas}
           title={sinVelas ? "Las velas no se pueden armar con estos datos: no hay nada para compartir" : enVelas ? "Armar una imagen de estas velas para compartir" : "Armar una imagen de esta tabla para compartir"}
           aria-label={`Compartir como imagen: por presidente, en ${enVelas ? "velas" : "tabla"}`}
           crearVista={() => ({ tipo: enVelas ? "velas" : "barras", expr: e, presIds: filas.map((f) => f.x.id), base: info.b })}><IconoCompartir />Compartir</BotonCompartir>} />}>
@@ -196,7 +198,7 @@ function BloqueMandato({ m, e, info, H, pd, inicio, version }: { m: Motor; e: Ex
   return (
     <Bloque H={H} titulo="Meses de mandato" acciones={
       <Acciones donde="Meses de mandato" href={href} compartir={
-        <BotonCompartir className="btn" titulo={`Primero los Datos: ${D.c.corto} por mes de mandato`} href={absoluto(href)}
+        <BotonCompartir className="btn" titulo={`Primero los Datos: ${D.c.corto} por mes de mandato`} href={linkCompartir(e, href, { ...inicio, ...(pd ? { pd } : {}) })}
           title="Armar una imagen de este gráfico para compartir" aria-label="Compartir como imagen: meses de mandato"
           crearVista={() => ({ tipo: "mandato", expr: e, modo: D.modo, presIds: D.pres.map((x) => x.id), anc: D.ancParam, md: null, mh: null, base: b })}><IconoCompartir />Compartir</BotonCompartir>} />}>
       <p className="note">Cada línea arranca en el mes 0 de un presidente ({TITULOS_MANDATO[D.modo]}).</p>

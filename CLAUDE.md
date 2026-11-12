@@ -9,6 +9,7 @@ Todo en español: código, comentarios, nombres de variables, commits y textos d
 - Bajar todo y armar la página: `python pipeline/obtener_datos.py` (tarda, usa red)
 - Regenerar solo los JSON de la web (sin red, desde `datos/cache/compilado.json`): `python pipeline/obtener_datos.py --solo-json`
 - Sitio: `cd web && npm ci && npm run build` (genera `web/out/`); `npm run tipos` para `tsc --noEmit`
+- Vista previa de los links en redes: `cd web && npm run previas` (después de los JSON y antes de `npm run build`): dibuja `web/public/previas/<slug>.png` de cada dato fijo (`web/lib/datos-fijos.ts`), `sitio.png` y `_datos.json` (título y descripción de `/dato/<slug>/`). Generado, no versionado; sin él el build sale igual, con textos genéricos.
 - Python 3.14 + pandas. No hay tests todavía; la verificación es que el comando de arriba termine sin error y la página abra bien.
 - Ver el sitio en local: configuración `web-out` de `.claude/launch.json` (sirve `web/out` en el puerto 3100). Después de cada `npm run build` alcanza con recargar.
 - Publicar: `git push` a `main` dispara `.github/workflows/actualizar.yml`. Si el push solo toca `web/` o `docs/`, va en modo rápido (1 minuto, sin bajar datos); si toca `pipeline/`, `datos/`, `requirements.txt` o el workflow, corre completo (10 minutos). Si el push es rechazado, es por el commit diario de datos: `git pull --rebase` y volver a subir.

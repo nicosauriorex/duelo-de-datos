@@ -8,6 +8,7 @@ indec_token.txt
 # Generados por el pipeline (se rearman con python pipeline/obtener_datos.py)
 datos/mensual.csv
 web/public/datos/
+web/public/previas/
 web/out/
 
 # datos/cache/ SÍ se versiona: es el respaldo cuando una fuente oficial se cae.

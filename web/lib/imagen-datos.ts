@@ -218,6 +218,11 @@ export function armarImagen(m: Motor, v: VistaImg, o: OpcionesImg): DatosImagen 
     } else if (pers.tarjetas === "gen") tarjetas = { tipo: "gen", items: tarjetasGen(m, c0, est, pers.datosGen, conNegativos) };
   }
 
+  // Series trimestrales, semestrales o anuales armadas mes a mes: el dibujo corta la línea en cada mes sin dato y quedarían puntos sueltos.
+  // Se usan solo los meses con dato (cada uno en su lugar del eje), así la línea une un dato con el siguiente, como el gráfico de la página.
+  // Una serie mensual con un hueco real en el medio conserva el hueco.
+  const sinHuecos = lista.every((x) => frecuenciaOrigen(x.c.v) !== "M");
+  const filasDib = sinHuecos ? rows.filter((r) => lista.some((x) => ok(r[x.key]))) : rows;
   const hoy = new Date();
   const mesUlt = ctx?.fecha ?? rows[rows.length - 1].fecha;
   return {
@@ -226,8 +231,8 @@ export function armarImagen(m: Motor, v: VistaImg, o: OpcionesImg): DatosImagen 
     cifra: ctx ? { valor: ctx.valor, mes: ctx.mes, aviso: ctx.ultimoDisponible } : null,
     frases: ctx?.frases ?? [],
     leyenda: ctx ? null : lista.map((x) => { const u = ultimaFila(x.key); return { nombre: x.c.corto, valor: u == null ? "–" : fmtDe(x.c)(u), color: x.k }; }),
-    x: rows.map((r) => mesDeFila(r)),
-    series: lista.map((x) => ({ nombre: x.c.corto, color: x.k, axis: x.axis, v: rows.map((r) => (ok(r[x.key]) ? (r[x.key] as number) : null)) })),
+    x: filasDib.map((r) => mesDeFila(r)),
+    series: lista.map((x) => ({ nombre: x.c.corto, color: x.k, axis: x.axis, v: filasDib.map((r) => (ok(r[x.key]) ? (r[x.key] as number) : null)) })),
     fmtEje: b100 ? (x) => nf0.format(x) : fmtEjeDe(calcs[0]),
     fmtEje2: !b100 && lista.length === 2 && v.eje !== "misma" ? fmtEjeDe(calcs[1]) : null,
     franjas, tarjetas, lineasRef, marcasExt, marcaUltimo: pers ? pers.marcaUltimo : true,

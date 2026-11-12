@@ -1,9 +1,10 @@
 // Ficha del dato: lo que calcula la ficha (componente `FichaDato`) y los links de su "Abrir completo".
 // Una variable (`Expr`, la misma de la URL del Histórico) vista de tres formas: Histórico, Por presidente y Meses de mandato.
 // Ver docs/specs/ajustes-tanda-5.md.
-import { calcularMandato, claseVariacion, varNum, type BaseCfg, type ModoMandato, type Pres, type StatsM } from "./estadisticas";
+import { calcularMandato, claseVariacion, filasGrafico, varNum, type BaseCfg, type Fila, type ModoMandato, type Pres, type StatsM } from "./estadisticas";
 import { fmtMes, ok } from "./formato";
-import type { FrecOrigen } from "./historico";
+import { leerComun, type Comun, type FrecOrigen } from "./historico";
+import type { DesdePref } from "./config";
 import type { Calculo, Expr, Motor } from "./motor";
 import { datosDesde, variacionMostrada } from "./tablas";
 import { encExpr } from "./url";
@@ -17,6 +18,17 @@ export const PRES_MANDATO_DEF = ["nk", "cfk1", "cfk2", "macri", "af", "milei"];
 export const MODO_MANDATO_DEF: ModoMandato = "teorico";
 
 const menos = (t: string) => t.replace(/^-/, "−");
+
+/** Período y filas del bloque Histórico de la ficha: el de la vista simple de Histórico (el "desde" de la configuración);
+ *  si ahí no hay datos (serie que terminó antes), toda la serie. Lo usan la ficha y las imágenes de vista previa de los links. */
+export function historicoFicha(m: Motor, c: Calculo, desdeCfg: DesdePref): { E: Comun; rows: Fila[] } {
+  const F = m.F, col = [{ key: "s0", c, flujo: !!c.flujo, ultimo: !!c.ultimo }];
+  let E = leerComun(new URLSearchParams(), F, desdeCfg);
+  const filas = (d: string) => filasGrafico(F, col, { desde: d, hasta: E.hasta, meses: E.meses, freq: "M", cierre: false, banda: false });
+  let rows = filas(E.desde);
+  if (!rows.some((r) => ok(r.s0)) && E.desde > F[0]) { E = { ...E, desde: F[0] }; rows = filas(F[0]); }
+  return { E, rows };
+}
 
 /** Velas de "Por presidente": una por mandato con datos; los que no tienen, aparte. Lo usan `Presidentes.tsx` y la ficha. */
 export function velasDe(m: Motor, c: Calculo, filas: { x: Pres; st: StatsM }[]): { velas: VelaDato[]; sin: string[] } {

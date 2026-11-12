@@ -17,8 +17,7 @@ import type { Expr, Motor, SerieMeta } from "@/lib/motor";
 import { comparaciones, crearPlantillas, distanciaRecord, evaluar, interanualTxt, hrefPlantilla, plantillaDeExpr, plantillaSuelta, type Evaluada, type Plantilla } from "@/lib/plantillas";
 import { TEMAS, hrefHistorico, idsDe, principalesDe, type Tema } from "@/lib/temas";
 import { useParams } from "@/lib/url";
-
-const ex = (id: string, extra: Partial<Expr> = {}): Expr => ({ id, rel: null, modo: "compra", esc: "", ...extra });
+import { PLACAS } from "@/lib/datos-fijos";
 
 interface Extra { texto: string; cls: Evaluada["cls"] }
 interface DefCifra {
@@ -32,19 +31,18 @@ interface DefCifra {
   /** Línea de contexto propia (si no, la de la plantilla). Recibe la plantilla que se terminó usando. */
   contexto?: (m: Motor, p: Plantilla, ev: Evaluada) => Extra | null;
 }
-const ID_EMAE = "dg_143_3_no_pr_2004_a_31";
 /** Las cuatro placas de la portada (fijas): inflación del último mes, salario mediano en pesos de hoy, actividad económica y dólar blue de hoy. */
 const CIFRAS: DefCifra[] = [
-  { titulo: "Inflación del último mes", e: ex("ipc_empalme", { med: "vm" }), sinCurio: true, fuente: "INDEC",
+  { titulo: "Inflación del último mes", e: PLACAS.inflacion, sinCurio: true, fuente: "INDEC",
     contexto: (m) => { const t = interanualTxt(m); return t ? { texto: `Interanual: ${t}`, cls: null } : null; } },
-  { titulo: "Salario mediano, en pesos de hoy", e: ex("sipa_med", { med: "real" }), sinCurio: true, fuente: "Secretaría de Trabajo (SIPA)",
+  { titulo: "Salario mediano, en pesos de hoy", e: PLACAS.salario, sinCurio: true, fuente: "Secretaría de Trabajo (SIPA)",
     contexto: (m, p) => {
       const dif = p.e && !p.def ? distanciaRecord(m, p.e) : null;      // el dato curioso ya trae su propio texto
       return dif == null ? null : { texto: dif > -0.005 ? "En su récord histórico" : `${nf1.format(-dif * 100)} % por debajo de su récord`, cls: null };
     } },
-  { titulo: "Actividad económica", e: ex(ID_EMAE, { med: "via" }), sinCurio: true, alt: ex(ID_EMAE, { med: "asis" }), fuente: "INDEC (EMAE)",
+  { titulo: "Actividad económica", e: PLACAS.actividad, sinCurio: true, alt: PLACAS.actividadNivel, fuente: "INDEC (EMAE)",
     contexto: (_m, p) => ({ texto: p.e?.med === "via" ? "Variación interanual del EMAE" : "Nivel del EMAE, índice 2004 = 100", cls: null }) },
-  { titulo: "Dólar blue, en pesos de hoy", e: ex("fx_blue", { med: "real" }), fuente: "Ámbito y Bluelytics" },
+  { titulo: "Dólar blue, en pesos de hoy", e: PLACAS.dolarBlue, fuente: "Ámbito y Bluelytics" },
 ];
 
 /** Las demás secciones del sitio, para quien quiere buscar sus propias variables o combinarlas: [carpeta, nombre, para qué sirve].

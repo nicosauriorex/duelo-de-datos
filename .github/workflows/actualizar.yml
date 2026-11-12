@@ -120,8 +120,11 @@ jobs:
 
       - name: Compilar el sitio (Next.js)
         working-directory: web
+        # En los dos modos: `npm run previas` dibuja las imágenes de vista previa de los links (public/previas/, no versionado)
+        # a partir de los JSON recién generados, y después se compila (las páginas /dato/<slug>/ leen public/previas/_datos.json).
         run: |
           npm ci
+          npm run previas
           npm run build
           {
             echo "- Tamaño del sitio: $(du -sh out | cut -f1)"

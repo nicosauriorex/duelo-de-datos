@@ -5,6 +5,7 @@ import { medDefaultDe, type Expr, type SerieMeta } from "./motor";
 import { esIndicadorIpc } from "./regiones";
 import { rutaPublica } from "./nombres";
 import { encExpr } from "./url";
+import { datoFijoDe, hrefFijo } from "./datos-fijos";
 
 interface DefPrincipal { id: string; nombre: string; corto: string; med?: string; esc?: string }
 export interface Principal extends Expr { nombre: string; corto: string }
@@ -102,6 +103,9 @@ export const subgrupoDe = (t: Tema, s: SerieMeta): string => {
 /** Link a Histórico con una variable (medida ya elegida). */
 export const hrefHistorico = (e: Expr, extra: Record<string, string> = {}): string =>
   `/historico/?${new URLSearchParams({ v: encExpr(e), ...extra }).toString()}`;
-/** Link a la ficha del dato (/dato/): la variable vista en Histórico, Por presidente y Meses de mandato. `pd` = presidente que se resalta. */
-export const hrefDato = (e: Expr, extra: Record<string, string> = {}): string =>
-  `/dato/?${new URLSearchParams({ v: encExpr(e), ...extra }).toString()}`;
+/** Link a la ficha del dato: la variable vista en Histórico, Por presidente y Meses de mandato. `pd` = presidente que se resalta.
+ *  Si la variable es exactamente la de un dato fijo, su página propia (/dato/<slug>/, con vista previa en redes); si no, /dato/?v=… */
+export const hrefDato = (e: Expr, extra: Record<string, string> = {}): string => {
+  const fijo = datoFijoDe(e);
+  return fijo ? hrefFijo(fijo.slug, extra) : `/dato/?${new URLSearchParams({ v: encExpr(e), ...extra }).toString()}`;
+};

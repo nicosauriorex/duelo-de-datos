@@ -12,15 +12,21 @@ Hecho y publicado (detalle en `docs/ROADMAP.md`):
 - Tablas con primera columna fija, barras con degradado, vista de velas, Congreso con página propia.
 - Tanda 4 (2026-11-11, `docs/specs/ajustes-tanda-4.md`): el botón Atrás cierra la ventana o el menú abierto y todas las capas tienen cruz (`useAtras` en `ui.tsx`, D-016); las cuentas cierran con los valores que se ven (un solo redondeo, `r1` en `formato.ts`); el Histórico arranca en Inflación con las líneas Último y Promedio, botón "Presidentes" bajo el gráfico y "Volver" del zoom fuera del gráfico; imagen de las velas; botones "Ver" alineados; sin pie genérico en la portada.
 - Tanda 5 (2026-11-12, `docs/specs/ajustes-tanda-5.md`): la ficha del dato (D-017) en `/dato/`, en los temas y en "Ver" de las preguntas; comparaciones (mes anterior, año atrás, inicio, promedio, mediana, máximo, mínimo) en la cabecera del Histórico; Personalizar como una sola ventana (panel al costado en computadora); ventanas de configuración en Por presidente y Meses de mandato; el IPC por rubros responde a la moneda y avisa cuando no aplica; placas de la portada con mes anterior y año atrás; bloque que presenta las secciones; el teclado no se abre solo.
+- Vista previa en redes (2026-11-12, `docs/specs/vista-previa-links.md`, D-018): 28 páginas fijas `/dato/<slug>/` con título con la cifra e imagen generada al publicar (`npm run previas`), imagen general del sitio, `sitemap.xml` y `robots.txt`.
 - Datos: canastas corregidas; respaldo del IPC cuando la API de INDEC no responde; filtro de cotizaciones sueltas; corridas a las 16:10, 17:15 y 21:00 (hora argentina, las dos primeras solo en días hábiles); publicación rápida cuando el push no toca el pipeline.
 
 ## Qué sigue, en orden
-1. **Vista previa de los links en redes** (bloque 7c, sin spec): página fija por dato con título e imagen propios.
+1. **Relatos, posts y video** (bloque 7c-2, sin spec): "contestar un relato", posts automáticos, video de la animación.
 2. **Parte diario del BCRA** (idea en `docs/IDEAS.md`, sin spec): compra de divisas del día, reservas, tipo de cambio minorista y tasas, como lo publica el banco a las 16:45–17:00. Necesita datos diarios; hoy todo el sitio es mensual. El usuario lo quiere para difundir el sitio en ese momento.
 3. **Datos de Congreso** (bloque 6d): cargar a mano bancas, bloques y totales de vetos en `datos/manual/`.
 4. **Mantenimiento del pipeline** (auditoría, etapa 4): descargas duplicadas o sin caché al inicio de `obtener_datos.py`, serie de UTDT cortada en 2005, series sin uso, helpers repetidos.
 
 ## Sin verificar (revisar antes de dar por cerrado)
+De la vista previa en redes:
+- Cómo se ve la tarjeta de verdad al pegar un link en WhatsApp, X, Telegram y Facebook (lo prueba el usuario).
+- La imagen compartible del navegador para series trimestrales o semestrales (pobreza, PIB) ahora une los puntos (regla en `armarImagen`); se vio en las vistas previas, no en el panel Compartir. Si la vista mezcla una serie mensual con una que no lo es, la no mensual sigue saliendo como puntos sueltos.
+- El workflow en GitHub con el paso nuevo (`npm run previas` en Linux): se comprueba al publicar.
+
 De la tanda 5 (lo demás se midió en el navegador a 360 y 1280 px):
 - El desplazamiento hasta la ficha al elegir un dato en un tema; que el gráfico se achique cuando el panel de Personalizar angosta la página (≥ 900 px); el foco sin teclado en un celular real; las imágenes de Compartir desde la ficha. La pestaña de prueba no entrega animaciones ni cambios de tamaño.
 - Con el panel de Personalizar abierto en computadora, el panel tapa el extremo derecho del menú (botón de configuración): revisar si molesta.
@@ -45,13 +51,14 @@ Durante la tanda 3 las capturas del navegador fallaron: se comprobó contenido y
 - Cristina: celeste en el primer mandato y azul en el segundo (dos tonos de la misma familia, a propósito).
 - La vista interanual de la inflación se titula "Inflación"; "interanual" aparece en la línea de la unidad.
 - Si se sigue un enlace del sitio con una ventana abierta, la página de destino se carga entera (no es una transición interna); así el historial queda sin entradas de más.
+- En las imágenes, algunos títulos y fuentes traen texto del catálogo que no es del público ("PIB … (tal cual)", "datos.gob.ar, serie 3.2_OGP_D_2004_T_17", "API pobreza_eph"): pendiente de nombres; cambiar `fuente` necesita la corrida completa del pipeline.
+- `web/lib/previas.ts` repite en chico la lógica de moneda de `difAbsTxt` y el recorte de fuente de `fuentesTxt`: unificar si se vuelven a tocar.
 - Quedan reglas CSS sin uso de versiones anteriores (`.chips`, `.voto-aviso`) y ramas del modo "índice" de Meses de mandato que ya no se alcanzan.
 
 ## Herramientas
 - `python pipeline/ver_cache.py <nombre>`: mira un archivo de `datos/cache/` sin volcarlo (columnas y pocas filas). Es la única forma permitida de leer el caché.
 - Flujo elegido: spec e implementación en la misma sesión, orquestando subagentes (`CLAUDE.md`, `docs/COMO-TRABAJAMOS.md`).
 - Barrido después de cada tanda: `cd web && npx tsx scripts/barrido-cuentas.ts` (las cuentas cierran) y `web/scripts/barrido-navegador.js` (desbordes, capas con cruz y Atrás, repetidos, ceros con signo; se carga en la página y se llama a `barridoPLD()`; las instrucciones están en el encabezado). Ojo: el navegador de prueba guarda en caché el HTML de cada ruta; después de compilar, pedir cada ruta con `fetch(ruta, { cache: "reload" })` antes de medir.
-- La vista previa de links en redes (7c) parte de la ruta `/dato/` (D-017).
 - Pendiente de herramientas: regenerar `DESIGN.md` con el documentador de Impeccable.
 
 ## Cómo se trabajó (y funcionó)

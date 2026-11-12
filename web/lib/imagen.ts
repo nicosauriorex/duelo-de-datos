@@ -70,12 +70,14 @@ export interface DatosImagen {
   fuenteCorta?: string;              // si la fuente no entra en dos renglones, esta
 }
 
-const SITIO = "primerolosdatos.com.ar";
+export const SITIO = "primerolosdatos.com.ar";
 const ETQ_COMENTARIO = "Comentario de quien comparte";
 const px = (n: number) => Math.round(n);
 
 type Ctx = CanvasRenderingContext2D;
-const fuenteDe = (pal: Paleta, peso: number, tam: number) => `${peso} ${px(tam)}px ${pal.familia}`;
+/** Un canvas donde dibujar: el de la página o uno compatible (el de @napi-rs/canvas en scripts/generar-previas.ts). */
+export interface LienzoCanvas { width: number; height: number; getContext(tipo: "2d"): Ctx | null }
+export const fuenteDe = (pal: Paleta, peso: number, tam: number) => `${peso} ${px(tam)}px ${pal.familia}`;
 
 /** Carga las fuentes de la marca antes de dibujar (si no, el canvas usa la de reserva). */
 export async function esperarFuentes(familia: string): Promise<void> {
@@ -101,9 +103,9 @@ function recortarPuntos(ctx: Ctx, s: string, ancho: number): string {
   while (t.length > 1 && ctx.measureText(t.trimEnd() + "…").width > ancho) t = t.slice(0, -1);
   return t.trimEnd() + "…";
 }
-interface Ajustado { lineas: string[]; tam: number; cortado?: boolean }
+export interface Ajustado { lineas: string[]; tam: number; cortado?: boolean }
 /** Entra en `ancho` y `lineas` renglones bajando el tamaño de `max` a `min`; si no entra ni al mínimo, corta el último renglón con puntos suspensivos. */
-function ajustar(ctx: Ctx, pal: Paleta, texto: string, o: { peso: number; max: number; min: number; ancho: number; lineas: number }): Ajustado {
+export function ajustar(ctx: Ctx, pal: Paleta, texto: string, o: { peso: number; max: number; min: number; ancho: number; lineas: number }): Ajustado {
   const limpio = texto.replace(/\s+/g, " ").trim();
   for (let t = px(o.max); t >= px(o.min); t -= 2) {
     ctx.font = fuenteDe(pal, o.peso, t);
@@ -117,8 +119,8 @@ function ajustar(ctx: Ctx, pal: Paleta, texto: string, o: { peso: number; max: n
   if (ls.length > o.lineas) cortadas[o.lineas - 1] = [cortadas[o.lineas - 1], ...ls.slice(o.lineas)].join(" ");
   return { lineas: cortadas.map((l) => recortarPuntos(ctx, l, o.ancho)), tam: t, cortado: true };
 }
-const alto = (a: Ajustado, inter = 1.18) => a.lineas.length * a.tam * inter;
-function texto(ctx: Ctx, pal: Paleta, a: Ajustado, peso: number, x: number, y: number, color: string, inter = 1.18, alinear: CanvasTextAlign = "left") {
+export const alto = (a: Ajustado, inter = 1.18) => a.lineas.length * a.tam * inter;
+export function texto(ctx: Ctx, pal: Paleta, a: Ajustado, peso: number, x: number, y: number, color: string, inter = 1.18, alinear: CanvasTextAlign = "left") {
   ctx.font = fuenteDe(pal, peso, a.tam); ctx.fillStyle = color; ctx.textAlign = alinear; ctx.textBaseline = "top";
   a.lineas.forEach((l, k) => ctx.fillText(l, x, y + k * a.tam * inter));
 }
@@ -720,21 +722,26 @@ function dibujarTarjetas(ctx: Ctx, pal: Paleta, P: PlanTarjetas, x0: number, y0:
 
 // ---------------------------------------------------------------- composición
 interface Resultado { holgura: number }
+export const ALTO_MARCA = 64, MARGEN = 56;
+
+/** Fondo y franja de la marca arriba (la misma en todas las imágenes). */
+export function dibujarMarca(ctx: Ctx, pal: Paleta, W: number, H: number) {
+  const m = MARGEN, hMarca = ALTO_MARCA;
+  ctx.fillStyle = pal.fondo; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = pal.barra; ctx.fillRect(0, 0, W, hMarca);
+  ctx.font = fuenteDe(pal, 900, 30); const tw = ctx.measureText("PRIMERO LOS DATOS").width, bw = m + tw + 56;
+  ctx.fillStyle = pal.acento; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(bw, 0); ctx.lineTo(bw - 20, hMarca); ctx.lineTo(0, hMarca); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = pal.sobreAcento; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText("PRIMERO LOS DATOS", m, hMarca / 2 + 1);
+  ctx.fillStyle = pal.acento; ctx.fillRect(0, hMarca, W, 4);
+}
 
 /** Compone toda la imagen. Con `pintar` en falso solo mide (para elegir la escala de texto con la que todo entra). */
-function componer(ctx: Ctx, d: DatosImagen, pal: Paleta, esc: number, pintar: boolean): Resultado {
-  const { w: W, h: H } = FORMATOS[d.formato], horiz = d.formato === "16x9";
+function componer(ctx: Ctx, d: DatosImagen, pal: Paleta, esc: number, pintar: boolean, tam: { w: number; h: number }): Resultado {
+  const { w: W, h: H } = tam, horiz = d.formato === "16x9";
   const filas = !!d.lienzo, lat = horiz && !filas;   // `lat`: texto a la izquierda y gráfico a la derecha
-  const m = 56, S = (n: number) => n * esc;
-  const hMarca = 64;
-  if (pintar) {
-    ctx.fillStyle = pal.fondo; ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = pal.barra; ctx.fillRect(0, 0, W, hMarca);
-    ctx.font = fuenteDe(pal, 900, 30); const tw = ctx.measureText("PRIMERO LOS DATOS").width, bw = m + tw + 56;
-    ctx.fillStyle = pal.acento; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(bw, 0); ctx.lineTo(bw - 20, hMarca); ctx.lineTo(0, hMarca); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = pal.sobreAcento; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText("PRIMERO LOS DATOS", m, hMarca / 2 + 1);
-    ctx.fillStyle = pal.acento; ctx.fillRect(0, hMarca, W, 4);
-  }
+  const m = MARGEN, S = (n: number) => n * esc;
+  const hMarca = ALTO_MARCA;
+  if (pintar) dibujarMarca(ctx, pal, W, H);
   const wCol = lat ? 520 : W - 2 * m, xCol = m;
   const xGraf = lat ? m + wCol + 48 : m, wGraf = lat ? W - xGraf - m : W - 2 * m;
 
@@ -853,9 +860,10 @@ function componer(ctx: Ctx, d: DatosImagen, pal: Paleta, esc: number, pintar: bo
   return { holgura };
 }
 
-/** Dibuja la imagen completa en el canvas, con el tamaño del formato. Baja el tamaño de los textos si hace falta para que todo entre. */
-export function dibujarImagen(canvas: HTMLCanvasElement, d: DatosImagen, pal: Paleta): void {
-  const { w, h } = FORMATOS[d.formato];
+/** Dibuja la imagen completa en el canvas, con el tamaño del formato. Baja el tamaño de los textos si hace falta para que todo entre.
+ *  `tam`: otro tamaño para la misma composición del formato (la vista previa de los links usa la horizontal más baja, ver generar-previas.ts). */
+export function dibujarImagen(canvas: LienzoCanvas, d: DatosImagen, pal: Paleta, tam: { w: number; h: number } = FORMATOS[d.formato]): void {
+  const { w, h } = tam;
   canvas.width = w; canvas.height = h;
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
@@ -863,11 +871,11 @@ export function dibujarImagen(canvas: HTMLCanvasElement, d: DatosImagen, pal: Pa
   for (const e of [1, 0.92, 0.84, 0.76, 0.68, 0.6, 0.54]) {
     esc = e;
     ctx.save();
-    const r = componer(ctx, d, pal, e, false);
+    const r = componer(ctx, d, pal, e, false, tam);
     ctx.restore();
     if (r.holgura >= 0) break;
   }
   ctx.save();
-  componer(ctx, d, pal, esc, true);
+  componer(ctx, d, pal, esc, true, tam);
   ctx.restore();
 }
