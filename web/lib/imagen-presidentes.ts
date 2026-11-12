@@ -11,6 +11,7 @@ import { fmtMes, lastIdx, ok } from "./formato";
 import type { Expr, Motor } from "./motor";
 import { grupoDe } from "./catalogo";
 import { datosDesde, variacionMostrada } from "./tablas";
+import { BASE_HERENCIA, tablaHerencia } from "./herencia";
 
 /** Lo que muestra una sección de presidentes y, por lo tanto, lo que lleva la imagen. Todo viene tal como está en pantalla. */
 export type VistaPres =
@@ -18,7 +19,8 @@ export type VistaPres =
   | { tipo: "velas"; expr: Expr; presIds: string[]; base: BaseCfg }                   // las mismas velas que la pantalla
   | { tipo: "variables"; presId: string; exprs: Expr[]; base: BaseCfg }
   | { tipo: "mandato"; expr: Expr; modo: ModoMandato; presIds: string[]; anc: string | null; md: string | null; mh: string | null; valorFinal?: boolean; base: BaseCfg }
-  | { tipo: "ranking"; crit: CritRk; inds: IndRk[]; usaVars: boolean; base: BaseCfg };
+  | { tipo: "ranking"; crit: CritRk; inds: IndRk[]; usaVars: boolean; base: BaseCfg }
+  | { tipo: "herencia"; presId: string; ids: string[]; base: BaseCfg };                 // ids: series de la tabla que están en el catálogo (base fija T-1)
 export interface OpcionesPres { formato: FormatoImg; comentario: string }
 
 export const esVistaPres = (v: unknown): v is VistaPres => !!v && typeof v === "object" && "tipo" in v;
@@ -26,6 +28,7 @@ export const esVistaPres = (v: unknown): v is VistaPres => !!v && typeof v === "
 export const idsDeVistaPres = (v: VistaPres): string[] =>
   v.tipo === "barras" || v.tipo === "velas" || v.tipo === "mandato" ? (v.expr.rel ? [v.expr.id, v.expr.rel] : [v.expr.id])
     : v.tipo === "variables" ? v.exprs.flatMap((e) => (e.rel ? [e.id, e.rel] : [e.id]))
+      : v.tipo === "herencia" ? v.ids
       : v.inds.flatMap((i) => (i.ind.rel ? [i.ind.id, i.ind.rel] : [i.ind.id]));
 
 const CRIT_NOMBRE: Record<CritRk, string> = {
@@ -129,6 +132,8 @@ export function armarImagenPres(m: Motor, v: VistaPres, o: OpcionesPres): DatosI
     return d;
   }
 
+  if (v.tipo === "herencia") return imagenHerencia(m, v, o);
+
   if (v.tipo === "mandato") {
     const PRES_T0 = PRES.filter((x) => m.idxDe(x.ini) > 0);
     const D = calcularMandato(m, PRES, PRES_T0, { expr: v.expr, modo: v.modo, banda: false, b, presIds: new Set(v.presIds), anc: v.anc, md: v.md, mh: v.mh });
@@ -176,3 +181,34 @@ export function armarImagenPres(m: Motor, v: VistaPres, o: OpcionesPres): DatosI
   return d;
 }
 
+
+/** Herencia de un presidente (docs/specs/herencia.md): el dibujo de "un presidente, varias variables" con los rótulos Recibió y Entregó (u Hoy).
+ *  Los valores, meses y cambios salen de `tablaHerencia`, los mismos de la página. Las filas sin ningún dato no van. */
+function imagenHerencia(m: Motor, v: Extract<VistaPres, { tipo: "herencia" }>, o: OpcionesPres): DatosImagen | null {
+  const t = tablaHerencia(m, v.presId);
+  if (!t) return null;
+  const conDato = t.filas.filter((f) => f.c && (f.recibio || f.entrego));
+  if (!conDato.length) return null;
+  const F = m.F, p = t.pres;
+  const filas: FilaVariable[] = conDato.map((f) => {
+    const c = f.c!, desde = f.recibio?.i ?? f.entrego!.i, hasta = f.entrego?.i ?? f.recibio!.i;
+    // los meses de los datos van debajo del cambio (pueden ser de varios meses antes del traspaso en series trimestrales o semestrales)
+    const corto = (t: string) => t.replace("la serie empieza en", "serie desde").replace("la serie termina en", "serie hasta");
+    const nota = f.recibio && f.entrego ? `${f.recibio.mes} → ${f.entrego.mes}` : f.recibio ? `${f.recibio.mes} → sin dato (${corto(f.sinEntrego)})` : `sin dato (${corto(f.sinRecibio)}) → ${f.entrego!.mes}`;
+    return {
+      nombre: f.nombre, unidad: f.unidad, ini: f.recibio?.txt ?? "–", fin: f.entrego?.txt ?? "–", variacion: f.cambio, cls: f.cls, nota,
+      spark: c.v.slice(desde, hasta + 1),
+    };
+  });
+  const fin = Math.min(p.i1, F.length - 1);
+  const d = esqueleto(m, o, BASE_HERENCIA, `Herencia de ${p.n}: lo que recibió${t.mesT1 ? ` (${t.mesT1})` : ""} y ${t.enCurso ? "el último dato" : `lo que entregó (${fmtMes(F[fin])})`}`, F[fin]);
+  d.inicioTxt = null;
+  const sin = t.filas.length - conDato.length;
+  d.frases = [neutro(`Recibió: último dato en o antes del mes anterior a asumir. ${t.enCurso ? "Hoy: último dato publicado" : "Entregó: último dato del mandato"}.${sin ? ` ${sin} ${sin === 1 ? "variable no tiene" : "variables no tienen"} datos para este período.` : ""}`)];
+  d.lienzo = { tipo: "variables", filas, presId: p.id, enc: { ini: "Recibió", fin: t.enCurso ? "Hoy" : "Entregó", vr: "Cambio", sp: "Recorrido", sinDato: "sin dato" } };
+  d.unidad = "Cambio en % (en puntos si el dato ya es un porcentaje). Debajo, los meses de los dos datos";
+  const calcs = conDato.map((f) => f.c!);
+  const fu = fuentesTxt(calcs.map((c) => c.serie.fuente));
+  d.fuente = fu.fuente; d.fuenteCorta = fu.fuenteCorta; d.nota = notaInflacion(calcs, false);
+  return d;
+}

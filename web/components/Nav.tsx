@@ -14,13 +14,13 @@ export const SECCIONES: [string, string][] = [
 ];
 /** Subsecciones de Presidentes: [carpeta, ancla, nombre]. Las URLs son las de siempre. */
 const SUBSECCIONES: [string, string, string][] = [
-  ["presidentes", "", "Por presidente"], ["mandato", "", "Meses de mandato"], ["ranking", "", "Ranking"],
+  ["presidentes", "", "Por presidente"], ["mandato", "", "Meses de mandato"], ["herencia", "", "Herencia"], ["ranking", "", "Ranking"],
   ["elecciones", "", "Elecciones"], ["congreso", "", "Congreso"],
 ];
 // Curiosidades ya no está en el menú, pero la página sigue en la misma URL y cuenta como parte de Presidentes.
 const GRUPO_PRES = new Set([...SUBSECCIONES.map((s) => s[0]), "curiosidades"]);
 const TITULOS: Record<string, string> = {
-  historico: "Histórico", presidentes: "Por presidente", ranking: "Ranking de presidentes", mandato: "Meses de mandato",
+  historico: "Histórico", presidentes: "Por presidente", ranking: "Ranking de presidentes", mandato: "Meses de mandato", herencia: "Herencia",
   curiosidades: "Curiosidades", congreso: "Gobierno y Congreso", elecciones: "Elecciones", contexto: "Contexto internacional", bcra: "Parte del Banco Central", semaforo: "Semáforo de actividad", plantillas: "Gráficos listos", fuentes: "Fuentes",
 };
 /** Páginas donde aparece "Volver" si se llegó desde otra página del sitio. */

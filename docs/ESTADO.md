@@ -15,10 +15,11 @@ Hecho y publicado (detalle en `docs/ROADMAP.md`):
 - Vista previa en redes (2026-11-12, `docs/specs/vista-previa-links.md`, D-018): 28 páginas fijas `/dato/<slug>/` con título con la cifra e imagen generada al publicar (`npm run previas`), imagen general del sitio, `sitemap.xml` y `robots.txt`.
 - Parte diario del Banco Central (2026-11-12, `docs/specs/parte-diario-bcra.md`, D-019): `/bcra/` con ocho variables diarias, variaciones, contexto, gráfico, imagen, texto para copiar y vista previa en redes; bloque en la portada.
 - Semáforo de actividad (2026-11-12, `docs/specs/semaforo-actividad.md`, D-020): `/semaforo/` con 29 indicadores, interanual y mes contra mes (solo ajuste oficial), índice de difusión, ventana por indicador, imagen y vista previa en redes.
+- Herencia, fase 1 (2026-11-12, `docs/specs/herencia.md`): `/herencia/` con 19 datos oficiales al recibir y al entregar cada presidente (T-1 fijo), vista "Todos los traspasos", imagen, vista previa en redes y lo que no se puede medir; series nuevas de subsidios a la energía y deuda con importadores.
 - Datos: canastas corregidas; respaldo del IPC cuando la API de INDEC no responde; filtro de cotizaciones sueltas; corridas a las 16:10, 17:15 y 21:00 (hora argentina, las dos primeras solo en días hábiles); publicación rápida cuando el push no toca el pipeline.
 
 ## Qué sigue, en orden
-1. **Herencia: recibido contra entregado** — `docs/specs/herencia.md`. Fase 1 lista para implementar (series oficiales; reutiliza `statsMandato` y la imagen de "un presidente, varias variables"). Fase 2: cargar a mano datos de informes en PDF con su cita (hace falta poder leer PDF). Fase 3: decisión del usuario sobre mostrar estimaciones privadas (reservas netas).
+1. **Herencia, fases 2 y 3** — `docs/specs/herencia.md` (la fase 1 está hecha). Fase 2: cargar a mano datos de informes en PDF con su cita (hace falta poder leer PDF). Fase 3: decisión del usuario sobre mostrar estimaciones privadas (reservas netas).
 2. **En qué gasta la Nación** — `docs/specs/gasto-nacion.md`. Fase 1 lista, pero ANTES hay que cerrar el requisito 0: confirmar la unidad de los montos y entender una discrepancia en las transferencias a universidades. Universidades (fase 3): solo hay datos por provincia y un PDF de 2024 por universidad; no existe un listado oficial de rendiciones.
 3. **Provincias** — `docs/specs/provincias.md`. Solo se puede hacer la fase 1 (gasto de la Nación en cada provincia, depende del punto anterior). Lo demás está bloqueado: el sitio de la DNAP (`economia.gob.ar/dnap`) tenía el certificado vencido el 2026-11-12. Fase 0: reintentar o que el usuario mire qué planillas publica.
 4. **Pendientes del semáforo**: revisar o retirar "Producción de autos" del catálogo general; ajuste estacional serio (X-13 con corrección de calendario) para completar el mes contra mes; indicadores sin fuente legible (CAME, patentamientos, Construya, escrituras, leche, petróleo), candidatos para la idea de "agentes que buscan el dato" (`docs/IDEAS.md`).
@@ -27,6 +28,12 @@ Hecho y publicado (detalle en `docs/ROADMAP.md`):
 7. **Mantenimiento del pipeline** (auditoría, etapa 4): descargas duplicadas o sin caché al inicio de `obtener_datos.py`, serie de UTDT cortada en 2005, series sin uso, helpers repetidos.
 
 ## Sin verificar (revisar antes de dar por cerrado)
+De la herencia (fase 1; verificado en el navegador a 360 y 1280 px: tablas de Macri, Alberto Fernández y Milei con las cuentas cerrando, traspasos de reservas y pobreza, panel Compartir, sin errores de consola):
+- Las reservas son promedio mensual en dólares de hoy: no se pueden comparar con los saldos de un día de la spec (US$ 24.141 y 22.663 millones). Si se quiere el saldo exacto del traspaso, hace falta otra serie.
+- El cuasifiscal recibido por Macri da 0,0 % del PIB porque la serie no tiene los intereses de las Lebac (la fila lo dice). El "dólar oficial en pesos de hoy" conserva el color de la serie, aunque en la práctica es tan ambiguo como el tipo de cambio real: decidir.
+- La imagen para compartir se vio en la vista previa generada (16:9); el panel abre, pero los formatos 1:1 y 4:5 no se miraron en esta sesión. La vista "Todos los traspasos" comparte solo el link.
+- La corrida en GitHub con las dos series nuevas (se comprueba al publicar).
+
 Del semáforo de actividad:
 - La producción de autos quedó afuera del semáforo: la serie `41.3_AA_0_A_23` da unas 100 mil unidades por mes contra las 45 a 55 mil de ADEFA y repite valores. Esa misma serie SIGUE en el catálogo general del sitio como "Producción de autos": revisarla contra ADEFA y corregirla o retirarla.
 - `PanelSemaforo` es copia de `PanelParte`: unificar en un panel de imagen genérico si aparece un tercero.

@@ -47,11 +47,12 @@ const CIFRAS: DefCifra[] = [
 ];
 
 /** Las demás secciones del sitio, para quien quiere buscar sus propias variables o combinarlas: [carpeta, nombre, para qué sirve].
- *  El orden de Presidentes es el del menú (Por presidente, Meses de mandato, Ranking, Elecciones, Congreso). */
+ *  El orden de Presidentes es el del menú (Por presidente, Meses de mandato, Herencia, Ranking, Elecciones, Congreso). */
 const SECCIONES_INICIO: [string, string, string][] = [
   ["historico", "Histórico", "Elegí cualquier dato y mirá cómo cambió en el tiempo, solo o comparado con otros."],
   ["presidentes", "Por presidente", "Fijate qué pasó con un dato en el mandato de cada presidente."],
   ["mandato", "Meses de mandato", "Poné a todos los presidentes en la misma largada y compará mes a mes."],
+  ["herencia", "Herencia", "Cómo estaba cada dato cuando asumió cada presidente y cómo lo dejó."],
   ["ranking", "Ranking", "Ordená a los presidentes según cómo cambió cada dato en su mandato."],
   ["elecciones", "Elecciones", "Mirá qué datos de la economía se movieron junto con el voto en cada elección."],
   ["congreso", "Gobierno y Congreso", "Bancas, leyes, decretos y vetos de cada gobierno."],

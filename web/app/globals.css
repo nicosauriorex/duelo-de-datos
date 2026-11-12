@@ -1227,3 +1227,14 @@ tr.nota-grupo td { background: var(--surface-0); color: var(--text-secondary); t
 .sem-ref i { display: inline-block; width: 18px; height: 0; border-top: 2px solid; }
 .sem-ref-orig { border-color: var(--series-1); }
 .sem-ref-sa { border-color: var(--series-2); border-top-style: dashed; }
+
+/* Herencia (/herencia/): recibió contra entregado. Las filas de grupo no se pliegan (sin cursor ni marca); "sin dato" en gris y con su motivo. */
+.tablewrap.her-tabla > table > tbody > tr.her-grupo > td { background: var(--surface-0); color: var(--text-secondary); font-weight: 700; font-size: var(--t-xs); text-align: left; }
+.her-sin { color: var(--text-muted); }
+.tablewrap.her-tabla td.her-sin small { white-space: normal; min-width: 9ch; max-width: 14ch; margin-left: auto; }
+.her-quien { text-align: left; }
+/* el nombre de la variable no se aprieta: la tabla se desliza de costado (como en Por presidente) */
+.tablewrap.her-tabla td.c-var { min-width: 8.2rem; }
+.tablewrap.her-tabla > table > tbody > tr.her-hoy > td { border-top: var(--linea) solid var(--border-fuerte); }
+.her-plegado { padding: 0 var(--e-1); }
+.her-plegado > summary { min-height: var(--alto-toque); padding: var(--e-2) 0; display: list-item; color: var(--text-primary); font-weight: 700; cursor: pointer; }

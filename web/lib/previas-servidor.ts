@@ -3,7 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { DATOS_FIJOS, type DatoFijo } from "./datos-fijos";
-import { CARPETA_PREVIAS, type DatosPrevias, type PreviaDato, type PreviaParte, type PreviaSemaforo } from "./previas";
+import { CARPETA_PREVIAS, type DatosPrevias, type PreviaDato, type PreviaHerencia, type PreviaParte, type PreviaSemaforo } from "./previas";
 
 const PUBLICO = path.join(process.cwd(), "public");
 
@@ -40,3 +40,6 @@ export const previaParte = (): PreviaParte | null => leerJson<PreviaParte>(CARPE
 
 /** Título, descripción e imagen del semáforo de actividad (null si `npm run previas` no lo generó: la página usa los textos generales). */
 export const previaSemaforo = (): PreviaSemaforo | null => leerJson<PreviaSemaforo>(CARPETA_PREVIAS, "semaforo.json");
+
+/** Título, descripción e imagen de la herencia (null si `npm run previas` no lo generó: la página usa los textos generales). */
+export const previaHerencia = (): PreviaHerencia | null => leerJson<PreviaHerencia>(CARPETA_PREVIAS, "herencia.json");

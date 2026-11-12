@@ -53,6 +53,7 @@ dg_151_1_ipendiedad_2012_m_41
 dg_151_1_tl_sin_tac_2012_m_15
 dg_160_2_tl_cuennte_0_t_22
 dg_172_3_tl_recaion_m_0_0_17
+dg_313_1_deuda_por_nes_0_t_28
 dg_33_2_isac_sin_edad_0_m_23_56
 dg_363_3_produccionudo_28
 dg_370_3_capacidaddad_0_0_9_83
@@ -76,6 +77,7 @@ dg_41_3_gn_0_a_11
 dg_42_3_eph_puntuatal_0_m_30
 dg_43_2_ectat_0_t_33
 dg_44_2_ectet_0_t_30
+dg_452_2_energiagia_0_t_7_79
 dg_453_1_serie_deseada_0_0_24_58
 dg_455_1_ventas_pretes_0_m_25_98
 dg_458_1_ventas_tottes_abri_m_33_40

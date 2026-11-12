@@ -331,6 +331,10 @@ def datos_gob(idx, ipc=None):
          "Ingresos menos gasto primario (sin intereses). Positivo = superávit."),
         ("379.9_RESULTADO_017__18_38", "Resultado financiero del sector público nacional", FI, "ars", "millones de $", 1, dict(agg=True, flujo=True),
          "Resultado primario menos intereses de la deuda. Positivo = superávit."),
+        ("452.2_ENERGIAGIA_0_T_7_79", "Subsidios económicos a la energía", FI, "ars", "millones de $", 0, dict(agg=True, flujo=True, trim_flujo=True, fuente="Secretaría de Hacienda (Ministerio de Economía) vía datos.gob.ar, serie 452.2_ENERGIAGIA_0_T_7_79"),
+         "Plata que el Estado nacional pone para que la luz, el gas y los combustibles cuesten menos de lo que valen (subsidios a la energía), en base caja. Dato trimestral, repartido en los 3 meses."),
+        ("313.1_DEUDA_POR_NES_0_T_28", "Deuda de empresas privadas con importadores del exterior", EX, "usd", "millones de US$", 0, dict(agg=True, trim_stock=True, fuente="BCRA vía datos.gob.ar (Subsecretaría de Programación Macroeconómica), serie 313.1_DEUDA_POR_NES_0_T_28"),
+         "Lo que las empresas privadas del país debían a proveedores del exterior por importaciones de bienes (deuda comercial), en dólares. Dato trimestral de stock. La serie abierta termina en 2017: después no hay publicación comparable."),
     ]
     extra = ["4.4_OGP_2004_T_17", "4.4_DGCP_2004_T_27", "4.4_DGI_2004_T_19", "9.2_P_2004_T_9"]
     datos = _cacheado_dict("datos_gob", [v[0] for v in VARS] + extra)
@@ -341,8 +345,8 @@ def datos_gob(idx, ipc=None):
         v = datos[sid]
         if op.get("x100") and v.max() < 1.5:
             v = v * 100
-        v = _trim_a_mes(v, idx, repartir=True) if op.get("trim_flujo") else v.reindex(idx)
-        out.append(S("dg_" + slug(sid), n, ruta, tipo, u, v, dr, f"datos.gob.ar, serie {sid}", desc, agg=op.get("agg", False), flujo=op.get("flujo", False)))
+        v = _trim_a_mes(v, idx, repartir=True) if op.get("trim_flujo") else (_trim_a_mes(v, idx) if op.get("trim_stock") else v.reindex(idx))
+        out.append(S("dg_" + slug(sid), n, ruta, tipo, u, v, dr, op.get("fuente", f"datos.gob.ar, serie {sid}"), desc, agg=op.get("agg", False), flujo=op.get("flujo", False)))
     get = lambda k: next((o["v"] for o in out if o["id"] == "dg_" + slug(k)), None)  # noqa: E731
     if get("74.3_IET_0_M_16") is not None and get("74.3_IIT_0_M_25") is not None:
         out.append(S("dg_saldo_comercial", "Saldo comercial (exportaciones - importaciones)", EX, "usd", "millones de US$",

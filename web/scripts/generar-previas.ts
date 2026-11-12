@@ -21,11 +21,13 @@ import { paletaDe } from "../lib/imagen-paleta";
 import { historicoFicha } from "../lib/ficha";
 import { baseDeConfig, DEFECTO, IMAGEN_DEFECTO } from "../lib/config";
 import { PRES_DEF } from "../lib/estadisticas";
-import { CARPETA_PREVIAS, DESCRIPCION_SITIO, PREVIA, textosPrevia, type DatosPrevias, type PreviaDato, type PreviaParte, type PreviaSemaforo } from "../lib/previas";
+import { CARPETA_PREVIAS, DESCRIPCION_SITIO, PREVIA, textosPrevia, type DatosPrevias, type PreviaDato, type PreviaHerencia, type PreviaParte, type PreviaSemaforo } from "../lib/previas";
 import { armarParte, decodificar, isoDeDia, textosPreviaParte, type DiarioCrudo } from "../lib/diario";
 import { armarImagenParte } from "../lib/imagen-parte";
 import { armarTabla, decodificar as decodificarSemaforo, isoDeMes, mesResumen, textosPreviaSemaforo, type SemaforoCrudo } from "../lib/semaforo";
 import { armarImagenSemaforo, dibujarImagenSemaforo } from "../lib/imagen-semaforo";
+import { armarImagenPres } from "../lib/imagen-presidentes";
+import { BASE_HERENCIA, idsHerencia, tablaHerencia, textosPreviaHerencia } from "../lib/herencia";
 
 const RAIZ = path.resolve(__dirname, "..");
 const DATOS = path.join(RAIZ, "public", "datos");
@@ -161,6 +163,30 @@ function previaDelSemaforo(pal: ReturnType<typeof paletaDe>): boolean {
   }
 }
 
+/** Imagen y textos de la herencia (/herencia/), con el presidente en funciones: `previas/herencia.png` y `previas/herencia.json`.
+ *  Es la misma imagen que arma "Compartir" en la página (lib/imagen-presidentes.ts, tipo "herencia"). Si algo falla, avisa y sigue. */
+function previaDeHerencia(m: Motor, metas: SerieMeta[], pal: ReturnType<typeof paletaDe>): boolean {
+  try {
+    const ids = idsHerencia().filter((id) => metas.some((s) => s.id === id));
+    const archivos = new Set(ids.map((id) => metas.find((s) => s.id === id)!.archivo));
+    for (const a of archivos) m.agregar(metas.filter((s) => s.archivo === a), leerJson<Record<string, SerieDatos>>(`${a}.json`));
+    const presId = PRES_DEF[PRES_DEF.length - 1].id, t = tablaHerencia(m, presId);
+    const datos = t && armarImagenPres(m, { tipo: "herencia", presId, ids, base: BASE_HERENCIA }, { formato: "16x9", comentario: "" });
+    if (!t || !datos) { avisar("herencia: no hay datos para armar la imagen (/herencia/ usa la imagen general)"); return false; }
+    fs.writeFileSync(path.join(SALIDA, "herencia.png"), aPng((cv) => dibujarImagen(cv, datos, pal, DIBUJO), DIBUJO));
+    const ult = Math.max(...t.filas.map((f) => f.entrego?.i ?? -1)), fecha = m.F[Math.max(0, ult)];
+    const { titulo, descripcion } = textosPreviaHerencia(t);
+    const previa: PreviaHerencia = { titulo, descripcion, fecha, imagen: `/${CARPETA_PREVIAS}/herencia.png?v=${fecha}` };
+    fs.writeFileSync(path.join(SALIDA, "herencia.json"), JSON.stringify(previa, null, 1));
+    console.log(`herencia: ${titulo}
+  ${descripcion}`);
+    return true;
+  } catch (err) {
+    avisar(`herencia: ${(err as Error).message}`);
+    return false;
+  }
+}
+
 function main() {
   registrarFuente();
   const pal = paletaDe(tokensOscuros(), FAMILIA, {});
@@ -210,13 +236,14 @@ function main() {
   fs.writeFileSync(path.join(SALIDA, "_datos.json"), JSON.stringify(salida, null, 1));
   const conParte = previaDelParte(pal);
   const conSemaforo = previaDelSemaforo(pal);
+  const conHerencia = previaDeHerencia(m, metas, pal);
   fs.writeFileSync(path.join(SALIDA, "sitio.png"), aPng((cv) => dibujarImagenSitio(cv, pal, {
     titulo: "Datos de Argentina, en debate.",
     bajada: DESCRIPCION_SITIO.replace(/^Datos de Argentina, en debate\.\s*/, ""),
     temas: TEMAS.map((t) => t.nombre),
     pie: "Datos oficiales: INDEC, BCRA, Secretaría de Trabajo y otras fuentes",
   }, PREVIA), PREVIA));
-  console.log(`\nPrevias: ${n} de ${DATOS_FIJOS.length} datos fijos, más sitio.png${conParte ? ", bcra.png" : ""}${conSemaforo ? ", semaforo.png" : ""}, en ${((Date.now() - inicio) / 1000).toFixed(1)} s.${avisos.length ? ` Avisos: ${avisos.length}.` : ""}`);
+  console.log(`\nPrevias: ${n} de ${DATOS_FIJOS.length} datos fijos, más sitio.png${conParte ? ", bcra.png" : ""}${conSemaforo ? ", semaforo.png" : ""}${conHerencia ? ", herencia.png" : ""}, en ${((Date.now() - inicio) / 1000).toFixed(1)} s.${avisos.length ? ` Avisos: ${avisos.length}.` : ""}`);
 }
 
 main();

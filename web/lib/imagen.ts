@@ -36,7 +36,7 @@ export interface FilaBarra { id: string; nombre: string; valor: number | null; v
 /** Una fila de "un presidente, varias variables". */
 export interface FilaVariable { nombre: string; unidad: string; ini: string | null; fin: string | null; variacion: string | null; cls: Cls; nota: string | null; spark: (number | null)[] }
 /** Títulos de las columnas de las filas con variables, si no son los de un mandato (el parte diario del Banco Central usa otros). */
-export interface EncVariables { ini: string; fin: string; sp: string; sinDato: string }
+export interface EncVariables { ini: string; fin: string; sp: string; sinDato: string; vr?: string }
 /** Una vela de "una variable, todos los presidentes": valores numéricos (para el dibujo) y ya formateados (para el texto). */
 export interface FilaVela { id: string; nombre: string; periodo: string; ini: number; fin: number; min: number; max: number; iniTxt: string; finTxt: string; minTxt: string; maxTxt: string; variacion: string; cls: Cls; nota: string | null }
 export interface FilaRank { puesto: number; id: string; nombre: string; score: number; indicadores: number }
@@ -515,7 +515,7 @@ function filasVariables(ctx: Ctx, r: Rect, L: LienzoDe<"variables">, pal: Paleta
     const q = col(r.x + c * (g.cw + g.gap));
     encabezado(ctx, pal, esc, r.y + 9, [
       { t: "Variable", x: q.nom, w: iw * fr.nom }, { t: L.enc?.ini ?? "Inicio", x: q.ini, w: iw * fr.ini - 8, alinear: "right" }, { t: L.enc?.fin ?? "Cierre", x: q.fin, w: iw * fr.fin - 8, alinear: "right" },
-      { t: "Variación", x: q.vr, w: iw * fr.vr - 8, alinear: "right" }, { t: L.enc?.sp ?? "Mandato", x: q.sp + 8, w: iw * fr.sp - 8 },
+      { t: L.enc?.vr ?? "Variación", x: q.vr, w: iw * fr.vr - 8, alinear: "right" }, { t: L.enc?.sp ?? "Mandato", x: q.sp + 8, w: iw * fr.sp - 8 },
     ]);
   }
   L.filas.forEach((f, k) => {

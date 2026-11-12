@@ -1,6 +1,7 @@
 # Herencia: recibido contra entregado
 
-Estado: lista para implementar la fase 1; las fases 2 y 3 necesitan lo que se indica en cada una (2026-11-12)
+Estado: fase 1 implementada (2026-11-12); las fases 2 y 3 necesitan lo que se indica en cada una.
+Decisiones de la implementación: un dato vale como "recibió" o "entregó" si tiene hasta 12 meses de atraso (`MAX_ATRASO` en `web/lib/herencia.ts`); precios regulados contra el nivel general en base dic-16 = 100 (sin enlace a la ficha, que usa otra escala); pasivos / base monetaria como cuenta propia (el motor no admite esa relación); las reservas de la tabla son el promedio del mes en dólares de hoy, no el saldo de un día: no coinciden con las cifras de "Cómo se verifica".
 Ideas: "Herencia: recibido contra entregado" (IDEAS.md, 2026-11-12).
 
 ## Objetivo

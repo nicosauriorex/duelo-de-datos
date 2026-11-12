@@ -33,6 +33,8 @@ export const NOMBRES: Record<string, string> = {
   bcra_26: "Crédito al sector privado",
   dg_379_9_superavit_017_23_94: "Resultado fiscal primario",
   dg_379_9_resultado_017_18_38: "Resultado fiscal financiero",
+  dg_452_2_energiagia_0_t_7_79: "Subsidios a la energía",
+  dg_313_1_deuda_por_nes_0_t_28: "Deuda con importadores (hasta 2017)",
   bcra_cuasifiscal: "Déficit cuasifiscal del Banco Central",
   bcra_12: "Tasa de plazo fijo",
   dg_380_3_icc_nacionnal_0_t_12: "Confianza del consumidor",
@@ -74,6 +76,8 @@ export const SINONIMOS: Record<string, string> = {
   bcra_26: "prestamos credito bancos",
   bcra_12: "plazo fijo tasa de interes ahorro",
   riesgo: "embi bonos",
+  dg_452_2_energiagia_0_t_7_79: "subsidios economicos energia luz gas tarifas cammesa subsidio energetico",
+  dg_313_1_deuda_por_nes_0_t_28: "deuda comercial importaciones proveedores del exterior deuda externa privada importadores",
 };
 
 // Los "regulados" del IPC (tarifas de servicios públicos, combustibles, transporte, educación…): se buscan también como "servicios públicos" y "tarifas", en todas las regiones.
