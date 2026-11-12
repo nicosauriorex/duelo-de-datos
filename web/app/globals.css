@@ -1174,3 +1174,56 @@ tr.nota-grupo td { background: var(--surface-0); color: var(--text-secondary); t
 .parte-bloque-cifras small { font-size: var(--t-xs); color: var(--text-muted); }
 .parte-bloque-ir { display: inline-flex; align-items: center; min-height: var(--alto-toque); font-weight: 700; color: var(--acento-texto); text-decoration: underline; }
 .enlace-parte { display: inline-flex; align-items: center; min-height: var(--alto-toque); font-weight: 600; }
+
+/* Semáforo de actividad (/semaforo/, enlace en el tema de actividad económica). Verde (subió) y rojo (bajó) siempre con el número y su signo.
+   Los fondos son los niveles 1 a 4 de los tokens `--bueno-f*` / `--malo-f*`, con su texto `--sobre-*`. */
+.sem { min-width: 0; }
+.sem-cab { margin-bottom: var(--e-3); }
+.sem-resumen { margin: 0 0 var(--e-3); font-size: var(--t-md); color: var(--text-secondary); max-width: 72ch; }
+.sem-resumen b { color: var(--text-primary); font-weight: 800; font-size: var(--t-lg); }
+.sem-controles { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-3); }
+.sem .seg button { min-height: var(--alto-toque); padding: 0 var(--e-3); }
+.sem-compartir { display: flex; flex-wrap: wrap; gap: var(--e-2); }
+.sem-compartir .btn { min-height: var(--alto-toque); justify-content: center; }
+.sem-tabla { margin-bottom: var(--e-3); border: 1px solid var(--border); background: var(--surface-1); }
+.sem-tabla:focus-visible { outline: var(--linea) solid var(--foco); outline-offset: 2px; }
+.sem-t { width: 100%; }
+.sem-t > thead > tr > :first-child, .sem-t > tbody > tr > :first-child { width: 13rem; min-width: 13rem; max-width: 13rem; }
+@media (max-width: 639.98px) {
+  .sem-t > thead > tr > :first-child, .sem-t > tbody > tr > :first-child { width: calc((100vw - 2 * var(--e-4)) * .4); min-width: 0; max-width: calc((100vw - 2 * var(--e-4)) * .4); }
+}
+.sem-t thead th { text-align: center; min-width: 3.75rem; }
+.sem-t thead th:first-child { text-align: left; }
+.sem-t tbody th[scope="row"] { top: auto; text-transform: none; letter-spacing: 0; font-size: var(--t-sm); font-weight: 600; color: var(--text-primary); text-align: left;
+  padding: 0; white-space: normal; vertical-align: middle; border-bottom: 1px solid var(--grid); }
+.sem-abrir { display: block; width: 100%; min-height: var(--alto-toque); padding: 6px var(--e-2); background: none; border: 0; text-align: left; font: inherit; color: inherit; cursor: pointer; }
+.sem-abrir:focus-visible { outline: var(--linea) solid var(--foco); outline-offset: -2px; }
+.sem-n { display: block; overflow-wrap: anywhere; line-height: 1.25; }
+.sem-abrir small { display: block; margin-top: 2px; color: var(--text-muted); font-size: var(--t-micro); font-weight: 400; line-height: 1.25; white-space: normal; overflow-wrap: anywhere; }
+.sem-fila { cursor: pointer; }
+.tablewrap.fija.sem-tabla > table > tbody > tr.sem-fila:hover > th { background: var(--acento-suave); }
+.tablewrap.fija.sem-tabla > table > tbody > tr.sem-grupo > * { background: var(--surface-0); color: var(--text-secondary); font-weight: 700; font-size: var(--t-xs);
+  text-transform: uppercase; letter-spacing: .03em; text-align: left; padding: 4px var(--e-2); white-space: normal; overflow-wrap: anywhere; }
+.sem-c { text-align: center; padding: 0; min-width: 3.75rem; height: var(--alto-toque); font-weight: 800; font-variant-numeric: tabular-nums; border: 1px solid var(--surface-1); }
+.sem-c.vacia { color: var(--text-muted); font-weight: 400; }
+.sem-c.cero { color: var(--text-secondary); }
+.sem-c.sube.n1 { background: var(--bueno-f1); color: var(--sobre-bueno-1); } .sem-c.sube.n2 { background: var(--bueno-f2); color: var(--sobre-bueno-2); }
+.sem-c.sube.n3 { background: var(--bueno-f3); color: var(--sobre-bueno-3); } .sem-c.sube.n4 { background: var(--bueno-f4); color: var(--sobre-bueno-4); }
+.sem-c.baja.n1 { background: var(--malo-f1); color: var(--sobre-malo-1); } .sem-c.baja.n2 { background: var(--malo-f2); color: var(--sobre-malo-2); }
+.sem-c.baja.n3 { background: var(--malo-f3); color: var(--sobre-malo-3); } .sem-c.baja.n4 { background: var(--malo-f4); color: var(--sobre-malo-4); }
+.sem-solo-ia { text-align: center; color: var(--text-muted); font-size: var(--t-xs); }
+.tablewrap.fija.sem-tabla > table > tbody > tr.sem-dif > * { background: var(--surface-0); border-top: var(--linea) solid var(--border-fuerte); }
+.sem-dif td { text-align: center; padding: var(--e-2) var(--e-1); }
+.sem-dif b { display: block; font-size: var(--t-lg); font-weight: 800; font-variant-numeric: tabular-nums; }
+.sem-dif small { display: block; color: var(--text-muted); font-size: var(--t-micro); }
+.sem-dif td.atenuada b { color: var(--text-muted); }
+.sem-dif th small { margin-top: 2px; font-weight: 400; }
+.sem details summary { min-height: var(--alto-toque); display: flex; align-items: center; }
+.sem-sub { margin: var(--e-3) 0 var(--e-1); font-size: var(--t-md); font-weight: 800; }
+/* Gráfico de una fila: la serie sin estacionalidad (oficial) va punteada */
+.sem-linea-sa { fill: none; stroke: var(--series-2); stroke-width: 2; stroke-dasharray: 5 3; stroke-linejoin: round; }
+.sem-ref { list-style: none; display: flex; flex-wrap: wrap; gap: var(--e-1) var(--e-3); margin: var(--e-1) 0 0; padding: 0; font-size: var(--t-xs); color: var(--text-secondary); }
+.sem-ref li { display: flex; align-items: center; gap: var(--e-1); }
+.sem-ref i { display: inline-block; width: 18px; height: 0; border-top: 2px solid; }
+.sem-ref-orig { border-color: var(--series-1); }
+.sem-ref-sa { border-color: var(--series-2); border-top-style: dashed; }

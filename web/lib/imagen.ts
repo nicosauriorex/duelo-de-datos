@@ -15,6 +15,8 @@ export interface Paleta {
   grilla: string; eje: string; acento: string; sobreAcento: string; accion: string; bueno: string; malo: string;
   series: string[];                 // en el orden de PALETA de components/util.ts
   pres: Record<string, string>;     // color de cada presidente (id → color)
+  /** Fondos de las celdas del semáforo de actividad (intensidad 1 a 4) y el color del texto que va encima de cada uno. */
+  fondosBueno: string[]; fondosMalo: string[]; sobreBueno: string[]; sobreMalo: string[];
 }
 export interface SerieImg {
   nombre: string; color: number; axis: 0 | 1; v: (number | null)[];

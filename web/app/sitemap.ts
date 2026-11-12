@@ -6,7 +6,7 @@ import { TEMAS } from "@/lib/temas";
 
 export const dynamic = "force-static";
 
-const SECCIONES = ["historico", "presidentes", "mandato", "ranking", "elecciones", "congreso", "contexto", "bcra", "plantillas", "curiosidades", "fuentes"];
+const SECCIONES = ["historico", "presidentes", "mandato", "ranking", "elecciones", "congreso", "contexto", "bcra", "semaforo", "plantillas", "curiosidades", "fuentes"];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const rutas = ["/", ...SECCIONES.map((s) => `/${s}/`), ...TEMAS.map((t) => `/tema/${t.slug}/`), ...fijosPublicables().map((d) => `/dato/${d.slug}/`)];

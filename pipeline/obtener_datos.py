@@ -31,6 +31,7 @@ import diario
 import macro
 import precios_mundo
 import salarios
+import semaforo
 
 RAIZ = Path(__file__).resolve().parent.parent  # carpeta del proyecto
 OUT = RAIZ / "datos"
@@ -252,7 +253,7 @@ def main():
 IDS_BASE = {"ipc_empalme", "cpi_usa", "fx_oficial", "fx_blue", "fx_mep", "fx_ccl", "poblacion", "pib_nom_anual"}
 
 
-def escribir_json_web(datos, ctx=None, pm=None, cap=None):
+def escribir_json_web(datos, ctx=None, pm=None, cap=None, con_red=True):
     """Escribe web/public/datos/: catalogo.json (metadatos + archivo de cada serie + fechas),
     base.json (series transversales) y un <categoria>.json por cada cat[0]. `ctx` (datos anuales del FMI) va aparte en contexto.json."""
     destino = RAIZ / "web" / "public" / "datos"
@@ -290,6 +291,13 @@ def escribir_json_web(datos, ctx=None, pm=None, cap=None):
         (destino / "diario_bcra.json").write_text(txt, encoding="utf-8")
     except Exception as e:
         print(f"Parte diario del BCRA: no se pudo armar, se sigue sin diario_bcra.json ({e}).")
+    # Semáforo de actividad: con red baja las series (con respaldo en datos/cache/sem_*.csv); sin red (--solo-json) usa solo los respaldos.
+    # Va fuera del hash, como el parte diario. Si falla, la corrida sigue sin semaforo.json.
+    try:
+        txt = json.dumps(semaforo.construir_json(con_red), ensure_ascii=False, separators=(",", ":"))
+        (destino / "semaforo.json").write_text(txt, encoding="utf-8")
+    except Exception as e:
+        print(f"Semáforo de actividad: no se pudo armar, se sigue sin semaforo.json ({e}).")
     # "version" cambia con cada dato nuevo: la web la agrega a cada pedido para no mezclar cachés viejos y nuevos.
     (destino / "catalogo.json").write_text(
         json.dumps({"version": h.hexdigest()[:10], "fechas": datos["fechas"], "series": meta}, ensure_ascii=False, separators=(",", ":")),
@@ -299,6 +307,6 @@ def escribir_json_web(datos, ctx=None, pm=None, cap=None):
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "--solo-json":  # regenera web/public/datos/ desde datos/cache/compilado.json, sin red
-        escribir_json_web(json.loads((OUT / "cache" / "compilado.json").read_text(encoding="utf-8")), contexto.cargar_cache(), precios_mundo.cargar_cache(), capacidad.construir_json(con_red=False))
+        escribir_json_web(json.loads((OUT / "cache" / "compilado.json").read_text(encoding="utf-8")), contexto.cargar_cache(), precios_mundo.cargar_cache(), capacidad.construir_json(con_red=False), con_red=False)
     else:
         sys.exit(main())

@@ -22,6 +22,8 @@ API del BCRA `https://api.bcra.gob.ar/estadisticas/v4.0/monetarias/{id}`, sin cl
 
 Ojo: la API trae algunas variables con atraso. El 12-11 al mediodía el dólar tenía dato del 11-11, pero las reservas del 04-11 y las compras del 03-11. Por eso cada dato muestra SU fecha y la página no supone que todos son de hoy.
 
+Segunda búsqueda (2026-11-12, 17 h): ninguna fuente oficial legible por un programa trae reservas, compras ni tasas más al día que la API (se probaron `Series.xlsm`, el informe monetario diario, la página de principales variables —con captcha— y datos.gob.ar). El parte muestra lo más nuevo que publica el BCRA en sus estadísticas, que llega con varios días de demora.
+
 ## Requisitos
 
 ### Pipeline

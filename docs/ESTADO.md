@@ -14,16 +14,24 @@ Hecho y publicado (detalle en `docs/ROADMAP.md`):
 - Tanda 5 (2026-11-12, `docs/specs/ajustes-tanda-5.md`): la ficha del dato (D-017) en `/dato/`, en los temas y en "Ver" de las preguntas; comparaciones (mes anterior, año atrás, inicio, promedio, mediana, máximo, mínimo) en la cabecera del Histórico; Personalizar como una sola ventana (panel al costado en computadora); ventanas de configuración en Por presidente y Meses de mandato; el IPC por rubros responde a la moneda y avisa cuando no aplica; placas de la portada con mes anterior y año atrás; bloque que presenta las secciones; el teclado no se abre solo.
 - Vista previa en redes (2026-11-12, `docs/specs/vista-previa-links.md`, D-018): 28 páginas fijas `/dato/<slug>/` con título con la cifra e imagen generada al publicar (`npm run previas`), imagen general del sitio, `sitemap.xml` y `robots.txt`.
 - Parte diario del Banco Central (2026-11-12, `docs/specs/parte-diario-bcra.md`, D-019): `/bcra/` con ocho variables diarias, variaciones, contexto, gráfico, imagen, texto para copiar y vista previa en redes; bloque en la portada.
+- Semáforo de actividad (2026-11-12, `docs/specs/semaforo-actividad.md`, D-020): `/semaforo/` con 29 indicadores, interanual y mes contra mes (solo ajuste oficial), índice de difusión, ventana por indicador, imagen y vista previa en redes.
 - Datos: canastas corregidas; respaldo del IPC cuando la API de INDEC no responde; filtro de cotizaciones sueltas; corridas a las 16:10, 17:15 y 21:00 (hora argentina, las dos primeras solo en días hábiles); publicación rápida cuando el push no toca el pipeline.
 
 ## Qué sigue, en orden
-1. **Relatos, posts y video** (bloque 7c-3, sin spec): "contestar un relato", publicar solo en X, video de la animación. Necesita decisiones del usuario: cuenta y clave de la API de X; si "contestar un relato" lleva sello verdadero/falso (choca con D-012).
-2. **Datos de Congreso** (bloque 6d): cargar a mano bancas, bloques y totales de vetos en `datos/manual/`.
-3. **Mantenimiento del pipeline** (auditoría, etapa 4): descargas duplicadas o sin caché al inicio de `obtener_datos.py`, serie de UTDT cortada en 2005, series sin uso, helpers repetidos.
+1. **Herencia: recibido contra entregado** y **gasto e impuestos de provincias y Nación** (ideas del 2026-11-12 en `docs/IDEAS.md`, sin spec).
+2. **Relatos, posts y video** (bloque 7c-3, sin spec): "contestar un relato", publicar solo en X, video de la animación. Necesita decisiones del usuario: cuenta y clave de la API de X; si "contestar un relato" lleva sello verdadero/falso (choca con D-012).
+3. **Datos de Congreso** (bloque 6d): cargar a mano bancas, bloques y totales de vetos en `datos/manual/`.
+4. **Mantenimiento del pipeline** (auditoría, etapa 4): descargas duplicadas o sin caché al inicio de `obtener_datos.py`, serie de UTDT cortada en 2005, series sin uso, helpers repetidos.
 
 ## Sin verificar (revisar antes de dar por cerrado)
+Del semáforo de actividad:
+- La corrida completa con red (bajada de las 30 series en GitHub) y que el IPC para deflactar sea el de esa misma corrida.
+- La producción de autos quedó afuera del semáforo: la serie `41.3_AA_0_A_23` da unas 100 mil unidades por mes contra las 45 a 55 mil de ADEFA y repite valores. Esa misma serie SIGUE en el catálogo general del sitio como "Producción de autos": revisarla contra ADEFA y corregirla o retirarla.
+- `PanelSemaforo` es copia de `PanelParte`: unificar en un panel de imagen genérico si aparece un tercero.
+- El tema claro y la imagen en formato cuadrado y vertical dentro del panel.
+
 Del parte del Banco Central:
-- La corrida completa con red (que el archivo diario salga con el caché recién actualizado) y cuánto atraso real traen reservas y compras a la tarde: el 12-11 al mediodía eran del 04-11 y del 03-11. Si siguen una semana atrás, buscar otra fuente (la planilla Series.xlsm del BCRA o el informe monetario diario).
+- Atraso del BCRA (investigado el 2026-11-12 a las 17 h): reservas, compras, base y depósitos salen con unos cinco días hábiles de demora en TODAS las fuentes oficiales legibles por un programa (API, `Series.xlsm`, informe monetario diario); las tasas, con cuatro; el dólar, con un día. La página "Principales variables" del BCRA tiene captcha y datos.gob.ar está cortada en jun-26. No hay fuente oficial más fresca. Única mejora posible: la variable 1226 (reservas en pesos) trae un día más y dividida por el mayorista da las reservas en dólares, pero sería una estimación propia, no el dato publicado: no se hizo. Falta saber si la demora es la normal o fue de esa semana (mirar otro jueves).
 - Copiar texto y copiar link al portapapeles, el modo claro y el botón Atrás en un celular real.
 
 De la vista previa en redes:

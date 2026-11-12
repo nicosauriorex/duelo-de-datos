@@ -56,6 +56,7 @@ const SECCIONES_INICIO: [string, string, string][] = [
   ["elecciones", "Elecciones", "Mirá qué datos de la economía se movieron junto con el voto en cada elección."],
   ["congreso", "Gobierno y Congreso", "Bancas, leyes, decretos y vetos de cada gobierno."],
   ["contexto", "Contexto internacional", "Compará a la Argentina con otros países y con los precios del mundo."],
+  ["semaforo", "Semáforo de actividad", "Los indicadores de actividad en una tabla: cuáles subieron y cuáles bajaron cada mes."],
   ["plantillas", "Gráficos listos", "Gráficos ya armados para abrir, cambiar y compartir."],
 ];
 

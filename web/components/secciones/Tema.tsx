@@ -22,6 +22,8 @@ const POR_NIVEL = 30;   // más series que esto en un bloque: se despliegan por 
 const MAX_PLANTILLAS = 8;
 /** Temas que enlazan al parte diario del Banco Central (/bcra/). */
 const TEMAS_CON_PARTE = new Set(["dolar", "finanzas"]);
+/** Temas que enlazan al semáforo de actividad (/semaforo/). */
+const TEMAS_CON_SEMAFORO = new Set(["actividad"]);
 
 function Texto({ t }: { t: Tema }) {
   const [largo, setLargo] = useState(false);
@@ -134,6 +136,7 @@ export function TemaPagina({ t }: { t: Tema }) {
         <h1 className="titulo-tema">{t.nombre}</h1>
         <Texto t={t} />
         {TEMAS_CON_PARTE.has(t.slug) && <Link prefetch={false} href="/bcra/" className="enlace-parte">Parte del Banco Central: los datos de cada día</Link>}
+        {TEMAS_CON_SEMAFORO.has(t.slug) && <Link prefetch={false} href="/semaforo/" className="enlace-parte">Semáforo de actividad: qué indicadores subieron cada mes</Link>}
       </div>
 
       {tarjetas.length > 0 && (

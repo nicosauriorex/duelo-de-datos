@@ -21,9 +21,11 @@ import { paletaDe } from "../lib/imagen-paleta";
 import { historicoFicha } from "../lib/ficha";
 import { baseDeConfig, DEFECTO, IMAGEN_DEFECTO } from "../lib/config";
 import { PRES_DEF } from "../lib/estadisticas";
-import { CARPETA_PREVIAS, DESCRIPCION_SITIO, PREVIA, textosPrevia, type DatosPrevias, type PreviaDato, type PreviaParte } from "../lib/previas";
+import { CARPETA_PREVIAS, DESCRIPCION_SITIO, PREVIA, textosPrevia, type DatosPrevias, type PreviaDato, type PreviaParte, type PreviaSemaforo } from "../lib/previas";
 import { armarParte, decodificar, isoDeDia, textosPreviaParte, type DiarioCrudo } from "../lib/diario";
 import { armarImagenParte } from "../lib/imagen-parte";
+import { armarTabla, decodificar as decodificarSemaforo, isoDeMes, mesResumen, textosPreviaSemaforo, type SemaforoCrudo } from "../lib/semaforo";
+import { armarImagenSemaforo, dibujarImagenSemaforo } from "../lib/imagen-semaforo";
 
 const RAIZ = path.resolve(__dirname, "..");
 const DATOS = path.join(RAIZ, "public", "datos");
@@ -137,6 +139,28 @@ function previaDelParte(pal: ReturnType<typeof paletaDe>): boolean {
   }
 }
 
+/** Imagen y textos del semáforo de actividad (/semaforo/): `previas/semaforo.png` y `previas/semaforo.json`. Si falta `semaforo.json`, avisa y sigue. */
+function previaDelSemaforo(pal: ReturnType<typeof paletaDe>): boolean {
+  const archivo = path.join(DATOS, "semaforo.json");
+  if (!fs.existsSync(archivo)) { avisar("no está semaforo.json: se saltea la imagen del semáforo de actividad (/semaforo/ usa la imagen general)"); return false; }
+  try {
+    const sem = decodificarSemaforo(JSON.parse(fs.readFileSync(archivo, "utf8")) as SemaforoCrudo);
+    const tabla = sem && armarTabla(sem, "ia");
+    if (!tabla) { avisar("semaforo.json no trae datos: se saltea la imagen del semáforo de actividad"); return false; }
+    const datos = armarImagenSemaforo(tabla, "16x9");
+    fs.writeFileSync(path.join(SALIDA, "semaforo.png"), aPng((cv) => dibujarImagenSemaforo(cv, datos, pal, DIBUJO), DIBUJO));
+    const { titulo, descripcion } = textosPreviaSemaforo(tabla), fecha = isoDeMes(mesResumen(tabla));
+    const previa: PreviaSemaforo = { titulo, descripcion, fecha, imagen: `/${CARPETA_PREVIAS}/semaforo.png?v=${fecha}` };
+    fs.writeFileSync(path.join(SALIDA, "semaforo.json"), JSON.stringify(previa, null, 1));
+    console.log(`semaforo: ${titulo}
+  ${descripcion}`);
+    return true;
+  } catch (err) {
+    avisar(`semáforo de actividad: ${(err as Error).message}`);
+    return false;
+  }
+}
+
 function main() {
   registrarFuente();
   const pal = paletaDe(tokensOscuros(), FAMILIA, {});
@@ -185,13 +209,14 @@ function main() {
   if (!n) fallar("no se pudo generar ninguna imagen");
   fs.writeFileSync(path.join(SALIDA, "_datos.json"), JSON.stringify(salida, null, 1));
   const conParte = previaDelParte(pal);
+  const conSemaforo = previaDelSemaforo(pal);
   fs.writeFileSync(path.join(SALIDA, "sitio.png"), aPng((cv) => dibujarImagenSitio(cv, pal, {
     titulo: "Datos de Argentina, en debate.",
     bajada: DESCRIPCION_SITIO.replace(/^Datos de Argentina, en debate\.\s*/, ""),
     temas: TEMAS.map((t) => t.nombre),
     pie: "Datos oficiales: INDEC, BCRA, Secretaría de Trabajo y otras fuentes",
   }, PREVIA), PREVIA));
-  console.log(`\nPrevias: ${n} de ${DATOS_FIJOS.length} datos fijos, más sitio.png${conParte ? " y bcra.png" : ""}, en ${((Date.now() - inicio) / 1000).toFixed(1)} s.${avisos.length ? ` Avisos: ${avisos.length}.` : ""}`);
+  console.log(`\nPrevias: ${n} de ${DATOS_FIJOS.length} datos fijos, más sitio.png${conParte ? ", bcra.png" : ""}${conSemaforo ? ", semaforo.png" : ""}, en ${((Date.now() - inicio) / 1000).toFixed(1)} s.${avisos.length ? ` Avisos: ${avisos.length}.` : ""}`);
 }
 
 main();

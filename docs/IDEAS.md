@@ -247,6 +247,31 @@ Decisiones del usuario (2026-11-11): los nombres públicos los propone Claude y 
 - En celular, al abrir "agregar una variable" se abre el teclado enseguida.
 - Un presidente, todas las variables: en "IPC por rubros" (índices) la moneda no cambia nada.
 
+## Dato del día con agentes que navegan (2026-11-12)
+- Para el parte del Banco Central: las fuentes legibles por un programa traen reservas y compras con unos cinco días hábiles de demora (ver `docs/specs/parte-diario-bcra.md`). Idea del usuario, para más adelante: programar agentes que naveguen y busquen el dato del día por su cuenta (comunicado y redes del BCRA, medios), a la hora en que se publica. A definir: cómo se marca un dato tomado así (no es la serie oficial), cómo se verifica y qué pasa cuando llega el dato oficial.
+
+## ~~Semáforo de actividad (2026-11-12)~~ ✅ 2026-11-12
+→ spec: docs/specs/semaforo-actividad.md. Hecho con interanual por defecto; el mes contra mes sin estacionalidad de los ejemplos quedó solo para las series con ajuste oficial (la estimación propia dio demasiado error). Pendiente como idea: sumar un ajuste estacional serio (X-13 con corrección de calendario) y los indicadores sin fuente legible (CAME, patentamientos, Construya, escrituras, leche, petróleo).
+Idea del usuario, con cuatro ejemplos de consultoras (Max Capital, Econviews, una "tabla semáforo s.e." y 1816).
+- Una tabla con los indicadores de actividad de alta frecuencia en filas (EMAE, industria, autos, hierro y acero, petróleo y gas, construcción, cemento, Construya, molienda de soja, faena, pesca, ventas minoristas, patentamientos de autos y motos, energía eléctrica, escrituras, IVA, crédito al sector privado, exportaciones e importaciones, comercio con Brasil, confianza del consumidor, empleo) y los últimos meses en columnas, con la variación mensual desestacionalizada pintada de verde o rojo.
+- Abajo, un **índice de difusión**: qué porcentaje de los indicadores subió ese mes.
+- Variantes vistas: columnas mes contra mes, trimestre contra trimestre y último dato contra el trimestre previo con un círculo de color (Econviews); agrupado por sector (actividad y empleo, consumo, comercio exterior, industria, construcción, agro, inmobiliario); una tabla interanual en términos reales y otra mensual desestacionalizada, separando indicadores "tempranos" de los "principales con demora" (1816).
+- A resolver: (1) faltan muchas fuentes (ADEFA, Cámara del Acero, AFCP, Construya, CAME, patentamientos, CAMMESA, escrituras, Secretaría de Energía, agro): usar el agente `investigador-datos`; (2) la desestacionalización es propia en los ejemplos: decidir si se usa la serie oficial sin estacionalidad donde existe y la interanual donde no, o si se desestacionaliza en el pipeline; (3) cada fila con su fecha (publican con distinta demora, como el parte del BCRA).
+
+## Herencia: recibido contra entregado (2026-11-12)
+Idea del usuario: una sección dentro de Presidentes que compare lo que cada presidente recibió con lo que entregó, con los datos de los que los presidentes se suelen quejar. Sin spec; no implementar sin que se pida.
+- Lista pedida: deuda con importadores, SIRA, déficit fiscal y cuasifiscal, brecha cambiaria, reservas netas negativas, precios congelados, tarifas atrasadas, Leliq y pases (pasivos remunerados), puts de los bancos, dividendos retenidos, acuerdo con el FMI incumplido.
+- Lo que ya hay en el sitio: resultado fiscal, cuasifiscal y pasivos remunerados (BCRA), brecha, reservas brutas. Es el mismo cálculo que "Por presidente" (valor al inicio y al cierre del mandato) con otro armado.
+- Lo que falta y es difícil: reservas netas (no hay serie oficial; depende de la metodología), deuda comercial con importadores y SIRA, puts, dividendos retenidos (estimaciones de informes, no series), tarifas y precios atrasados (hay que definir cómo se mide el atraso), cumplimiento del acuerdo con el FMI (es un hecho, no una serie). Varios habría que cargarlos a mano con su fuente, como los datos de Congreso, y decir cuáles son estimaciones.
+- Cuidado con D-012: mostrar recibido y entregado con su fuente, sin calificar la herencia.
+
+## Gasto e impuestos de las provincias y la Nación (2026-11-12)
+Idea del usuario. Sin spec; no implementar sin que se pida.
+- Gasto de la Nación y de las provincias por partida presupuestaria.
+- Qué provincias cobran más impuestos (por ejemplo Ingresos Brutos), contemplando exenciones.
+- Un ranking de provincias.
+- A resolver: fuentes (Presupuesto Abierto para la Nación; ejecución presupuestaria y recaudación provincial por tributo de la Dirección Nacional de Asuntos Provinciales; leyes impositivas de cada provincia para alícuotas y exenciones); cómo comparar (por habitante, como % del producto de la provincia, en pesos de hoy); el sitio hoy no tiene datos por provincia salvo el IPC por región: es un bloque nuevo, con su propio archivo de datos como el parte del BCRA. Comparar alícuotas con exenciones es mucho más difícil que comparar recaudación.
+
 ## Correcciones pedidas (2026-11-09)
 → spec: docs/specs/correcciones-historico.md
 Son ajustes a lo ya hecho, no ideas nuevas.

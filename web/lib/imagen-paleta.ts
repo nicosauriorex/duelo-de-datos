@@ -15,6 +15,8 @@ export function paletaDe(t: (token: string) => string, familia: string, colPres:
     tinta: t("--text-primary"), tintaSec: t("--text-secondary"), tintaTenue: t("--text-muted"), grilla: t("--grid"), eje: t("--axis"),
     acento: t("--acento"), sobreAcento: t("--sobre-acento"), accion: t("--accion"), bueno: t("--bueno"), malo: t("--malo"),
     series: PALETA.map(t), pres,
+    fondosBueno: [1, 2, 3, 4].map((n) => t(`--bueno-f${n}`)), fondosMalo: [1, 2, 3, 4].map((n) => t(`--malo-f${n}`)),
+    sobreBueno: [1, 2, 3, 4].map((n) => t(`--sobre-bueno-${n}`)), sobreMalo: [1, 2, 3, 4].map((n) => t(`--sobre-malo-${n}`)),
   };
 }
 

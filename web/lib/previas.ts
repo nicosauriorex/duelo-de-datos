@@ -24,6 +24,9 @@ export interface PreviaDato {
 /** La vista previa del parte diario del Banco Central (`previas/bcra.json`, lo escribe el mismo script): título y descripción con las cifras del día. */
 export interface PreviaParte { titulo: string; descripcion: string; fecha: string; imagen: string }
 export const DESCRIPCION_PARTE = "Los datos del día del Banco Central: compra de dólares, reservas, dólar minorista y mayorista, tasas, base monetaria y depósitos.";
+/** La vista previa del semáforo de actividad (`previas/semaforo.json`): título y descripción con el mes y la difusión. */
+export interface PreviaSemaforo { titulo: string; descripcion: string; fecha: string; imagen: string }
+export const DESCRIPCION_SEMAFORO = "Los indicadores de actividad en una sola tabla: cuáles subieron y cuáles bajaron cada mes, y qué porcentaje subió. Fuentes oficiales y cámaras del sector.";
 export interface DatosPrevias { generado: string; datos: Record<string, PreviaDato> }
 
 /** Open Graph y Twitter de una página. `imagen` puede ser relativa (se completa con `metadataBase`) o absoluta. */
