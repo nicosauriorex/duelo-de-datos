@@ -32,6 +32,7 @@ import macro
 import precios_mundo
 import salarios
 import semaforo
+import gasto_nacion
 
 RAIZ = Path(__file__).resolve().parent.parent  # carpeta del proyecto
 OUT = RAIZ / "datos"
@@ -298,6 +299,13 @@ def escribir_json_web(datos, ctx=None, pm=None, cap=None, con_red=True):
         (destino / "semaforo.json").write_text(txt, encoding="utf-8")
     except Exception as e:
         print(f"Semáforo de actividad: no se pudo armar, se sigue sin semaforo.json ({e}).")
+    # Gasto de la Nación (Presupuesto Abierto): con red baja los años que faltan (respaldos en datos/cache/gasto_nacion_*); sin red usa solo los respaldos.
+    # Va fuera del hash. Si falla, la corrida sigue sin gasto_nacion*.json.
+    try:
+        for nombre, obj in gasto_nacion.construir_json(con_red).items():
+            (destino / nombre).write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    except Exception as e:
+        print(f"Gasto de la Nación: no se pudo armar, se sigue sin gasto_nacion*.json ({e}).")
     # "version" cambia con cada dato nuevo: la web la agrega a cada pedido para no mezclar cachés viejos y nuevos.
     (destino / "catalogo.json").write_text(
         json.dumps({"version": h.hexdigest()[:10], "fechas": datos["fechas"], "series": meta}, ensure_ascii=False, separators=(",", ":")),

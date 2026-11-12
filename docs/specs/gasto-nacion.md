@@ -1,6 +1,7 @@
 # En qué gasta la Nación (por partida y por entidad)
 
-Estado: lista para implementar la fase 1, previa verificación de unidades (requisito 0); las fases 2 a 4, según se indica (2026-11-12)
+Estado: fase 1 implementada (2026-11-12); las fases 2 a 4, según se indica.
+Decisiones de la implementación: un año está cerrado cuando la fuente publica su actualización de cierre (posterior a marzo del año siguiente), no por calendario; las barras se redondean repartiendo la diferencia por mayor resto para que sumen el total que se ve; el % ejecutado no se muestra donde lo gastado supera el crédito vigente (pasa con cada universidad: el vigente no se reparte a ese nivel); el pipeline repone tildes que la fuente no trae; incisos 6 y 7 con nombres del público ("Préstamos y compras de activos financieros", "Deuda: intereses y pagos de capital"); medida, etapa y buscador en desplegables para que el dato se vea sin deslizar.
 Ideas: "Gasto e impuestos de las provincias y la Nación" y "presupuesto de cada entidad pública, por ejemplo las universidades" (IDEAS.md, 2026-11-12). Las provincias van en su propia spec (`provincias.md`).
 
 ## Objetivo
@@ -20,12 +21,32 @@ Que cualquiera pueda ver en qué gasta el Estado nacional: por finalidad (salud,
 3. Que los archivos de 2018 a 2023 tienen las mismas columnas que 2024 y 2025 (solo se abrieron esos dos).
 Si alguna verificación no cierra, se detiene la fase y se informa al usuario.
 
+### Resultado del requisito 0 (2026-11-12): cierra
+1. **Unidad: millones de pesos.** El devengado total del archivo coincide con `serie_finfun_anual.csv` (que está en pesos) en 2018-2023 y 2025 con cociente 1,0000; en 2024 el archivo da 90.197.487 millones y la serie 90.355.660 (0,18 % menos, probablemente otra foto del dato). Informe de CEPA (ene-2025, devengado e-Sidif): 89.653.693 millones para 2024.
+2. **Universidades: la cifra buena es 3.285.292 millones** (inciso 5, partida principal 6, devengado, todas las jurisdicciones, 2024), igual hasta el último dígito al "TOTAL GENERAL" de la tabla de `comentario_universidades_2024.pdf`. Los $1.386.917 millones del texto de ese mismo documento no cuadran con su tabla (se parecen al crédito presupuestado inicial del programa, 1.385.289): no usarlos. El archivo **sí trae cada universidad** en `subparcial_desc` (UBA 602.898; UTN 235.292; La Plata 226.819…). `ubicacion_geografica_desc` no sirve para ubicar a cada universidad. Lo que las universidades declaran como gasto propio (1.437.082 millones) es otra fuente y no se mezcla con las transferencias.
+3. **Columnas**: 2021 a 2025 tienen las 56 columnas; 2018 a 2020, 52 (les faltan `prestamo_externo_id/desc` y `codigo_bapin_id/desc`, que no se usan). Codificación utf-8 con BOM y **decimales con punto**. `ultima_actualizacion_fecha` es un texto ("Última actualización del ejercicio 2024: 01 Julio 2025."): hay que sacarle la fecha. Cada ZIP pesa unos 4 MB (CSV de 100 a 120 MB, 110 a 140 mil filas): entra entero en memoria.
+4. `serie_finfun_anual.csv` trae también el PIB nominal de cada año en pesos (columna `pib`).
+
 ## Fase 1 (lista, después del requisito 0): el gasto por año
 ### Pipeline
 1. `pipeline/gasto_nacion.py`: baja el ZIP anual de cada año, lo lee por partes (es grande) y lo **agrega** a lo que usa el sitio; el archivo crudo no se guarda ni se versiona. Los años cerrados se agregan una sola vez y quedan como respaldo chico en `datos/cache/gasto_nacion_<AÑO>.csv` (versionado); el año en curso se vuelve a bajar como mucho una vez por día (mirar `ultima_actualizacion_fecha`).
 2. Salida `web/public/datos/gasto_nacion.json` (o un archivo por año si pesa más de 1 MB): por año, el total y los árboles agregados con las cinco etapas: finalidad → función; jurisdicción → entidad → programa; inciso → partida principal; provincia (`ubicacion_geografica_desc`); fuente de financiamiento. Más el PIB y el IPC promedio del año, para mostrar pesos de hoy y % del PIB (el IPC sale del que ya usa el pipeline; el PIB, de `serie_finfun_anual.csv` o del catálogo).
 3. Nombres: pasar las descripciones a mayúscula inicial y unificar variantes de un mismo organismo entre años con el mapeo interanual; un organismo que cambia de ministerio se sigue por su nombre de entidad o programa, y se dice.
 4. Se corre en la corrida completa; `--solo-json` rearma desde los respaldos. Si falla, avisa y la corrida sigue (patrón de `diario.py` y `semaforo.py`).
+
+### Formato de los archivos (contrato entre pipeline y sitio)
+Montos en millones de pesos corrientes, redondeados a 1 decimal. Etapas, siempre en este orden: `[presupuestado, vigente, comprometido, devengado, pagado]`.
+- `web/public/datos/gasto_nacion.json` (índice, chico):
+  `{ "generado": "AAAA-MM-DD", "fuente": "...", "anios": [ { "anio": 2024, "en_curso": false, "actualizado": "2025-07-01", "pib": <millones de $ o null>, "total": [5 etapas], "archivo": "gasto_nacion_2024.json" } ], "serie_larga": { "anios": [2004, ...], "pib": [...], "finalidades": [ { "n": "Servicios sociales", "v": [devengado por año], "h": [ { "n": "Salud", "v": [...] } ] } ] } }`
+  (`serie_larga` sale de `serie_finfun_anual.csv`, devengado, en millones.)
+- `web/public/datos/gasto_nacion_<AÑO>.json`: `{ "anio": 2024, "arboles": { "para_que": Nodo, "quien": Nodo, "en_que": Nodo, "donde": Nodo, "fuente": Nodo } }` con `Nodo = { "n": nombre, "v": [5 etapas], "h"?: [Nodo, ...] }` (la raíz es el total, `n` = "Total"; hijos ordenados por devengado de mayor a menor):
+  - `para_que`: finalidad → función.
+  - `quien`: jurisdicción → entidad → programa; en el programa "Desarrollo de la Educación Superior", un nivel más con cada universidad (`subparcial_desc` de inciso 5, partida principal 6) y el resto del programa en "Otros gastos del programa".
+  - `en_que`: inciso → partida principal.
+  - `donde`: provincia (`ubicacion_geografica_desc`).
+  - `fuente`: fuente de financiamiento.
+  Nombres con mayúscula inicial y el resto como en el original (siglas intactas), espacios limpios. Cada nodo puede llevar `"t"`: el nombre técnico ("Inciso 1 - Gastos en personal") cuando `n` es el nombre del público.
+- El sitio pasa a pesos de hoy con el IPC que ya carga (`base.json`: promedio del IPC del año contra el último mes) y a % del PIB con `pib` del índice.
 
 ### Sitio
 5. Ruta `/gasto/` ("En qué gasta la Nación"). Carga su archivo aparte (como `useSemaforo`).

@@ -1,0 +1,662 @@
+arbol,ids,n1,n2,n3,n4,credito_presupuestado,credito_vigente,credito_comprometido,credito_devengado,credito_pagado
+para_que,1.1,Administración gubernamental,Legislativa,,,387967.7824,463602.7609,452358.9268,452289.5626,428905.8746
+para_que,1.2,Administración gubernamental,Judicial,,,2149516.3387,2925872.5878,2829800.8604,2829565.4606,2692418.9557
+para_que,1.3,Administración gubernamental,Dirección Superior Ejecutiva,,,309763.8757,349438.4657,307317.6858,305694.2196,284410.6265
+para_que,1.4,Administración gubernamental,Relaciones Exteriores,,,694971.94,953049.6276,912379.514,912378.3353,889902.9219
+para_que,1.5,Administración gubernamental,Relaciones Interiores,,,1514704.5156,2486268.8622,2017695.0844,2017293.9058,1913808.7007
+para_que,1.6,Administración gubernamental,Administración Fiscal,,,73914.5154,82855.5012,73457.6128,73028.9292,68656.573
+para_que,1.7,Administración gubernamental,Control de la Gestión Pública,,,84483.0681,101662.4627,98601.325,98601.2922,88858.4558
+para_que,1.8,Administración gubernamental,Información y Estadística Básicas,,,36239.8397,41614.9141,40157.4176,40063.9546,37472.4391
+para_que,2.1,Servicios de defensa y seguridad,Defensa,,,1917463.333,2419400.9779,2372657.1624,2370003.636,2231337.0489
+para_que,2.2,Servicios de defensa y seguridad,Seguridad Interior,,,2320910.3854,2943531.0454,2890909.2598,2888636.351,2793769.8335
+para_que,2.3,Servicios de defensa y seguridad,Sistema Penal,,,395636.7481,569469.3164,557878.6414,557608.6668,531319.9752
+para_que,2.4,Servicios de defensa y seguridad,Inteligencia,,,184030.9741,288928.4614,279988.0955,279840.2678,278669.1308
+para_que,3.1,Servicios sociales,Salud,,,4428909.1178,7354539.5187,6929082.3129,6927733.5443,6634617.0811
+para_que,3.2,Servicios sociales,Promoción y Asistencia Social,,,3276406.2872,2964482.7536,2912979.313,2912422.7273,2884448.455
+para_que,3.3,Servicios sociales,Seguridad Social,,,47394433.4477,71656607.5116,71176348.6498,71171544.9799,70841595.661
+para_que,3.4,Servicios sociales,Educación y Cultura,,,5402666.4333,6682814.7894,6616728.422,6614878.4916,6064571.3259
+para_que,3.5,Servicios sociales,"Ciencia, Tecnología e Innovación",,,1320795.5057,1515826.6085,1470965.4215,1469367.4029,1298942.2716
+para_que,3.6,Servicios sociales,Trabajo,,,855113.4866,1115470.9065,1103198.8836,1102781.9612,1093481.8209
+para_que,3.7,Servicios sociales,Vivienda y Urbanismo,,,271799.0713,41254.7546,30666.1953,30661.6445,30249.6272
+para_que,3.8,Servicios sociales,Agua Potable y Alcantarillado,,,526111.1939,198317.5338,165988.8454,165199.0738,149453.4569
+para_que,4.1,Servicios económicos,"Energía, Combustibles y Minería",,,6598090.8487,6158263.5758,5770753.5834,5770586.6163,5742059.8482
+para_que,4.2,Servicios económicos,Comunicaciones,,,387015.8062,331728.8778,168993.4459,168988.2816,136105.7465
+para_que,4.3,Servicios económicos,Transporte,,,2764082.7381,3499278.1343,3194126.1455,3193736.5169,2875426.3126
+para_que,4.4,Servicios económicos,Ecología y Desarrollo Sostenible,,,273916.2095,224419.9129,193381.3137,191370.2514,167162.8908
+para_que,4.5,Servicios económicos,"Agricultura, Ganadería y Pesca",,,356868.0227,387287.2665,330200.863,330120.1604,294195.9207
+para_que,4.6,Servicios económicos,Industria,,,182234.5242,171360.3732,103537.9714,103163.6018,96909.9444
+para_que,4.7,Servicios económicos,"Comercio, Turismo y Otros Servicios",,,74247.5656,103704.0341,70725.6715,70170.5287,62691.3571
+para_que,4.8,Servicios económicos,Seguros y Finanzas,,,89711.7796,160190.4178,132203.8787,132153.8538,124731.3861
+para_que,5.1,Deuda pública,Servicio de la Deuda Pública,,,10301208.6819,12382217.6819,10354070.7958,10354070.7958,10354070.7958
+quien,,Jefatura de Gabinete de Ministros,Administración de Parques Nacionales,Actividades Centrales,,16015.2709,21791.6715,20211.5196,20175.0602,19189.9702
+quien,,Jefatura de Gabinete de Ministros,Administración de Parques Nacionales,Atencion a Pasividades de Guardaparques,,3006.5216,1932.894,1917.7924,1917.7924,1917.7924
+quien,,Jefatura de Gabinete de Ministros,Administración de Parques Nacionales,Conservacion y Administracion de Areas Naturales Protegidas,,39699.6213,59526.508,54327.5367,52989.7927,46789.6719
+quien,,Jefatura de Gabinete de Ministros,Administración de Parques Nacionales,Formacion y Capacitacion,,1842.0531,2207.3314,2127.4817,2048.4471,1795.1424
+quien,,Jefatura de Gabinete de Ministros,Administración de Parques Nacionales,Infraestructura en Areas Naturales Protegidas,,3601.8963,4840.7026,3528.9195,3467.6856,2985.6132
+quien,,Jefatura de Gabinete de Ministros,Administración de Parques Nacionales,"Planificacion, Formulacion y Ejecucion de Politicas de Conservacion en Areas Naturales Protegidas",,1610.2756,1986.9902,1908.3154,1819.6765,1623.2912
+quien,,Jefatura de Gabinete de Ministros,Administración de Parques Nacionales,Recuperacion Sustentable de Paisajes y Medios de Vida en Argentina (BIRF N° 9335-AR y PROGREEN Nº TF0B7681),,4764.9839,4764.9839,2247.6644,2247.6644,2247.6644
+quien,,Jefatura de Gabinete de Ministros,Administración de Parques Nacionales,Sistema de Areas Marinas Protegidas,,601.536,715.7742,705.6561,666.2384,589.0794
+quien,,Jefatura de Gabinete de Ministros,"Agencia Nac de Promoción de la Investigación, el Desarrollo Tecnológico y la Innovación","Promocion y Financiamiento de Actividades de Ciencia, Tecnologia e Innovacion",,17182.9245,23638.6327,19600.9875,19557.48,17625.1091
+quien,,Jefatura de Gabinete de Ministros,Agencia de Acceso a la Información Pública,Acceso a la Informacion Publica y Proteccion de Datos Personales,,2336.546,2336.546,2186.1237,2185.9347,1960.2668
+quien,,Jefatura de Gabinete de Ministros,Agencia de Administración de Bienes del Estado,Administracion de Bienes del Estado,,11141.4998,16972.9872,14239.2096,14209.4706,12849.6501
+quien,,Jefatura de Gabinete de Ministros,Banco Nacional de Datos Genéticos (BNDG),Acciones del Banco Nacional de Datos Geneticos,,2172.9019,2258.0351,2125.3032,2125.3032,1779.288
+quien,,Jefatura de Gabinete de Ministros,Comisión Nacional de Actividades Espaciales,Actividades Centrales,,9359.4386,12557.8549,12531.8754,12531.8754,11473.993
+quien,,Jefatura de Gabinete de Ministros,Comisión Nacional de Actividades Espaciales,Generacion de Ciclos de Informacion Espacial Completos,,38036.5722,50868.1895,50010.703,50000.8597,32769.719
+quien,,Jefatura de Gabinete de Ministros,Comisión Nacional de Actividades Espaciales,Investigacion y Desarrollo de Medios de Acceso al Espacio,,4382.1251,7445.7985,7443.4581,7443.4581,7443.4581
+quien,,Jefatura de Gabinete de Ministros,Comisión Nacional de Energía Atómica (CNEA),Acciones para la Seguridad Nuclear y Proteccion Ambiental,,9126.5901,10373.7238,10190.349,10190.349,9812.5358
+quien,,Jefatura de Gabinete de Ministros,Comisión Nacional de Energía Atómica (CNEA),Actividades Centrales,,86333.0331,67368.5977,64257.1187,64257.1187,57423.6303
+quien,,Jefatura de Gabinete de Ministros,Comisión Nacional de Energía Atómica (CNEA),Aplicaciones de la Tecnologia Nuclear,,16553.0065,19076.4808,18779.3544,18779.3544,17259.746
+quien,,Jefatura de Gabinete de Ministros,Comisión Nacional de Energía Atómica (CNEA),Coordinacion del Plan Nacional de Medicina,,651.0872,2167.2083,1295.5634,1295.5634,948.1616
+quien,,Jefatura de Gabinete de Ministros,Comisión Nacional de Energía Atómica (CNEA),Desarrollos y Suministros para la Energia Nuclear,,68024.6146,113040.0196,112626.3805,112626.3805,92164.603
+quien,,Jefatura de Gabinete de Ministros,Comisión Nacional de Energía Atómica (CNEA),Investigacion y Aplicaciones no Nucleares,,11375.8601,11904.614,11545.3039,11545.0039,10249.9765
+quien,,Jefatura de Gabinete de Ministros,Comisión Nacional de Energía Atómica (CNEA),Suministros y Tecnologia del Ciclo de Combustible Nuclear,,14670.9314,14542.2746,12475.7694,12475.7694,11513.203
+quien,,Jefatura de Gabinete de Ministros,Consejo Nacional de Investigaciones Científicas y Técnicas,Actividades Centrales,,17589.4417,20830.4672,20534.7562,20531.711,18653.8051
+quien,,Jefatura de Gabinete de Ministros,Consejo Nacional de Investigaciones Científicas y Técnicas,Desarrollo de Politicas de Vinculacion Tecnologica y Social,,283.0144,998.4451,998.2097,998.2097,916.413
+quien,,Jefatura de Gabinete de Ministros,Consejo Nacional de Investigaciones Científicas y Técnicas,Formacion de Recursos Humanos,,459769.5196,542362.3899,542362.3899,542362.3899,495101.5952
+quien,,Jefatura de Gabinete de Ministros,Consejo Nacional de Investigaciones Científicas y Técnicas,Investigaciones en Ciencia y Tecnica en el Atlantico Sur: Pampa Azul,,215.4307,0.0,0.0,0.0,0.0
+quien,,Jefatura de Gabinete de Ministros,Consejo Nacional de Investigaciones Científicas y Técnicas,"Promocion, Investigacion, Financiamiento, Innovacion y Divulgacion en Ciencia y Tecnica",,29556.0372,40572.9895,37840.768,37840.768,33323.6145
+quien,,Jefatura de Gabinete de Ministros,Dirección Nacional de Migraciones,"Control de Ingresos y Egresos, Admision y Permanencia de Personas dentro del Territorio Nacional",,108315.5007,155274.8588,153521.5084,153307.6811,134537.3128
+quien,,Jefatura de Gabinete de Ministros,Ente Nacional de Comunicaciones,Actividades Centrales,,30873.7575,32729.3334,32074.0916,32074.0916,28567.2799
+quien,,Jefatura de Gabinete de Ministros,Ente Nacional de Comunicaciones,Administracion de Servicios de Tecnologias de la Informacion y las Comunicaciones,,3169.9635,3188.9635,3182.4798,3182.4798,3083.3798
+quien,,Jefatura de Gabinete de Ministros,Ente Nacional de Comunicaciones,Administracion y Gestion de Proyecto de Fomento y Desarrollo,,3339.318,2556.442,2250.5985,2250.5985,1600.6781
+quien,,Jefatura de Gabinete de Ministros,Ente Nacional de Comunicaciones,Atencion de Usuarios,,7238.4204,6920.0704,6908.2696,6908.2696,6744.5443
+quien,,Jefatura de Gabinete de Ministros,Ente Nacional de Comunicaciones,Control de Servicios Postales,,1611.7041,1615.7541,1610.0209,1610.0209,1570.7679
+quien,,Jefatura de Gabinete de Ministros,Ente Nacional de Comunicaciones,Control y Fiscalizacion de Servicios de Tecnologias de la Informacion y las Comunicaciones,,9693.827,10567.027,9503.1341,9503.1341,9348.5517
+quien,,Jefatura de Gabinete de Ministros,Ente Nacional de Comunicaciones,Control y Fiscalizacion de los Servicios de Comunicacion Audiovisual,,5768.598,6107.098,6090.5078,6090.5078,5005.7147
+quien,,Jefatura de Gabinete de Ministros,Ente Nacional de Comunicaciones,"Enseñanza, Capacitacion y Habilitacion",,2371.218,2692.118,2682.93,2682.93,2527.9935
+quien,,Jefatura de Gabinete de Ministros,Instituto Nacional de Asuntos Indigenas,Atencion y Desarrollo de Poblaciones Indigenas,,4847.2122,5718.4049,5348.6783,5347.8445,4919.8183
+quien,,Jefatura de Gabinete de Ministros,Instituto Nacional de Promoción Turística,Promocion del Turismo Receptivo Internacional,,12143.4232,12881.4927,12219.1848,12166.1697,11620.8969
+quien,,Jefatura de Gabinete de Ministros,Registro Nacional de las Personas (RENAPER),"Identificacion, Registro y Clasificacion del Potencial Humano Nacional",,147601.4459,241596.6811,237048.5165,236864.113,178115.4406
+quien,,Jefatura de Gabinete de Ministros,"Secretaría de Innovación, Ciencia y Tecnología",Acciones para Potenciar Tecnologias del Estado,,965.1684,5344.7985,5344.7985,5344.7985,1008.793
+quien,,Jefatura de Gabinete de Ministros,"Secretaría de Innovación, Ciencia y Tecnología",Actividades Centrales,,19595.2622,42471.6835,41332.5011,41261.2919,38261.0628
+quien,,Jefatura de Gabinete de Ministros,"Secretaría de Innovación, Ciencia y Tecnología",Actividades Comunes a los Programas 24 y 25,,5825.2493,1117.2943,1117.2943,1117.2943,1114.8668
+quien,,Jefatura de Gabinete de Ministros,"Secretaría de Innovación, Ciencia y Tecnología",Asistencia Financiera a Empresas Publicas,,26300.034,24020.6486,24020.6486,24020.6486,10012.5
+quien,,Jefatura de Gabinete de Ministros,"Secretaría de Innovación, Ciencia y Tecnología","Conectividad, Inclusion Digital y Formulacion de Politicas de TICs",,4085.5947,16488.3949,15756.8966,15751.7323,9009.5007
+quien,,Jefatura de Gabinete de Ministros,"Secretaría de Innovación, Ciencia y Tecnología","Federalizacion de las Politicas en Ciencia, Tecnologia e Innovacion",,41361.9752,14952.7368,9969.8718,9969.8718,7243.919
+quien,,Jefatura de Gabinete de Ministros,"Secretaría de Innovación, Ciencia y Tecnología",Financiamiento de Organismos Internacionales para Desarrollo Cientifico - Tecnologico,,9842.6426,11188.7472,9637.8979,9637.8396,4445.4554
+quien,,Jefatura de Gabinete de Ministros,"Secretaría de Innovación, Ciencia y Tecnología","Formulacion, Coordinacion e Implementacion de Acciones de Articulacion en Ciencia y Tecnologia",,4286.8712,9732.3262,4876.227,4876.227,645.8111
+quien,,Jefatura de Gabinete de Ministros,"Secretaría de Innovación, Ciencia y Tecnología",Gobierno Abierto y Pais Digital,,8697.7159,11634.7776,10432.1097,10427.5766,9525.6241
+quien,,Jefatura de Gabinete de Ministros,"Secretaría de Innovación, Ciencia y Tecnología",Innovacion Administrativa,,9769.6177,21212.171,20575.1855,20573.6594,15464.8473
+quien,,Jefatura de Gabinete de Ministros,"Secretaría de Innovación, Ciencia y Tecnología",Planeamiento y Politicas en Ciencia Tecnologia e Innovacion,,3198.4483,397.8183,386.4307,386.4307,386.4307
+quien,,Jefatura de Gabinete de Ministros,Vicejefatura de Gabinete Ejecutiva,Actividades Centrales,,36002.4431,50000.6229,43847.2099,43748.5516,42103.6036
+quien,,Jefatura de Gabinete de Ministros,Vicejefatura de Gabinete Ejecutiva,Asuntos Estrategicos,,2161.0581,1247.7688,785.0154,779.7785,732.846
+quien,,Jefatura de Gabinete de Ministros,Vicejefatura de Gabinete Ejecutiva,Gestion y Organizacion del Sistema de Contrataciones de la Administracion Publica Nacional,,1337.455,1576.155,1450.4447,1450.4447,1361.8781
+quien,,Jefatura de Gabinete de Ministros,Vicejefatura de Gabinete Ejecutiva,Relaciones con la Sociedad Civil y Desarrollo Comunitario,,5.4213,0.0,0.0,0.0,0.0
+quien,,Jefatura de Gabinete de Ministros,Vicejefatura de Gabinete del Interior,"Actividad Comun a Programas 54, 55 y 57",,1483.5488,1466.6279,1401.38,1401.38,1401.38
+quien,,Jefatura de Gabinete de Ministros,Vicejefatura de Gabinete del Interior,Actividad Comun a Programas con Financiamiento Externo,,19.5416,19.5416,1.431,1.431,1.431
+quien,,Jefatura de Gabinete de Ministros,Vicejefatura de Gabinete del Interior,Actividades Centrales,,18188.7076,28158.6699,25303.7543,25300.8065,24128.0757
+quien,,Jefatura de Gabinete de Ministros,Vicejefatura de Gabinete del Interior,Actividades Comun de Programas de Turismo y Deporte,,6973.408,7323.408,6696.5328,6511.8933,6486.9829
+quien,,Jefatura de Gabinete de Ministros,Vicejefatura de Gabinete del Interior,Actividades Comunes de Ambiente y Desarrollo Sostenible,,12199.3522,12415.9955,11352.2564,10984.1408,10837.6182
+quien,,Jefatura de Gabinete de Ministros,Vicejefatura de Gabinete del Interior,Calidad y Formacion Turistica,,540.8784,540.8784,391.5672,391.5672,343.7102
+quien,,Jefatura de Gabinete de Ministros,Vicejefatura de Gabinete del Interior,Control Ambiental,,51212.7469,23601.0683,20388.6861,20388.5351,20357.3611
+quien,,Jefatura de Gabinete de Ministros,Vicejefatura de Gabinete del Interior,"Cooperacion, Asistencia Tecnica y Capacitacion a Municipios",,17898.4014,3327.9661,992.3345,992.3345,984.7029
+quien,,Jefatura de Gabinete de Ministros,Vicejefatura de Gabinete del Interior,Coordinacion Interjurisdiccional e Interinstitucional,,777.4059,771.6449,591.781,591.781,568.8243
+quien,,Jefatura de Gabinete de Ministros,Vicejefatura de Gabinete del Interior,Deporte Comunitario y Competencias,,25088.1145,21247.3694,17178.6144,17165.4556,16371.1687
+quien,,Jefatura de Gabinete de Ministros,Vicejefatura de Gabinete del Interior,Deporte Federado e Iniciacion Deportiva,,11418.8858,12263.8865,10762.676,10762.4709,9868.835
+quien,,Jefatura de Gabinete de Ministros,Vicejefatura de Gabinete del Interior,Desarrollo Sostenible,,1565.5922,3983.851,1527.2224,1527.2224,1527.0524
+quien,,Jefatura de Gabinete de Ministros,Vicejefatura de Gabinete del Interior,Desarrollo del Turismo Nacional,,4158.6485,2714.9217,2355.4502,2201.378,1672.128
+quien,,Jefatura de Gabinete de Ministros,Vicejefatura de Gabinete del Interior,Impulso al Desarrollo del Sistema Democratico y Relaciones con la Comunidad,,3229.1979,397250.3857,361364.9021,361364.9021,360627.338
+quien,,Jefatura de Gabinete de Ministros,Vicejefatura de Gabinete del Interior,Iniciativas Complementarias de Interior,,13814.7812,17382.401,14279.0278,14279.0278,13114.1035
+quien,,Jefatura de Gabinete de Ministros,Vicejefatura de Gabinete del Interior,Inversiones con Financiamiento Internacional,,1907.5081,1733.4081,237.5364,212.2638,211.349
+quien,,Jefatura de Gabinete de Ministros,Vicejefatura de Gabinete del Interior,Plan Federal de Turismo Social Responsable,,7475.2588,6313.5705,5243.659,5243.659,5242.8138
+quien,,Jefatura de Gabinete de Ministros,Vicejefatura de Gabinete del Interior,Politica Ambiental en Recursos Naturales,,13425.3861,13454.2599,5797.5789,5797.3119,5126.6564
+quien,,Jefatura de Gabinete de Ministros,Vicejefatura de Gabinete del Interior,Programa Federal de Infraestructura Deportiva,,0.0,81.0,0.4962,0.4962,0.4962
+quien,,Jefatura de Gabinete de Ministros,Vicejefatura de Gabinete del Interior,Promocion Turistica,,6862.8239,7868.8239,7014.9537,7014.9537,6845.4694
+quien,,Jefatura de Gabinete de Ministros,Vicejefatura de Gabinete del Interior,Promocion y Gestion del Cambio Climatico y el Desarrollo Sostenible,,1882.5684,2549.0098,1596.9493,1596.9493,1398.5773
+quien,,Jefatura de Gabinete de Ministros,Vicejefatura de Gabinete del Interior,Relaciones con las Provincias y Desarrollo Regional,,303087.0165,229706.1575,222103.7371,222103.7371,218701.1868
+quien,,Ministerio Público,Ministerio Público,Ejercicio de la Accion Publica y Defensa de la Legalidad,,372913.4874,515913.7559,509449.2304,509448.8044,479815.7945
+quien,,Ministerio Público,Ministerio Público,"Representacion, Defensa y Curatela Publica Oficial",,203529.4188,287907.0924,278436.306,278435.7033,265700.3268
+quien,,Ministerio de Capital Humano,Administración Nacional de la Seguridad Social,Acciones de Nutricion – Programa 1.000 Dias,,185120.2282,354620.2282,352311.2833,352311.2833,352311.2833
+quien,,Ministerio de Capital Humano,Administración Nacional de la Seguridad Social,Actividades Centrales,,1094192.5491,1390097.5491,1325405.1328,1320609.5737,1257301.7831
+quien,,Ministerio de Capital Humano,Administración Nacional de la Seguridad Social,Asignaciones Familiares,,5674259.1133,8846113.5588,8815021.7555,8815021.7555,8814627.4622
+quien,,Ministerio de Capital Humano,Administración Nacional de la Seguridad Social,Atencion Ex-Cajas Provinciales,,971870.6753,1633870.6753,1595817.9624,1595817.9624,1595817.9615
+quien,,Ministerio de Capital Humano,Administración Nacional de la Seguridad Social,Atencion Pensiones Ex-Combatientes y Regimen Reparatorio Ley Nº26.913,,228262.7091,322262.7091,317085.4933,317085.4933,317083.6917
+quien,,Ministerio de Capital Humano,Administración Nacional de la Seguridad Social,Complementos a las Prestaciones Previsionales,,2909334.8966,2999334.8966,2995095.0083,2995095.0083,2994983.6201
+quien,,Ministerio de Capital Humano,Administración Nacional de la Seguridad Social,Pension Universal para el Adulto Mayor,,444470.5251,625170.5251,621755.2158,621755.2158,621755.2158
+quien,,Ministerio de Capital Humano,Administración Nacional de la Seguridad Social,Pensiones No Contributivas (Decreto N° 746/2017),,765630.4702,1114630.4702,1108761.8585,1108761.8585,1108647.529
+quien,,Ministerio de Capital Humano,Administración Nacional de la Seguridad Social,Prestaciones Previsionales,,28033633.5247,45239328.3121,45019821.9985,45019819.9958,45007691.9215
+quien,,Ministerio de Capital Humano,Administración Nacional de la Seguridad Social,Seguro de Desempleo,,257136.9045,349636.9045,337032.3104,337032.3104,335126.7979
+quien,,Ministerio de Capital Humano,Administración Nacional de la Seguridad Social,Transferencias y Contribuciones a la Seguridad Social y Organismos Descentralizados,,1201212.4311,1830103.2311,1784719.7604,1784719.7604,1784719.581
+quien,,Ministerio de Capital Humano,Biblioteca Nacional,Servicios de la Biblioteca Nacional,,25271.4044,28476.2727,27723.5325,27720.2976,23981.4353
+quien,,Ministerio de Capital Humano,Comisión Nacional de Evaluación y Acreditación Universitaria,Evaluacion y Acreditacion Universitaria,,4792.2458,6804.4936,6657.8882,6638.8912,4949.1827
+quien,,Ministerio de Capital Humano,Fundación Miguel Lillio,"Investigacion de la Flora, Fauna y Gea",,6804.7039,9796.9073,9090.4706,9090.4706,8366.6431
+quien,,Ministerio de Capital Humano,Instituto Nacional de Asociativismo y Economía Social,Asistencia a la Actividad Cooperativa y Mutual,,19632.3721,19985.5619,16866.6347,16861.7774,13919.4141
+quien,,Ministerio de Capital Humano,Ministerio de Capital Humano,Actividad Comun a las acciones del Consejo Nacional de Coordinacion de Politicas Sociales,,459.8334,471.2302,447.3638,447.3638,426.4816
+quien,,Ministerio de Capital Humano,Ministerio de Capital Humano,Actividades Centrales,,5271.718,12511.4324,10463.9781,10462.2987,9786.549
+quien,,Ministerio de Capital Humano,Ministerio de Capital Humano,Apoyo al Desarrollo Integral de la Primera Infancia,,0.0,725.9611,51.3393,51.3393,51.3393
+quien,,Ministerio de Capital Humano,Ministerio de Capital Humano,Asistencia y Coordinacion de Politicas Sociales,,4496.9873,5162.9037,4703.5542,4697.0563,4279.2479
+quien,,Ministerio de Capital Humano,"Secretaría Nacional de Niñez, Adolescencia y Familia",Abordaje Territorial,,7820.8189,3791.6049,3716.8968,3716.8968,3716.8968
+quien,,Ministerio de Capital Humano,"Secretaría Nacional de Niñez, Adolescencia y Familia",Acciones de Abordaje Integral Comunitaria,,2928.2821,1830.8213,1498.3358,1498.3358,1354.3597
+quien,,Ministerio de Capital Humano,"Secretaría Nacional de Niñez, Adolescencia y Familia",Acciones de Inclusion Social,,609894.409,216428.8124,214780.6767,214780.6767,214780.6767
+quien,,Ministerio de Capital Humano,"Secretaría Nacional de Niñez, Adolescencia y Familia",Acciones para el Fortalecimiento de las Familias y su Inclusion Comunitaria,,339.5202,284.1375,284.1375,284.1375,276.802
+quien,,Ministerio de Capital Humano,"Secretaría Nacional de Niñez, Adolescencia y Familia","Acciones para la Promocion y Proteccion Integral de los Derechos de Niños, Niñas y Adolescentes",,23430.9797,26397.3673,25918.5567,25918.5567,25778.4083
+quien,,Ministerio de Capital Humano,"Secretaría Nacional de Niñez, Adolescencia y Familia",Actividad Comun a los Programas 26 y 38,,4655.9937,4233.7548,4192.5606,4143.8175,4134.3434
+quien,,Ministerio de Capital Humano,"Secretaría Nacional de Niñez, Adolescencia y Familia",Actividad Comun a los Programas 26 y 54,,1558.5819,1398.0537,1390.3688,1390.3688,1390.3688
+quien,,Ministerio de Capital Humano,"Secretaría Nacional de Niñez, Adolescencia y Familia",Actividad Comun a los Programas 57 y 58,,4171.0362,3947.2036,3939.416,3928.2134,3928.2134
+quien,,Ministerio de Capital Humano,"Secretaría Nacional de Niñez, Adolescencia y Familia",Actividades Centrales,,92392.6063,86888.2222,80849.9911,80848.2964,77726.8397
+quien,,Ministerio de Capital Humano,"Secretaría Nacional de Niñez, Adolescencia y Familia","Actividades Comunes a los Programas 44, 46 y 47",,9761.88,9294.8435,9188.436,9188.436,9116.1865
+quien,,Ministerio de Capital Humano,"Secretaría Nacional de Niñez, Adolescencia y Familia",Apoyo al Plan Nacional de Primera Infancia,,4050.5507,3813.3672,3773.4387,3773.4387,3594.9865
+quien,,Ministerio de Capital Humano,"Secretaría Nacional de Niñez, Adolescencia y Familia",Construccion “CASA AMOR”,,225.1,0.0,0.0,0.0,0.0
+quien,,Ministerio de Capital Humano,"Secretaría Nacional de Niñez, Adolescencia y Familia",Economia Social,,3815.0058,0.0,0.0,0.0,0.0
+quien,,Ministerio de Capital Humano,"Secretaría Nacional de Niñez, Adolescencia y Familia",Plan Nacional de Proteccion Social,,2983.7955,0.0,0.0,0.0,0.0
+quien,,Ministerio de Capital Humano,"Secretaría Nacional de Niñez, Adolescencia y Familia",Politicas Alimentarias,,2026787.2464,2279949.3297,2270114.474,2270114.474,2255264.0083
+quien,,Ministerio de Capital Humano,"Secretaría Nacional de Niñez, Adolescencia y Familia",Politicas Federales para la Promocion de los Derechos de Niños y Adolescentes,,6475.9458,5787.8689,5782.8753,5782.8753,5713.6466
+quien,,Ministerio de Capital Humano,"Secretaría Nacional de Niñez, Adolescencia y Familia",Programa de Articulacion Social del Area Metropolitana de Buenos Aires,,50.1618,0.0,0.0,0.0,0.0
+quien,,Ministerio de Capital Humano,"Secretaría Nacional de Niñez, Adolescencia y Familia",Programa de Fortalecimiento de la Informacion Social Estrategica,,70.601,0.0,0.0,0.0,0.0
+quien,,Ministerio de Capital Humano,"Secretaría Nacional de Niñez, Adolescencia y Familia",Programa de Integracion Social y Fortalecimiento de la Ciudadania hacia el Desarrollo Humano,,48.6664,30.1273,0.0,0.0,0.0
+quien,,Ministerio de Capital Humano,"Secretaría Nacional de Niñez, Adolescencia y Familia",Programa para la Equidad del Norte Grande,,50.1618,0.0,0.0,0.0,0.0
+quien,,Ministerio de Capital Humano,"Secretaría Nacional de Niñez, Adolescencia y Familia",Promocion de Acciones Juveniles,,3453.7101,2435.5289,2435.5289,2435.5289,2399.1194
+quien,,Ministerio de Capital Humano,"Secretaría Nacional de Niñez, Adolescencia y Familia",Promocion y Asistencia a Espacios de Primera Infancia,,10884.2302,8628.1331,8411.2014,8411.2014,8045.8637
+quien,,Ministerio de Capital Humano,"Secretaría Nacional de Niñez, Adolescencia y Familia",Promocion y Proteccion de los Derechos de Adultos Mayores,,9412.6167,10645.2843,10162.0475,10162.0475,10067.7541
+quien,,Ministerio de Capital Humano,"Secretaría Nacional de Niñez, Adolescencia y Familia",Transferencias Varias,,1261.7922,0.0,0.0,0.0,0.0
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Acciones de Formacion Docente,,9772.119,8867.4862,8721.0542,8721.0542,7917.017
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Actividades Centrales,,27425.4681,30569.1374,28219.4272,28205.2557,26167.3344
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Cooperacion e Integracion Educativa Internacional,,1733.123,2761.9178,1772.1835,1772.1835,1509.3535
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Otros gastos del programa,45446.7867,48544.9238,48325.6592,48325.6592,46133.987
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional Arturo Jauretche,4816.5019,4816.5019,35986.0989,35986.0989,32834.8306
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional José Clemente Paz,4216.1895,4216.1895,26595.4756,26595.4756,24292.9946
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional Madres de Plaza de Mayo,1004.2856,1004.2856,4273.3326,4273.3326,3814.7838
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional Raúl Scalabrini Ortiz,528.7429,528.7429,4142.561,4142.561,3795.6383
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Avellaneda,3528.4571,3528.4571,26517.3039,26517.3039,23953.7437
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Catamarca,8730.0039,8730.0039,53722.4676,53722.4676,48951.8055
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Chaco Austral,3655.9752,3655.9752,18319.6748,18319.6748,16562.2178
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Chilecito,2484.3945,2484.3945,15556.7964,15556.7964,14170.2516
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Comechingones,839.6128,839.6128,4288.5615,4288.5615,3915.1022
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Cuyo,26090.1114,26090.1114,159088.8061,159088.8061,144998.4094
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Córdoba,47788.6041,47788.6041,284684.3716,284684.3716,259717.788
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Entre Ríos,9676.0937,9676.0937,56628.8086,56628.8086,51360.5315
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Formosa,4560.3838,4560.3838,31895.7416,31895.7416,29112.7731
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de General San Martín,10272.5787,10272.5787,56476.4569,56476.4569,51308.7608
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de General Sarmiento,4549.1851,4549.1851,29485.2669,29485.2669,26850.24
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Guillermo Brown,1061.9664,1061.9664,6284.4412,6284.4412,5794.5331
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Hurlingham,4497.3112,4497.3112,31143.5777,31143.5777,28289.978
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Jujuy,8540.3584,8540.3584,49624.011,49624.011,45197.6015
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de La Matanza,12131.5452,12131.5452,74671.8292,74671.8292,68181.2566
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de La Pampa,8759.2968,8759.2968,49019.3349,49019.3349,44431.1846
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de La Plata,48436.3949,48436.3949,305059.5377,305059.5377,277301.5779
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de La Rioja,7977.0918,7977.0918,51239.2734,51239.2734,46725.7579
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Lanús,4548.5609,4548.5609,27784.6251,27784.6251,25301.1546
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Lomas de Zamora,11009.3237,11009.3237,53764.277,53764.277,48964.0472
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Luján,8996.9324,8996.9324,57723.6843,57723.6843,52329.8786
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Mar del Plata,15206.472,15206.472,96417.0809,96417.0809,87889.8697
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Misiones,11012.2279,11012.2279,64781.0106,64781.0106,58430.381
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Moreno,3618.027,3618.027,16966.6573,16966.6573,15443.5613
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Pilar,0.0,0.0,2752.9763,2752.9763,2431.1882
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Quilmes,6606.7675,6606.7675,39483.6981,39483.6981,35909.8142
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Rio Negro,5356.9197,5356.9197,34545.8514,34545.8514,31358.9247
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Rosario,34259.8323,34259.8323,216845.0082,216845.0082,197677.3331
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Río Cuarto,9963.8107,9963.8107,59114.901,59114.901,53852.0801
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Río Tercero,0.0,0.0,2675.3456,2675.3456,2194.3456
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Salta,10578.5343,10578.5343,63364.9086,63364.9086,57244.8442
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de San Antonio de Areco,1165.6792,1165.6792,3472.8973,3472.8973,3151.1642
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de San Juan,17894.7489,17894.7489,111913.062,111913.062,101945.0346
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de San Luis,12920.7534,12920.7534,80116.1828,80116.1828,73018.4306
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Santiago del Estero,6601.9172,6601.9172,37851.6416,37851.6416,34475.4297
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,"Universidad Nacional de Tierra del Fuego, Antártida e Islas del Atlántico Sur",2830.2654,2830.2654,19177.9336,19177.9336,17396.2453
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Tres de Febrero,4359.7684,4359.7684,28733.6276,28733.6276,25597.2434
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Tucumán,31931.0187,31931.0187,194904.3916,194904.3916,177592.724
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Villa Maria,3788.5439,3788.5439,24536.7278,24536.7278,22377.1527
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de Villa Mercedes,1014.1912,1014.1912,8969.1987,8969.1987,8185.6162
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de la Patagonia,11370.1749,11370.1749,68848.7031,68848.7031,62612.9601
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de la Patagonia Austral,6876.4234,6876.4234,40427.1403,40427.1403,36779.8925
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional de las Artes,7420.1842,7420.1842,46344.0374,46344.0374,42240.6794
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional del Alto Uruguay,323.1507,323.1507,3173.6073,3173.6073,2890.0528
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional del Centro de la Provincia de Bs.As.,10932.7155,10932.7155,67195.9428,67195.9428,61200.6479
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional del Comahue,14366.2961,14366.2961,85443.6401,85443.6401,77762.0841
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional del Delta,0.0,0.0,2349.4873,2349.4873,1512.4832
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional del Litoral,16639.1029,16639.1029,99455.3364,99455.3364,90588.7922
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional del Nordeste,18646.9997,18646.9997,118733.1472,118733.1472,108248.4455
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional del Noroeste de la Pcia.de Buenos Aires,4045.1963,4045.1963,17013.4987,17013.4987,15347.9519
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional del Oeste,2382.5307,2382.5307,12041.5761,12041.5761,10577.5737
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Nacional del Sur,12588.526,12588.526,77354.1635,77354.1635,69416.2897
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Pedagógica Nacional,855.9884,855.9884,6585.5341,6585.5341,6022.6487
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad Tecnologica Nacional,49492.8301,49492.8301,313295.8119,313295.8119,284739.369
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad de Buenos Aires,129773.655,129773.655,817960.8148,817960.8148,743513.6748
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad de Rafaela,1330.4566,1330.4566,6833.1779,6833.1779,6237.9539
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidad de la Defensa Nacional,626.0954,626.0954,5080.561,5080.561,4636.5968
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Desarrollo de la Educacion Superior,Universidades sin Discriminar,2561171.4721,3696284.7677,0.0,0.0,0.0
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Fondo de Compensacion Salarial Docente,,65753.8109,0.0,0.0,0.0,0.0
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Fortalecimiento Edilicio de Jardines Infantiles,,26535.4638,11942.9282,11563.0158,11563.0158,10966.7476
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Fortalecimiento Territorial y Acompañamiento de Organizaciones Educativas,,1290.78,202.662,202.662,202.662,202.662
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Gestion Educativa y Politicas Socioeducativas,,542248.943,276633.893,276480.8006,276480.8006,242938.1041
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Gestion y Asignacion de Becas a Estudiantes,,395316.6461,299017.8406,298916.2641,298916.2641,298856.6684
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Informacion y Evaluacion de la Calidad Educativa,,26398.8247,15819.6983,14888.24,14888.24,12867.7833
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Infraestructura y Equipamiento,,58850.4207,176315.4866,175249.7515,175248.9406,174015.1518
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Innovacion y Desarrollo de la Formacion Tecnologica,,42919.3754,41277.1112,41258.1003,41258.1003,37608.1832
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Mejoramiento de la Calidad Educativa,,69387.5719,10887.8748,10866.2577,10866.2577,10296.6015
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Plan Nacional de Alfabetizacion,,0.0,407717.6021,407665.3743,407665.3743,342263.9819
+quien,,Ministerio de Capital Humano,Secretaría de Educacion,Transferencias Varias,,744.1342,0.0,0.0,0.0,0.0
+quien,,Ministerio de Capital Humano,"Secretaría de Trabajo, Empleo y Seguridad Social",Acciones de Articulacion Territorial,,35420.5743,43716.453,43341.7468,43312.0697,41587.9072
+quien,,Ministerio de Capital Humano,"Secretaría de Trabajo, Empleo y Seguridad Social",Acciones de Capacitacion Laboral,,23118.3222,31089.8183,28796.5065,28792.468,28650.2836
+quien,,Ministerio de Capital Humano,"Secretaría de Trabajo, Empleo y Seguridad Social",Acciones de Empleo,,722447.1606,953071.2502,946744.2893,946700.5992,946458.3562
+quien,,Ministerio de Capital Humano,"Secretaría de Trabajo, Empleo y Seguridad Social",Actividades Centrales,,47348.6458,39759.1439,37298.2952,37102.2904,34830.628
+quien,,Ministerio de Capital Humano,"Secretaría de Trabajo, Empleo y Seguridad Social",Analisis y Formulacion de la Politica de Seguridad Social,,1642.7222,18239.7622,17518.849,17495.1749,14511.9565
+quien,,Ministerio de Capital Humano,"Secretaría de Trabajo, Empleo y Seguridad Social",Formulacion y Regulacion de la Politica Laboral,,8603.5744,9222.3414,9198.3647,9149.5245,8805.1337
+quien,,Ministerio de Capital Humano,"Secretaría de Trabajo, Empleo y Seguridad Social",Regularizacion del Trabajo,,5344.8258,6323.0558,6298.9308,6228.3792,6072.147
+quien,,Ministerio de Capital Humano,Superintendencia de Riesgos del Trabajo,Fiscalizacion Cumplimiento de la Ley de Riesgos del Trabajo,,11187.6612,14049.0817,14001.9013,14001.4553,12565.4086
+quien,,Ministerio de Defensa,Estado Mayor Conjunto de las Fuerzas Armadas (EMCO),Actividades Centrales,,5360.6063,22729.2987,7193.8524,7193.8524,6697.1945
+quien,,Ministerio de Defensa,Estado Mayor Conjunto de las Fuerzas Armadas (EMCO),Formacion y Capacitacion,,698.8952,797.5256,790.9912,790.9912,779.3563
+quien,,Ministerio de Defensa,Estado Mayor Conjunto de las Fuerzas Armadas (EMCO),Fuerzas de Paz,,6225.8454,8534.1553,8324.5347,8324.5347,7305.4242
+quien,,Ministerio de Defensa,Estado Mayor Conjunto de las Fuerzas Armadas (EMCO),Planeamiento Militar Conjunto,,4742.241,4221.7306,4048.022,4048.022,3780.1661
+quien,,Ministerio de Defensa,Estado Mayor Conjunto de las Fuerzas Armadas (EMCO),Planeamiento y Conduccion de Operaciones y de Adiestramiento Militar Conjunto,,3433.3889,749.0691,705.2412,705.2412,581.7337
+quien,,Ministerio de Defensa,Estado Mayor Conjunto de las Fuerzas Armadas (EMCO),Sanidad Militar Conjunta,,309.9698,380.159,380.1475,380.1475,376.5581
+quien,,Ministerio de Defensa,Estado Mayor Conjunto de las Fuerzas Armadas (EMCO),Sosten Logistico Antartico,,25224.4903,21042.7714,19475.4939,19475.4939,14070.1148
+quien,,Ministerio de Defensa,Estado Mayor General de la Armada Argentina,Actividades Centrales,,136646.5863,194403.3436,188696.6959,188668.4378,175748.3353
+quien,,Ministerio de Defensa,Estado Mayor General de la Armada Argentina,Alistamiento Operacional de la Armada,,338083.5614,430617.5228,426906.3259,426705.5736,411333.1233
+quien,,Ministerio de Defensa,Estado Mayor General de la Armada Argentina,Formacion y Capacitacion,,66674.8152,83129.6002,83012.5189,82994.8928,80409.972
+quien,,Ministerio de Defensa,Estado Mayor General de la Armada Argentina,Hidrografia Naval,,4009.6948,33.2793,33.2793,33.2793,33.2793
+quien,,Ministerio de Defensa,Estado Mayor General de la Armada Argentina,Sanidad Naval,,47645.3369,70272.3414,68859.0572,68729.0845,64070.2865
+quien,,Ministerio de Defensa,Estado Mayor General de la Armada Argentina,Sostenimiento Operacional,,2625.1819,2553.7989,2553.7989,2553.7989,2435.4135
+quien,,Ministerio de Defensa,Estado Mayor General de la Armada Argentina,Transportes Navales,,5019.2132,5411.2554,5066.3577,5060.2309,3855.1297
+quien,,Ministerio de Defensa,Estado Mayor General de la Fuerza Aérea Argentina,Actividades Centrales,,96334.7911,123367.0524,122105.8168,122105.8168,115817.7266
+quien,,Ministerio de Defensa,Estado Mayor General de la Fuerza Aérea Argentina,Alistamiento Operacional de la Fuerza Aerea,,259237.9749,329109.2578,326201.7901,325022.5192,302174.6736
+quien,,Ministerio de Defensa,Estado Mayor General de la Fuerza Aérea Argentina,Asistencia Sanitaria de la Fuerza Aerea,,59467.6661,83891.9846,81892.0834,81892.0834,77775.8621
+quien,,Ministerio de Defensa,Estado Mayor General de la Fuerza Aérea Argentina,Capacitacion y Formacion de la Fuerza Aerea,,74564.626,95731.4007,94481.5527,94481.5527,90381.3145
+quien,,Ministerio de Defensa,Estado Mayor General de la Fuerza Aérea Argentina,Control de Transito Aereo,,4522.4947,6026.5486,5989.0904,5989.0904,5829.6858
+quien,,Ministerio de Defensa,Estado Mayor General de la Fuerza Aérea Argentina,Servicio Meteorologico Nacional,,3546.0691,4768.516,4737.1203,4737.1203,4614.3839
+quien,,Ministerio de Defensa,Estado Mayor General de la Fuerza Aérea Argentina,Sostenimiento Operacional,,3732.8468,538.9651,538.9572,538.9572,472.723
+quien,,Ministerio de Defensa,Estado Mayor General de la Fuerza Aérea Argentina,Transporte Aereo de Fomento,,8744.4253,10153.0723,9422.6356,9422.6356,8446.2417
+quien,,Ministerio de Defensa,Estado Mayor General del Ejército Argentino,Actividades Centrales,,320769.4782,656292.3915,654151.2269,654009.1913,624138.1416
+quien,,Ministerio de Defensa,Estado Mayor General del Ejército Argentino,Alistamiento Operacional del Ejercito,,607329.1155,632312.6957,625586.83,625582.2576,582672.3783
+quien,,Ministerio de Defensa,Estado Mayor General del Ejército Argentino,Asistencia Sanitaria,,111136.4996,123297.6637,113639.076,113639.076,108127.1375
+quien,,Ministerio de Defensa,Estado Mayor General del Ejército Argentino,Formacion y Capacitacion,,180363.1696,187403.7352,181537.6581,181537.4336,177988.2872
+quien,,Ministerio de Defensa,Estado Mayor General del Ejército Argentino,Remonta y Veterinaria,,19180.5894,23247.8532,20800.7404,20800.7404,19744.2752
+quien,,Ministerio de Defensa,Estado Mayor General del Ejército Argentino,Sastreria Militar,,1811.3456,1903.3456,1708.7122,1708.7122,1693.1814
+quien,,Ministerio de Defensa,Estado Mayor General del Ejército Argentino,Sostenimiento Operacional,,1265.4104,7699.73,7687.3391,7687.3391,6422.42
+quien,,Ministerio de Defensa,Instituto Geográfico Nacional,Elaboracion y Actualizacion de Informacion Geoespacial y Cartografia Basica Nacional,,6219.2462,7290.8073,7266.1911,7266.1911,6478.1475
+quien,,Ministerio de Defensa,Instituto de Ayuda Financiera para pago de Retiros y Pensiones Militares,Prestaciones de Prevision Social,,1435547.1197,1983389.0776,1977732.5437,1977732.5437,1977396.4366
+quien,,Ministerio de Defensa,Ministerio de Defensa,Conduccion y Planificacion para la Defensa,,22981.6241,28508.535,26515.7568,25570.3699,24495.9836
+quien,,Ministerio de Defensa,Ministerio de Defensa,Desarrollo Tecnologico para la Defensa,,10405.1754,11969.7715,11740.2469,11740.2469,11022.8665
+quien,,Ministerio de Defensa,Ministerio de Defensa,Logistica de la Defensa,,146.9687,3661.3419,2855.678,2855.678,529.9542
+quien,,Ministerio de Defensa,Ministerio de Defensa,"Mantenimiento, Produccion y Soporte Logistico para la Defensa - Fondo Nacional de la Defensa 'FONDEF'",,10968.8094,8051.5594,4848.0298,4848.0298,4698.0378
+quien,,Ministerio de Defensa,Ministerio de Defensa,Servicios de Hidrografia,,4600.6669,5343.1178,4874.6277,4708.3916,4553.7537
+quien,,Ministerio de Defensa,Ministerio de Defensa,Transferencias Varias,,87.9853,27346.4473,27346.4473,27346.4473,27346.4473
+quien,,Ministerio de Defensa,Servicio Meteorológico Nacional,Servicios de Meteorologia Nacional,,21994.738,27314.0739,27222.9327,27222.9315,24271.9894
+quien,,Ministerio de Desregulación y Transformación del Estado,Ministerio de Desregulación y Transformación del Estado,Actividades Centrales,,100.0,3464.6322,2683.2225,2683.2225,2436.3602
+quien,,Ministerio de Desregulación y Transformación del Estado,Ministerio de Desregulación y Transformación del Estado,Desarrollo de los Recursos Humanos del Sector Publico,,14460.9145,5866.0582,4707.487,4707.487,4284.025
+quien,,Ministerio de Desregulación y Transformación del Estado,Ministerio de Desregulación y Transformación del Estado,Fortalecimiento de la Gestion Publica,,1222.1627,2409.3635,2005.2536,1987.8917,1895.821
+quien,,Ministerio de Economía,Administración Nacional de Aviación Civil,"Regulacion, Fiscalizacion y Administracion de la Aviacion Civil",,55480.5532,74546.5192,68620.6063,68408.6147,63121.3469
+quien,,Ministerio de Economía,Agencia Nacional de Puertos y Navegación,"Regulacion, Control y Desarrollo de la Actividad e Infraestructura Portuaria y de Vias Navegables",,0.0,16932.3959,6330.0317,6330.0317,4135.0972
+quien,,Ministerio de Economía,Agencia Nacional de Seguridad Vial,Acciones de Seguridad Vial,,16261.8528,20745.585,19519.8625,19487.2408,17756.5982
+quien,,Ministerio de Economía,Comisión Nacional de Regulación del Transporte,Actividades Centrales,,10426.6013,14007.2077,13002.448,13002.447,11039.5921
+quien,,Ministerio de Economía,Comisión Nacional de Regulación del Transporte,"Fiscalizacion, Regulacion y Control del Servicio de Transporte Terrestre",,22163.9115,30917.955,29878.686,29878.5398,27289.995
+quien,,Ministerio de Economía,Comisión Nacional de Valores,Control y Fiscalizacion de la Oferta Publica,,14974.3594,18672.4854,17438.6632,17419.9468,15194.1667
+quien,,Ministerio de Economía,Dirección Nacional de Vialidad,Actividades Centrales,,61206.6383,70194.5558,69275.9784,69270.6799,56336.7736
+quien,,Ministerio de Economía,Dirección Nacional de Vialidad,Construccion de Autopistas y Autovias,,52081.6293,205689.6097,181345.8806,181345.8806,180707.7538
+quien,,Ministerio de Economía,Dirección Nacional de Vialidad,Construccion de Rutas Nuevas y Obras de Pavimentacion,,9474.7278,3167.6509,2321.1446,2321.1446,2321.1446
+quien,,Ministerio de Economía,Dirección Nacional de Vialidad,Construccion de Rutas Seguras,,6530.8311,6111.6937,5297.2983,5297.2983,5297.2983
+quien,,Ministerio de Economía,Dirección Nacional de Vialidad,Construccion de Tuneles y Puentes Grandes,,1915.7309,789.1343,773.2116,773.2116,764.6092
+quien,,Ministerio de Economía,Dirección Nacional de Vialidad,Construccion y Puesta en Valor de Infraestructura de Apoyo y Soporte al Plan Vial Nacional,,211.078,0.0,0.0,0.0,0.0
+quien,,Ministerio de Economía,Dirección Nacional de Vialidad,Construcciones de Obras Viales fuera de la Red Vial Nacional,,1969.7399,20496.2632,18300.158,18300.158,18300.158
+quien,,Ministerio de Economía,Dirección Nacional de Vialidad,Ejecucion Obras de Mantenimiento y Rehabilitacion en Red por Administracion,,266877.0454,280999.2789,251443.6313,251441.6721,229195.4665
+quien,,Ministerio de Economía,Dirección Nacional de Vialidad,Ejecucion Obras de Rehabilitacion y Mantenimiento en Red por Sistema de Gestion Integral,,9682.2815,42081.2012,38377.8775,38377.8775,37799.4213
+quien,,Ministerio de Economía,Dirección Nacional de Vialidad,Ejecucion Obras de Seguridad en Rutas Nacionales,,2913.9175,1918.9867,1493.1161,1493.1161,1388.4056
+quien,,Ministerio de Economía,Dirección Nacional de Vialidad,"Ejecucion de Infraestructura Vial para el Desarrollo Economico, Social y Productivo",,0.0,9324.4876,9311.812,9311.812,9311.812
+quien,,Ministerio de Economía,Dirección Nacional de Vialidad,"Ejecucion de Obras, Operacion y Mantenimiento en Corredores Viales",,14479.8695,0.0,0.0,0.0,0.0
+quien,,Ministerio de Economía,Dirección Nacional de Vialidad,Mantenimiento y Reparacion de Obras de Arte,,764.7495,61.4834,61.4834,61.4834,61.4834
+quien,,Ministerio de Economía,Dirección Nacional de Vialidad,Reparacion y Construccion de Puentes y Alcantarillas,,2262.1937,4708.3277,4359.6207,4359.6207,4359.6207
+quien,,Ministerio de Economía,Dirección Nacional de Vialidad,Repavimentacion de Rutas Nacionales,,8645.2569,9179.7579,8256.1074,8256.1074,8256.1074
+quien,,Ministerio de Economía,Ente Nacional Regulador de la Electricidad,Regulacion y Contralor del Mercado Electrico,,15999.4044,20026.5272,18629.0604,18593.2153,16599.5772
+quien,,Ministerio de Economía,Ente Nacional Regulador del Gas,Regulacion del Transporte y Distribucion de Gas,,50121.2303,59398.1962,57694.66,57667.4669,51651.8858
+quien,,Ministerio de Economía,Instituto Nacional de Investigación y Desarrollo Pesquero,Investigacion y Desarrollo Pesquero,,18330.7353,24718.9939,21988.276,21986.9346,17421.7694
+quien,,Ministerio de Economía,Instituto Nacional de Semillas,Promocion del Comercio y Produccion de Semillas,,21280.4584,21280.4584,13595.4002,13579.3282,12843.8713
+quien,,Ministerio de Economía,Instituto Nacional de Tecnología Agropecuaria,Actividades Centrales,,44537.9141,44719.732,43943.5319,43912.7929,41244.3605
+quien,,Ministerio de Economía,Instituto Nacional de Tecnología Agropecuaria,Fortalecimiento Estrategico y Articulacion Institucional,,4314.9129,6749.0748,6564.0943,5115.3866,4200.4725
+quien,,Ministerio de Economía,Instituto Nacional de Tecnología Agropecuaria,"Investigacion Aplicada, Innovacion, Transferencias de Tecnologias, Extension y Apoyo al Desarrollo Rural - AITTE",,149659.9842,153247.535,152633.2197,152617.1112,141470.6359
+quien,,Ministerio de Economía,Instituto Nacional de Tecnología Agropecuaria,Investigacion Fundamental e Innovaciones Tecnologicas - IFIT,,25844.018,28314.2094,28013.661,28012.176,25312.7858
+quien,,Ministerio de Economía,Instituto Nacional de Tecnología Industrial,Actividades Centrales,,40217.6524,42448.378,31851.3779,31851.1294,29924.8408
+quien,,Ministerio de Economía,Instituto Nacional de Tecnología Industrial,"Metrologia, Desarrollo e Innovacion en Procesos Industriales",,45411.0514,51758.3774,48666.3337,48653.8609,38180.9112
+quien,,Ministerio de Economía,Instituto Nacional de Vitivinicultura,Control de Genuinidad de la Produccion Vitivinicola,,14073.7418,17469.7254,17162.5757,17162.5757,15596.4737
+quien,,Ministerio de Economía,Instituto Nacional de la Propiedad Industrial,Proteccion de los Derechos de la Propiedad Industrial,,12432.5365,14729.2515,14387.2681,14302.6974,12622.5774
+quien,,Ministerio de Economía,Instituto Nacional del Agua,Desarrollo de la Ciencia y Tecnica del Agua,,7314.533,8563.2802,7570.5859,7570.5859,6889.6266
+quien,,Ministerio de Economía,Junta de Seguridad en el Transporte,Investigacion de Accidentes y Promocion de la Seguridad,,13582.4121,13582.4121,10624.685,10624.2357,9889.6229
+quien,,Ministerio de Economía,Ministerio de Economía,Acciones Censales,,1083.4826,692.5931,554.2625,554.2625,326.1258
+quien,,Ministerio de Economía,Ministerio de Economía,Acciones de la Unidad Plan Belgrano,,182.9373,54.1266,54.1266,54.1266,54.1266
+quien,,Ministerio de Economía,Ministerio de Economía,Acciones para el Uso Racional y Eficiente de la Energia,,87.0145,9109.9165,9021.1013,9021.1013,9021.1013
+quien,,Ministerio de Economía,Ministerio de Economía,Acciones para la Transformacion e Integracion Productiva,,2977.4054,102.8943,102.8943,102.8943,102.8943
+quien,,Ministerio de Economía,Ministerio de Economía,Actividades Centrales,,103645.5416,104843.822,92899.5214,92871.547,89699.665
+quien,,Ministerio de Economía,Ministerio de Economía,Actividades Comunes a los Programas de Industria y Desarrollo Productivo,,34785.0118,4503.6237,4503.433,4503.433,4503.433
+quien,,Ministerio de Economía,Ministerio de Economía,Actividades Comunes a los Programas de la Secretaria de Hacienda,,10817.8534,13690.599,12526.6161,12186.5937,12150.5975
+quien,,Ministerio de Economía,Ministerio de Economía,Actividades Comunes a los Programas de la Secretaria de Industria y Desarrollo Productivo,,34888.8097,96925.3303,51376.6759,51142.435,49007.1958
+quien,,Ministerio de Economía,Ministerio de Economía,Actividades Comunes a los Programas de la Secretaria de Obras Publicas,,8248.3229,8852.9997,8065.1429,8020.7562,7818.5171
+quien,,Ministerio de Economía,Ministerio de Economía,Actividades Comunes a los Programas de la Secretaria de Transporte,,2927.0401,3257.4935,2886.7807,2861.0429,2774.4563
+quien,,Ministerio de Economía,Ministerio de Economía,Actividades Comunes a los Programas vinculados a Infraestructura,,29460.3204,33133.8267,30201.6048,30029.0738,27605.6582
+quien,,Ministerio de Economía,Ministerio de Economía,Actividades Comunes de la Secretaria de Energia,,4431.7744,5952.0129,4643.6898,4643.6898,4399.9379
+quien,,Ministerio de Economía,Ministerio de Economía,Actividades Comunes del INDEC,,17835.0926,21639.4306,21122.7162,21112.9227,19712.7397
+quien,,Ministerio de Economía,Ministerio de Economía,Administracion Financiera,,23699.8936,21942.9996,18007.2046,17953.3493,17060.7564
+quien,,Ministerio de Economía,Ministerio de Economía,Administracion de Ingresos Publicos y Politica Tributaria,,1905.2141,2408.1968,2366.3002,2366.3002,2267.4829
+quien,,Ministerio de Economía,Ministerio de Economía,Administracion de los Asuntos Economicos y Financieros Internacionales,,382.417,435.0156,366.1939,366.1939,354.2106
+quien,,Ministerio de Economía,Ministerio de Economía,Administracion y Control Comercial Agropecuario,,146.6,762.1248,91.4765,91.4765,91.4765
+quien,,Ministerio de Economía,Ministerio de Economía,Analisis y Regulacion de la Competencia Comercial Internacional,,1072.7981,1453.8887,1292.5757,1292.5757,1221.9282
+quien,,Ministerio de Economía,Ministerio de Economía,Apoyo para el Desarrollo de Infraestructura Urbana en Municipios,,143.9089,0.0,0.0,0.0,0.0
+quien,,Ministerio de Economía,Ministerio de Economía,Apoyo para el Desarrollo de Obra Publica,,24685.0195,15734.7256,10425.1354,10425.1354,10315.8548
+quien,,Ministerio de Economía,Ministerio de Economía,Apoyo para el Desarrollo de la Infraestructura Hidraulica,,2170.6787,4042.0591,2965.0711,2960.2722,2737.4359
+quien,,Ministerio de Economía,Ministerio de Economía,Asistencia Financiera a Empresas Publicas,,71909.3165,412993.61,401310.2888,401268.6838,398554.7401
+quien,,Ministerio de Economía,Ministerio de Economía,Asistencia Tecnico - Financiera y Desarrollo de Infraestructura para el Saneamiento,,87909.5949,86809.9066,59790.6665,59009.1498,48407.2889
+quien,,Ministerio de Economía,Ministerio de Economía,"Consolidacion Urbana, Mejoramiento de Barrios y Puesta en Valor de Centralidades",,33920.9399,33800.0582,31214.3607,30949.006,25403.4643
+quien,,Ministerio de Economía,Ministerio de Economía,Coordinacion Fiscal con las Provincias,,906.8023,1169.5478,1059.7398,1057.2585,1021.5706
+quien,,Ministerio de Economía,Ministerio de Economía,Coordinacion de Financiamientos Transversales y Federales y de la Asistencia a la Produccion,,32462.2968,0.0,0.0,0.0,0.0
+quien,,Ministerio de Economía,Ministerio de Economía,Coordinacion de Politicas de Transporte Aereo,,15.2,60.95,37.7652,37.7652,35.8308
+quien,,Ministerio de Economía,Ministerio de Economía,Coordinacion de Politicas de Transporte Fluvial y Maritimo,,9940.7026,6162.3585,5902.1357,5901.7589,5800.5665
+quien,,Ministerio de Economía,Ministerio de Economía,Coordinacion de Relaciones Financieras Internacionales,,1567.9339,2190.645,2089.9375,2089.9375,2005.7574
+quien,,Ministerio de Economía,Ministerio de Economía,Defensa de la Libre Competencia,,3097.0294,4140.5738,2749.3633,2740.6292,2607.023
+quien,,Ministerio de Economía,Ministerio de Economía,Definicion de Politicas de Comercio Exterior,,6155.0268,0.0,0.0,0.0,0.0
+quien,,Ministerio de Economía,Ministerio de Economía,Definicion de Politicas de Comercio Interior,,17484.5826,0.0,0.0,0.0,0.0
+quien,,Ministerio de Economía,Ministerio de Economía,Desarrollo Sustentable de la Cuenca Matanza - Riachuelo,,77268.6984,15340.5606,10600.1851,10600.1851,10578.9731
+quien,,Ministerio de Economía,Ministerio de Economía,Desarrollo de la Infraestructura Ambiental,,1456.7191,0.0,0.0,0.0,0.0
+quien,,Ministerio de Economía,Ministerio de Economía,Desarrollo de la Infraestructura Hidraulica,,74643.4689,70864.5682,66633.1078,66629.6518,61708.7322
+quien,,Ministerio de Economía,Ministerio de Economía,Desarrollo de la Infraestructura Productiva,,421.8228,0.0,0.0,0.0,0.0
+quien,,Ministerio de Economía,Ministerio de Economía,Desarrollo de la Infraestructura del Conocimiento,,11473.8345,13525.5746,9647.157,9620.5986,7620.5986
+quien,,Ministerio de Economía,Ministerio de Economía,Financiamiento de la Produccion,,47246.9645,0.0,0.0,0.0,0.0
+quien,,Ministerio de Economía,Ministerio de Economía,"Finanzas, Bancos y Seguros",,2968.068,3240.8507,3014.9634,3014.9634,2890.3319
+quien,,Ministerio de Economía,Ministerio de Economía,Fomento al Desarrollo Tecnologico,,16562.0008,24031.0206,8655.9542,8600.3962,8087.8881
+quien,,Ministerio de Economía,Ministerio de Economía,Formulacion de Politicas de Desarrollo de Mercados Agroindustriales Nacionales e Internacionales,,310.8614,0.0,0.0,0.0,0.0
+quien,,Ministerio de Economía,Ministerio de Economía,Formulacion de Politicas para la Agricultura Familiar y Desarrollo Productivo,,9719.6949,0.0,0.0,0.0,0.0
+quien,,Ministerio de Economía,Ministerio de Economía,Formulacion y Ejecucion de Politica de Hidrocarburos,,634673.1726,491488.5021,458130.7302,458130.7302,457753.0486
+quien,,Ministerio de Economía,Ministerio de Economía,Formulacion y Ejecucion de Politicas Economicas,,3812.0988,4603.749,4338.6207,4334.4984,4171.5934
+quien,,Ministerio de Economía,Ministerio de Economía,Formulacion y Ejecucion de Politicas de Desarrollo y Competitividad Federal,,187.9876,0.0,0.0,0.0,0.0
+quien,,Ministerio de Economía,Ministerio de Economía,Formulacion y Ejecucion de Politicas de Transporte Terrestre,,981935.4216,926283.6187,923249.4717,923148.2054,807399.5142
+quien,,Ministerio de Economía,Ministerio de Economía,Formulacion y Ejecucion de la Politica Geologico - Minera,,4965.9996,5382.0893,3363.5648,3363.5059,3202.7318
+quien,,Ministerio de Economía,Ministerio de Economía,Formulacion y Ejecucion de la Politica de Energia Electrica,,3620071.6288,3593690.5639,3592923.6019,3592923.6019,3592704.2392
+quien,,Ministerio de Economía,Ministerio de Economía,Fortalecimiento Movilidad Sostenible,,0.0,29033.9912,27397.5455,27397.5455,21900.0442
+quien,,Ministerio de Economía,Ministerio de Economía,"Fortalecimiento de la Infraestructura Social, del Cuidado y Sanitaria",,8353.2338,2493.8629,1648.8099,1648.8099,1584.5153
+quien,,Ministerio de Economía,Ministerio de Economía,Fortalecimiento del Desarrollo Regional de Alimentos y Bioeconomia,,21031.9435,0.0,0.0,0.0,0.0
+quien,,Ministerio de Economía,Ministerio de Economía,Gestion Productiva,,20095.858,0.0,0.0,0.0,0.0
+quien,,Ministerio de Economía,Ministerio de Economía,Gestion de la Produccion Industrial y del Comercio,,0.0,62155.896,32499.1459,32369.7366,26413.3532
+quien,,Ministerio de Economía,Ministerio de Economía,Integracion Socio Urbana,,40324.1205,7976.6668,7114.7705,7110.4205,6836.3018
+quien,,Ministerio de Economía,Ministerio de Economía,Planificacion Territorial de la Inversion Publica,,333.3633,29.4658,29.4658,29.4658,29.4658
+quien,,Ministerio de Economía,Ministerio de Economía,Planificacion y Desarrollo Territorial,,17857.4524,1693.5766,1206.5004,1206.4228,1197.2836
+quien,,Ministerio de Economía,Ministerio de Economía,Politicas de Instrumento de Financiamiento para el Sector Agropecuario,,12.0,0.0,0.0,0.0,0.0
+quien,,Ministerio de Economía,Ministerio de Economía,Politicas para el Aumento de la Produccion y Productividad en las Cadenas Agroindustriales en Forma Sostenible,,33441.4167,96567.7738,59524.1712,59480.1209,54643.3553
+quien,,Ministerio de Economía,Ministerio de Economía,Politicas para la Gestion del Riesgo Agropecuario,,15984.4943,10024.0593,2293.6157,2293.6157,1546.2655
+quien,,Ministerio de Economía,Ministerio de Economía,Prevencion Sismica,,2045.8538,1355.9472,1331.3871,1331.1903,1329.3841
+quien,,Ministerio de Economía,Ministerio de Economía,Produccion Integral y Acceso al Habitat,,21062.2233,15849.7855,11919.789,11919.6658,11900.187
+quien,,Ministerio de Economía,Ministerio de Economía,Programa Federal de Reconversion Productiva y Apoyo a la Actividad Ganadera,,7000.0,0.0,0.0,0.0,0.0
+quien,,Ministerio de Economía,Ministerio de Economía,Promocion de la Productividad y Competitividad PyME y el Desarrollo de los Emprendedores,,2165.9919,0.0,0.0,0.0,0.0
+quien,,Ministerio de Economía,Ministerio de Economía,Servicio Estadistico,,14655.9171,17213.9919,16753.4981,16669.8286,15710.2614
+quien,,Ministerio de Economía,Organismo Regulador de Seguridad de Presas,Control de Seguridad de Presas,,2270.118,2977.208,2929.9101,2826.1885,2589.1617
+quien,,Ministerio de Economía,Organismo Regulador del Sistema Nacional de Aeropuertos,Control del Sistema Nacional de Aeropuertos,,9450.9258,9450.9258,8850.9003,8850.1036,8163.7171
+quien,,Ministerio de Economía,Servicio Geológico Minero Argentino,Actividades Centrales,,5194.9638,6926.6969,6517.2352,6517.2352,5640.1406
+quien,,Ministerio de Economía,Servicio Geológico Minero Argentino,Desarrollo y Aplicacion de la Tecnologia Minera,,1954.0076,2453.9608,2277.9752,2277.9752,2072.6336
+quien,,Ministerio de Economía,Servicio Geológico Minero Argentino,Prevencion Sismica,,0.0,807.7566,735.7465,735.7465,50.8811
+quien,,Ministerio de Economía,Servicio Geológico Minero Argentino,Produccion de Informacion Geologica de Base,,2893.8804,3351.2478,3284.3457,3284.3457,2885.2798
+quien,,Ministerio de Economía,Servicio Nacional de Sanidad y Calidad Agroalimentaria,Acciones para la Inocuidad y Calidad Agroalimentaria,,37098.0388,45180.5353,44987.0113,44986.3985,39652.8161
+quien,,Ministerio de Economía,Servicio Nacional de Sanidad y Calidad Agroalimentaria,Acciones para la Proteccion Vegetal,,24290.6123,30539.6193,30301.1843,30301.1358,27065.3347
+quien,,Ministerio de Economía,Servicio Nacional de Sanidad y Calidad Agroalimentaria,Acciones para la Sanidad Animal,,25520.0716,32565.1968,32306.4653,32306.1406,28996.9721
+quien,,Ministerio de Economía,Servicio Nacional de Sanidad y Calidad Agroalimentaria,Actividades Centrales,,77286.5848,93456.0718,90761.4941,90743.241,78843.8102
+quien,,Ministerio de Economía,Superintendencia de Seguros de la Nación,Control y Fiscalizacion de la Actividad Aseguradora y Reaseguradora,,27162.6202,33589.0831,33489.0209,33457.7124,30561.0249
+quien,,Ministerio de Economía,Tribunal Fiscal de la Nación,Resolucion de Cuestiones Dudosas y Litigiosas,,10565.8213,13681.7609,13567.6828,13565.2015,12181.3186
+quien,,Ministerio de Economía,Tribunal de Tasaciones de la Nación,Tasacion de Bienes,,2858.6597,3409.3173,3302.8875,3302.7832,2987.8665
+quien,,Ministerio de Justicia,Centro Internacional para la Promoción de los Derechos Humanos,Promocion Internacional de los Derechos Humanos,,1147.5202,1754.5909,1131.7772,1131.7772,905.2965
+quien,,Ministerio de Justicia,Ministerio de Justicia,Actividades Centrales,,15074.0037,28835.9662,26890.8216,26811.4013,26805.301
+quien,,Ministerio de Justicia,Ministerio de Justicia,Actividades Comunes a los Programas 26 y 43,,3538.1248,12354.2364,9120.9737,9120.9737,9120.9737
+quien,,Ministerio de Justicia,Ministerio de Justicia,Actividades Comunes a los Programas de la Secretaria de Justicia,,1660.6286,8412.8425,7483.3931,7476.7708,7476.7708
+quien,,Ministerio de Justicia,Ministerio de Justicia,Afianzamiento de la Justicia,,17728.6031,23247.2683,22419.3391,22380.3378,22380.3378
+quien,,Ministerio de Justicia,Ministerio de Justicia,"Conservacion, Administracion y Disposicion de Bienes Cautelados y Recuperados por Proceso Judicial",,0.0,1250.0,86.2069,86.2069,86.2069
+quien,,Ministerio de Justicia,Ministerio de Justicia,Controles Anticorrupcion,,308.9222,308.9222,271.3946,271.3946,271.3946
+quien,,Ministerio de Justicia,Ministerio de Justicia,Politica Criminal,,8689.7693,7552.8143,3874.8286,3874.8286,3659.1158
+quien,,Ministerio de Justicia,Ministerio de Justicia,Promocion y Defensa de los Derechos Humanos,,93749.5362,86245.6198,73629.7969,73168.283,69216.2769
+quien,,Ministerio de Justicia,Ministerio de Justicia,Regulacion y Control Registral,,6596.5634,12961.0746,12823.939,12823.939,12823.939
+quien,,Ministerio de Justicia,Ministerio de Justicia,Representacion Notarial del Estado,,85.726,85.726,62.9413,62.9413,62.9413
+quien,,Ministerio de Justicia,Procuración del Tesoro de la Nación,Defensa y Representacion Juridica del Estado,,5052.527,8750.1288,8197.6343,8161.6801,8133.2368
+quien,,Ministerio de Justicia,Unidad de Informacion Financiera,Prevencion del Lavado de Activos,,8182.4864,13797.0631,10460.4699,10460.4699,8795.7307
+quien,,"Ministerio de Relaciones Exteriores, Comercio Internacional y Culto","Ministerio de Relaciones Exteriores, Comercio Internacional y Culto",Acciones Diplomaticas de Politica Exterior,,28903.6889,28343.1026,27788.669,27788.669,26741.6389
+quien,,"Ministerio de Relaciones Exteriores, Comercio Internacional y Culto","Ministerio de Relaciones Exteriores, Comercio Internacional y Culto","Acciones Diplomaticas para la Promocion del Reclamo Argentino de Reconocimiento de la Soberania Nacional de las Islas Malvinas,",,3443.1999,4429.9777,4307.0609,4306.3266,4134.5781
+quien,,"Ministerio de Relaciones Exteriores, Comercio Internacional y Culto","Ministerio de Relaciones Exteriores, Comercio Internacional y Culto",Actividades Centrales,,55199.2749,65711.3139,61805.1945,61804.7502,59410.8608
+quien,,"Ministerio de Relaciones Exteriores, Comercio Internacional y Culto","Ministerio de Relaciones Exteriores, Comercio Internacional y Culto","Actividades Comunes a los Programas 16, 19 y 23",,267458.213,334808.7714,325213.5301,325213.5301,309138.4565
+quien,,"Ministerio de Relaciones Exteriores, Comercio Internacional y Culto","Ministerio de Relaciones Exteriores, Comercio Internacional y Culto",Cascos Blancos,,1261.3227,1070.251,979.3265,979.3265,938.4345
+quien,,"Ministerio de Relaciones Exteriores, Comercio Internacional y Culto","Ministerio de Relaciones Exteriores, Comercio Internacional y Culto",Cuotas y Contribuciones a Organismos Internacionales,,135651.2428,132395.613,130475.6508,130475.6508,129023.1508
+quien,,"Ministerio de Relaciones Exteriores, Comercio Internacional y Culto","Ministerio de Relaciones Exteriores, Comercio Internacional y Culto",Desarrollo del Plan Antartico,,5820.2584,7139.792,5963.409,5963.409,5757.9743
+quien,,"Ministerio de Relaciones Exteriores, Comercio Internacional y Culto","Ministerio de Relaciones Exteriores, Comercio Internacional y Culto",Mantenimiento y Promocion de las Relaciones Economicas Internacionales,,19098.4404,25576.6609,25157.9037,25157.9037,24123.6443
+quien,,"Ministerio de Relaciones Exteriores, Comercio Internacional y Culto","Ministerio de Relaciones Exteriores, Comercio Internacional y Culto",Promocion de la Cooperacion Internacional,,1843.6265,2997.5221,2907.33,2907.33,2785.6485
+quien,,"Ministerio de Relaciones Exteriores, Comercio Internacional y Culto","Ministerio de Relaciones Exteriores, Comercio Internacional y Culto",Registro y Sostenimiento de Cultos,,1899.2549,2424.0589,2323.0121,2323.0121,2184.6731
+quien,,Ministerio de Salud,Administración Nacional de Laboratorios e Institutos de Salud 'Dr. Carlos Malbrán',"Prevencion, Control e Investigacion de Patologias en Salud",,41715.1539,50922.3816,48455.5615,48446.1219,44303.0603
+quien,,Ministerio de Salud,Administración Nacional de Laboratorios e Institutos de Salud 'Dr. Carlos Malbrán',Servicios de la Deuda,,0.0893,0.0893,0.0,0.0,0.0
+quien,,Ministerio de Salud,"Administración Nacional de Medicamentos, Alimentos y Tecnología Médica","Control y Fiscalizacion de Medicamentos, Alimentos, Productos Medicos, Cosmeticos y Productos de Uso Domestico",,39568.1879,48883.2327,47685.6077,47665.1123,44117.1159
+quien,,Ministerio de Salud,Agencia Nacional de Discapacidad,Acciones de Integracion de Personas con Discapacidad,,4768.9843,4925.5232,3480.2693,3480.2693,3329.4916
+quien,,Ministerio de Salud,Agencia Nacional de Discapacidad,Actividades Centrales,,9089.3408,14859.9928,12692.6809,12692.6809,12123.9123
+quien,,Ministerio de Salud,Agencia Nacional de Discapacidad,Atencion Medica a los Beneficiarios de Pensiones no Contributivas,,552553.358,868655.2392,735276.4698,735274.4815,713717.3089
+quien,,Ministerio de Salud,Agencia Nacional de Discapacidad,Pensiones no Contributivas por Invalidez Laborativa,,3165104.5837,4232463.7281,4185316.9297,4185316.9297,4184872.3695
+quien,,Ministerio de Salud,Agencia Nacional de Discapacidad,Prevencion y Control de Discapacidades,,3501.599,3624.599,3311.7672,3311.7672,3212.9233
+quien,,Ministerio de Salud,Agencia Nacional de Discapacidad,Promocion del Modelo Social de la Discapacidad en Municipios,,531.58,292.813,0.0,0.0,0.0
+quien,,Ministerio de Salud,Hospital Nacional 'Prof. Alejandro A. Posadas',Atencion Sanitaria para la Comunidad,,171976.0012,209353.9587,206926.9902,206926.9902,186190.7947
+quien,,Ministerio de Salud,Hospital Nacional Dr. Baldomero Sommer,Atencion de Pacientes,,38014.8519,44552.7598,37936.7129,37580.7785,34098.2201
+quien,,Ministerio de Salud,Hospital Nacional en Red Especializado en Salud Mental y Adicciones 'Licenciada Laura Bonaparte',Asistencia para la Salud Mental y Consumos Problematicos,,16815.7907,18610.3517,17907.2769,17906.8947,16515.4187
+quien,,Ministerio de Salud,Hospital Nacional y Comunidad 'Dr. Ramón Carrillo',Atencion de Pacientes,,29483.5271,37782.1665,36789.4606,36737.6294,34403.4965
+quien,,Ministerio de Salud,Instituto Nacional Central Único Coordinador de Ablación e Implante,Regulacion de la Ablacion e Implantes,,37244.1279,44045.6543,40119.9835,39893.8435,32347.6446
+quien,,Ministerio de Salud,Instituto Nacional de Rehabilitación Psicofísica del Sur 'Dr. Juan Otimio Tesone',Atencion a Personas con Discapacidades Psicofisicas,,11240.8298,14962.3333,13969.9369,13969.9369,12701.3562
+quien,,Ministerio de Salud,Instituto Nacional del Cáncer (INC),"Investigacion, Prevencion, Deteccion Temprana y Tratamiento del Cancer",,4999.0278,3129.229,2908.7672,2906.7872,2906.7872
+quien,,Ministerio de Salud,Ministerio de Salud,Abordaje Integral de Enfermedades No Transmisibles y sus Factores de Riesgo,,408.6021,812.6696,634.5738,629.1844,603.7094
+quien,,Ministerio de Salud,Ministerio de Salud,Abordaje de Curso de Vida,,7079.8275,24222.3206,19355.4545,19354.5473,16371.8139
+quien,,Ministerio de Salud,Ministerio de Salud,"Acceso a Medicamentos, Insumos y Tecnologia Medica",,66898.9421,151269.5219,138823.0347,138725.7705,135720.8625
+quien,,Ministerio de Salud,Ministerio de Salud,Actividades Centrales,,103185.5316,137258.6252,117012.1216,116983.5527,112092.7358
+quien,,Ministerio de Salud,Ministerio de Salud,Actividades Comunes a los Programas 51 y 52,,7391.219,9274.1338,8632.8464,8627.5311,8416.3029
+quien,,Ministerio de Salud,Ministerio de Salud,Actividades Comunes a los Programas con Financiamiento Externo,,1513.887,1695.8999,1648.7132,1641.5836,1614.8928
+quien,,Ministerio de Salud,Ministerio de Salud,Actividades Comunes a los Programas de Acceso a la Salud,,639.8728,0.0,0.0,0.0,0.0
+quien,,Ministerio de Salud,Ministerio de Salud,Actividades Comunes de Programas de Equidad en Salud,,525.8881,2.9654,0.0,0.0,0.0
+quien,,Ministerio de Salud,Ministerio de Salud,Actividades Comunes de Programas de Gestion Sanitaria,,378.1206,3636.142,2795.0058,2773.5083,2755.715
+quien,,Ministerio de Salud,Ministerio de Salud,Actividades Comunes de la Unidad Gabinete de Asesores,,731.1575,1276.364,999.0862,989.1775,980.6707
+quien,,Ministerio de Salud,Ministerio de Salud,Apoyo al Desarrollo de la Atencion Medica,,6102.3252,5304.9592,2372.4385,2372.3396,2267.4125
+quien,,Ministerio de Salud,Ministerio de Salud,Atencion Sanitaria en el Territorio,,156.2232,7.8595,0.0,0.0,0.0
+quien,,Ministerio de Salud,Ministerio de Salud,Atencion y Acompañamiento a Personas con Consumos Problematicos,,32245.9267,55372.625,54639.8557,54638.6497,53664.6593
+quien,,Ministerio de Salud,Ministerio de Salud,Cobertura Sanitaria Compensatoria,,78083.5933,126028.276,112772.8638,112772.8638,103411.1872
+quien,,Ministerio de Salud,Ministerio de Salud,Cobertura de Emergencias Sanitarias,,684.0012,1783.1538,1227.0524,1227.0524,1222.4751
+quien,,Ministerio de Salud,Ministerio de Salud,Desarrollo de la Salud Sexual y la Procreacion Responsable,,3968.6645,25615.899,23163.1466,23163.1466,23116.8732
+quien,,Ministerio de Salud,Ministerio de Salud,"Estadisticas, Estudios e Investigaciones en Salud",,560.7686,1633.607,1372.9789,1372.9789,1300.6607
+quien,,Ministerio de Salud,Ministerio de Salud,Formacion de Recursos Humanos Sanitarios y Asistenciales,,9031.443,21636.3131,17573.7482,17573.7482,15788.565
+quien,,Ministerio de Salud,Ministerio de Salud,Fortalecimiento de la Capacidad del Sistema Publico de Salud,,2749.2922,21125.5336,21048.5637,21047.5268,21047.5268
+quien,,Ministerio de Salud,Ministerio de Salud,Fortalecimiento de la Estrategia de Atencion Primaria,,2044.7808,994.3284,583.4661,583.4661,565.0522
+quien,,Ministerio de Salud,Ministerio de Salud,Fortalecimiento de los Sistemas Provinciales de Salud,,33610.824,131227.8909,122245.4921,122057.2053,60335.0428
+quien,,Ministerio de Salud,Ministerio de Salud,Investigacion y Desarrollo de los Laboratorios de Produccion Publica,,274.7173,0.0,0.0,0.0,0.0
+quien,,Ministerio de Salud,Ministerio de Salud,"Investigacion, Prevencion, Deteccion Temprana y Tratamiento del Cancer",,0.0,9803.2996,7933.5007,7933.5007,0.0
+quien,,Ministerio de Salud,Ministerio de Salud,"Planificacion, Control, Regulacion, Estudios, Investigaciones y Fiscalizacion de la Politica de Salud",,1084.1464,2617.4228,2307.692,2307.692,2026.3985
+quien,,Ministerio de Salud,Ministerio de Salud,Prevencion y Control de Enfermedades Cronicas no Transmisibles,,7235.4222,1.0,0.0,0.0,0.0
+quien,,Ministerio de Salud,Ministerio de Salud,Prevencion y Control de Enfermedades Endemicas,,3251.7067,4487.1379,3834.8909,3834.8909,3155.7987
+quien,,Ministerio de Salud,Ministerio de Salud,Prevencion y Control de Enfermedades Transmisible e Inmunoprevenibles,,212364.9476,227523.8934,203040.35,202898.24,186735.9966
+quien,,Ministerio de Salud,Ministerio de Salud,Prevencion y Tratamiento de Patologias Especificas,,617.1037,621.6833,325.8888,325.8888,325.8888
+quien,,Ministerio de Salud,Ministerio de Salud,"Prevencion, Estadisticas e Investigacion sobre Consumos Problematicos",,2145.1799,2950.6613,2936.2446,2936.2446,2870.9652
+quien,,Ministerio de Salud,Ministerio de Salud,"Respuesta al VIH, Infecciones de Transmision Sexual, Hepatitis Virales, Tuberculosis y Lepra",,23473.2936,59977.472,57178.6675,57171.6366,44419.0326
+quien,,Ministerio de Salud,Ministerio de Salud,Transferencias Varias,,423730.5948,516981.8617,516787.9514,516787.9514,450906.1491
+quien,,Ministerio de Salud,Superintendencia de Servicios de Salud,Actividades Centrales,,28507.975,36033.9224,34302.3597,34300.9926,32553.6395
+quien,,Ministerio de Salud,Superintendencia de Servicios de Salud,Asistencia Financiera a Agentes del Seguro de Salud,,74945.2026,63685.8534,60849.9974,60849.9974,48619.298
+quien,,Ministerio de Salud,Superintendencia de Servicios de Salud,Regulacion y Control del Sistema de Salud,,5569.379,5593.1297,5506.3204,5506.3204,4968.4669
+quien,,Ministerio de Seguridad Nacional,Agencia Nacional de Materiales Controlados,Formulacion y Ejecucion de Politicas para Restringir el Circulante de Armas de Fuego en la Sociedad Civil,,3046.0134,7956.6915,7437.2982,7425.9949,6817.9931
+quien,,Ministerio de Seguridad Nacional,"Caja de Retiros, Jubilaciones y Pensiones de la Policía Federal Argentina",Actividades Centrales,,8039.9639,12244.8146,11260.1129,11254.0048,10444.8201
+quien,,Ministerio de Seguridad Nacional,"Caja de Retiros, Jubilaciones y Pensiones de la Policía Federal Argentina",Administracion de Beneficios Previsionales Gendarmeria Nacional,,386076.2457,517191.4033,515719.8125,515719.8125,469262.7458
+quien,,Ministerio de Seguridad Nacional,"Caja de Retiros, Jubilaciones y Pensiones de la Policía Federal Argentina",Administracion de Beneficios Previsionales Parques Nacionales,,0.0,3701.5297,3535.9544,3535.9544,2949.2468
+quien,,Ministerio de Seguridad Nacional,"Caja de Retiros, Jubilaciones y Pensiones de la Policía Federal Argentina","Administracion de Beneficios Previsionales Policia Federal, Policia de Seguridad Aeroportuaria y otros",,1069249.3172,1464088.8223,1458309.6515,1458309.6515,1327810.2554
+quien,,Ministerio de Seguridad Nacional,"Caja de Retiros, Jubilaciones y Pensiones de la Policía Federal Argentina",Administracion de Beneficios Previsionales Prefectura Naval Argentina,,305125.2641,403050.2862,402050.1132,402050.1132,366407.7149
+quien,,Ministerio de Seguridad Nacional,"Caja de Retiros, Jubilaciones y Pensiones de la Policía Federal Argentina",Administracion de Beneficios Previsionales Servicio Penitenciario Federal,,243667.5968,373898.8514,371016.8168,371016.8168,335302.1489
+quien,,Ministerio de Seguridad Nacional,Gendarmería Nacional,Actividades Centrales,,145210.724,181180.2612,180692.9134,180692.9134,178497.9174
+quien,,Ministerio de Seguridad Nacional,Gendarmería Nacional,Asistencia Sanitaria de la Gendarmeria Nacional,,28868.4952,35628.8822,35363.3491,35363.3491,34537.608
+quien,,Ministerio de Seguridad Nacional,Gendarmería Nacional,Formacion y Capacitacion de la Gendarmeria Nacional,,101120.7796,134951.1767,134828.9483,134828.9483,133603.3416
+quien,,Ministerio de Seguridad Nacional,Gendarmería Nacional,Misiones Humanitarias y de Paz para Organismos Internacionales,,4980.3828,7163.2359,6614.9162,6614.9162,5705.7854
+quien,,Ministerio de Seguridad Nacional,Gendarmería Nacional,Operaciones Complementarias de Seguridad Interior,,303354.3927,401254.1106,400396.0369,400396.0369,392551.7212
+quien,,Ministerio de Seguridad Nacional,Gendarmería Nacional,Seguridad en Fronteras,,316860.4734,425886.1863,425033.1524,425033.1524,418171.1429
+quien,,Ministerio de Seguridad Nacional,Gendarmería Nacional,Servicio de Investigacion de Delitos Complejos y Operaciones Antidrogas,,78000.853,106477.5521,106065.766,106065.766,96784.446
+quien,,Ministerio de Seguridad Nacional,Ministerio de Seguridad Nacional,Acciones ante Desastres y Emergencias de Origen Socio-Natural,,43396.6013,119319.4628,88870.9403,88852.5467,88562.715
+quien,,Ministerio de Seguridad Nacional,Ministerio de Seguridad Nacional,Acciones de Formacion y Capacitacion,,967.7669,1209.828,1153.121,1153.121,1133.5595
+quien,,Ministerio de Seguridad Nacional,Ministerio de Seguridad Nacional,Acciones de Seguridad y Politica Criminal,,6710.376,4082.3947,3783.6888,3781.3729,3698.4011
+quien,,Ministerio de Seguridad Nacional,Ministerio de Seguridad Nacional,Actividades Centrales,,50219.8211,61124.2202,56684.0371,56674.91,55861.0884
+quien,,Ministerio de Seguridad Nacional,Ministerio de Seguridad Nacional,Articulacion Federal de la Seguridad,,0.0,1600.0956,1586.0651,1586.0651,1531.9021
+quien,,Ministerio de Seguridad Nacional,Ministerio de Seguridad Nacional,Asuntos Penitenciarios,,2978.7136,25893.1052,25681.1907,25676.5707,25523.8034
+quien,,Ministerio de Seguridad Nacional,Ministerio de Seguridad Nacional,Coordinacion Institucional del Ministerio de Seguridad y Fuerzas Policiales y de Seguridad,,73672.966,101002.4613,98931.4075,98854.614,89035.8836
+quien,,Ministerio de Seguridad Nacional,Ministerio de Seguridad Nacional,Fondo Especial de Asistencia para Emergencias,,0.0,100000.0,100000.0,100000.0,100000.0
+quien,,Ministerio de Seguridad Nacional,Ministerio de Seguridad Nacional,"Fondos para la atencion de Recompensas, Informantes y Proteccion de Testigos",,0.0,399.0735,362.2604,362.2604,330.8003
+quien,,Ministerio de Seguridad Nacional,Ministerio de Seguridad Nacional,Politicas de Lucha contra el Narcotrafico y la Criminalidad Organizada,,0.0,4504.2759,4448.595,4448.595,4310.6875
+quien,,Ministerio de Seguridad Nacional,Policía Federal Argentina,Actividades Centrales,,125163.2952,160203.2535,158935.6854,158783.3465,150707.9643
+quien,,Ministerio de Seguridad Nacional,Policía Federal Argentina,Asistencia Sanitaria de la Policia Federal Argentina,,45642.7986,54996.7986,54755.8005,54706.3523,53352.8401
+quien,,Ministerio de Seguridad Nacional,Policía Federal Argentina,Formacion y Capacitacion de la Policia Federal Argentina,,34391.7488,40235.7488,40098.7425,39596.5814,37758.9816
+quien,,Ministerio de Seguridad Nacional,Policía Federal Argentina,Seguridad Federal,,430465.9936,575801.1409,574404.7484,573401.1765,558567.9205
+quien,,Ministerio de Seguridad Nacional,Policía Federal Argentina,Servicio de Bomberos,,32416.9056,41904.3815,41658.757,41615.9363,40194.293
+quien,,Ministerio de Seguridad Nacional,Policía Federal Argentina,Servicios de Informatica y Comunicaciones,,24516.6111,31914.4599,31834.6295,31605.2388,30819.9492
+quien,,Ministerio de Seguridad Nacional,Policía de Seguridad Aeroportuaria,Actividades Centrales,,18630.7468,21264.8588,21207.6002,21205.1429,20127.7795
+quien,,Ministerio de Seguridad Nacional,Policía de Seguridad Aeroportuaria,Formacion y Capacitacion en Seguridad Aeroportuaria,,2167.9075,2485.0213,2246.6647,2246.6647,2118.833
+quien,,Ministerio de Seguridad Nacional,Policía de Seguridad Aeroportuaria,Seguridad Aeroportuaria,,113305.8317,156975.5471,156683.4372,156683.4372,150877.6305
+quien,,Ministerio de Seguridad Nacional,Prefectura Naval Argentina,Actividades Centrales,,75341.5822,118297.7752,118149.7571,118029.2855,116553.7802
+quien,,Ministerio de Seguridad Nacional,Prefectura Naval Argentina,Atencion Sanitaria de la Prefectura Naval Argentina,,15889.661,20172.7452,20147.3773,20147.3773,19727.8263
+quien,,Ministerio de Seguridad Nacional,Prefectura Naval Argentina,Control y Servicio Tecnico de Seguridad de la Navegacion,,5660.7064,6999.6434,6999.6434,6999.6434,6926.7553
+quien,,Ministerio de Seguridad Nacional,Prefectura Naval Argentina,Formacion y Capacitacion Profesional de la Prefectura Naval Argentina,,37180.0708,47535.0855,47442.5564,47442.5564,46239.6594
+quien,,Ministerio de Seguridad Nacional,Prefectura Naval Argentina,Operaciones de Seguridad Interior,,20186.2163,23010.55,21952.9194,21952.9194,21206.9253
+quien,,Ministerio de Seguridad Nacional,Prefectura Naval Argentina,Policia de Seguridad de la Navegacion,,351917.9247,466714.5098,460729.0441,460020.6074,439329.132
+quien,,Ministerio de Seguridad Nacional,Prefectura Naval Argentina,Servicio de Informatica y Comunicaciones para la Navegacion,,8353.5813,9121.155,8407.7088,8407.7088,8266.5273
+quien,,Ministerio de Seguridad Nacional,Servicio Penitenciario Federal,Actividades Centrales,,49793.1811,93839.9865,93409.9471,93409.9471,87189.8765
+quien,,Ministerio de Seguridad Nacional,Servicio Penitenciario Federal,Cooperacion Tecnica y Financiera para la Laborterapia de Internos,,25721.7475,24688.782,22862.8891,22862.8891,21643.2282
+quien,,Ministerio de Seguridad Nacional,Servicio Penitenciario Federal,Formacion y Capacitacion,,8475.936,13451.3432,12972.106,12972.106,12492.874
+quien,,Ministerio de Seguridad Nacional,Servicio Penitenciario Federal,Seguridad y Rehabilitacion del Interno,,271507.4875,388461.8403,386975.1498,386975.1498,372789.0624
+quien,,Obligaciones a Cargo del Tesoro,Obligaciones a Cargo del Tesoro,Aportes al Sector Externo,,172213.1584,353413.1584,331421.8363,331421.8363,331421.8363
+quien,,Obligaciones a Cargo del Tesoro,Obligaciones a Cargo del Tesoro,Asistencia Financiera a Empresas Publicas y Otros Entes de la Secretaria de Cultura,,1964.0,1964.0,0.0,0.0,0.0
+quien,,Obligaciones a Cargo del Tesoro,Obligaciones a Cargo del Tesoro,Asistencia Financiera a Empresas Publicas y Otros Entes de la Secretaria de Educacion,,41020.4,108603.2973,92026.7973,92026.7973,80433.2588
+quien,,Obligaciones a Cargo del Tesoro,Obligaciones a Cargo del Tesoro,Asistencia Financiera a Empresas Publicas y Otros Entes de la Secretaria de Energia,,2206057.4128,1359769.3658,1319321.3922,1319321.3922,1307573.2122
+quien,,Obligaciones a Cargo del Tesoro,Obligaciones a Cargo del Tesoro,Asistencia Financiera a Empresas Publicas y Otros Entes de la Secretaria de Obras Publicas,,390352.2015,93069.5611,93069.5611,93069.5611,78147.3952
+quien,,Obligaciones a Cargo del Tesoro,Obligaciones a Cargo del Tesoro,Asistencia Financiera a Empresas Publicas y Otros Entes de la Secretaria de Transporte,,1041476.9979,1446908.3527,1373474.4409,1373474.4409,1227700.5503
+quien,,Obligaciones a Cargo del Tesoro,Obligaciones a Cargo del Tesoro,"Asistencia Financiera a Empresas Publicas y Otros Entes de la Secretaria de Turismo, Ambiente y Deportes",,16000.0,20650.0,20650.0,20650.0,20650.0
+quien,,Obligaciones a Cargo del Tesoro,Obligaciones a Cargo del Tesoro,Asistencia Financiera a Empresas Publicas y Otros Entes del Ministerio de Defensa,,32813.035,44326.4119,43702.7184,43702.7184,42081.5114
+quien,,Obligaciones a Cargo del Tesoro,Obligaciones a Cargo del Tesoro,Asistencia Financiera a Empresas Publicas y Otros Entes del Ministerio de Economia,,173571.4855,79712.5,79365.0436,79365.0436,77065.0436
+quien,,Obligaciones a Cargo del Tesoro,Obligaciones a Cargo del Tesoro,Asistencia Financiera a Empresas Publicas y Otros Entes del Ministerio de Salud,,718549.0,1729000.0,1698549.0,1698549.0,1698549.0
+quien,,Obligaciones a Cargo del Tesoro,Obligaciones a Cargo del Tesoro,Asistencia Financiera a Empresas Publicas y Otros Entes dependientes de la Jefatura de Gabinete de Ministros,,142418.0,142368.0,1820.0,1820.0,1820.0
+quien,,Obligaciones a Cargo del Tesoro,Obligaciones a Cargo del Tesoro,Asistencia Financiera a Empresas Publicas y Otros Entes dependientes de la Secretaria de Comunicacion y Medios,,54467.8584,81480.1985,62745.039,62745.039,56468.236
+quien,,Obligaciones a Cargo del Tesoro,Obligaciones a Cargo del Tesoro,Asistencia Financiera a Provincias y Municipios,,768.9022,805.7077,805.5266,805.5266,805.5266
+quien,,Obligaciones a Cargo del Tesoro,Obligaciones a Cargo del Tesoro,Atencion Servicios Financieros y Gastos Judiciales,,10688.396,10688.396,2918.0357,2908.6266,2105.8801
+quien,,Obligaciones a Cargo del Tesoro,Obligaciones a Cargo del Tesoro,Cumplimiento de Medida Cautelar CSJN 1864/2022,,510000.0,1408000.0,1004369.2874,1004369.2874,984884.8955
+quien,,Obligaciones a Cargo del Tesoro,Obligaciones a Cargo del Tesoro,Otras Asistencias Financieras,,1677509.2887,610473.442,0.0,0.0,0.0
+quien,,Poder Judicial de la Nación,Poder Judicial de la Nación,Actividades Centrales,,269507.3843,301245.9972,293007.3885,293007.3885,279536.2514
+quien,,Poder Judicial de la Nación,Poder Judicial de la Nación,Administracion General de la Corte Suprema de Justicia de la Nacion,,33959.8689,52405.4689,43005.5912,43005.5912,39816.8656
+quien,,Poder Judicial de la Nación,Poder Judicial de la Nación,Archivo General,,6529.0919,10170.711,8040.8037,8040.8037,7660.2265
+quien,,Poder Judicial de la Nación,Poder Judicial de la Nación,Asistencia Social,,11442.0061,17537.0061,15019.6785,15019.6785,14395.8657
+quien,,Poder Judicial de la Nación,Poder Judicial de la Nación,Atencion de Pasividades,,3906.748,5671.748,5113.4368,5113.4368,4186.1658
+quien,,Poder Judicial de la Nación,Poder Judicial de la Nación,Biblioteca y Jurisprudencia,,3913.553,6021.4832,4275.6598,4275.6598,3909.7724
+quien,,Poder Judicial de la Nación,Poder Judicial de la Nación,Interceptacion y Captacion de las Comunicaciones,,15915.6039,24297.3039,20173.5478,20173.5478,18668.4473
+quien,,Poder Judicial de la Nación,Poder Judicial de la Nación,Justicia Federal,,564153.1533,806278.4151,802476.8736,802476.8736,775797.4152
+quien,,Poder Judicial de la Nación,Poder Judicial de la Nación,Justicia Ordinaria de la Ciudad Autonoma de Buenos Aires,,362475.4016,509315.4938,507062.1333,507062.1333,473184.0505
+quien,,Poder Judicial de la Nación,Poder Judicial de la Nación,Justicia de Casacion,,42494.6469,61245.2384,61235.7096,61235.7096,58652.8104
+quien,,Poder Judicial de la Nación,Poder Judicial de la Nación,Justicia de Maxima Instancia,,51462.4548,76869.35,69063.0357,69063.0357,65417.5336
+quien,,Poder Judicial de la Nación,Poder Judicial de la Nación,Mandamientos y Notificaciones,,24660.2552,34339.0351,32240.5492,32240.5492,30562.1231
+quien,,Poder Judicial de la Nación,Poder Judicial de la Nación,Pericias Judiciales,,39565.7208,55623.1963,50611.5947,50611.5947,48727.9629
+quien,,Poder Legislativo Nacional,Auditoría General de la Nación,Control Externo del Sector Publico Nacional,,60324.2671,75975.5865,75252.5921,75252.5921,68575.9666
+quien,,Poder Legislativo Nacional,Poder Legislativo Nacional,Administracion del Edificio del Molino,,1185.0,1185.0,1185.0,1185.0,888.75
+quien,,Poder Legislativo Nacional,Poder Legislativo Nacional,Apoyo al Congreso Nacional en Materia Fiscal,,1073.908,1386.908,1370.1844,1370.1844,1244.8735
+quien,,Poder Legislativo Nacional,Poder Legislativo Nacional,Asistencia Bibliografica,,40765.1907,49714.4962,49510.0729,49510.0729,47193.2136
+quien,,Poder Legislativo Nacional,Poder Legislativo Nacional,Asistencia Social Integral al Personal del Congreso de la Nacion,,49788.0575,73182.9639,73182.9639,73182.9639,71359.8216
+quien,,Poder Legislativo Nacional,Poder Legislativo Nacional,Control Parlamentario de Seguimiento de Tramite Legislativo,,189.2176,189.2176,189.2176,189.2176,189.2176
+quien,,Poder Legislativo Nacional,Poder Legislativo Nacional,"Control Parlamentario de los Derechos de las Niñas, Niños y Adolescentes",,151.545,151.545,151.545,151.545,151.545
+quien,,Poder Legislativo Nacional,Poder Legislativo Nacional,Control Parlamentario de los Fondos de la Seguridad Social,,138.9906,138.9906,138.9906,138.9906,138.9906
+quien,,Poder Legislativo Nacional,Poder Legislativo Nacional,Control Parlamentario sobre Organos y Actividades de Seguridad Interior,,30.5066,15.2533,15.2533,15.2533,15.2533
+quien,,Poder Legislativo Nacional,Poder Legislativo Nacional,Control Parlamentario sobre el Funcionamiento del Sistema de Inteligencia,,114.8032,114.8032,114.8032,114.8032,114.8032
+quien,,Poder Legislativo Nacional,Poder Legislativo Nacional,"Defensa de los Derechos de las Niñas, Niños y Adolescentes",,7254.9439,8405.7839,8405.7839,8405.7839,7484.9816
+quien,,Poder Legislativo Nacional,Poder Legislativo Nacional,Defensa de los Derechos de los Ciudadanos,,10768.496,13312.451,12818.8608,12818.8608,12257.1807
+quien,,Poder Legislativo Nacional,Poder Legislativo Nacional,Defensa del Publico de Servicios de Comunicacion Audiovisual,,3836.3068,5562.4068,4069.9902,4000.626,3892.6279
+quien,,Poder Legislativo Nacional,Poder Legislativo Nacional,Formacion y Sancion Legislativa,,188176.6136,215586.6138,214978.9196,214978.9196,202062.0629
+quien,,Poder Legislativo Nacional,Poder Legislativo Nacional,Formacion y Sancion de Leyes Nacionales,,160016.7866,190730.6697,190433.4677,190433.4677,182968.4884
+quien,,Poder Legislativo Nacional,Poder Legislativo Nacional,Impresiones y Publicaciones Parlamentarias,,11597.91,13503.9996,13491.5656,13491.5656,12824.1874
+quien,,Poder Legislativo Nacional,Poder Legislativo Nacional,Monitoreo e Implementacion del Nuevo Codigo Procesal Penal de la Nacion,,83.5516,0.0,0.0,0.0,0.0
+quien,,Poder Legislativo Nacional,Poder Legislativo Nacional,Promocion y Seguimiento de la Comunicacion Audiovisual,,31.5866,1.08,0.0,0.0,0.0
+quien,,Poder Legislativo Nacional,Poder Legislativo Nacional,Proteccion de los Derechos del Interno Penitenciario,,13413.2327,17042.2327,17004.0796,16984.8372,16172.9958
+quien,,Poder Legislativo Nacional,Poder Legislativo Nacional,Revision de Cuentas Nacionales,,271.5772,271.5772,271.5772,271.5772,271.5772
+quien,,Poder Legislativo Nacional,Poder Legislativo Nacional,Seguimiento de Contratos de Participacion Publico-Privada,,20.928,0.0,0.0,0.0,0.0
+quien,,Poder Legislativo Nacional,Poder Legislativo Nacional,Seguimiento y Control de la Gestion de Contratacion y Pago de la Deuda Exterior de la Nacion,,61.1736,0.0,0.0,0.0,0.0
+quien,,Poder Legislativo Nacional,Poder Legislativo Nacional,"Seguimiento y Control del Ministerio Publico de la Nacion (Ley N° 24.946,27.148 y 27.149)",,33.8,0.0,0.0,0.0,0.0
+quien,,Poder Legislativo Nacional,Poder Legislativo Nacional,"Sistema Nacional de Prevencion de la Tortura y Otros Tratos o Penas Crueles, Inhumanos o Degradantes",,3404.7356,5269.5941,5166.7791,5166.7791,4844.3467
+quien,,Presidencia de la Nación,Autoridad Regulatoria Nuclear,Regulacion y Fiscalizacion de las Actividades Nucleares,,15286.4552,23500.0238,20599.8901,20599.7416,15784.1171
+quien,,Presidencia de la Nación,Fondo Nacional de las Artes,Financiamiento para el Fomento de las Artes,,3147.2985,4267.1239,3610.8739,3602.4063,2867.106
+quien,,Presidencia de la Nación,Instituto Nacional del Teatro,"Fomento, Produccion y Difusion del Teatro",,6425.7486,5932.3453,5065.243,5062.8226,4404.4784
+quien,,Presidencia de la Nación,Secretaria de Cultura,Actividades Centrales,,29374.3811,33588.7251,32073.2698,30995.8,29000.2368
+quien,,Presidencia de la Nación,Secretaria de Cultura,Desarrollo y Fomento de la Cultura Ciudadana y la Economia Creativa,,4757.4732,3473.9063,3472.6563,3472.6563,3469.2668
+quien,,Presidencia de la Nación,Secretaria de Cultura,Difusion y Fortalecimiento del Patrimonio Cultural,,5786.8909,8071.2895,7792.7154,7792.7154,7685.8459
+quien,,Presidencia de la Nación,Secretaria de Cultura,Fomento y Apoyo Economico a Bibliotecas Populares,,4487.9076,4762.5467,4361.0472,4361.0472,3098.9647
+quien,,Presidencia de la Nación,Secretaria de Cultura,"Fomento, Promocion y Apoyo a la Cultura",,4224.8319,428.9875,428.9875,428.9875,428.9875
+quien,,Presidencia de la Nación,Secretaria de Cultura,Gestion de Espacios Culturales y Proyectos Especiales,,14595.932,37344.5448,35892.7644,35892.7644,33993.5271
+quien,,Presidencia de la Nación,Secretaria de Cultura,Gestion de Museos Nacionales,,15409.9557,25169.5413,24389.1267,24244.5399,23135.4839
+quien,,Presidencia de la Nación,Secretaria de Cultura,Gestion de Organismos Estables,,9617.3186,12948.3725,12637.8706,12637.8706,12406.688
+quien,,Presidencia de la Nación,Secretaria de Cultura,Promocion y Desarrollo Artistico Cultural y de las Economias Creativas,,6510.7797,9781.4547,8137.592,8137.592,7940.6025
+quien,,Presidencia de la Nación,Secretaría General de la Presidencia de la Nación,Acciones de Prensa Institucional,,4437.0054,2660.8902,1375.4404,1375.4404,1375.4404
+quien,,Presidencia de la Nación,Secretaría General de la Presidencia de la Nación,Conduccion del Poder Ejecutivo Nacional,,45076.2785,62664.0718,58004.0017,57703.1155,56276.2576
+quien,,Presidencia de la Nación,Secretaría Legal y Técnica,Asistencia Legal y Tecnica,,9941.4971,13143.9973,12418.4127,11483.6912,10946.711
+quien,,Presidencia de la Nación,Secretaría de Comunicación y Medios,Acciones de Comunicacion y Difusion de Actos de Gobierno,,25412.8594,16161.6319,7423.8404,7412.5016,7138.8192
+quien,,Presidencia de la Nación,Secretaría de Inteligencia de Estado,Informacion e Inteligencia,,48256.2736,106990.4602,105197.4607,105197.4607,105196.8751
+quien,,Presidencia de la Nación,Sindicatura General de la Nación,Control Interno del Poder Ejecutivo Nacional,,18837.46,24104.36,22905.7215,22905.6888,19839.4779
+quien,,Presidencia de la Nación,Teatro Nacional Cervantes,Acciones Artisticas del Teatro Nacional Cervantes,,8940.2949,12492.8969,12130.8443,12111.0071,10557.9093
+quien,,Servicio de la Deuda Pública,Servicio de la Deuda Pública,Deudas Directas de la Administracion Central,,10299240.6905,12380240.6905,10352094.3937,10352094.3937,10352094.3937
+en_que,1,Gastos en personal,Asignaciones familiares,,,26.5391,46.7791,46.7791,46.7791,46.7791
+en_que,1,Gastos en personal,Asistencia social al personal,,,956522.4417,519504.0009,436559.1692,436056.7859,406073.8115
+en_que,1,Gastos en personal,Beneficios y compensaciones,,,156723.8393,170932.159,151294.6721,150739.4513,133695.1785
+en_que,1,Gastos en personal,Gabinete de autoridades superiores,,,17730.9487,29094.5259,25395.5932,25006.1893,23431.9397
+en_que,1,Gastos en personal,Personal contratado,,,1076054.6215,1272632.6113,1238010.7527,1234963.3462,1154087.7289
+en_que,1,Gastos en personal,Personal permanente,,,8760655.1647,11336051.8617,11238574.484,11232471.6826,10799875.5927
+en_que,1,Gastos en personal,Personal temporario,,,268378.4271,345656.9373,332543.607,332387.5028,309945.5732
+en_que,1,Gastos en personal,Servicios extraordinarios,,,213792.605,301152.6956,289463.5244,288627.1724,260803.7021
+en_que,2,Bienes de consumo,Minerales,,,1344.8679,1356.1391,795.7437,795.5161,618.2717
+en_que,2,Bienes de consumo,Otros bienes de consumo,,,130470.0671,169668.4866,133843.7134,133697.6292,115776.6341
+en_que,2,Bienes de consumo,"Productos alimenticios, agropecuarios y forestales",,,176003.8945,201990.2149,194643.8711,194621.6619,175511.23
+en_que,2,Bienes de consumo,Productos de cuero y caucho,,,7682.2558,7594.0264,7223.7297,7218.4837,6672.5922
+en_que,2,Bienes de consumo,Productos de minerales no metálicos,,,4405.458,5463.0369,7537.2827,7537.1429,6960.8054
+en_que,2,Bienes de consumo,"Productos de papel, cartón e impresos",,,62480.3723,123875.9021,106908.292,106722.5105,95441.4115
+en_que,2,Bienes de consumo,Productos metálicos,,,43382.26,30930.6681,38314.0395,38242.1496,21102.6783
+en_que,2,Bienes de consumo,"Productos químicos, combustibles y lubricantes",,,457950.3611,684244.3325,602247.8504,601882.5598,553925.0877
+en_que,2,Bienes de consumo,Textiles y vestuario,,,19171.9368,21171.6981,24680.796,24646.1176,20974.6133
+en_que,3,Servicios no personales,Alquileres y derechos,,,132937.8133,214868.0665,186113.3567,185511.1441,173670.9367
+en_que,3,Servicios no personales,"Impuestos, derechos, tasas y juicios",,,60948.9902,78040.7709,66813.1225,66799.2706,57657.4266
+en_que,3,Servicios no personales,"Mantenimiento, reparación y limpieza",,,337141.0453,546647.0738,485169.1541,484821.8043,415593.5276
+en_que,3,Servicios no personales,Otros servicios,,,431601.8036,397036.9322,376392.6801,376008.1752,345338.1923
+en_que,3,Servicios no personales,Pasajes y viáticos,,,106657.2465,162247.514,131937.6359,131721.1519,121184.1863
+en_que,3,Servicios no personales,Publicidad y propaganda,,,8717.9758,1302.6758,88.8298,88.8298,88.7866
+en_que,3,Servicios no personales,Servicios básicos,,,210027.847,303548.9192,255152.7267,254910.0888,227613.8841
+en_que,3,Servicios no personales,Servicios comerciales y financieros,,,216043.4872,494813.4236,451308.9893,449923.8089,417487.3513
+en_que,3,Servicios no personales,Servicios técnicos y profesionales,,,313649.178,369699.5977,306978.0232,306242.719,258033.2215
+en_que,4,Bienes de uso,Activos intangibles,,,36539.6083,70603.2573,53731.8691,53647.845,44177.3815
+en_que,4,Bienes de uso,Bienes preexistentes,,,6348.0805,6342.837,1157.8813,1157.8813,1157.8813
+en_que,4,Bienes de uso,Construcciones,,,387175.454,631801.1208,559594.9674,557677.808,514303.1803
+en_que,4,Bienes de uso,Equipo militar y de seguridad,,,74878.8822,49333.4727,45660.7781,45655.5925,36842.4737
+en_que,4,Bienes de uso,"Libros, revistas y otros elementos coleccionables",,,29203.6808,7606.7133,2628.71,2628.71,219.656
+en_que,4,Bienes de uso,Maquinaria y equipo,,,435381.4647,449724.9181,366212.1721,361816.9736,313436.2116
+en_que,4,Bienes de uso,Semovientes,,,6.5197,28.2191,25.3247,25.3247,16.7384
+en_que,5,Transferencias,Transferencias a instituciones provinciales y municipales para financiar gastos corrientes,,,1921519.7102,3045539.2911,2575843.9021,2575814.556,2339691.1324
+en_que,5,Transferencias,Transferencias a instituciones provinciales y municipales para financiar gastos de capital,,,310753.2656,215821.7395,185188.9157,184869.1277,167687.4544
+en_que,5,Transferencias,Transferencias a otras entidades del Sector Público Nacional,,,7651809.5844,8918631.4134,8235155.321,8235113.7159,7906142.1395
+en_que,5,Transferencias,Transferencias a universidades nacionales,,,3314203.0481,4428812.5796,4420920.9543,4420920.9543,4017906.811
+en_que,5,Transferencias,Transferencias al exterior,,,144784.9715,147099.4402,142423.5585,142423.5585,134350.2494
+en_que,5,Transferencias,Transferencias al sector privado para financiar gastos capital,,,80579.4571,48514.9788,27557.3529,27557.3529,22559.7391
+en_que,5,Transferencias,Transferencias al sector privado para financiar gastos corrientes,,,55532430.0843,80019356.7918,79162444.619,79162387.3862,78801257.284
+en_que,6,Incremento de activos financieros,Aportes de capital y compra de acciones,,,172555.4264,353532.9594,331487.6113,331487.6113,331399.4113
+en_que,6,Incremento de activos financieros,Préstamos a corto plazo,,,538.0121,1238.0121,1112.4698,1112.4698,459.7804
+en_que,6,Incremento de activos financieros,Préstamos a largo plazo,,,2362.7604,3422.1824,1706.0494,1706.0494,763.3478
+en_que,7,Servicio de la deuda y disminución de otros pasivos,Intereses por préstamos recibidos,,,5232898.6545,6656674.09,6276234.9605,6276234.9605,6276234.9605
+en_que,7,Servicio de la deuda y disminución de otros pasivos,Servicio de la deuda colocada en moneda extranjera,,,2729743.06,3485783.0389,2667651.3491,2667651.3491,2667651.3491
+en_que,7,Servicio de la deuda y disminución de otros pasivos,Servicio de la deuda colocada en moneda nacional,,,2338566.9674,2239760.553,1410184.4862,1410184.4862,1410184.4862
+en_que,8,Otros gastos,"Descuentos, bonificaciones y devoluciones",,,0.4453,2192.052,2191.0083,2191.0083,2191.0083
+en_que,8,Otros gastos,Otras pérdidas,,,433.4508,2068.9246,0.6189,0.6189,0.6189
+donde,,Binacional,,,,99086.3862,54360.8993,27958.2665,27958.2665,26820.7729
+donde,,Ciudad Autónoma de Buenos Aires,,,,25322931.6248,33093261.4944,27178627.5412,27162428.7477,25869834.7543
+donde,,Interprovincial,,,,1579792.1417,1678490.8341,1004912.7608,1002957.8611,981925.1846
+donde,,Nacional,,,,15934541.1029,16798117.2886,9980727.3496,9980718.3879,9752880.7142
+donde,,No Clasificado,,,,8356449.2319,10789816.2122,9680775.5605,9680720.436,9649709.1604
+donde,,Provincia de Buenos Aires,,,,17865242.4722,27040821.7925,30785485.7447,30783054.4467,30357476.4092
+donde,,Provincia de Catamarca,,,,655716.2847,942720.5486,933603.0129,933600.6745,925443.5728
+donde,,Provincia de Corrientes,,,,1062036.7796,1571739.5632,1847574.0432,1847510.8265,1822879.1004
+donde,,Provincia de Córdoba,,,,3314620.761,5151676.1876,6135307.007,6135160.1326,6070490.0106
+donde,,Provincia de Entre Ríos,,,,1140310.7328,1774572.855,2097193.1443,2097072.756,2081318.0043
+donde,,Provincia de Formosa,,,,488293.6871,732211.9251,964787.0311,964420.6703,951659.933
+donde,,Provincia de Jujuy,,,,892498.8517,1380744.2695,1487389.1274,1487319.7796,1477933.5763
+donde,,Provincia de La Pampa,,,,627395.0467,867423.5082,816903.9905,816858.6684,806368.4577
+donde,,Provincia de La Rioja,,,,529079.3481,767621.1373,786059.213,786019.9768,776757.8805
+donde,,Provincia de Mendoza,,,,2093324.4696,3335099.2315,3981637.6212,3981622.7702,3950449.6838
+donde,,Provincia de Misiones,,,,1100960.0762,1666978.0965,1977521.756,1977424.5381,1958208.6838
+donde,,Provincia de Río Negro,,,,1278611.5019,2006491.3719,2166403.0546,2166148.1616,2148209.0374
+donde,,Provincia de Salta,,,,1317001.6188,2125842.3762,2563252.0504,2562921.9196,2546864.2788
+donde,,Provincia de San Juan,,,,878862.9313,1383078.4892,1662692.4922,1662661.3462,1647047.8347
+donde,,Provincia de San Luis,,,,654434.0663,945463.3691,964652.4377,964622.7317,954025.2662
+donde,,Provincia de Santa Cruz,,,,585218.4158,999590.7724,944462.701,944288.3931,923580.0804
+donde,,Provincia de Santa Fe,,,,3071223.0888,4716387.433,5393334.9572,5393182.8413,5335586.9019
+donde,,Provincia de Santiago del Estero,,,,1026344.1542,1619252.4806,1853907.5551,1853901.6872,1839710.3287
+donde,,"Provincia de Tierra del Fuego, Antártida e Islas del Atlántico Sur",,,,347609.7242,470455.601,391487.3407,391410.9713,386226.0692
+donde,,Provincia de Tucumán,,,,1751735.3527,2772581.4992,3337264.485,3337181.518,3304867.5034
+donde,,Provincia del Chaco,,,,1052343.3811,1590178.4862,1924399.6296,1924335.9544,1904501.965
+donde,,Provincia del Chubut,,,,830961.5634,1230746.1054,1380356.3329,1380098.533,1363558.1049
+donde,,Provincia del Neuquén,,,,716589.2405,1067735.8068,1288477.0919,1288352.0173,1275911.1683
+fuente,,Crédito Externo,,,,4785248.5013,5830011.1381,5561655.5334,5560604.0469,5495845.6058
+fuente,,Crédito Interno,,,,9242176.1911,9462560.405,7521941.7638,7521941.7638,7487121.9086
+fuente,,Recursos Propios,,,,39231090.6819,56524628.9741,56067155.3242,56059471.6422,55724496.8277
+fuente,,Recursos con Afectación Específica,,,,2295214.4772,3001037.8455,2794428.3457,2792759.5632,2635341.8243
+fuente,,Tesoro Nacional,,,,33446606.5156,46148206.4785,44105141.5127,44092351.6968,42395545.9735
+fuente,,Transferencias Externas,,,,7774.4789,13255.5619,4649.5239,4649.5239,4635.7047
+fuente,,Transferencias Internas,,,,5565103.1901,7593759.2313,7502181.2945,7502176.7769,7347256.5928

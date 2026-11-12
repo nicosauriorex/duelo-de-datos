@@ -32,7 +32,10 @@ export interface TarjetaImg { id?: string; nombre: string; nota?: string | null;
 export interface LineaRef { tipo: "prom" | "med" | "ult"; valor: number; texto: string }
 export interface MarcaExt { tipo: "max" | "min"; x: number; valor: number; texto: string }
 /** Una fila de "una variable, todos los presidentes". */
-export interface FilaBarra { id: string; nombre: string; valor: number | null; variacion: string | null; cls: Cls; ini: string | null; fin: string | null; nota: string | null }
+export interface FilaBarra {
+  id: string; nombre: string; valor: number | null; variacion: string | null; cls: Cls; ini: string | null; fin: string | null; nota: string | null;
+  detalle?: string;                  // segundo renglón propio (si está, reemplaza a "inicio → fin"); lo usa el gasto de la Nación
+}
 /** Una fila de "un presidente, varias variables". */
 export interface FilaVariable { nombre: string; unidad: string; ini: string | null; fin: string | null; variacion: string | null; cls: Cls; nota: string | null; spark: (number | null)[] }
 /** Títulos de las columnas de las filas con variables, si no son los de un mandato (el parte diario del Banco Central usa otros). */
@@ -42,7 +45,7 @@ export interface FilaVela { id: string; nombre: string; periodo: string; ini: nu
 export interface FilaRank { puesto: number; id: string; nombre: string; score: number; indicadores: number }
 /** Contenido de la imagen cuando no es un gráfico de líneas. */
 export type Lienzo =
-  | { tipo: "barras"; filas: FilaBarra[]; sinDatos: string[] }
+  | { tipo: "barras"; filas: FilaBarra[]; sinDatos: string[]; enc?: { nombre: string; valor: string }; sinTope?: boolean }
   | { tipo: "variables"; filas: FilaVariable[]; presId: string; enc?: EncVariables }
   | { tipo: "velas"; filas: FilaVela[]; sinDatos: string[] }
   | { tipo: "ranking"; filas: FilaRank[]; sinDatos: string[] };
@@ -453,15 +456,16 @@ function filasBarras(ctx: Ctx, r: Rect, L: LienzoDe<"barras">, pal: Paleta, esc:
   // escala común: un tope para que un valor enorme no aplaste al resto (la barra se corta y el número va completo)
   const abs = L.filas.flatMap((f) => (f.valor == null ? [] : [Math.abs(f.valor)])).sort((a, b) => a - b);
   const maxAbs = abs[abs.length - 1] ?? 0, q = abs[Math.floor(0.75 * (abs.length - 1))] ?? 0;
-  const tope = abs.length >= 5 && q > 0 && maxAbs > q * 3 ? q * 3 : maxAbs;
+  const tope = !L.sinTope && abs.length >= 5 && q > 0 && maxAbs > q * 3 ? q * 3 : maxAbs;
   const pos = Math.min(tope, Math.max(0, ...L.filas.map((f) => f.valor ?? 0))), neg = Math.min(tope, Math.max(0, ...L.filas.map((f) => -(f.valor ?? 0))));
   const iw = g.cw - 8 - pad * 2, wA = iw * 0.4, wBar = iw * 0.26, wV = iw * 0.32;
-  const tamR = tamComun(ctx, pal, L.filas.map((f) => (f.ini != null && f.fin != null ? `${f.ini} → ${f.fin}` : "sin datos")), { peso: 600, max: f2, min: 10, ancho: wA });
+  const segundo = (f: FilaBarra) => f.detalle ?? (f.ini != null && f.fin != null ? `${f.ini} → ${f.fin}` : "sin datos");
+  const tamR = tamComun(ctx, pal, L.filas.map(segundo), { peso: 600, max: f2, min: 10, ancho: wA });
   const tamV = tamComun(ctx, pal, L.filas.map((f) => f.variacion ?? "–"), { peso: 900, max: f1 * 1.15, min: 12, ancho: wV });
   const geom = (cx: number) => { const left = cx + 8 + pad; return { left, xBar: left + wA + iw * 0.02, xV: left + iw - wV, v: left + iw }; };
   for (let c = 0; c < g.cols; c++) {
     const cx = r.x + c * (g.cw + g.gap), q0 = geom(cx);
-    encabezado(ctx, pal, esc, r.y + 9, [{ t: "Presidente", x: q0.left, w: wA }, { t: "Variación en el mandato", x: q0.xBar, w: wBar + wV + iw * 0.02, alinear: "left" }]);
+    encabezado(ctx, pal, esc, r.y + 9, [{ t: L.enc?.nombre ?? "Presidente", x: q0.left, w: wA }, { t: L.enc?.valor ?? "Variación en el mandato", x: q0.xBar, w: wBar + wV + iw * 0.02, alinear: "left" }]);
     const unidad = pos + neg > 0 ? wBar / (pos + neg) : 0, x0 = q0.xBar + neg * unidad;
     if (neg > 0) { ctx.fillStyle = pal.eje; ctx.fillRect(x0 - 1, g.y0, 2, g.rowH * g.per); }
   }
@@ -471,7 +475,7 @@ function filasBarras(ctx: Ctx, r: Rect, L: LienzoDe<"barras">, pal: Paleta, esc:
     ctx.fillStyle = pal.pres[f.id] ?? pal.eje; ctx.fillRect(cx + 8, y + 7, 6, g.rowH - 14);
     const color = f.cls === "neutro" ? pal.acento : colorCls(pal, f.cls);
     const aN = ajustar(ctx, pal, f.nombre, { peso: 800, max: f1, min: 12, ancho: wA, lineas: 1 });
-    const aR = ajustar(ctx, pal, f.ini != null && f.fin != null ? `${f.ini} → ${f.fin}` : "sin datos", { peso: 600, max: tamR, min: tamR, ancho: wA, lineas: 1 });
+    const aR = ajustar(ctx, pal, segundo(f), { peso: 600, max: tamR, min: tamR, ancho: wA, lineas: 1 });
     const yt = y + (g.rowH - alto(aN, 1.2) - alto(aR, 1.2)) / 2;
     texto(ctx, pal, aN, 800, q0.left, yt, pal.tinta, 1.2); texto(ctx, pal, aR, 600, q0.left, yt + alto(aN, 1.2), pal.tintaSec, 1.2);
     // barra

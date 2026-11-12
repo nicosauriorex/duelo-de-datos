@@ -30,6 +30,9 @@ export const DESCRIPCION_SEMAFORO = "Los indicadores de actividad en una sola ta
 /** La vista previa de la herencia (`previas/herencia.json`): título y descripción con el presidente en funciones. */
 export interface PreviaHerencia { titulo: string; descripcion: string; fecha: string; imagen: string }
 export const DESCRIPCION_HERENCIA = "Cómo estaban las reservas, el dólar, las cuentas públicas, la inflación, la deuda, la pobreza y el salario cuando asumió cada presidente, y cómo los entregó. Datos oficiales.";
+/** La vista previa del gasto de la Nación (`previas/gasto.json`): título y descripción con el total del último año cerrado. */
+export interface PreviaGasto { titulo: string; descripcion: string; fecha: string; imagen: string }
+export const DESCRIPCION_GASTO = "En qué gasta el Estado nacional cada año: para qué, quién, en qué y dónde, cuánto se presupuestó y cuánto se ejecutó. Datos oficiales de Presupuesto Abierto.";
 export interface DatosPrevias { generado: string; datos: Record<string, PreviaDato> }
 
 /** Open Graph y Twitter de una página. `imagen` puede ser relativa (se completa con `metadataBase`) o absoluta. */

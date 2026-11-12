@@ -267,7 +267,7 @@ Idea del usuario: una sección dentro de Presidentes que compare lo que cada pre
 - Cuidado con D-012: mostrar recibido y entregado con su fuente, sin calificar la herencia.
 
 ## Gasto e impuestos de las provincias y la Nación (2026-11-12)
-→ specs: docs/specs/gasto-nacion.md (Nación por partida y por entidad, con universidades) y docs/specs/provincias.md (bloqueada en parte: el sitio de la DNAP no carga).
+→ specs: docs/specs/gasto-nacion.md (Nación por partida y por entidad, con universidades; fase 1 implementada el 2026-11-12, `/gasto/`) y docs/specs/provincias.md (bloqueada en parte: el sitio de la DNAP no carga).
 Idea del usuario. Agregado el mismo día: ver el presupuesto de cada entidad pública (por ejemplo en qué gastan las universidades) y aclarar si lo tienen sin rendir.
 - Gasto de la Nación y de las provincias por partida presupuestaria.
 - Qué provincias cobran más impuestos (por ejemplo Ingresos Brutos), contemplando exenciones.

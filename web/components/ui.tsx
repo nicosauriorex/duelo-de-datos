@@ -140,13 +140,15 @@ export function useAtras(abierta: boolean, onCerrar: () => void): () => void {
 /** Panel desplegable que se abre debajo del botón y EMPUJA el contenido (no flota encima).
  *  Se cierra con Escape, con un clic afuera, con su cruz o con Atrás. */
 export function Desplegable({ etiqueta, children, abiertoInicial = false, className = "" }: {
-  etiqueta: ReactNode; children: ReactNode; abiertoInicial?: boolean; className?: string;
+  etiqueta: ReactNode; children: ReactNode | ((cerrar: (luego?: () => void) => void) => ReactNode); abiertoInicial?: boolean; className?: string;
 }) {
   const [abierto, setAbierto] = useState(abiertoInicial);
+  // `luego`: lo que hay que hacer recién cuando el panel ya se cerró y el historial volvió a su lugar (por ejemplo, cambiar la URL), como en `Modal`
+  const luego = useRef<(() => void) | null>(null);
   const raiz = useRef<HTMLDivElement>(null);
   const boton = useRef<HTMLButtonElement>(null);
   const esLaDeArriba = useCapa(abierto);
-  const cerrarAtras = useAtras(abierto, () => setAbierto(false));
+  const cerrarAtras = useAtras(abierto, () => { setAbierto(false); const l = luego.current; luego.current = null; l?.(); });
   useEffect(() => {
     if (!abierto) return;
     const clic = (ev: MouseEvent) => { if (raiz.current && !raiz.current.contains(ev.target as Node)) setAbierto(false); };
@@ -161,7 +163,7 @@ export function Desplegable({ etiqueta, children, abiertoInicial = false, classN
       {abierto && (
         <div className="panel">
           <div className="panel-cruz"><button type="button" className="cruz-capa" aria-label="Cerrar" onClick={() => { cerrarAtras(); boton.current?.focus(); }}><IconoCruz /></button></div>
-          {children}
+          {typeof children === "function" ? children((l) => { luego.current = l ?? null; cerrarAtras(); boton.current?.focus(); }) : children}
         </div>
       )}
     </div>

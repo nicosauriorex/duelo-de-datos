@@ -55,3 +55,20 @@ export const redondeadoComo = (fmt: (v: number) => string, v: number): number =>
 export const restaLimpia = (b: number, a: number): number => Math.round((b - a) * 1e9) / 1e9;
 /** `x` redondeado a un decimal igual que lo muestra `nf1` (mismo criterio en los empates) y sin cero negativo. Es el redondeo de todos los porcentajes del sitio. */
 export const r1 = (x: number): number => (valorMostrado(nf1.format(x)) ?? x) || 0;
+
+/** Montos grandes en pesos a partir de millones: "$ 90,2 billones" (desde un billón = un millón de millones) o "$ 602.898 millones".
+ *  `unidad` fija la escala y los decimales (para que una lista entera use la misma y las cuentas se puedan seguir). Sin notación científica. */
+export interface UnidadMonto { div: 1 | 1e6; nombre: "millones" | "billones"; dec: number }
+/** Única regla de escala de los montos: billones desde 10 billones (10.000.000 de millones); por debajo, millones.
+ *  `minimo`: el valor más chico que se va a mostrar con la misma unidad (una lista); sin él, el propio monto.
+ *  En billones: un decimal si todo llega a un billón, si no dos; y si alguno no llega a 0,01 billones, toda la lista va en millones. */
+export const unidadMontoDe = (millones: number, minimo: number = millones): UnidadMonto => {
+  const m = Math.abs(minimo);
+  if (Math.abs(millones) < 1e7 || (m > 0 && m < 1e4)) return { div: 1, nombre: "millones", dec: 0 };
+  return { div: 1e6, nombre: "billones", dec: m >= 1e6 ? 1 : 2 };
+};
+export function fmtMillones(millones: number, unidad: UnidadMonto = unidadMontoDe(millones)): string {
+  const x = millones / unidad.div, txt = nfDec(unidad.dec).format(Math.abs(x));
+  const cero = /^[0,.]+$/.test(txt);
+  return `$ ${x < 0 && !cero ? "−" : ""}${txt} ${unidad.nombre}`;
+}
