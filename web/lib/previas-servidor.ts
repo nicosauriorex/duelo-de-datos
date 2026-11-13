@@ -3,7 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { DATOS_FIJOS, type DatoFijo } from "./datos-fijos";
-import { CARPETA_PREVIAS, type DatosPrevias, type PreviaDato, type PreviaGasto, type PreviaHerencia, type PreviaParte, type PreviaSemaforo, type PreviaUniversidades } from "./previas";
+import { CARPETA_PREVIAS, type DatosPrevias, type PreviaDato, type PreviaGasto, type PreviaHerencia, type PreviaParte, type PreviaSemaforo, type PreviaUniversidades, type PreviaProvincias } from "./previas";
 
 const PUBLICO = path.join(process.cwd(), "public");
 
@@ -49,3 +49,6 @@ export const previaGasto = (): PreviaGasto | null => leerJson<PreviaGasto>(CARPE
 
 /** Título, descripción e imagen de las universidades (null si `npm run previas` no lo generó: la página usa los textos generales). */
 export const previaUniversidades = (): PreviaUniversidades | null => leerJson<PreviaUniversidades>(CARPETA_PREVIAS, "universidades.json");
+
+/** Título, descripción e imagen de las provincias (null si `npm run previas` no lo generó: la página usa los textos generales). */
+export const previaProvincias = (): PreviaProvincias | null => leerJson<PreviaProvincias>(CARPETA_PREVIAS, "provincias.json");

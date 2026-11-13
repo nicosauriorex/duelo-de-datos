@@ -1378,3 +1378,49 @@ button.gas-abrir:focus-visible { outline: var(--linea) solid var(--foco); outlin
 .uni-citas li { margin-bottom: var(--e-3); overflow-wrap: anywhere; }
 .uni-citas ul { margin: var(--e-1) 0 0; padding-left: var(--e-4); }
 .uni-citas a { overflow-wrap: anywhere; }
+
+/* Cuánto gasta la Nación en cada provincia (/provincias/). El detalle reusa las clases .gas-* (barras) y .uni-evo-* (columnas por año). */
+.prov { min-width: 0; }
+.prov .seg button { min-height: var(--alto-toque); padding: 0 var(--e-3); }
+.prov-aclara { max-width: 80ch; }
+.prov-controles { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--e-2) var(--e-3); margin-bottom: var(--e-3); }
+.prov-controles .controls { min-width: 0; margin-bottom: 0; }
+.prov-masa { max-width: 80ch; margin: 0 0 var(--e-3); }
+.prov-card h2, .prov-detalle h2, .prov-agregado h2 { overflow-wrap: anywhere; }
+.prov-tabla td { text-align: right; font-variant-numeric: tabular-nums; }
+.prov-tabla td.prov-nombre, .prov-sin td.prov-nombre { text-align: left; white-space: normal; min-width: 150px; max-width: 220px; padding: 0; }
+.prov-sin td.prov-nombre { padding: 6px var(--e-2); }
+.prov-valor { font-weight: 800; }
+.prov-abrir { display: flex; align-items: center; gap: var(--e-2); width: 100%; min-height: var(--alto-toque); padding: 0 var(--e-2); border: 0; background: none; color: var(--text-primary); font: inherit; text-align: left; cursor: pointer; }
+.prov-abrir:hover { background: var(--acento-suave); }
+.prov-abrir:focus-visible { outline: var(--linea) solid var(--foco); outline-offset: -2px; }
+.prov-pos { flex: none; min-width: 1.6em; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.prov-nom { min-width: 0; overflow-wrap: anywhere; font-weight: 600; }
+.prov-total-n { display: block; color: var(--text-secondary); padding: 6px var(--e-2); }
+.prov-marca { text-decoration: none; margin-left: 2px; color: var(--acento-texto); }
+.prov-nota-caba { max-width: 72ch; }
+.prov-tabla tfoot td { border-top: var(--linea) solid var(--border-fuerte); font-weight: 800; }
+.prov-sin { margin-top: var(--e-4); }
+.prov-sin h3 { margin: 0 0 var(--e-1); }
+.prov-compartir { display: flex; flex-wrap: wrap; gap: var(--e-2); margin: var(--e-2) 0 var(--e-3); }
+.prov-compartir .btn { min-height: var(--alto-toque); justify-content: center; }
+.prov-detalle { overflow-y: auto; min-height: 0; padding: var(--e-3) var(--e-3) var(--e-4); }
+.prov-cifras { margin: var(--e-1) 0; }
+.prov-cifras b { font-size: var(--t-lg); font-weight: 800; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.prov-cifras span { color: var(--text-secondary); font-size: var(--t-sm); }
+.prov-formas .seg { display: flex; width: 100%; max-width: 420px; }
+.prov-formas .seg button { flex: 1 1 0; min-width: 0; }
+.prov-evo { margin-top: var(--e-4); }
+.prov-linea { margin: var(--e-3) 0 var(--e-2); min-width: 0; }
+.prov-linea svg { display: block; width: 100%; height: 200px; overflow: visible; }
+.prov-grilla { stroke: var(--grid); stroke-width: 1; }
+.prov-ejes { display: flex; justify-content: space-between; font-size: var(--t-xs); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.prov-eje-y { font-size: var(--t-xs); color: var(--text-muted); }
+.prov-leyenda { list-style: none; margin: 0 0 var(--e-2); padding: 0; display: grid; gap: var(--e-1); }
+.prov-leyenda li { display: flex; align-items: center; gap: var(--e-2); min-width: 0; }
+.prov-leyenda-n { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.prov-leyenda b { flex: none; font-variant-numeric: tabular-nums; }
+.prov-clave { flex: none; width: 14px; height: 4px; border-radius: 2px; }
+/* Filas de barras dentro de una ventana: `.modal li button` las vuelve flex y parte los nombres; acá siguen como en /gasto/. */
+.modal li button.gas-abrir { display: block; padding: var(--e-2) var(--e-1); border-radius: 0; }
+.modal li button.gas-abrir:focus-visible { outline: var(--linea) solid var(--foco); outline-offset: -2px; }

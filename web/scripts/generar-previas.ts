@@ -21,7 +21,7 @@ import { paletaDe } from "../lib/imagen-paleta";
 import { historicoFicha } from "../lib/ficha";
 import { baseDeConfig, DEFECTO, IMAGEN_DEFECTO } from "../lib/config";
 import { PRES_DEF } from "../lib/estadisticas";
-import { CARPETA_PREVIAS, DESCRIPCION_SITIO, PREVIA, textosPrevia, type DatosPrevias, type PreviaDato, type PreviaGasto, type PreviaHerencia, type PreviaParte, type PreviaSemaforo, type PreviaUniversidades } from "../lib/previas";
+import { CARPETA_PREVIAS, DESCRIPCION_SITIO, PREVIA, textosPrevia, type DatosPrevias, type PreviaDato, type PreviaGasto, type PreviaHerencia, type PreviaParte, type PreviaSemaforo, type PreviaUniversidades, type PreviaProvincias } from "../lib/previas";
 import { armarParte, decodificar, isoDeDia, textosPreviaParte, type DiarioCrudo } from "../lib/diario";
 import { armarImagenParte } from "../lib/imagen-parte";
 import { armarTabla, decodificar as decodificarSemaforo, isoDeMes, mesResumen, textosPreviaSemaforo, type SemaforoCrudo } from "../lib/semaforo";
@@ -29,6 +29,7 @@ import { armarImagenSemaforo, dibujarImagenSemaforo } from "../lib/imagen-semafo
 import { armarImagenPres } from "../lib/imagen-presidentes";
 import { anioDefecto, armarImagenGasto, armarVista, crearDeflactor, decodificarAnio, decodificarIndice, textosPreviaGasto } from "../lib/gasto";
 import { anioDefectoU, armarImagenU, armarVistaU, crearContexto, decodificarUniv, textosPreviaU } from "../lib/universidades";
+import { anioDefectoP, armarImagenP, armarVistaP, crearContexto as crearContextoP, decodificarProv, textosPreviaP } from "../lib/provincias";
 import { BASE_HERENCIA, idsHerencia, tablaHerencia, textosPreviaHerencia } from "../lib/herencia";
 import type { DatoInforme, DatosInformes, ReservasNetas } from "../lib/herencia-informes";
 
@@ -252,6 +253,30 @@ function previaDeUniversidades(m: Motor, pal: ReturnType<typeof paletaDe>): bool
   }
 }
 
+/** Imagen y textos de las provincias (/provincias/), con la vista de entrada (último año cerrado, por habitante, todo el gasto): `previas/provincias.png`
+ *  y `previas/provincias.json`. Es la misma imagen que arma "Compartir" en la página. Si falta `provincias.json`, avisa y sigue. */
+function previaDeProvincias(m: Motor, pal: ReturnType<typeof paletaDe>): boolean {
+  const archivo = path.join(DATOS, "provincias.json");
+  if (!fs.existsSync(archivo)) { avisar("no está provincias.json: se saltea la imagen de las provincias (/provincias/ usa la imagen general)"); return false; }
+  try {
+    const d = decodificarProv(JSON.parse(fs.readFileSync(archivo, "utf8")));
+    if (!d) { avisar("provincias.json no trae datos: se saltea la imagen de las provincias"); return false; }
+    const c = crearContextoP(d, crearDeflactor(m.F, m.base().IPC));
+    const anio = anioDefectoP(c), hab = armarVistaP(c, { anio, medida: "hab", gasto: "todo" }), total = armarVistaP(c, { anio, medida: "total", gasto: "todo" });
+    if (!hab || !total) { avisar("provincias: no hay datos para armar la imagen"); return false; }
+    fs.writeFileSync(path.join(SALIDA, "provincias.png"), aPng((cv) => dibujarImagen(cv, armarImagenP(hab, "16x9"), pal, DIBUJO), DIBUJO));
+    const { titulo, descripcion } = textosPreviaP(hab, total), fecha = d.generado || String(anio);
+    const previa: PreviaProvincias = { titulo, descripcion, fecha, imagen: `/${CARPETA_PREVIAS}/provincias.png?v=${encodeURIComponent(fecha)}` };
+    fs.writeFileSync(path.join(SALIDA, "provincias.json"), JSON.stringify(previa, null, 1));
+    console.log(`provincias: ${titulo}
+  ${descripcion}`);
+    return true;
+  } catch (err) {
+    avisar(`provincias: ${(err as Error).message}`);
+    return false;
+  }
+}
+
 function main() {
   registrarFuente();
   const pal = paletaDe(tokensOscuros(), FAMILIA, {});
@@ -304,13 +329,14 @@ function main() {
   const conHerencia = previaDeHerencia(m, metas, pal);
   const conGasto = previaDelGasto(m, pal);
   const conUniversidades = previaDeUniversidades(m, pal);
+  const conProvincias = previaDeProvincias(m, pal);
   fs.writeFileSync(path.join(SALIDA, "sitio.png"), aPng((cv) => dibujarImagenSitio(cv, pal, {
     titulo: "Datos de Argentina, en debate.",
     bajada: DESCRIPCION_SITIO.replace(/^Datos de Argentina, en debate\.\s*/, ""),
     temas: TEMAS.map((t) => t.nombre),
     pie: "Datos oficiales: INDEC, BCRA, Secretaría de Trabajo y otras fuentes",
   }, PREVIA), PREVIA));
-  console.log(`\nPrevias: ${n} de ${DATOS_FIJOS.length} datos fijos, más sitio.png${conParte ? ", bcra.png" : ""}${conSemaforo ? ", semaforo.png" : ""}${conHerencia ? ", herencia.png" : ""}${conGasto ? ", gasto.png" : ""}${conUniversidades ? ", universidades.png" : ""}, en ${((Date.now() - inicio) / 1000).toFixed(1)} s.${avisos.length ? ` Avisos: ${avisos.length}.` : ""}`);
+  console.log(`\nPrevias: ${n} de ${DATOS_FIJOS.length} datos fijos, más sitio.png${conParte ? ", bcra.png" : ""}${conSemaforo ? ", semaforo.png" : ""}${conHerencia ? ", herencia.png" : ""}${conGasto ? ", gasto.png" : ""}${conUniversidades ? ", universidades.png" : ""}${conProvincias ? ", provincias.png" : ""}, en ${((Date.now() - inicio) / 1000).toFixed(1)} s.${avisos.length ? ` Avisos: ${avisos.length}.` : ""}`);
 }
 
 main();

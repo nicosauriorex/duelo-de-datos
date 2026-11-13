@@ -1,6 +1,6 @@
 # Provincias: gasto, impuestos y ranking
 
-Estado: NO lista para implementar entera. La fase 1 se puede hacer; las fases 2 y 3 están bloqueadas por falta de fuente verificada (2026-11-12)
+Estado: fase 1 implementada (2026-11-13); las fases 2 y 3 están bloqueadas por falta de fuente verificada (2026-11-12)
 Ideas: "Gasto e impuestos de las provincias y la Nación" (IDEAS.md, 2026-11-12). El gasto de la Nación va en `gasto-nacion.md`.
 
 ## Objetivo
@@ -29,12 +29,58 @@ Conclusión: casi todo lo que se pidió depende de la DNAP. Por lo que se conoce
 Sin la fase 0 no se implementan las fases 2 y 3: no cargar cifras por provincia desde notas de prensa ni desde copias de terceros.
 
 ## Fase 1 (se puede hacer ya): la Nación en cada provincia
-Depende de `gasto-nacion.md` (usa su mismo archivo de datos). Dentro de `/gasto/`, la vista "Dónde" se amplía a una página propia `/provincias/`:
-1. Tabla de las 24 jurisdicciones con el gasto de la Nación ubicado en cada una, por año: total, por habitante (población de INDEC) y en pesos de hoy; ordenable; con su posición.
-2. Al tocar una provincia: en qué gasta la Nación ahí (finalidad y función, organismo, tipo de gasto) y cómo cambió en los años disponibles.
-3. Aclaración visible: es el gasto que la Nación declara ubicado en la provincia (jubilaciones, universidades, obras, transferencias no automáticas); **no** es el gasto del gobierno provincial ni incluye la coparticipación. Mucho gasto figura en CABA o sin ubicación.
-4. Un bloque de contexto con el gasto del conjunto de las provincias por finalidad (serie agregada 1980-2023, en % del PIB), para tener el tamaño del gasto provincial aunque no se pueda abrir por provincia.
-5. Compartir, vista previa en redes y reglas del sitio como en las demás secciones (cálculos en `web/lib/`, nada desborda a 360 px, palabras del público, sin veredicto).
+Estado: implementada (2026-11-13). Desvíos: `sin_provincia` trae también "Exterior" (id 95, aparece en 2026); las barras del detalle van en pesos de hoy (el por habitante, en la cabecera y la evolución); la tabla suma la fila "Las 24 juntas". Depende de `gasto-nacion.md` (usa el mismo archivo de Presupuesto Abierto). Página propia `/provincias/` ("Cuánto gasta la Nación en cada provincia").
+
+### Fuentes (probadas el 2026-11-13)
+- **Gasto por provincia**: el crédito anual de Presupuesto Abierto que ya baja `pipeline/gasto_nacion.py`. Columnas `ubicacion_geografica_id` (código INDEC de 2 cifras: 2 = CABA, 6 = Buenos Aires, 10 Catamarca … 94 Tierra del Fuego) y `ubicacion_geografica_desc`. Además de las 24 jurisdicciones trae 96 "Interprovincial", 97 "Nacional", 98 "Binacional" y 99 "No Clasificado". 2024, devengado: 90.197.487 millones en total; CABA 19.923.286, Buenos Aires 21.125.814, Córdoba 4.158.723, Nacional 10.138.112, No Clasificado 8.139.450 (ahí van los intereses de la deuda: 7.493.290). Más del 95 % de lo ubicado en las provincias (fuera de CABA) es Servicios sociales, sobre todo seguridad social (jubilaciones, pensiones, asignaciones).
+  El cruce provincia × (finalidad > función), provincia × (jurisdicción > entidad) y provincia × (inciso > partida principal) sale del mismo CSV: en 2024 son 656, 1.367 y 931 combinaciones.
+- **Población**: INDEC, proyecciones 2010-2040 por provincia (base censo 2010): `https://www.indec.gob.ar/ftp/cuadros/poblacion/c2_proyecciones_prov_2010_2040.xls` (1 MB; una hoja por jurisdicción, nombre `<código>-<NOMBRE>`, p. ej. `14-CÓRDOBA`, `02-CABA`; en cada hoja, bloques de 6 años: una fila "Edad" con los años y debajo la fila "Total" con "Ambos sexos" en la primera columna de cada año). Para 2018-2026 se usa esta proyección (no hay archivo con la base del censo 2022): se dice en la página.
+- **Gasto de todas las provincias juntas, en % del PIB** (Secretaría de Política Económica, "Gasto Público Consolidado", devengado anual, 1980-2023), API de series de datos.gob.ar: total `451.6_GPP_PIBPIB_0_0_7_41`; Funcionamiento del Estado `451.6_GPP_FUNCIOPIB_0_0_29_76`; Servicios sociales `451.6_GPP_SERVICPIB_0_0_26_100`; Servicios económicos `451.6_GPP_SERVICPIB_0_0_28_76`; Servicios de la deuda `451.6_GPP_SERVICPIB_0_0_31_1`. 2023: 16,13 % del PIB.
+
+### Pipeline
+1. `pipeline/gasto_nacion.py`, `_agregar_completo`: tres árboles más en el respaldo largo `gasto_nacion_<AÑO>.csv` (mismas columnas `arbol, ids, n1..n4` y las cinco etapas):
+   - `prov_para_que`: `ids` = `"<ubicacion_id>|<finalidad_id>.<funcion_id>"`; n1 = provincia (desc), n2 = finalidad, n3 = función.
+   - `prov_quien`: `ids` = `"<ubicacion_id>"`; n1 = provincia, n2 = jurisdicción, n3 = entidad.
+   - `prov_en_que`: `ids` = `"<ubicacion_id>|<inciso_id>"`; n1 = provincia, n2 = inciso, n3 = partida principal.
+   `_anio_json` y el control de totales siguen usando solo los cinco árboles de antes: `gasto_nacion_<AÑO>.json` no cambia.
+   `cargar_anio`: si el respaldo existe pero no trae `prov_para_que`, con red se vuelve a bajar aunque el año esté cerrado (una vez: después ya los trae). Sin red se usa como está y la página de provincias sale sin ese año.
+2. `pipeline/provincias.py` (nuevo, patrón de `universidades.py`): no baja el gasto, lee los respaldos de `gasto_nacion.py`. Baja la población (respaldo `datos/cache/provincias_poblacion.csv`: `codigo, anio, poblacion`, 2010-2040) y las cinco series del agregado (respaldo `datos/cache/provincias_agregado.csv`: `anio` y una columna por serie); como mucho una bajada por día (`datos/cache/provincias_meta.json`). Con `con_red=False` usa solo los respaldos.
+3. Salidas en `web/public/datos/` (montos en millones de pesos corrientes, devengado, redondeados a 1 decimal):
+   - `provincias.json` (índice):
+     `{ "generado", "fuente", "fuente_poblacion", "fuente_agregado", "anios": [ {"anio", "en_curso", "actualizado", "pib", "archivo": "provincias_<AÑO>.json"} ], "provincias": [ {"id": "14", "n": "Córdoba", "pob": [por año de "anios"], "v": [devengado total por año], "ss": [devengado de la función Seguridad social, id 3.3, por año]} ], "sin_provincia": [ {"id": "97", "n": "Nacional", "v": [...]}, … 96, 98, 99 ], "total": [devengado total de la Administración Nacional por año], "agregado": {"anios": [1980…], "series": [ {"n": "Total", "v": [...]}, {"n": "Funcionamiento del Estado", …}, {"n": "Servicios sociales", …}, {"n": "Servicios económicos", …}, {"n": "Deuda", …} ]} }`
+     `null` donde no hay dato. `anios`, `en_curso`, `actualizado` y `pib` iguales a `gasto_nacion.json`. Nombres cortos del público: "Ciudad de Buenos Aires", "Buenos Aires", "Tierra del Fuego", "Santiago del Estero"… (sin "Provincia de").
+   - `provincias_<AÑO>.json`: `{ "anio", "provincias": { "<id>": { "para_que": Nodo, "quien": Nodo, "en_que": Nodo } } }` solo para las 24 jurisdicciones, con el mismo `Nodo` de `gasto.ts` (`{n, v: [5 etapas], t?, h?}`; raíz "Total"; hijos por devengado de mayor a menor; redondeo de abajo hacia arriba como `_cerrar`). En `en_que`, el nivel 1 con los nombres del público de `INCISOS` y el técnico en `t`. Nombres unificados entre años y con tildes como en `gasto_nacion.py` (`_titulos`, `_con_tildes`).
+4. Controles (si alguno no cierra, `RuntimeError`: la corrida sigue sin `provincias*.json`, como universidades):
+   - por año, las 24 provincias + las 4 sin provincia = total del año de `gasto_nacion` (devengado, tolerancia 1 millón);
+   - cada provincia: raíz de `para_que` = raíz de `quien` = raíz de `en_que` = su `v` del índice (tolerancia 1 millón);
+   - 2024: Córdoba 4.158.722,8 y CABA 19.923.286,3 millones;
+   - población: 24 jurisdicciones, la suma de 2024 a menos de 0,5 % de la hoja "01-TOTAL DEL PAÍS" de ese año; Córdoba 2024 entre 3,8 y 4,2 millones;
+   - agregado: las cuatro finalidades suman el total a menos de 0,1 punto del PIB en cada año con las cinco series; 2023 total entre 15 y 17.
+5. `pipeline/obtener_datos.py`: llamada después de universidades, fuera del hash, con `try/except` y aviso (como universidades). Funciona con `--solo-json`. Docstring con fuentes, respaldos, controles y uso suelto (`--bajar`, `--sin-red`).
+6. Al implementar: correr `python pipeline/gasto_nacion.py --bajar` una vez para que los respaldos de 2018-2026 traigan los árboles nuevos, y versionarlos (cada CSV crece unas 3.000 filas).
+
+### Sitio
+7. Ruta `/provincias/`, sección `web/components/secciones/Provincias.tsx`, cálculos en `web/lib/provincias.ts` (reusar de `gasto.ts`: `Nodo`, `crearDeflactor`, `armarVista`, escalas y redondeo que cierra; de `universidades.ts` lo que sirva para la variación real y la evolución), carga en `web/components/useProvincias.ts` (como `useUniversidades`: `provincias.json` al entrar, `provincias_<AÑO>.json` al abrir una provincia; el IPC de `base.json` como en `/gasto/`).
+8. Arriba: año (por defecto el último cerrado; el en curso marcado con su fecha) y dos opciones en `Seg`:
+   - **Medida**: "Por habitante" (pesos de hoy por persona, por defecto), "Total" (pesos de hoy), "% de lo ubicado en provincias".
+   - **Qué gasto**: "Todo" (por defecto) / "Sin jubilaciones ni asignaciones" (resta la función Seguridad social; sirve para ver obras, salud, educación, transferencias).
+   Todo en la URL (`anio`, `medida`, `gasto`, `prov`); ningún parámetro existente cambia de significado.
+9. Una línea arriba de la tabla: "De cada $100 que gastó la Nación en <año>, $X figuran en una provincia y $Y en la Ciudad de Buenos Aires; el resto, $Z, no tiene provincia (deuda, organismos nacionales)." Las tres cifras cierran a 100.
+10. Tabla de las 24 jurisdicciones ordenada por la medida elegida (mayor a menor), con posición, nombre, valor de la medida, la otra cifra útil (si se ve por habitante, el total; si se ve el total, por habitante) y la variación real contra el año anterior. Primera columna fija y nada desborda a 360 px (reglas de `.claude/rules/frontend.md`). Debajo, aparte y sin posición: "Sin provincia" con sus cuatro partes y lo que suman. La Ciudad de Buenos Aires lleva una marca con la nota de que ahí figuran las sedes de los organismos.
+11. Al tocar una provincia se abre su detalle (en la misma página, con cruz y Atrás como el resto del sitio: `useAtras`): en qué gasta la Nación ahí con las tres formas de `/gasto/` (Para qué, Quién, En qué) como barras que se abren al tocar, y la evolución 2018-<último año> del gasto por habitante en pesos de hoy (gráfico chico como el de universidades, el año en curso marcado). El "Qué gasto" elegido se respeta en la evolución; en las barras, "Sin jubilaciones" saca la función Seguridad social de Para qué y se aclara que en Quién y En qué se ve todo.
+12. Aclaración visible arriba (no plegada): es el gasto que la Nación declara ubicado en cada provincia (jubilaciones, asignaciones, universidades, obras, transferencias no automáticas); **no** es el gasto del gobierno provincial ni incluye la coparticipación; mucho gasto figura en la Ciudad de Buenos Aires (sedes) o sin provincia.
+13. Bloque de contexto "Lo que gastan las provincias juntas": el agregado en % del PIB 1980-2023 (total y las cuatro finalidades, gráfico de líneas simple con el último valor), con la aclaración de que la fuente no lo abre por provincia y que el último año es 2023.
+14. Al pie, plegado: qué incluye y qué no, la población usada (proyección INDEC con base 2010) y las fuentes con su fecha.
+15. Compartir: imagen (1:1, 4:5 y 16:9 como en las otras secciones) con las 24 provincias en barras según la medida y el "Qué gasto" elegidos, título con el año; link; vista previa en redes con `npm run previas` (`previas/provincias.png` y `.json`, título con la provincia de mayor gasto por habitante sin contar CABA o con el total ubicado; sin veredicto).
+16. Links: desde `/gasto/` en la forma Dónde ("Ver cada provincia, por habitante"), desde la portada (`Inicio.tsx`, junto a universidades), `Nav.tsx` (nombre y Volver), `sitemap.ts`.
+17. Reglas: números en formato es-AR con `formato.ts`; pesos por habitante en pesos enteros con separador de miles; las cuentas cierran; sin `<select>` nativo; palabras del público; sin veredicto (D-012).
+
+### Cómo se verifica
+- `python pipeline/obtener_datos.py --solo-json` termina con `provincias.json` y los `provincias_<AÑO>.json`, y los controles pasan; `python pipeline/provincias.py --sin-red` muestra los tamaños (índice < 100 KB; cada año < 400 KB).
+- Córdoba 2024 por habitante: 4.158.722,8 millones / población 2024 de la hoja 14, a mano, igual a lo que muestra la tabla (en pesos corrientes con el IPC desactivado o con el factor anotado).
+- `npm run tipos`, `npm run build`, `npm run previas`.
+- En el navegador (`web-out`): `/provincias/` a 360 y 1280 px sin desborde ni errores de consola; cambiar medida y "Qué gasto"; abrir una provincia, sus tres formas y la evolución; Atrás cierra el detalle; link compartido con `?prov=14&medida=total` abre lo mismo; imagen en el panel; link desde `/gasto/` Dónde.
+- Revisor contra esta spec.
 
 ## Fase 2 (bloqueada por la fase 0): las cuentas de cada provincia
 Con las planillas de la DNAP: gasto de cada provincia por finalidad y por tipo; recaudación propia por impuesto; recursos de origen nacional; resultado; deuda. Todo por habitante y en pesos de hoy. Ranking por indicador, con la posición de cada provincia y sin puntaje combinado por defecto (como se hizo con el Ranking de presidentes: el combinado, si se hace, plegado y explicado).

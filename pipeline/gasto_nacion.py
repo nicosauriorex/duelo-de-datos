@@ -16,6 +16,9 @@ Años cerrados (`anio_cerrado`: el respaldo se bajó con la actualización de N+
 Años sin cerrar ("en curso", puede haber dos): como mucho una bajada por día.
 Con `con_red=False` (--solo-json) se arma solo con los respaldos.
 
+Además, tres cruces con la provincia (los usa provincias.py; no van a gasto_nacion_<AÑO>.json): prov_para_que, prov_quien y prov_en_que
+(n1 = provincia; `ids` empieza con el código INDEC de la ubicación geográfica).
+
 Árboles (contrato con el sitio): para_que (finalidad > función), quien (jurisdicción > entidad > programa; en el programa
 de Educación Superior, un nivel más con cada universidad), en_que (inciso > partida principal), donde (provincia), fuente.
 
@@ -50,7 +53,7 @@ OTROS_PROGRAMA = "Otros gastos del programa"
 
 COLS = ["jurisdiccion_desc", "entidad_desc", "programa_desc", "finalidad_id", "finalidad_desc", "funcion_id", "funcion_desc",
         "inciso_id", "inciso_desc", "principal_id", "principal_desc", "subparcial_desc",
-        "fuente_financiamiento_desc", "ubicacion_geografica_desc", "ultima_actualizacion_fecha"] + ETAPAS
+        "fuente_financiamiento_desc", "ubicacion_geografica_id", "ubicacion_geografica_desc", "ultima_actualizacion_fecha"] + ETAPAS
 
 # nombres para el público de los incisos: id -> nombre (el técnico va en "t")
 INCISOS = {
@@ -137,7 +140,7 @@ def _agregar_completo(raw_zip):
     actualizado = _fecha_actualizacion(df["ultima_actualizacion_fecha"])
     for e in ETAPAS:
         df[e] = _num(df[e])
-    for c in ("finalidad_id", "funcion_id", "inciso_id", "principal_id"):
+    for c in ("finalidad_id", "funcion_id", "inciso_id", "principal_id", "ubicacion_geografica_id"):
         df[c] = _id(df[c])
     for c in [c for c in COLS if c.endswith("_desc")]:
         df[c] = df[c].map(limpiar)
@@ -148,6 +151,10 @@ def _agregar_completo(raw_zip):
     df.loc[es_univ, "universidad"] = df.loc[es_univ, "subparcial_desc"]
     df["id_pq"] = df["finalidad_id"].astype(str) + "." + df["funcion_id"].astype(str)
     df["id_inc"] = df["inciso_id"].astype(str)
+    ub = df["ubicacion_geografica_id"].astype(str)
+    df["id_prov_pq"] = ub + "|" + df["id_pq"]
+    df["id_prov_inc"] = ub + "|" + df["id_inc"]
+    df["id_prov"] = ub
     # (árbol, columna con el id, columnas de nombre); el id se agrupa junto con los nombres
     arboles = [
         ("para_que", "id_pq", ["finalidad_desc", "funcion_desc"]),
@@ -155,6 +162,10 @@ def _agregar_completo(raw_zip):
         ("en_que", "id_inc", ["inciso_desc", "principal_desc"]),
         ("donde", None, ["ubicacion_geografica_desc"]),
         ("fuente", None, ["fuente_financiamiento_desc"]),
+        # cruces con la provincia (fase 1 de provincias.md): n1 = provincia
+        ("prov_para_que", "id_prov_pq", ["ubicacion_geografica_desc", "finalidad_desc", "funcion_desc"]),
+        ("prov_quien", "id_prov", ["ubicacion_geografica_desc", "jurisdiccion_desc", "entidad_desc"]),
+        ("prov_en_que", "id_prov_inc", ["ubicacion_geografica_desc", "inciso_desc", "principal_desc"]),
     ]
     partes = []
     for arbol, col_id, nombres in arboles:
@@ -203,7 +214,10 @@ def cargar_anio(anio, con_red, meta):
     m = meta.get(str(anio), {})
     cerrado = anio_cerrado(anio, m.get("actualizado"))
     if f.exists() and (not con_red or cerrado or m.get("bajado") == hoy):
-        return pd.read_csv(f, keep_default_na=False, dtype={"ids": str, "n1": str, "n2": str, "n3": str, "n4": str})
+        largo = pd.read_csv(f, keep_default_na=False, dtype={"ids": str, "n1": str, "n2": str, "n3": str, "n4": str})
+        # un respaldo anterior a los cruces con la provincia se vuelve a bajar una vez (aunque el año esté cerrado)
+        if not con_red or "prov_para_que" in set(largo["arbol"]):
+            return largo
     if con_red:
         try:
             raw = _get(URL_ANUAL.format(a=anio), timeout=300)

@@ -148,6 +148,7 @@ function Lista({ vista: v, onIr, onTodas }: { vista: Vista; onIr: (r: string[]) 
         <p className="gas-nota-donde"><Link prefetch={false} href={`/universidades/?anio=${v.anio.anio}`} className="enlace-parte">Ver cuánto recibió cada universidad, año por año</Link></p>
       )}
       {v.forma === "donde" && <p className="note gas-nota-donde">{NOTA_DONDE}</p>}
+      {v.forma === "donde" && !v.ruta.length && <p className="gas-nota-donde"><Link prefetch={false} href={`/provincias/?anio=${v.anio.anio}`} className="enlace-parte">Ver cada provincia, por habitante</Link></p>}
       {v.barras.length ? (
         <>
           <p className="gas-enc" aria-hidden="true"><span>{nivel ?? "Partida"}</span><span>{v.encParte}</span></p>

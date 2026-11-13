@@ -36,6 +36,9 @@ export const DESCRIPCION_GASTO = "En qué gasta el Estado nacional cada año: pa
 /** La vista previa de las universidades (`previas/universidades.json`): título y descripción con el total del último año cerrado. */
 export interface PreviaUniversidades { titulo: string; descripcion: string; fecha: string; imagen: string }
 export const DESCRIPCION_UNIVERSIDADES = "Cuánto transfirió la Nación a cada universidad nacional desde 2018, en pesos de hoy y como % del PIB, con estudiantes y control y rendición de cuentas. Datos oficiales.";
+/** La vista previa de las provincias (`previas/provincias.json`): título y descripción con el total ubicado del último año cerrado. */
+export interface PreviaProvincias { titulo: string; descripcion: string; fecha: string; imagen: string }
+export const DESCRIPCION_PROVINCIAS = "Cuánto gasta la Nación en cada provincia, por habitante y en pesos de hoy, con y sin jubilaciones. Es el gasto que la Nación declara ubicado en cada una, no el de los gobiernos provinciales. Datos oficiales.";
 export interface DatosPrevias { generado: string; datos: Record<string, PreviaDato> }
 
 /** Open Graph y Twitter de una página. `imagen` puede ser relativa (se completa con `metadataBase`) o absoluta. */

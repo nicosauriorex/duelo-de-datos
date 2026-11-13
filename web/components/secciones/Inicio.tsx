@@ -60,6 +60,7 @@ const SECCIONES_INICIO: [string, string, string][] = [
   ["semaforo", "Semáforo de actividad", "Los indicadores de actividad en una tabla: cuáles subieron y cuáles bajaron cada mes."],
   ["gasto", "En qué gasta la Nación", "Cuánto gastó el Estado nacional cada año: para qué, quién, en qué y dónde, presupuestado y ejecutado."],
   ["universidades", "Cuánto reciben las universidades", "Lo que la Nación transfiere a cada universidad nacional, año por año, y cómo se controla."],
+  ["provincias", "Cuánto gasta la Nación en cada provincia", "El gasto que la Nación declara en cada provincia, por habitante y en pesos de hoy."],
   ["plantillas", "Gráficos listos", "Gráficos ya armados para abrir, cambiar y compartir."],
 ];
 

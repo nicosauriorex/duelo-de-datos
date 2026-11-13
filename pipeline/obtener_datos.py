@@ -33,6 +33,7 @@ import precios_mundo
 import salarios
 import semaforo
 import universidades
+import provincias
 import gasto_mensual
 import gasto_nacion
 import herencia_informes
@@ -325,6 +326,14 @@ def escribir_json_web(datos, ctx=None, pm=None, cap=None, con_red=True):
             (destino / nombre).write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     except Exception as e:
         print(f"Universidades: no se pudo armar, se sigue sin universidades.json ({e}).")
+    # Provincias, fase 1: lo que la Nación gasta en cada provincia (de los respaldos de gasto_nacion_*), población de INDEC y el gasto
+    # consolidado de las provincias en % del PIB (respaldos datos/cache/provincias_*; una bajada por día como mucho). Va fuera del hash.
+    # Si un control no pasa o algo falla, la corrida sigue sin provincias*.json.
+    try:
+        for nombre, obj in provincias.construir_json(con_red).items():
+            (destino / nombre).write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    except Exception as e:
+        print(f"Provincias: no se pudo armar, se sigue sin provincias*.json ({e}).")
     # Herencia, fase 2: datos de informes cargados a mano (datos/manual/herencia.json), sin red. Va fuera del hash.
     # Un dato sin cita completa corta solo este archivo: la corrida sigue y la página muestra las series sin los datos de informes.
     try:
