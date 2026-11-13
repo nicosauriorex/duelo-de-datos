@@ -13,7 +13,7 @@ import { fechaLarga } from "@/lib/gasto";
 import { extremoTxt } from "@/lib/universidades";
 import { conPunto, type Contexto } from "@/lib/provincias";
 import {
-  IND_DEFECTO, NOTA_CAJA, ORDEN_C_DEFECTO, ORDENES_C, TITULO_C, anioDefectoC, anioValidoC, armarDetalleC, armarImagenC, armarVistaC, buscarProvC, crearCtxC, esIndicador, esOrdenC,
+  IND_DEFECTO, NOTA_CAJA, anioParcial, avisoPeriodoC, etiquetaPeriodo, rangoMeses, crearCtxParcial, indicadorOfrecido, ORDEN_C_DEFECTO, ORDENES_C, TITULO_C, anioDefectoC, anioValidoC, armarDetalleC, armarImagenC, armarVistaC, buscarProvC, crearCtxC, esIndicador, esOrdenC,
   hrefC, indicadorDe, opcionesAnioC, opcionesIndicador, tituloC,
   type CtxC, type DatosCuentas, type DetalleC, type EvoC, type IdInd, type OrdenC, type VistaC,
 } from "@/lib/provinciasCuentas";
@@ -33,12 +33,15 @@ export function Cuentas({ c, p, set, montado }: { c: Contexto; p: URLSearchParam
 }
 
 function CuerpoC({ d, c, p, set, montado }: { d: DatosCuentas; c: Contexto; p: URLSearchParams; set: Cambiar; montado: boolean }) {
-  const x = useMemo(() => crearCtxC(d, c), [d, c]);
+  const x0 = useMemo(() => crearCtxC(d, c), [d, c]);
+  const xp = useMemo(() => crearCtxParcial(x0), [x0]);
   const [imagen, setImagen] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
-  const def = anioDefectoC(x);
-  const anio = anioValidoC(x, p.get("anio")) ?? def;
-  const ind: IdInd = esIndicador(p.get("ind")) ? (p.get("ind") as IdInd) : IND_DEFECTO;
+  const def = anioDefectoC(x0);
+  const anio = anioValidoC(x0, p.get("anio")) ?? def;
+  // Con "anio" = el año en curso se usa el contexto del período parcial (acumulado, contra el mismo período del año anterior).
+  const x = xp && anio === anioParcial(x0) ? xp : x0;
+  const ind: IdInd = esIndicador(p.get("ind")) && indicadorOfrecido(x, p.get("ind") as IdInd) ? (p.get("ind") as IdInd) : IND_DEFECTO;
   const orden: OrdenC = esOrdenC(p.get("orden")) ? (p.get("orden") as OrdenC) : ORDEN_C_DEFECTO;
   const abierta = montado ? buscarProvC(x, p.get("prov")) : null;
   const I = indicadorDe(ind);
@@ -52,13 +55,14 @@ function CuerpoC({ d, c, p, set, montado }: { d: DatosCuentas; c: Contexto; p: U
     <>
       <p className="sub">Cuánto gasta, cuánto recauda, cuánto recibe de la Nación y cuánto debe el gobierno de cada provincia. Datos oficiales de la Dirección Nacional de Asuntos Provinciales.</p>
       <Aclaraciones />
+      {!I.fijo && avisoPeriodoC(x) && <p className="note" role="status">{avisoPeriodoC(x)}</p>}
       <div className="controls prov-controles">
-        <Selector etiqueta="Indicador" valor={ind} opciones={opcionesIndicador()} onElegir={(v) => set({ ind: v === IND_DEFECTO ? null : v })} className="pc-sel-ind" />
-        <Selector etiqueta="Año" valor={String(anio)} opciones={opcionesAnioC(x)} onElegir={(a) => set({ anio: Number(a) === def ? null : a })} />
+        <Selector etiqueta="Indicador" valor={ind} opciones={opcionesIndicador(x)} onElegir={(v) => set({ ind: v === IND_DEFECTO ? null : v })} className="pc-sel-ind" />
+        <Selector etiqueta="Año" valor={String(anio)} opciones={opcionesAnioC(x0)} onElegir={(a) => set({ anio: Number(a) === def ? null : a })} />
         <div className="controls"><label>Orden</label><Seg valor={orden} opciones={ORDENES_C} onElegir={(v) => set({ orden: v === ORDEN_C_DEFECTO ? null : v })} /></div>
       </div>
       <p className="note pc-explica"><b>{I.n}.</b> {I.explica}{I.fijo ? ` Último dato publicado: ${fechaLarga(d.deudaFecha) ?? "sin fecha"}.` : ""}</p>
-      {!vista ? <div className="card"><p className="note">No hay datos de {anio} para este indicador{I.id === "gasto_hab" || I.id === "recaud_hab" || I.fijo ? " (hace falta la población de la provincia en ese año)" : ""}.</p></div> : (
+      {!vista ? <div className="card"><p className="note">No hay datos de {etiquetaPeriodo(x, anio)} para este indicador{I.id === "gasto_hab" || I.id === "recaud_hab" || I.fijo ? " (hace falta la población de la provincia en ese año)" : ""}.</p></div> : (
         <>
           <Tabla v={vista} onAbrir={(id) => set({ prov: id })} />
           <div className="prov-compartir" role="group" aria-label="Compartir esta vista">
@@ -69,8 +73,8 @@ function CuerpoC({ d, c, p, set, montado }: { d: DatosCuentas; c: Contexto; p: U
         </>
       )}
       <Alicuotas c={c} p={p} set={set} />
-      <Pie d={d} />
-      {abierta && <DetalleCuentas x={x} id={abierta.id} anio={anio} ind={ind} orden={orden} def={def} onCerrar={() => set({ prov: null })} />}
+      <Pie d={d} parcial={!!x.per} />
+      {abierta && <DetalleCuentas x={x} xEvo={x0} id={abierta.id} anio={anio} ind={ind} orden={orden} def={def} onCerrar={() => set({ prov: null })} />}
       {imagen && vista && <PanelGasto armar={armarImg} titulo={titulo} href={href} onCerrar={() => setImagen(false)} />}
     </>
   );
@@ -94,7 +98,7 @@ function Aclaraciones() {
 function Tabla({ v, onAbrir }: { v: VistaC; onAbrir: (id: string) => void }) {
   return (
     <div className="card prov-card">
-      <h2>{v.ind.n}{v.ind.fijo ? ` (al ${fechaLarga(v.fechaDeuda) ?? "último dato"})` : ` en ${v.anio}`}</h2>
+      <h2>{v.ind.n}{v.ind.fijo ? ` (al ${fechaLarga(v.fechaDeuda) ?? "último dato"})` : ` en ${v.etq}`}</h2>
       <p className="note">{v.unidad}. {v.ind.fijo ? "No depende del año elegido. " : ""}Ordenado de {v.orden === "desc" ? "mayor a menor" : "menor a mayor"}. Tocá una provincia para ver sus cuentas.</p>
       {v.aviso && <p className="note" role="status">{v.aviso}</p>}
       <div className="tablewrap fija prov-tabla">
@@ -120,8 +124,8 @@ function Tabla({ v, onAbrir }: { v: VistaC; onAbrir: (id: string) => void }) {
         </table>
       </div>
       {v.sinCuentas && <p className="note">{v.sinCuentas}</p>}
-      {v.conCaja > 0 && <p className="note pc-nota-caja">† {NOTA_CAJA} En {v.anio}: {v.conCaja} de las 24.</p>}
-      {v.encVari && <p className="note">{v.ind.tipo === "pesos" ? `La variación es real (descontada la inflación) contra ${v.anio - 1}.` : `La variación es la diferencia contra ${v.anio - 1}${v.ind.tipo === "pct" ? ", en puntos porcentuales" : ""}.`} Un guion es que falta el dato de ese año.</p>}
+      {v.conCaja > 0 && <p className="note pc-nota-caja">† {NOTA_CAJA} En {v.etq}: {v.conCaja} de las 24.</p>}
+      {v.encVari && <p className="note">{v.ind.tipo === "pesos" ? `La variación es real (descontada la inflación) contra ${v.etqAnt}.` : `La variación es la diferencia contra ${v.etqAnt}${v.ind.tipo === "pct" ? ", en puntos porcentuales" : ""}.`} Un guion es que falta el dato de ese año.</p>}
       <details className="gas-tabla-anios">
         <summary>Cómo se calcula</summary>
         <p className="note">{v.ind.formula}.</p>
@@ -131,26 +135,26 @@ function Tabla({ v, onAbrir }: { v: VistaC; onAbrir: (id: string) => void }) {
 }
 
 /** Detalle de una provincia: sus cuentas del año, el gasto por finalidad y la evolución del indicador. En una ventana con cruz, Atrás y Escape. */
-function DetalleCuentas({ x, id, anio, ind, orden, def, onCerrar }: { x: CtxC; id: string; anio: number; ind: IdInd; orden: OrdenC; def: number; onCerrar: () => void }) {
+function DetalleCuentas({ x, xEvo, id, anio, ind, orden, def, onCerrar }: { x: CtxC; xEvo: CtxC; id: string; anio: number; ind: IdInd; orden: OrdenC; def: number; onCerrar: () => void }) {
   const [aviso, setAviso] = useState<string | null>(null);
-  const det = useMemo(() => armarDetalleC(x, id, anio, ind), [x, id, anio, ind]);
+  const det = useMemo(() => armarDetalleC(x, id, anio, ind, xEvo), [x, xEvo, id, anio, ind]);
   const I = indicadorDe(ind);
   if (!det) return null;
   const href = hrefC({ anio, ind, orden }, def, id);
   const mostrar = (t: string | null) => { setAviso(t); if (t) setTimeout(() => setAviso(null), 4000); };
   return (
-    <Modal titulo={`${det.n}: cuentas de ${anio}`} onCerrar={onCerrar} ancho>
+    <Modal titulo={`${det.n}: cuentas de ${det.etq}`} onCerrar={onCerrar} ancho>
       <div className="prov-detalle">
-        <h2>{det.n}: cuentas de {anio}</h2>
+        <h2>{det.n}: cuentas de {det.etq}</h2>
         <p className="prov-cifras">
-          <b>{det.valorTxt ?? "Sin dato"}</b><span> {I.n.toLowerCase()}{I.fijo ? "" : ` en ${anio}`}</span>
-          {det.variTxt && <span> · {det.variTxt}{I.tipo === "pesos" ? " real" : ""} vs {anio - 1}</span>}
+          <b>{det.valorTxt ?? "Sin dato"}</b><span> {I.n.toLowerCase()}{I.fijo ? "" : ` en ${det.etq}`}</span>
+          {det.variTxt && <span> · {det.variTxt}{I.tipo === "pesos" ? " real" : ""} vs {det.etqAnt}</span>}
         </p>
         {det.caja && <p className="note">† {NOTA_CAJA}</p>}
-        {det.cuentas ? <TablaCuentas cu={det.cuentas} anio={anio} /> : <p className="note">No hay cuentas de {det.n} para {anio}.</p>}
+        {det.cuentas ? <TablaCuentas cu={det.cuentas} etq={det.etq} /> : <p className="note">No hay cuentas de {det.n} para {det.etq}.</p>}
         {det.finalidades && (
           <div className="pc-fin">
-            <h3>En qué gastó, por finalidad ({anio})</h3>
+            <h3>En qué gastó, por finalidad ({det.etq})</h3>
             <p className="note">Total {det.finTotal}, en pesos de {x.p.def.ref}.</p>
             {det.finNota && <p className="note">{det.finNota}</p>}
             <ol className="gas-lista">
@@ -166,9 +170,9 @@ function DetalleCuentas({ x, id, anio, ind, orden, def, onCerrar }: { x: CtxC; i
             </ol>
           </div>
         )}
-        {det.evo ? <Evolucion evo={det.evo} anio={anio} nombre={det.n} titulo={I.n} /> : <p className="note">{I.n} no depende del año: es el último dato publicado, así que no tiene evolución.</p>}
+        {det.evo ? <Evolucion evo={det.evo} anio={anio} nombre={det.n} titulo={I.n} nota={det.evoNota} /> : <p className="note">{I.n} no depende del año: es el último dato publicado, así que no tiene evolución.</p>}
         <div className="prov-compartir">
-          <button type="button" className="btn" onClick={async () => mostrar(avisoCompartir(await compartir(href, `${det.n}: ${tituloC({ anio, ind: I })}`)))}>Copiar link de esta provincia</button>
+          <button type="button" className="btn" onClick={async () => mostrar(avisoCompartir(await compartir(href, `${det.n}: ${tituloC({ anio, ind: I, etq: det.etq })}`)))}>Copiar link de esta provincia</button>
         </div>
         {aviso && <p className="aviso-link" role="status">{aviso}</p>}
       </div>
@@ -176,7 +180,7 @@ function DetalleCuentas({ x, id, anio, ind, orden, def, onCerrar }: { x: CtxC; i
   );
 }
 
-function TablaCuentas({ cu, anio }: { cu: NonNullable<DetalleC["cuentas"]>; anio: number }) {
+function TablaCuentas({ cu, etq }: { cu: NonNullable<DetalleC["cuentas"]>; etq: string }) {
   const bloque = (titulo: string, filas: typeof cu.ingresos) => (
     <>
       <tr className="pc-cab"><th scope="rowgroup" colSpan={2}>{titulo}</th></tr>
@@ -192,7 +196,7 @@ function TablaCuentas({ cu, anio }: { cu: NonNullable<DetalleC["cuentas"]>; anio
       <p className="note">{cu.unidad}. Las filas suman el total que se ve; “Otros” es lo que falta para llegar al total.</p>
       <div className="tablewrap">
         <table>
-          <caption className="pc-leyenda">Ingresos, gastos y resultado de {anio}</caption>
+          <caption className="pc-leyenda">Ingresos, gastos y resultado de {etq}</caption>
           <tbody>
             {bloque("Ingresos", cu.ingresos)}
             {bloque("Gastos", cu.gastos)}
@@ -205,7 +209,7 @@ function TablaCuentas({ cu, anio }: { cu: NonNullable<DetalleC["cuentas"]>; anio
 }
 
 /** Gráfico chico de columnas del indicador, una por año (las barras de resultado negativo van más claras), y la tabla año por año. */
-function Evolucion({ evo, anio, nombre, titulo }: { evo: EvoC; anio: number; nombre: string; titulo: string }) {
+function Evolucion({ evo, anio, nombre, titulo, nota }: { evo: EvoC; anio: number; nombre: string; titulo: string; nota: string | null }) {
   return (
     <figure className="uni-evo-fig prov-evo">
       <figcaption className="uni-evo-tit">{nombre}: {titulo.toLowerCase()}, de {evo.puntos[0]?.anio} a {evo.puntos[evo.puntos.length - 1]?.anio}</figcaption>
@@ -223,6 +227,7 @@ function Evolucion({ evo, anio, nombre, titulo }: { evo: EvoC; anio: number; nom
         })}
       </ol>
       {evo.primero && evo.ultimo && evo.primero !== evo.ultimo && <p className="uni-evo-ext"><span>{extremoTxt(evo.primero)}</span><span>{extremoTxt(evo.ultimo)}</span></p>}
+      {nota && <p className="note">{nota}</p>}
       {evo.hayNegativos && <p className="note">Las barras más claras son valores negativos (el largo es el valor sin el signo).</p>}
       <details className="gas-tabla-anios">
         <summary>Ver año por año</summary>
@@ -237,7 +242,7 @@ function Evolucion({ evo, anio, nombre, titulo }: { evo: EvoC; anio: number; nom
   );
 }
 
-function Pie({ d }: { d: DatosCuentas }) {
+function Pie({ d, parcial }: { d: DatosCuentas; parcial: boolean }) {
   const gen = fechaLarga(d.generado || null);
   const fuentes = Object.entries(d.fuentes);
   return (
@@ -249,6 +254,7 @@ function Pie({ d }: { d: DatosCuentas }) {
         <li><b>Caja de jubilaciones propia</b>: se marca a las provincias cuyas prestaciones de la seguridad social son el 5 % o más de su gasto total en el año elegido.</li>
         <li><b>Deuda</b>: stock al {fechaLarga(d.deudaFecha) ?? "último dato publicado"}, sin deuda flotante. No depende del año elegido.</li>
         {fuentes.map(([k, f]) => <li key={k}><b>Fuente ({k})</b>: {[f.archivo, f.pagina, f.fecha && `bajado el ${fechaLarga(f.fecha) ?? f.fecha}`].filter(Boolean).join(", ") || "sin detalle"}.</li>)}
+        {parcial && d.parcial && <li><b>Período parcial</b>: lo acumulado de {rangoMeses(d.parcial.meses)} de {d.parcial.anios[d.parcial.anios.length - 1]}, comparado con el mismo período de {d.parcial.anios[d.parcial.anios.length - 1] - 1}. Los pesos de hoy usan la inflación promedio de esos meses. Sin empleados públicos ni sueldo medio: no hay dato trimestral.</li>}
         {d.fuente && <li><b>Fuente</b>: {conPunto(d.fuente)}{gen ? ` Archivo armado el ${gen}.` : ""}</li>}
       </ul>
     </details>

@@ -1,6 +1,7 @@
 {
  "bajado": "2026-11-13",
  "bajado_ib": "2026-11-13",
+ "bajado_parcial": "2026-11-13",
  "deuda_fecha": "2026-06-30",
  "fuentes": {
   "cuentas": {
@@ -40,5 +41,36 @@
    "bajado": "2026-11-13",
    "pagina": "https://www.argentina.gob.ar/economia/sechacienda/asuntosprovinciales/direccion-de-recursos-provinciales/ingresos-brutos"
   }
+ },
+ "fuentes_parcial": {
+  "cuentas_2025": {
+   "archivo": "https://www.argentina.gob.ar/sites/default/files/ejecuciones_presupuestarias_apnf_2025_-_trim_ii_2.xls",
+   "bajado": "2026-11-13",
+   "pagina": "https://www.argentina.gob.ar/economia/sechacienda/coordinacion-fiscal-provincial/ejecucion-presupuestaria-provincial/ejecuciones"
+  },
+  "cuentas_2026": {
+   "archivo": "https://www.argentina.gob.ar/sites/default/files/ejecuciones_presupuestarias_apnf_2026_-_trim_ii_0.xls",
+   "bajado": "2026-11-13",
+   "pagina": "https://www.argentina.gob.ar/economia/sechacienda/coordinacion-fiscal-provincial/ejecucion-presupuestaria-provincial/ejecuciones"
+  },
+  "finalidad_2026": {
+   "archivo": "https://www.argentina.gob.ar/sites/default/files/gfyf_apnf_2026_-_trim._ii.xlsx",
+   "bajado": "2026-11-13",
+   "pagina": "https://www.argentina.gob.ar/economia/sechacienda/coordinacion-fiscal-provincial/ejecucion-presupuestaria-provincial/gastos-por"
+  },
+  "recaudacion_2025": {
+   "archivo": "https://www.argentina.gob.ar/sites/default/files/top_trim_2025_4.xlsx",
+   "bajado": "2026-11-13",
+   "pagina": "https://www.argentina.gob.ar/economia/sechacienda/asuntosprovinciales/direccion-de-recursos-provinciales/recursos-tributarios-de-origen-provincial-top"
+  },
+  "recaudacion_2026": {
+   "archivo": "https://www.argentina.gob.ar/sites/default/files/top_trim_2026_4.xlsx",
+   "bajado": "2026-11-13",
+   "pagina": "https://www.argentina.gob.ar/economia/sechacienda/asuntosprovinciales/direccion-de-recursos-provinciales/recursos-tributarios-de-origen-provincial-top"
+  }
+ },
+ "parcial": {
+  "anio": 2026,
+  "trim": 2
  }
 }

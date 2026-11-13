@@ -156,6 +156,47 @@ Estado: implementada (2026-11-13), falta la corrida en GitHub. Desvíos: (a) el 
 - En el navegador: `/provincias/` sin parámetros se ve igual que antes; `?vista=cuentas` a 360 y 1280 px sin desborde ni errores de consola; cambiar indicador, año e invertir el orden; abrir una provincia; Atrás cierra el detalle; link con `?vista=cuentas&ind=deuda&prov=14` abre lo mismo; imagen en el panel.
 - Revisor contra esta spec.
 
+## Fase 4: el año en curso, acumulado por trimestre
+Estado: implementada (2026-11-13), falta la corrida en GitHub. Desvíos: (a) la recaudación de 2026 viene acumulada en la hoja "II TRIM" (punto 3); (b) con un indicador de deuda el aviso del período no se muestra (la deuda no depende del año); (c) la imagen y el título usan el período ("enero a junio de 2026", archivo `-ene-jun`). Revisor: sin bloqueantes; corregidos el docstring, el campo `hasta` sin uso, una clase CSS sin regla y el aviso con deuda. Completa la fase 2 (punto 6: el año en curso había quedado afuera).
+
+### Lo que publica la DNAP (mirado el 2026-11-13)
+- Cuentas: en la misma página de `ejecuciones`, un `.xls` por trimestre: `ejecuciones_presupuestarias_apnf_<año>_-_trim<sep><romano><sufijo>.xls` (separador `_` o `._`, sufijos `_0`, `_2`…). 2026 llega al II trimestre (`..._2026_-_trim_ii_0.xls`); 2025 tiene I a IV. **Acumulado** desde enero (Buenos Aires: II-2025 16,8 billones contra 36,6 del año). Una sola hoja ("II TRIM PARA PUBLICAR"; la de 2025 trae otra hoja de participación que se ignora): título "II Trimestre 2026 - En millones de pesos", fila "Concepto" con las 24 jurisdicciones en columnas y "Total" al final; los mismos renglones que `serie_aif` (I a V iguales; los totales cambian de número: VIII Gastos primarios, IX Resultado financiero, X Resultado primario). Las tildes vienen rotas en el archivo ("Or�gen", "C�rdoba"). Nota 3: La Pampa excluida (columna en cero); el "Total" es sin ella.
+- Finalidad: `gastos-por`, `gfyf_apnf_<año>_-_trim._<romano>.xlsx`, mismo formato (filas: finalidades y funciones como `serie_ff`, hasta "TOTAL"; jurisdicciones en columnas).
+- Recaudación por impuesto: `top_trim_<año>_<n>.xlsx`, una hoja por trimestre ("I TRIM", "II TRIM"), **no acumulado** (cada hoja es su trimestre); fila "Provincias" con Ingresos Brutos, Inmobiliario, Sellos, Automotores, Otros.
+
+### Qué se muestra
+En `/provincias/?vista=cuentas`, el selector de año suma una opción arriba de todo: "2026 · enero a junio" (el último trimestre publicado). Sigue siendo `anio=2026` en la URL; sin `anio`, el defecto sigue siendo el último año cerrado (los links compartidos no cambian). Con el período parcial:
+- la tabla, el detalle y la imagen usan lo acumulado de 2026 y lo comparan con **el mismo período de 2025** (no con el año entero): "Variación real vs enero a junio de 2025";
+- montos por habitante: lo del período (no anualizado), en pesos de hoy con la inflación promedio de esos meses; la unidad lo dice ("Pesos por habitante en enero a junio");
+- indicadores sin dato trimestral (empleados, sueldo medio) no se ofrecen en el período parcial: si llega por URL, cae al indicador por defecto. Deuda (los dos) no depende del año: igual que hoy;
+- el detalle: cuentas y finalidad del período; la evolución sigue siendo la anual (2010-último cerrado), con una línea que dice que el año en curso no entra porque no está completo;
+- la caja de jubilaciones propia se calcula con el período (mismo 5 %);
+- La Pampa sin cuentas (como 2025), con la nota que ya existe;
+- aviso visible en una línea: "Datos de enero a junio de 2026, provisorios: los años cerrados comparan años enteros; esto compara contra el mismo período de 2025".
+
+### Pipeline
+1. `provincias_dnap.py`: tema nuevo `parcial` aparte de `TEMAS` (como las alícuotas: si falla, las cuentas anuales y las alícuotas salen igual). Busca en la página de `ejecuciones` el trimestre más reciente del año más nuevo (`(\d{4})_-_trim\.?_(iv|iii|ii|i)`), y el **mismo trimestre del año anterior**; en `gastos-por`, `gfyf` del mismo trimestre del año nuevo; en la página de recaudación, `top_trim_<año>_<n>.xlsx` del año nuevo y del anterior (el más reciente de cada año). Respaldos: originales `provincias_dnap_parcial_<tema>_<año>.xlsx/.xls` y la meta `fuentes_parcial`, `bajado_parcial`, `parcial` (`{"anio", "trim"}`).
+2. Lectura con las mismas reglas de `REGLAS_CUENTAS`, pero: jurisdicciones en columnas (alias de siempre; "Total" = consolidado), los totales VI a X se reconocen por nombre sin mirar el número, y el carácter roto `�` vale por cualquier letra al comparar.
+3. Recaudación: la hoja acumulada al trimestre (en 2025 "ACUM II TRIM"; en 2026 la hoja "II TRIM" ya viene acumulada aunque no lo diga: el control contra las cuentas lo confirma, un trimestre suelto daría la mitad).
+4. Controles (RuntimeError si no pasan):
+   - los mismos cierres de `_controles_cuentas` (corrientes + capital = total, resultado = ingresos − gastos, la suma de las jurisdicciones con dato = "Total", 0,01 %);
+   - es acumulado: gastos totales del consolidado del año anterior al trimestre N, sobre los del año entero en `serie_aif`, entre 0,15·N y 0,35·N (II: entre 30 % y 70 %);
+   - finalidades = gastos totales por provincia (avisa entre 0,01 % y 5 %, falla más allá, como hoy);
+   - recaudación acumulada = "De origen provincial" de las cuentas (0,5 %; avisa con la lista, falla si son más de 3).
+5. Salida: dentro de `provincias_cuentas.json`, clave `parcial` con **la misma forma que el archivo** (para usar el mismo decodificador): `{"anios": [2025, 2026], "trim": 2, "meses": 6, "provincias": [ {id, pob, c, caja, fin (solo el año nuevo; null en el anterior), imp, emp: {}, deuda: (la misma del archivo)} ], "consolidado": {...}, "sin_cuentas": {...}, "fuentes": {...}}`. Si el tema falla, sin clave `parcial` (la página se ve como hoy). Si el año del último trimestre ya tiene año cerrado en `serie_aif`, tampoco va (ya está entero).
+
+### Sitio
+6. `lib/gasto.ts`: el `Deflactor` suma `factorMeses(anio, meses)`: IPC del último mes / promedio de los primeros `meses` meses del año (null si falta alguno).
+7. `lib/provinciasCuentas.ts`: `decodificarCuentas` lee `parcial` con el mismo código (campo `parcial: (DatosCuentas & { trim, meses }) | null`). Un contexto propio del período: `crearCtxParcial(x)` = `{ d: parcial, p: { ...p, def: { ref, factor: (a) => def.factorMeses(a, meses) } } }`; así `armarVistaC`, `armarDetalleC` e `armarImagenC` sirven sin cambios de fondo. Textos del período en una función (`etiquetaPeriodo(anio)` → "enero a junio de 2026"; la de comparación, "enero a junio de 2025") usada en encabezados, unidad, títulos, imagen, nombre de archivo (`-2026-ene-jun`) y variación, en lugar de `${anio}` y `${anio - 1}`. Indicadores ofrecidos en el período: los que no son de empleo.
+8. `ProvinciasCuentas.tsx`: la opción del selector, el aviso, la evolución anual del contexto principal en el detalle y su nota. La vista previa en redes no cambia (sigue con el último año cerrado).
+
+### Cómo se verifica
+- `python pipeline/provincias_dnap.py --bajar` y `--sin-red` pasan los controles; `python pipeline/obtener_datos.py --solo-json` deja `parcial` en `provincias_cuentas.json`.
+- A mano: Buenos Aires gastos totales II-2026 = 21.667.604,4 millones de la planilla; Córdoba Ingresos Brutos I+II 2026 = suma de las dos hojas de `top_trim_2026_4.xlsx`.
+- `npm run tipos`, `npm run build`.
+- En el navegador: `/provincias/?vista=cuentas` sin parámetros igual que antes; con `anio=2026`, tabla, variación contra ene-jun 2025, detalle de Córdoba (cuentas que cierran, finalidad, evolución anual con la nota), Atrás cierra; `anio=2026&ind=empleados` cae a gasto por habitante; imagen en el panel; 360 y 1280 px sin desborde ni errores de consola.
+- Revisor contra esta spec.
+
 ## Fase 3: alícuotas de Ingresos Brutos
 Estado: implementada (2026-11-13); corrida en GitHub en verde (314ef03). Desvíos: (a) en la planilla, Industria manufacturera 2025 de Catamarca es 1,5 % (el 1 % de abajo era de CABA): se verificó contra eso; (b) algunas filas de la columna 0 con pocas provincias (Agricultura, Ganadería, Caza y silvicultura, con menos de 5 con dato) son aperturas de la actividad de arriba, no actividades principales: quedan 18 principales; (c) las actividades y aperturas se emparejan entre años por nombre sin la "s" final ("Generación de energías" 2024 = "de energía" 2025); "sin datos" queda null; (d) cuentas y alícuotas se arman por separado en `construir_json`: si una falla, la otra sale; (e) respaldos `provincias_dnap_ib_<año>.xlsx`, meta `fuentes_ib` y `bajado_ib`; (f) parámetros de URL `ib_act` (nombre de la actividad sin tildes con guiones), `ib_anio`, `ib_orden`; la actividad por defecto es Industria manufacturera; (g) las aperturas se abren en una ventana que no queda en la URL; (h) el bloque no tiene imagen para compartir (la spec no la pide). Fuente: DNAP, `asuntosprovinciales/direccion-de-recursos-provinciales/ingresos-brutos`, archivos `<año>_ib.xlsx` (2024 y 2025), marcados por la DNAP "provisorio - en desarrollo".
 

@@ -49,7 +49,16 @@ la DNAP los marca "provisorio - en desarrollo"). Respaldos: provincias_dnap_ib_<
 rangos como "1,70% - 2,21% -2,50%"); "sin datos" queda null. Controles (RuntimeError si no pasan): las 24 columnas con los alias de
 arriba más el tope del Consenso Fiscal, al menos 8 actividades principales por año, ningún número fuera de 0 a 15 %.
 
-Uso suelto:  python pipeline/provincias_dnap.py --bajar    (baja las planillas y deja los respaldos, sin armar el JSON)
+Fase 4, el año en curso (clave `parcial` de provincias_cuentas.json, misma forma que el archivo con años [anterior, en curso]; si falla,
+el archivo sale sin ella). De las mismas páginas: el último trimestre publicado del año más nuevo (`ejecuciones_presupuestarias_apnf_
+<año>_-_trim_<romano>.xls`, acumulado desde enero, jurisdicciones en columnas) y el mismo trimestre del año anterior; la finalidad del
+mismo trimestre (`gfyf_apnf_<año>_-_trim._<romano>.xlsx`, solo el año en curso) y la recaudación por impuesto (`top_trim_<año>_<n>.xlsx`,
+se toma la hoja acumulada al trimestre: "ACUM II TRIM" en 2025; en 2026 "II TRIM" ya viene acumulada). Respaldos provincias_dnap_parcial_<tema>_<año>.xls(x); meta "parcial",
+"fuentes_parcial" y "bajado_parcial". Controles: los cierres de las cuentas y la suma = "Total", finalidades = gastos totales, recaudación
+= tributarios de origen provincial, y que sea acumulado (el trimestre N del año anterior entre 15·N y 35·N % del año entero). Si el año
+ya está cerrado en la serie anual, no va.
+
+Uso suelto:  python pipeline/provincias_dnap.py --bajar   (baja las planillas y deja los respaldos, sin armar el JSON)
              python pipeline/provincias_dnap.py            (con red, arma en memoria y muestra el tamaño; no escribe en web/)
              python pipeline/provincias_dnap.py --sin-red  (igual, solo con los respaldos)
 """
@@ -575,6 +584,337 @@ def construir_alicuotas(con_red=True):
             "fuentes": meta.get("fuentes_ib", {}), "anios": anios, "actividades": actividades}
 
 
+# ---------- el año en curso, acumulado por trimestre (fase 4) ----------
+# Planillas trimestrales de la DNAP: jurisdicciones en columnas ("Total" = consolidado sin las que no tienen dato), acumulado desde enero
+# (cuentas y finalidad); la recaudación trae una hoja por trimestre sin acumular. Las tildes vienen rotas en el archivo ("Or�gen").
+PATRON_PARCIAL_CU = r"ejecuciones_presupuestarias_apnf_(\d{4})_-_trim\.?_(iv|iii|ii|i)(?:_\d+)?\.xlsx?$"
+PATRON_PARCIAL_FI = r"gfyf_apnf_(\d{4})_-_trim\.?_(iv|iii|ii|i)(?:_\d+)?\.xlsx?$"
+PATRON_PARCIAL_TOP = r"top_trim_(\d{4})_(\d)(?:_\d+)?\.xlsx?$"
+ROMANOS = {"i": 1, "ii": 2, "iii": 3, "iv": 4}
+
+
+def _n_roto(s):
+    """Como _n, pero el carácter roto (�) queda como '?' para que valga por cualquier letra al comparar."""
+    s = re.sub(r"\(.*?\)", "", str(s)).replace("�", "?")
+    s = unicodedata.normalize("NFKD", s)
+    s = "".join(c for c in s if not unicodedata.combining(c))
+    return re.sub(r"[^a-z0-9?]", "", s.lower())
+
+
+def _empieza(k, ini):
+    """`k` (de _n_roto) empieza con `ini` (de _n), con '?' de comodín: una letra rota o una tilde que se perdió."""
+    i = 0
+    for ch in ini:
+        if i < len(k) and (k[i] == ch or k[i] == "?"):
+            i += 1
+        else:
+            return False
+    return True
+
+
+def _igual(k, ini):
+    return len(k) == len(ini) and _empieza(k, ini)
+
+
+def _columnas_jur(d, r0):
+    """{columna: código o 'consolidado'} de la fila de encabezado (las 24 jurisdicciones y "Total")."""
+    cols = {}
+    for c in range(1, d.shape[1]):
+        v = d.iloc[r0, c]
+        if pd.isna(v) or not str(v).strip():
+            continue
+        cols[c] = "consolidado" if _n(v) == "total" else str(_cod(v))
+    faltan = [PROVINCIAS[c] for c in PROVINCIAS if str(c) not in cols.values()]
+    if faltan or "consolidado" not in cols.values():
+        raise RuntimeError(f"columnas: faltan {faltan}{'' if 'consolidado' in cols.values() else ' y Total'}")
+    return cols
+
+
+def _fila_concepto(d):
+    for i in range(min(20, d.shape[0])):
+        if _n(d.iloc[i, 0]) == "concepto":
+            return i
+    raise RuntimeError("no se encontró la fila 'Concepto' (algo cambió en la planilla)")
+
+
+def _leer_cuentas_trim(raw, anio):
+    """Una planilla trimestral de cuentas -> DataFrame largo (provincia, anio, concepto, valor). Los totales VI a X se reconocen por el
+    nombre (en estas planillas cambian de número: VIII gastos primarios, IX resultado financiero, X resultado primario)."""
+    x = pd.ExcelFile(io.BytesIO(raw))
+    d = x.parse(x.sheet_names[0], header=None)
+    r0 = _fila_concepto(d)
+    cols = _columnas_jur(d, r0)
+    filas, bloque, vistos = [], None, set()
+    for i in range(r0 + 1, d.shape[0]):
+        etiqueta = d.iloc[i, 0]
+        if not isinstance(etiqueta, str):
+            continue
+        if _n(etiqueta).startswith("nota"):
+            break
+        m = ROMANO.match(etiqueta)
+        if m:
+            bloque = m.group(1)
+        k = _n_roto(ROMANO.sub("", etiqueta))
+        for b, ini, ident in REGLAS_CUENTAS:
+            total = b in ("VI", "VII", "VIII", "IX", "X")
+            if ident in vistos or not _empieza(k, ini) or (not total and b != bloque) or (total and not m):
+                continue
+            vistos.add(ident)
+            for c, pid in cols.items():
+                v = _num(d.iloc[i, c])
+                if v is not None:
+                    filas.append((pid, anio, ident, v))
+            break
+    if len(vistos) != len(IDS_CUENTAS):
+        raise RuntimeError(f"cuentas {anio}: faltan renglones {sorted(set(IDS_CUENTAS) - vistos)}")
+    return pd.DataFrame(filas, columns=["provincia", "anio", "concepto", "valor"])
+
+
+def _leer_finalidad_trim(raw, anio, nombres):
+    """Planilla trimestral de gasto por finalidad -> DataFrame largo. Los nombres (rotos en el archivo) se toman de la serie anual
+    (`nombres`: conceptos "Finalidad" y "Finalidad / Función"); un renglón que no está en la serie anual levanta RuntimeError."""
+    x = pd.ExcelFile(io.BytesIO(raw))
+    d = x.parse(x.sheet_names[0], header=None)
+    r0 = _fila_concepto(d)
+    cols = _columnas_jur(d, r0)
+    filas, fin, hubo_total = [], None, False
+    for i in range(r0 + 1, d.shape[0]):
+        etiqueta = d.iloc[i, 0]
+        if not isinstance(etiqueta, str):
+            continue
+        k = _n_roto(etiqueta)
+        if k.startswith("nota"):
+            break
+        if k == "total":
+            concepto, hubo_total = "TOTAL", True
+        else:
+            es_fin = next((f for f in nombres if " / " not in f and _igual(k, _n(f))), None)
+            if es_fin:
+                fin, concepto = es_fin, es_fin
+            else:
+                if fin is None:
+                    raise RuntimeError(f"finalidad {anio}: {etiqueta.strip()!r} aparece antes de una finalidad conocida")
+                concepto = next((c for c in nombres if c.startswith(f"{fin} / ") and _igual(k, _n(c.partition(" / ")[2]))), None)
+                if concepto is None:
+                    raise RuntimeError(f"finalidad {anio}: función sin equivalente en la serie anual: {etiqueta.strip()!r}")
+        for c, pid in cols.items():
+            v = _num(d.iloc[i, c])
+            if v is not None:
+                filas.append((pid, anio, concepto, v))
+        if hubo_total:
+            break
+    if not hubo_total:
+        raise RuntimeError(f"finalidad {anio}: no se encontró la fila TOTAL")
+    return pd.DataFrame(filas, columns=["provincia", "anio", "concepto", "valor"])
+
+
+def _leer_recaudacion_trim(raw, anio, trim):
+    """top_trim_<año>: la hoja acumulada al trimestre ("ACUM II TRIM" en 2025; en 2026 "II TRIM" ya es acumulada: el control contra las
+    cuentas lo confirma, porque un trimestre suelto daría la mitad)."""
+    x = pd.ExcelFile(io.BytesIO(raw))
+    romanos = {v: k for k, v in ROMANOS.items()}
+    acum = {}
+    r = romanos[trim]
+    h = (next((s for s in x.sheet_names if _n(s) == f"acum{r}trim"), None)
+         or next((s for s in x.sheet_names if _n(s) == f"{r}trim"), None))
+    if h is None:
+        raise RuntimeError(f"recaudación {anio}: falta la hoja ACUM {r.upper()} TRIM o {r.upper()} TRIM")
+    d = x.parse(h, header=None)
+    r0 = c0 = None
+    for i in range(min(20, d.shape[0])):
+        for c in range(min(5, d.shape[1])):
+            if _n(d.iloc[i, c]) == "provincias":
+                r0, c0 = i, c
+        if r0 is not None:
+            break
+    if r0 is None:
+        raise RuntimeError(f"recaudación {anio} hoja {h}: no se encontró la fila Provincias")
+    col = {}
+    for c in range(c0 + 1, d.shape[1]):
+        t_ = _n_roto(d.iloc[r0, c])
+        for nombre, ident in HOJAS_TOP.items():
+            if _igual(t_, _n(nombre)):
+                col[ident] = c
+    if set(col) != set(HOJAS_TOP.values()):
+        raise RuntimeError(f"recaudación {anio} hoja {h}: columnas no reconocidas {sorted(col)}")
+    for i in range(r0 + 1, d.shape[0]):
+        etiqueta = d.iloc[i, c0]
+        if not isinstance(etiqueta, str):
+            continue
+        k = _n(etiqueta)
+        if k == "total":
+            break
+        if k == "provincias":
+            continue
+        pid = str(_cod(etiqueta))
+        for ident, c in col.items():
+            v = _num(d.iloc[i, c])
+            if v is not None:
+                acum[(pid, ident)] = acum.get((pid, ident), 0.0) + v
+    return pd.DataFrame([(p, anio, i, v) for (p, i), v in acum.items()], columns=["provincia", "anio", "concepto", "valor"])
+
+
+def _candidatos(links, patron):
+    """[(año, trimestre, url)] de los links que coinciden con el patrón."""
+    out = []
+    for u in links:
+        m = re.search(patron, u.rsplit("/", 1)[-1], re.I)
+        if m:
+            t = m.group(2).lower()
+            out.append((int(m.group(1)), ROMANOS[t] if t in ROMANOS else int(t), u))
+    return sorted(out)
+
+
+def _bajar_parcial(meta):
+    """Baja el último trimestre del año más nuevo (cuentas y finalidad), el mismo trimestre del año anterior (cuentas) y la recaudación
+    trimestral de los dos años. Lee todo antes de reemplazar los respaldos."""
+    l_cu = _candidatos(_links(_bytes(BASE + PAGINAS["cuentas"], timeout=60).decode("utf-8", "replace")), PATRON_PARCIAL_CU)
+    if not l_cu:
+        raise RuntimeError("no aparece ninguna planilla trimestral de cuentas")
+    anio, trim, _ = l_cu[-1]
+    u_cu = l_cu[-1][2]
+    u_cu_ant = next((u for a, t, u in reversed(l_cu) if a == anio - 1 and t == trim), None)
+    if u_cu_ant is None:
+        raise RuntimeError(f"no aparece la planilla de cuentas del trimestre {trim} de {anio - 1}")
+    l_fi = _candidatos(_links(_bytes(BASE + PAGINAS["finalidad"], timeout=60).decode("utf-8", "replace")), PATRON_PARCIAL_FI)
+    u_fi = next((u for a, t, u in reversed(l_fi) if a == anio and t == trim), None)
+    if u_fi is None:
+        raise RuntimeError(f"no aparece la planilla de finalidad del trimestre {trim} de {anio}")
+    l_top = _candidatos(_links(_bytes(BASE + PAGINAS["recaudacion"], timeout=60).decode("utf-8", "replace")), PATRON_PARCIAL_TOP)
+    u_top = {a: next((u for aa, _, u in reversed(l_top) if aa == a), None) for a in (anio, anio - 1)}
+    if None in u_top.values():
+        raise RuntimeError(f"no aparece la recaudación trimestral de {anio} o {anio - 1}")
+    archivos = {f"cuentas_{anio}": u_cu, f"cuentas_{anio - 1}": u_cu_ant, f"finalidad_{anio}": u_fi,
+                f"recaudacion_{anio}": u_top[anio], f"recaudacion_{anio - 1}": u_top[anio - 1]}
+    datos = {k: _bytes(u) for k, u in archivos.items()}
+    _leer_parcial(datos, anio, trim)   # que se pueda leer antes de reemplazar los respaldos
+    for f in CACHE.glob("provincias_dnap_parcial_*"):
+        f.unlink()
+    for k, b in datos.items():
+        ext = ".xls" if archivos[k].lower().endswith(".xls") else ".xlsx"
+        (CACHE / f"provincias_dnap_parcial_{k}{ext}").write_bytes(b)
+    meta["parcial"] = {"anio": anio, "trim": trim}
+    meta["fuentes_parcial"] = {k: {"pagina": BASE + PAGINAS[k.split("_")[0]], "archivo": u, "bajado": date.today().isoformat()}
+                               for k, u in archivos.items()}
+
+
+def _leer_parcial(datos, anio, trim):
+    """{nombre: bytes} -> (cuentas, finalidad, recaudación) en formato largo, con los dos años."""
+    _, orden_fi = _cargar("finalidad")
+    nombres = [c for c in orden_fi if c != "TOTAL"]
+    cu = pd.concat([_leer_cuentas_trim(datos[f"cuentas_{a}"], a) for a in (anio - 1, anio)], ignore_index=True)
+    fi = _leer_finalidad_trim(datos[f"finalidad_{anio}"], anio, nombres)
+    rc = pd.concat([_leer_recaudacion_trim(datos[f"recaudacion_{a}"], a, trim) for a in (anio - 1, anio)], ignore_index=True)
+    return cu, fi, rc
+
+
+def _actualizar_parcial(con_red):
+    meta = _meta()
+    hoy = date.today().isoformat()
+    hay = "parcial" in meta and any(CACHE.glob("provincias_dnap_parcial_*"))
+    if not con_red or (hay and meta.get("bajado_parcial") == hoy):
+        return
+    try:
+        _bajar_parcial(meta)
+        meta["bajado_parcial"] = hoy
+        _guardar_meta(meta)
+        print(f"  provincias_dnap: año en curso bajado ({meta['parcial']['anio']}, trimestre {meta['parcial']['trim']})")
+    except Exception as e:  # noqa: BLE001
+        if not hay:
+            raise RuntimeError(f"no se pudo bajar el año en curso y no hay respaldo ({e})") from e
+        print(f"  provincias_dnap: error al bajar el año en curso ({e}); uso el respaldo")
+
+
+def _a_dict(df):
+    datos = {}
+    for p, a, c, v in zip(df["provincia"], df["anio"], df["concepto"], df["valor"]):
+        datos.setdefault((str(p), c), {})[int(a)] = float(v)
+    return datos
+
+
+def construir_parcial(con_red, anual):
+    """La clave `parcial` de provincias_cuentas.json (misma forma que el archivo; `anual` es el objeto anual ya armado).
+    None si el año del último trimestre ya está cerrado en la serie anual. Levanta RuntimeError si un control no pasa."""
+    _actualizar_parcial(con_red)
+    meta = _meta()
+    if "parcial" not in meta:
+        raise RuntimeError("no hay respaldo del año en curso (datos/cache/provincias_dnap_parcial_*)")
+    anio, trim = meta["parcial"]["anio"], meta["parcial"]["trim"]
+    if anio in anual["anios"]:
+        print(f"  provincias_dnap: {anio} ya está cerrado en la serie anual; no va el año en curso")
+        return None
+    datos = {}
+    for f in CACHE.glob("provincias_dnap_parcial_*"):
+        datos[f.stem[len("provincias_dnap_parcial_"):]] = f.read_bytes()
+    cu_df, fi_df, rc_df = _leer_parcial(datos, anio, trim)
+    cu, fi, rc = _a_dict(cu_df), _a_dict(fi_df), _a_dict(rc_df)
+    anios = [anio - 1, anio]
+    ids = [str(c) for c in PROVINCIAS]
+
+    # sin cuentas (columna en cero): fuera antes de los controles, como en la serie anual
+    sin_cuentas = {}
+    for p in ids:
+        for a in anios:
+            if all((cu.get((p, k), {}).get(a) or 0.0) == 0.0 for k in IDS_CUENTAS):
+                sin_cuentas.setdefault(str(a), []).append(p)
+                for k in IDS_CUENTAS:
+                    cu.get((p, k), {}).pop(a, None)
+                print(f"  provincias_dnap: {PROVINCIAS[int(p)]} {a} (trimestre {trim}) sin cuentas publicadas: queda sin dato")
+    _controles_cuentas(cu, anios)
+    _controles_finalidad(cu, fi, [anio])
+
+    # es acumulado: el año anterior al trimestre N, contra el año entero
+    i_ant = anual["anios"].index(anio - 1) if anio - 1 in anual["anios"] else None
+    gas_anual = anual["consolidado"]["c"]["gas_tot"][i_ant] if i_ant is not None else None
+    gas_ant = _g(cu, "consolidado", "gas_tot", anio - 1)
+    if gas_anual and gas_ant:
+        r = gas_ant / gas_anual
+        print(f"  control acumulado: gastos totales {anio - 1} al trimestre {trim} = {r:.1%} del año (esperado entre {0.15 * trim:.0%} y {0.35 * trim:.0%})")
+        if not 0.15 * trim <= r <= 0.35 * trim:
+            _fallo(f"el trimestre {trim} de {anio - 1} da {r:.1%} del año entero: no parece acumulado")
+    else:
+        _fallo(f"no hay gastos totales de {anio - 1} para controlar que el trimestral sea acumulado")
+    rc_ctrl = {(p, "total"): {a: sum(rc.get((p, k), {}).get(a, 0.0) for k in ("ib", "inmo", "sellos", "auto", "otros"))
+                             for a in anios if any(a in rc.get((p, k), {}) for k in ("ib", "inmo", "sellos", "auto", "otros"))}
+               for p in ids}
+    _controles_recaudacion(cu, rc_ctrl, anios)
+
+    def ser(d, p, c):
+        return [_r(_g(d, p, c, a)) for a in anios]
+
+    try:
+        pob = _poblacion()
+    except Exception as e:  # noqa: BLE001
+        print(f"  provincias_dnap: no se pudo leer la población de INDEC ({e}); 'pob' sale vacío")
+        pob = {}
+    fin_orden = list(dict.fromkeys(c for (_, c) in fi if c != "TOTAL"))
+    deuda = {p["id"]: p["deuda"] for p in anual["provincias"]}
+    provincias = []
+    for cod in PROVINCIAS:
+        p = str(cod)
+        caja = []
+        for a in anios:
+            ss, gas = _g(cu, p, "prest_ss", a), _g(cu, p, "gas_tot", a)
+            caja.append(None if ss is None or not gas else bool(ss / gas >= CAJA_MINIMO))
+        fin = []
+        for c in fin_orden:
+            if (p, c) not in fi:
+                continue
+            f, _, n = c.partition(" / ")
+            fin.append({"n": n or f, "f": f if n else None, "v": ser(fi, p, c)})
+        provincias.append({"id": p, "pob": [pob.get((cod, a)) for a in anios], "c": {i: ser(cu, p, i) for i in IDS_CUENTAS},
+                           "caja": caja, "fin": fin, "imp": {k: ser(rc, p, k) for k in ("ib", "inmo", "sellos", "auto", "otros")},
+                           "emp": {}, "deuda": deuda.get(p)})
+    con_caja = sum(1 for p in provincias if p["caja"][1])
+    print(f"  provincias_dnap: año en curso {anio} al trimestre {trim}: caja propia en {con_caja} provincias")
+    pob_cons = [sum(pob.get((c, a), 0) for c in PROVINCIAS if str(c) not in sin_cuentas.get(str(a), [])) or None for a in anios]
+    return {
+        "anios": anios, "trim": trim, "meses": 3 * trim,
+        "fuentes": meta.get("fuentes_parcial", {}), "provincias": provincias, "deuda_fecha": anual["deuda_fecha"],
+        "sin_cuentas": sin_cuentas, "consolidado": {"pob": pob_cons, "c": {i: ser(cu, "consolidado", i) for i in IDS_CUENTAS}},
+    }
+
+
 # ---------- bajada ----------
 
 def _meta():
@@ -916,6 +1256,12 @@ def construir(con_red=True):
         "sin_cuentas": sin_cuentas,   # años en que el consolidado de la DNAP no incluye a esas provincias
         "consolidado": {"pob": pob_cons, "c": {i: ser(cu, "consolidado", i) for i in IDS_CUENTAS}},
     }
+    try:   # el año en curso va aparte: si falla, las cuentas anuales salen igual (sin la clave `parcial`)
+        parcial = construir_parcial(con_red, obj)
+        if parcial:
+            obj["parcial"] = parcial
+    except Exception as e:  # noqa: BLE001
+        print(f"  provincias_dnap: no se pudo armar el año en curso; sale sin él ({e})")
     return {"provincias_cuentas.json": obj}
 
 
@@ -941,6 +1287,10 @@ if __name__ == "__main__":
         m["bajado_ib"] = date.today().isoformat()
         _guardar_meta(m)
         print("  provincias_dnap: alícuotas de Ingresos Brutos bajadas")
+        _bajar_parcial(m := _meta())
+        m["bajado_parcial"] = date.today().isoformat()
+        _guardar_meta(m)
+        print(f"  provincias_dnap: año en curso bajado ({m['parcial']['anio']}, trimestre {m['parcial']['trim']})")
         sys.exit(0)
     res = construir_json(con_red="--sin-red" not in sys.argv)
     for nombre, obj in sorted(res.items()):

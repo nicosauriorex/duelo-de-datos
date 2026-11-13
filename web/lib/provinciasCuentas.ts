@@ -27,6 +27,8 @@ export interface DatosCuentas {
   provincias: ProvCuentas[]; deudaFecha: string | null; consolidado: { c: SerieC; emp: SerieC } | null;
   /** Por año ("2025"), ids de las provincias sin cuentas publicadas: el consolidado de ese año no las incluye. */
   sinCuentas: Record<string, string[]>;
+  /** El año en curso, acumulado por trimestre (fase 4): la misma forma que el archivo, más `trim` y `meses`. null si no viene. */
+  parcial: (DatosCuentas & { trim: number; meses: number }) | null;
 }
 
 const nums = (v: unknown, n: number): (number | null)[] =>
@@ -67,12 +69,22 @@ export function decodificarCuentas(c: unknown): DatosCuentas | null {
     }
   }
   const cons = r.consolidado as Record<string, unknown> | null | undefined;
+  const fechaOk = (f: unknown): string | null => (typeof f === "string" && /^\d{4}-\d{2}-\d{2}/.test(f) ? f : null);
+  let parcial: DatosCuentas["parcial"] = null;
+  if (r.parcial && typeof r.parcial === "object" && !Array.isArray(r.parcial)) {
+    const q = r.parcial as Record<string, unknown>, pd = decodificarCuentas({ ...q, parcial: null });
+    const trim = q.trim, meses = q.meses;
+    if (pd && Number.isInteger(trim) && Number.isInteger(meses) && (meses as number) >= 1 && (meses as number) <= 12 && !anios.includes(pd.anios[pd.anios.length - 1])) {
+      parcial = { ...pd, trim: trim as number, meses: meses as number, deudaFecha: pd.deudaFecha ?? fechaOk(r.deuda_fecha) };
+    }
+  }
   return {
     generado: typeof r.generado === "string" ? r.generado : "", fuente: typeof r.fuente === "string" ? r.fuente : "", fuentes, anios, provincias,
     deudaFecha: typeof r.deuda_fecha === "string" && /^\d{4}-\d{2}-\d{2}/.test(r.deuda_fecha) ? r.deuda_fecha : null,
     consolidado: cons && typeof cons === "object" ? { c: serie(cons.c, n), emp: serie(cons.emp, n) } : null,
     sinCuentas: Object.fromEntries(Object.entries(r.sin_cuentas && typeof r.sin_cuentas === "object" ? (r.sin_cuentas as Record<string, unknown>) : {})
       .map(([a, v]): [string, string[]] => [a, (Array.isArray(v) ? v : []).map(idDe).filter((x): x is string => !!x)])),
+    parcial,
   };
 }
 
@@ -82,7 +94,7 @@ export function notaSinCuentas(x: CtxC, anio: number): string | null {
   if (!ids.length) return null;
   const ns = ids.map((id) => nombreProv(x, id));
   const lista = ns.length === 1 ? ns[0] : `${ns.slice(0, -1).join(", ")} y ${ns[ns.length - 1]}`;
-  return `En ${anio} la Dirección Nacional de Asuntos Provinciales todavía no publicó las cuentas de ${lista}: sale sin dato y "Las 24 juntas" no ${ns.length === 1 ? "la" : "las"} incluye.`;
+  return `${x.per ? "Para" : "En"} ${etiquetaPeriodo(x, anio)} la Dirección Nacional de Asuntos Provinciales todavía no publicó las cuentas de ${lista}: sale sin dato y "Las 24 juntas" no ${ns.length === 1 ? "la" : "las"} incluye.`;
 }
 
 // ---------------------------------------------------------------- indicadores
@@ -107,7 +119,10 @@ export const INDICADORES: Indicador[] = [
 export const IND_DEFECTO: IdInd = "gasto_hab";
 export const esIndicador = (s: string | null): s is IdInd => INDICADORES.some((i) => i.id === s);
 export const indicadorDe = (id: IdInd): Indicador => INDICADORES.find((i) => i.id === id)!;
-export const opcionesIndicador = (): [string, string][] => INDICADORES.map((i) => [i.id, i.n]);
+/** Sin dato trimestral: no se ofrecen en el período parcial. */
+const DE_EMPLEO: IdInd[] = ["empleados", "sueldo_medio"];
+export const indicadorOfrecido = (x: CtxC | null | undefined, id: IdInd): boolean => !(x?.per && DE_EMPLEO.includes(id));
+export const opcionesIndicador = (x?: CtxC): [string, string][] => INDICADORES.filter((i) => indicadorOfrecido(x, i.id)).map((i) => [i.id, i.n]);
 
 export type OrdenC = "desc" | "asc";
 export const ORDENES_C: [OrdenC, string][] = [["desc", "De mayor a menor"], ["asc", "De menor a mayor"]];
@@ -124,8 +139,30 @@ export const NOTA_CAJA = "Tiene su propia caja de jubilaciones: paga jubilacione
 const UNIDAD_MEDIO = 1;
 
 // ---------------------------------------------------------------- contexto y entidades
-export interface CtxC { d: DatosCuentas; p: Contexto }
+/** `per`: el contexto es el del período parcial (año en curso acumulado); `base`: el contexto principal (años cerrados). */
+export interface CtxC { d: DatosCuentas; p: Contexto; per?: { anio: number; meses: number }; base?: CtxC }
 export const crearCtxC = (d: DatosCuentas, p: Contexto): CtxC => ({ d, p });
+
+const MESES_LARGO = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+const MESES_CORTO = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+/** "enero a junio" (o "enero" si es un solo mes). */
+export const rangoMeses = (meses: number): string => (meses <= 1 ? "enero" : `enero a ${MESES_LARGO[meses - 1]}`);
+/** Año del período parcial (el año en curso acumulado), o null si el archivo no lo trae. */
+export const anioParcial = (x: CtxC): number | null => (x.d.parcial ? x.d.parcial.anios[x.d.parcial.anios.length - 1] : null);
+/** Contexto propio del período parcial: sus datos y el deflactor por meses ("enero a junio" de cada año). null si no hay período parcial. */
+export function crearCtxParcial(x: CtxC): CtxC | null {
+  const pa = x.d.parcial;
+  if (!pa) return null;
+  const def = x.p.def;
+  return { d: pa, base: x, per: { anio: pa.anios[pa.anios.length - 1], meses: pa.meses }, p: { ...x.p, def: { ...def, factor: (a) => def.factorMeses(a, pa.meses) } } };
+}
+/** "enero a junio de 2026" en el período parcial (y la comparación, "enero a junio de 2025"); si no, el año solo. */
+export const etiquetaPeriodo = (x: CtxC, anio: number): string => (x.per && (anio === x.per.anio || anio === x.per.anio - 1) ? `${rangoMeses(x.per.meses)} de ${anio}` : String(anio));
+/** Sufijo del nombre de archivo del período parcial: "-ene-jun" (vacío si no es parcial). */
+const sufijoPeriodo = (x: CtxC): string => (x.per ? (x.per.meses <= 1 ? "-ene" : `-ene-${MESES_CORTO[x.per.meses - 1]}`) : "");
+/** El aviso de una línea de la vista del período parcial. */
+export const avisoPeriodoC = (x: CtxC): string | null =>
+  x.per ? `Datos de ${etiquetaPeriodo(x, x.per.anio)}, provisorios: los años cerrados comparan años enteros; esto compara contra el mismo período de ${x.per.anio - 1}.` : null;
 /** Un gobierno provincial (o las 24 juntas, con `id` null) con lo que hace falta para calcular. */
 interface Ent { id: string | null; n: string; c: SerieC; imp: SerieC; emp: SerieC; deuda: Record<string, number | null>; caja: (boolean | null)[]; fin: FinalidadC[] }
 
@@ -187,8 +224,12 @@ const factor = (x: CtxC, anio: number) => x.p.def.factor(anio) ?? 1;
 const aniosC = (x: CtxC) => x.d.anios.filter((a) => a >= ANIO_MIN_C);
 export const aniosDeCuentas = aniosC;
 export const anioDefectoC = (x: CtxC): number => { const a = aniosC(x); return a[a.length - 1] ?? x.d.anios[x.d.anios.length - 1]; };
-export const anioValidoC = (x: CtxC, s: string | null): number | null => aniosC(x).find((a) => String(a) === s) ?? null;
-export const opcionesAnioC = (x: CtxC): [string, string][] => [...aniosC(x)].reverse().map((a) => [String(a), String(a)]);
+export const anioValidoC = (x: CtxC, s: string | null): number | null => (anioParcial(x) != null && String(anioParcial(x)) === s ? anioParcial(x) : aniosC(x).find((a) => String(a) === s) ?? null);
+/** Los años cerrados, del más nuevo al más viejo; arriba de todo, el año en curso acumulado ("2026 · enero a junio") si el archivo lo trae. */
+export const opcionesAnioC = (x: CtxC): [string, string][] => {
+  const pa = x.d.parcial, o = [...aniosC(x)].reverse().map((a): [string, string] => [String(a), String(a)]);
+  return pa ? [[String(anioParcial(x)), `${anioParcial(x)} · ${rangoMeses(pa.meses)}`], ...o] : o;
+};
 export const buscarProvC = (x: CtxC, s: string | null): { id: string; n: string } | null => {
   if (!s) return null;
   const k = Number(s), e = x.d.provincias.find((p) => p.id === s || (s.trim() !== "" && Number.isFinite(k) && Number(p.id) === k));
@@ -243,22 +284,27 @@ export interface VistaC {
   conCaja: number; unidad: string; encVari: string | null; fechaDeuda: string | null; aviso: string | null; sinPoblacion: boolean;
   /** Provincias sin cuentas publicadas ese año (null si están todas). */
   sinCuentas: string | null;
+  /** El año y el anterior como se nombran en pantalla ("2025", o "enero a junio de 2025" en el período parcial), y el sufijo del archivo de la imagen. */
+  etq: string; etqAnt: string; sufArchivo: string;
 }
 const unidadDe = (x: CtxC, ind: Indicador, anio: number): string => {
   const hoy = `pesos de ${x.p.def.ref}, ajustados por inflación con el IPC`;
   switch (ind.id) {
-    case "gasto_hab": case "recaud_hab": return `Pesos por habitante (${hoy})`;
+    case "gasto_hab": case "recaud_hab": return `Pesos por habitante${x.per ? ` en ${rangoMeses(x.per.meses)}` : ""} (${hoy})`;
     case "sueldo_medio": return `Pesos por mes (${hoy})`;
     case "empleados": return "Empleados cada mil habitantes";
     case "deuda_hab": return `Pesos por habitante (${hoy}) al ${fechaLarga(x.d.deudaFecha) ?? "último dato publicado"}`;
     case "deuda_ing": return `% de los ingresos de ${ultimoAnioIngresos(x, juntas(x)) ?? "último año"} (deuda al ${fechaLarga(x.d.deudaFecha) ?? "último dato publicado"})`;
-    default: return `% (${anio})`;
+    default: return `% (${etiquetaPeriodo(x, anio)})`;
   }
 };
 
 /** La tabla de las 24 jurisdicciones de un año, ordenada por el indicador (sin dato al final) y la fila de las 24 juntas aparte. */
 export function armarVistaC(x: CtxC, o: { anio: number; ind: IdInd; orden: OrdenC }): VistaC | null {
-  const ind = indicadorDe(o.ind), i = x.d.anios.indexOf(o.anio);
+  const ind = indicadorDe(o.ind);
+  // La deuda no depende del año: en el período parcial se calcula con los años cerrados, como siempre.
+  if (x.base && ind.fijo) return armarVistaC(x.base, { ...o, anio: anioDefectoC(x.base) });
+  const i = x.d.anios.indexOf(o.anio);
   if (i < 0) return null;
   const ents = entidades(x).map((e) => ({ e, v: valorDe(x, ind, e, o.anio), vari: variDe(x, ind, e, o.anio) }));
   if (!ents.some((t) => t.v != null)) return null;
@@ -278,9 +324,10 @@ export function armarVistaC(x: CtxC, o: { anio: number; ind: IdInd; orden: Orden
   return {
     anio: o.anio, ind, orden: o.orden, filas, juntas: { txt: jv != null ? txtValor(ind, jv) : "–", variTxt: jvari?.txt ?? null },
     conCaja: filas.filter((f) => f.caja).length, unidad: unidadDe(x, ind, o.anio), sinCuentas: ind.fijo ? null : notaSinCuentas(x, o.anio),
-    encVari: ind.fijo ? null : ind.tipo === "pesos" ? `Variación real vs ${o.anio - 1}` : ind.tipo === "pct" ? `Variación vs ${o.anio - 1}, en puntos` : `Variación vs ${o.anio - 1}`,
+    encVari: ind.fijo ? null : ind.tipo === "pesos" ? `Variación real vs ${etiquetaPeriodo(x, o.anio - 1)}` : ind.tipo === "pct" ? `Variación vs ${etiquetaPeriodo(x, o.anio - 1)}, en puntos` : `Variación vs ${etiquetaPeriodo(x, o.anio - 1)}`,
     fechaDeuda: ind.fijo ? x.d.deudaFecha : null,
-    aviso: sinFactor ? `No hay inflación para ${o.anio}: se muestra en pesos corrientes.` : null,
+    aviso: sinFactor ? `No hay inflación para ${etiquetaPeriodo(x, o.anio)}: se muestra en pesos corrientes.` : null,
+    etq: etiquetaPeriodo(x, o.anio), etqAnt: etiquetaPeriodo(x, o.anio - 1), sufArchivo: sufijoPeriodo(x),
     sinPoblacion: ents.some((t) => t.v == null) && (ind.id === "gasto_hab" || ind.id === "recaud_hab" || ind.id === "deuda_hab") && ents.every((t) => pobDe(x, t.e.id, ind.fijo ? anioDeuda(x) ?? o.anio : o.anio) == null),
   };
 }
@@ -292,8 +339,10 @@ export interface BarraFin { n: string; txt: string; parte: string; ancho: number
 export interface PuntoC extends PuntoEvo { neg: boolean }
 export interface EvoC { puntos: PuntoC[]; primero: PuntoC | null; ultimo: PuntoC | null; filas: { anio: number; txt: string | null; vari: string | null }[]; hayNegativos: boolean }
 export interface DetalleC {
-  id: string; n: string; anio: number; caja: boolean; valorTxt: string | null; variTxt: string | null;
+  id: string; n: string; anio: number; etq: string; etqAnt: string; caja: boolean; valorTxt: string | null; variTxt: string | null;
   cuentas: CuentasAnio | null; finalidades: BarraFin[] | null; finTotal: string | null; finNota: string | null; evo: EvoC | null;
+  /** Período parcial: la evolución es la anual y no incluye el año en curso (null si no es parcial). */
+  evoNota: string | null;
 }
 
 const cuenta = (e: Ent, k: string, i: number) => e.c[k]?.[i] ?? null;
@@ -326,7 +375,7 @@ function cuentasDe(x: CtxC, e: Ent, anio: number): CuentasAnio | null {
   const I = cerrar(ingFilas, ing), G = cerrar(gasFilas, gas);
   const res = aDec(I.totR - G.totR, esc.dec);
   return {
-    unidad: x.p.def.factor(anio) == null ? `Pesos corrientes de ${anio}` : `Pesos de ${x.p.def.ref} (ajustados por inflación con el IPC)`,
+    unidad: x.p.def.factor(anio) == null ? `Pesos corrientes de ${etiquetaPeriodo(x, anio)}` : `Pesos de ${x.p.def.ref} (ajustados por inflación con el IPC)${x.per ? `, acumulados de ${etiquetaPeriodo(x, anio)}` : ""}`,
     ingresos: [...I.filas, { n: "Ingresos totales", txt: esc.txt(I.totR) }],
     gastos: [...G.filas, { n: "Gastos totales", txt: esc.txt(G.totR) }],
     resultado: { n: "Resultado financiero (ingresos menos gastos)", txt: `${res > 0 ? "+" : ""}${esc.txt(res)}` },
@@ -377,18 +426,24 @@ function evolucionC(x: CtxC, ind: Indicador, e: Ent): EvoC | null {
   return { puntos, primero: con[0] ?? null, ultimo: con[con.length - 1] ?? null, filas, hayNegativos: puntos.some((p) => p.neg) };
 }
 
-export function armarDetalleC(x: CtxC, id: string, anio: number, ind: IdInd): DetalleC | null {
+/** `xEvo`: el contexto de la evolución anual (en el período parcial, el principal: el año en curso no entra). */
+export function armarDetalleC(x: CtxC, id: string, anio: number, ind: IdInd, xEvo: CtxC = x): DetalleC | null {
   const e = entidades(x).find((t) => t.id === id);
   if (!e) return null;
-  const I = indicadorDe(ind), i = x.d.anios.indexOf(anio), v = valorDe(x, I, e, anio), fin = finalidadesDe(x, e, anio);
+  const I = indicadorDe(ind), i = x.d.anios.indexOf(anio), fin = finalidadesDe(x, e, anio);
+  // La deuda no depende del año: en el período parcial sale de los años cerrados.
+  const xv = x.base && I.fijo ? x.base : x, ev = entidades(xv).find((t) => t.id === id) ?? e, av = xv === x ? anio : anioDefectoC(xv);
+  const v = valorDe(xv, I, ev, av), eEvo = entidades(xEvo).find((t) => t.id === id);
   return {
-    id, n: e.n, anio, caja: i >= 0 && e.caja[i] === true, valorTxt: v != null ? txtValor(I, v) : null, variTxt: variDe(x, I, e, anio)?.txt ?? null,
-    cuentas: cuentasDe(x, e, anio), finalidades: fin?.barras ?? null, finTotal: fin?.total ?? null, finNota: fin?.nota ?? null, evo: evolucionC(x, I, e),
+    id, n: e.n, anio, etq: etiquetaPeriodo(x, anio), etqAnt: etiquetaPeriodo(x, anio - 1), caja: i >= 0 && e.caja[i] === true,
+    valorTxt: v != null ? txtValor(I, v) : null, variTxt: variDe(xv, I, ev, av)?.txt ?? null,
+    cuentas: cuentasDe(x, e, anio), finalidades: fin?.barras ?? null, finTotal: fin?.total ?? null, finNota: fin?.nota ?? null, evo: eEvo ? evolucionC(xEvo, I, eEvo) : null,
+    evoNota: x.per ? `La evolución es anual, de ${aniosC(xEvo)[0]} a ${anioDefectoC(xEvo)}: ${etiquetaPeriodo(x, anio)} no entra porque el año todavía no está completo.` : null,
   };
 }
 
 // ---------------------------------------------------------------- textos, dirección, imagen y vista previa
-export const tituloC = (v: { anio: number; ind: Indicador }) => `${v.ind.n} en las 24 provincias${v.ind.fijo ? "" : `, ${v.anio}`}`;
+export const tituloC = (v: { anio: number; ind: Indicador; etq?: string }) => `${v.ind.n} en las 24 provincias${v.ind.fijo ? "" : `, ${v.etq ?? v.anio}`}`;
 /** Dirección de la vista (con los parámetros que no son los de defecto). `prov`: el detalle abierto. */
 export function hrefC(v: { anio: number; ind: IdInd; orden: OrdenC }, anioDef: number, prov: string | null = null): string {
   const p = new URLSearchParams({ vista: VISTA_CUENTAS });
@@ -403,7 +458,7 @@ export function hrefC(v: { anio: number; ind: IdInd; orden: OrdenC }, anioDef: n
 export function armarImagenC(v: VistaC, formato: FormatoImg, hoy: Date = new Date()): DatosImagen {
   const filas: FilaBarra[] = v.filas.filter((f) => f.valor != null).map((f, i) => ({
     id: `cta-${i}`, nombre: f.n, valor: f.valor, variacion: f.txt, cls: "neutro", ini: null, fin: null, nota: null,
-    detalle: [f.variTxt && (v.ind.tipo === "pesos" ? `${f.variTxt} real vs ${v.anio - 1}` : `${f.variTxt} vs ${v.anio - 1}`), f.caja && "caja de jubilaciones propia"].filter(Boolean).join(" · ") || " ",
+    detalle: [f.variTxt && (v.ind.tipo === "pesos" ? `${f.variTxt} real vs ${v.etqAnt}` : `${f.variTxt} vs ${v.etqAnt}`), f.caja && "caja de jubilaciones propia"].filter(Boolean).join(" · ") || " ",
   }));
   return {
     formato, titulo: tituloC(v), temporalidad: `${v.ind.explica.replace(/\.$/, "")}. Ordenado de ${v.orden === "desc" ? "mayor a menor" : "menor a mayor"}`,
@@ -413,7 +468,7 @@ export function armarImagenC(v: VistaC, formato: FormatoImg, hoy: Date = new Dat
     comentario: "", unidad: v.unidad, fuente: FUENTE_C,
     nota: "Gobiernos provinciales (sin municipios ni empresas). Algunas provincias tienen su propia caja de jubilaciones y otras la transfirieron a la Nación: eso cambia los montos",
     fecha: hoy.toLocaleDateString("es-AR"),
-    archivo: `primerolosdatos-provincias-cuentas-${v.ind.id}${v.ind.fijo ? "" : `-${v.anio}`}`,
+    archivo: `primerolosdatos-provincias-cuentas-${v.ind.id}${v.ind.fijo ? "" : `-${v.anio}${v.sufArchivo}`}`,
     lienzo: { tipo: "barras", filas, sinDatos: [], enc: { nombre: "Provincia", valor: v.ind.n }, sinTope: true },
     marcaUltimo: false,
   };
@@ -422,7 +477,7 @@ export function armarImagenC(v: VistaC, formato: FormatoImg, hoy: Date = new Dat
 /** Título y descripción de la vista previa de la vista de cuentas: neutros, sin veredicto. */
 export function textosPreviaC(v: VistaC): { titulo: string; descripcion: string } {
   return {
-    titulo: `Las cuentas de las 24 provincias, ${v.anio}`,
+    titulo: `Las cuentas de las 24 provincias, ${v.etq}`,
     descripcion: `Cuánto gasta, cuánto recauda, cuánto recibe de la Nación y cuánto debe cada provincia, con datos oficiales. Por ejemplo: ${v.ind.n.toLowerCase()}, de las 24 jurisdicciones. Fuente: Dirección Nacional de Asuntos Provinciales (Ministerio de Economía).`,
   };
 }

@@ -116,11 +116,15 @@ export const opcionesAnio = (ix: IndiceGasto): [string, string][] =>
   });
 
 // ---------------------------------------------------------------- pesos de hoy
-export interface Deflactor { ref: string; factor: (anio: number) => number | null }
+export interface Deflactor {
+  ref: string; factor: (anio: number) => number | null;
+  /** Factor de un período parcial: IPC del último mes / promedio de los primeros `meses` meses del año (null si falta alguno). */
+  factorMeses: (anio: number, meses: number) => number | null;
+}
 /** `F`: meses del catálogo ("AAAA-MM"); `IPC`: el IPC empalmado de base.json, mes a mes. Factor de un año = IPC del último mes / IPC promedio del año
  *  (con los meses que haya: el año en curso, con los publicados). */
 export function crearDeflactor(F: string[], IPC: (number | null)[]): Deflactor {
-  const ref = lastIdx(IPC), cache = new Map<number, number | null>();
+  const ref = lastIdx(IPC), cache = new Map<number, number | null>(), cacheM = new Map<string, number | null>();
   const refTxt = ref >= 0 ? `${MESES[+F[ref].slice(5, 7) - 1]}-${F[ref].slice(2, 4)}` : "";
   return {
     ref: refTxt,
@@ -130,6 +134,15 @@ export function crearDeflactor(F: string[], IPC: (number | null)[]): Deflactor {
       F.forEach((f, i) => { const x = IPC[i]; if (f.startsWith(`${anio}-`) && ok(x) && x > 0) { s += x; n++; } });
       const r = n && ref >= 0 ? (IPC[ref] as number) / (s / n) : null;
       cache.set(anio, r);
+      return r;
+    },
+    factorMeses: (anio, meses) => {
+      const k = `${anio}/${meses}`;
+      if (cacheM.has(k)) return cacheM.get(k)!;
+      let s = 0, n = 0;
+      F.forEach((f, i) => { const x = IPC[i]; if (f.startsWith(`${anio}-`) && +f.slice(5, 7) <= meses && ok(x) && x > 0) { s += x; n++; } });
+      const r = meses > 0 && n === meses && ref >= 0 ? (IPC[ref] as number) / (s / n) : null;
+      cacheM.set(k, r);
       return r;
     },
   };
