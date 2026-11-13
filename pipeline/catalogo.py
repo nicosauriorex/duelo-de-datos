@@ -286,7 +286,9 @@ def datos_gob(idx, ipc=None):
         ("38.3_CEM_1994_M_7", "Despachos de cemento al mercado interno", CO, "none", "miles de toneladas", 1, dict(agg=True), "Asociación de Fabricantes de Cemento Portland. Buen termómetro de la construcción."),
         ("455.1_VENTAS_PRETES_0_M_25_98", "Ventas en supermercados (a precios constantes)", CO, "none", "millones de $ de 2017", 1, dict(agg=True), "Encuesta de supermercados del INDEC, deflactada."),
         ("458.1_VENTAS_TOTTES_ABRI_M_33_40", "Ventas en shoppings (a precios constantes)", CO, "none", "miles de $ de 2017", 1, dict(agg=True), "Encuesta de centros de compras del INDEC, deflactada."),
-        ("41.3_AA_0_A_23", "Producción de autos", CO, "none", "miles de unidades", 1, {}, "Unidades producidas por las automotrices (no son ventas: los patentamientos no tienen serie pública descargable)."),
+        # "Producción de autos" (41.3_AA_0_A_23) retirada el 2026-11-13: no es producción en unidades (ronda 100 por mes
+        # desde 1994, 2002 igual que 1998, la versión anual corta en 2009) y no coincide con ADEFA. Su id web
+        # (dg_41_3_aa_0_a_23) no se reutiliza; un link viejo cae al valor por defecto.
         ("380.3_ICC_NACIONNAL_0_T_12", "Confianza del consumidor (UTDT)", ["Opinión pública (UTDT)"], "none", "puntos (0 a 100)", 1, {}, "Índice de Confianza del Consumidor de la Universidad Di Tella: encuesta mensual sobre la situación personal, la macroeconómica y la intención de comprar durables e inmuebles. Va de 0 a 100; 50 es neutro."),
         ("380.3_DESAGREGACNAL_0_T_43", "Confianza del consumidor: situación personal", ["Opinión pública (UTDT)"], "none", "puntos (0 a 100)", 1, {}, "Subíndice del ICC (UTDT): cómo ve cada encuestado su situación económica personal hoy y dentro de un año."),
         ("380.3_DESAGREGACCRO_0_T_40", "Confianza del consumidor: situación macroeconómica", ["Opinión pública (UTDT)"], "none", "puntos (0 a 100)", 1, {}, "Subíndice del ICC (UTDT): expectativas sobre la economía del país."),

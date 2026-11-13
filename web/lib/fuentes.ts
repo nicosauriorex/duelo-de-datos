@@ -16,7 +16,7 @@ export const FUENTES_HTML = `
       <li><b>Mandatos:</b> el mes en que asume un presidente es su primer mes (Duhalde desde ene-2002). "Inicio" puede ser el último mes del antecesor o el mes de asunción.</li>
       <li><b>"En términos de":</b> solo para precios en pesos (productos, canastas) y el dólar, contra salarios, canastas, el dólar u otros precios. Divide en pesos del mismo mes.</li>
       <li><b>Tasas reales:</b> real anual = (1 + TNA/12)^12 dividido la inflación de los 12 meses previos; real mensual = (1 + TNA/12) dividido la inflación del mes. Es una medida "ex post" (con la inflación que efectivamente hubo).</li>
-      <li><b>No conseguido:</b> deuda pública bruta y consolidada (Finanzas solo publica PDFs trimestrales), venta de autos (patentamientos), ventas minoristas de CAME, tarifas de luz, gas, agua y colectivo en pesos (se pueden ver los rubros del IPC: "Regulados" y "Vivienda, agua, electricidad, gas") y empleo público separado por nación y provincias.</li>
+      <li><b>No conseguido:</b> deuda pública bruta y consolidada (Finanzas solo publica PDFs trimestrales), venta de autos (patentamientos), producción de autos (la serie oficial disponible no coincide con los datos de ADEFA), ventas minoristas de CAME, tarifas de luz, gas, agua y colectivo en pesos (se pueden ver los rubros del IPC: "Regulados" y "Vivienda, agua, electricidad, gas") y empleo público separado por nación y provincias.</li>
 `;
 
 /** Organismos principales de los que salen los datos (portada y pie de página). El detalle está en FUENTES_HTML. */
