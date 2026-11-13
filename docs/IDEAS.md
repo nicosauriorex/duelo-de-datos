@@ -259,9 +259,9 @@ Idea del usuario, con cuatro ejemplos de consultoras (Max Capital, Econviews, un
 - A resolver: (1) faltan muchas fuentes (ADEFA, Cámara del Acero, AFCP, Construya, CAME, patentamientos, CAMMESA, escrituras, Secretaría de Energía, agro): usar el agente `investigador-datos`; (2) la desestacionalización es propia en los ejemplos: decidir si se usa la serie oficial sin estacionalidad donde existe y la interanual donde no, o si se desestacionaliza en el pipeline; (3) cada fila con su fecha (publican con distinta demora, como el parte del BCRA).
 
 ## Gasto e impuestos de las provincias y la Nación (2026-11-12)
-→ specs: docs/specs/gasto-nacion.md (Nación por partida y por entidad, con universidades; fase 1 implementada el 2026-11-12, `/gasto/`) y docs/specs/provincias.md (bloqueada en parte: el sitio de la DNAP no carga).
-Idea del usuario. Agregado el mismo día: ver el presupuesto de cada entidad pública (por ejemplo en qué gastan las universidades) y aclarar si lo tienen sin rendir.
-- Gasto de la Nación y de las provincias por partida presupuestaria.
+→ specs: docs/specs/gasto-nacion.md (Nación por partida y por entidad, con universidades; hecha, ver "Hecho") y docs/specs/provincias.md (bloqueada en parte: el sitio de la DNAP no carga).
+Idea del usuario. Agregado el mismo día: ~~ver el presupuesto de cada entidad pública (por ejemplo en qué gastan las universidades) y aclarar si lo tienen sin rendir~~ ✅ 2026-11-13 (lo que se puede: ver "Hecho").
+- ~~Gasto de la Nación por partida presupuestaria~~ ✅ 2026-11-12; gasto de las provincias por partida: pendiente.
 - Qué provincias cobran más impuestos (por ejemplo Ingresos Brutos), contemplando exenciones.
 - Un ranking de provincias.
 - A resolver: fuentes (Presupuesto Abierto para la Nación; ejecución presupuestaria y recaudación provincial por tributo de la Dirección Nacional de Asuntos Provinciales; leyes impositivas de cada provincia para alícuotas y exenciones); cómo comparar (por habitante, como % del producto de la provincia, en pesos de hoy); el sitio hoy no tiene datos por provincia salvo el IPC por región: es un bloque nuevo, con su propio archivo de datos como el parte del BCRA. Comparar alícuotas con exenciones es mucho más difícil que comparar recaudación.
@@ -297,6 +297,11 @@ Son ajustes a lo ya hecho, no ideas nuevas.
 
 ## Hecho
 (Ideas implementadas y verificadas; se tachan acá con su fecha. Ver CLAUDE.md.)
+
+### En qué gasta la Nación y las universidades (bloque 12, implementado, spec gasto-nacion)
+- ~~Gasto de la Nación por partida, organismo, tipo de gasto y provincia, año por año (`/gasto/`).~~ ✅ 2026-11-12
+- ~~Cómo viene el año en curso, mes a mes, contra el año anterior (`/gasto/?vista=mes`).~~ ✅ 2026-11-13
+- ~~Presupuesto de cada entidad pública, por ejemplo las universidades, y si lo tienen sin rendir (`/universidades/`): transferencias por universidad 2018-2026, por estudiante en 2023 y 2024, y lo que dicen los documentos oficiales sobre el control (no hay lista pública de quién rindió).~~ ✅ 2026-11-13 (sin dato: en qué gasta cada universidad, porque lo que declaran no cierra con lo transferido; empresas públicas)
 
 ### Herencia: recibido contra entregado (bloque 11, implementado, spec herencia)
 - ~~Sección dentro de Presidentes que compare lo que cada presidente recibió con lo que entregó: series oficiales (fase 1), datos de informes con su cita (fase 2), reservas netas del FMI y estimación propia, cobertura de tarifas, puts, importaciones pendientes y precios acordados (fase 3).~~ ✅ 2026-11-12 (sin dato: dividendos retenidos; cepo de 2003 y 2007)
