@@ -258,14 +258,6 @@ Idea del usuario, con cuatro ejemplos de consultoras (Max Capital, Econviews, un
 - Variantes vistas: columnas mes contra mes, trimestre contra trimestre y último dato contra el trimestre previo con un círculo de color (Econviews); agrupado por sector (actividad y empleo, consumo, comercio exterior, industria, construcción, agro, inmobiliario); una tabla interanual en términos reales y otra mensual desestacionalizada, separando indicadores "tempranos" de los "principales con demora" (1816).
 - A resolver: (1) faltan muchas fuentes (ADEFA, Cámara del Acero, AFCP, Construya, CAME, patentamientos, CAMMESA, escrituras, Secretaría de Energía, agro): usar el agente `investigador-datos`; (2) la desestacionalización es propia en los ejemplos: decidir si se usa la serie oficial sin estacionalidad donde existe y la interanual donde no, o si se desestacionaliza en el pipeline; (3) cada fila con su fecha (publican con distinta demora, como el parte del BCRA).
 
-## Herencia: recibido contra entregado (2026-11-12)
-→ spec: docs/specs/herencia.md. Fase 1 implementada el 2026-11-12 (`/herencia/`); fases 2 y 3 pendientes.
-Idea del usuario: una sección dentro de Presidentes que compare lo que cada presidente recibió con lo que entregó, con los datos de los que los presidentes se suelen quejar. Sin spec; no implementar sin que se pida.
-- Lista pedida: deuda con importadores, SIRA, déficit fiscal y cuasifiscal, brecha cambiaria, reservas netas negativas, precios congelados, tarifas atrasadas, Leliq y pases (pasivos remunerados), puts de los bancos, dividendos retenidos, acuerdo con el FMI incumplido.
-- Lo que ya hay en el sitio: resultado fiscal, cuasifiscal y pasivos remunerados (BCRA), brecha, reservas brutas. Es el mismo cálculo que "Por presidente" (valor al inicio y al cierre del mandato) con otro armado.
-- Lo que falta y es difícil: reservas netas (no hay serie oficial; depende de la metodología), deuda comercial con importadores y SIRA, puts, dividendos retenidos (estimaciones de informes, no series), tarifas y precios atrasados (hay que definir cómo se mide el atraso), cumplimiento del acuerdo con el FMI (es un hecho, no una serie). Varios habría que cargarlos a mano con su fuente, como los datos de Congreso, y decir cuáles son estimaciones.
-- Cuidado con D-012: mostrar recibido y entregado con su fuente, sin calificar la herencia.
-
 ## Gasto e impuestos de las provincias y la Nación (2026-11-12)
 → specs: docs/specs/gasto-nacion.md (Nación por partida y por entidad, con universidades; fase 1 implementada el 2026-11-12, `/gasto/`) y docs/specs/provincias.md (bloqueada en parte: el sitio de la DNAP no carga).
 Idea del usuario. Agregado el mismo día: ver el presupuesto de cada entidad pública (por ejemplo en qué gastan las universidades) y aclarar si lo tienen sin rendir.
@@ -305,6 +297,15 @@ Son ajustes a lo ya hecho, no ideas nuevas.
 
 ## Hecho
 (Ideas implementadas y verificadas; se tachan acá con su fecha. Ver CLAUDE.md.)
+
+### Herencia: recibido contra entregado (bloque 11, implementado, spec herencia)
+- ~~Sección dentro de Presidentes que compare lo que cada presidente recibió con lo que entregó: series oficiales (fase 1), datos de informes con su cita (fase 2), reservas netas del FMI y estimación propia, cobertura de tarifas, puts, importaciones pendientes y precios acordados (fase 3).~~ ✅ 2026-11-12 (sin dato: dividendos retenidos; cepo de 2003 y 2007)
+  Pedido original:
+  - ~~Idea del usuario: una sección dentro de Presidentes que compare lo que cada presidente recibió con lo que entregó, con los datos de los que los presidentes se suelen quejar. Sin spec; no implementar sin que se pida.~~
+  - ~~Lista pedida: deuda con importadores, SIRA, déficit fiscal y cuasifiscal, brecha cambiaria, reservas netas negativas, precios congelados, tarifas atrasadas, Leliq y pases (pasivos remunerados), puts de los bancos, dividendos retenidos, acuerdo con el FMI incumplido.~~
+  - ~~Lo que ya hay en el sitio: resultado fiscal, cuasifiscal y pasivos remunerados (BCRA), brecha, reservas brutas. Es el mismo cálculo que "Por presidente" (valor al inicio y al cierre del mandato) con otro armado.~~
+  - ~~Lo que falta y es difícil: reservas netas (no hay serie oficial; depende de la metodología), deuda comercial con importadores y SIRA, puts, dividendos retenidos (estimaciones de informes, no series), tarifas y precios atrasados (hay que definir cómo se mide el atraso), cumplimiento del acuerdo con el FMI (es un hecho, no una serie). Varios habría que cargarlos a mano con su fuente, como los datos de Congreso, y decir cuáles son estimaciones.~~
+  - ~~Cuidado con D-012: mostrar recibido y entregado con su fuente, sin calificar la herencia.~~
 
 ### Responder con una imagen (bloque 7a, implementado, spec responder-con-imagen)
 - ~~Imagen para compartir (1:1, 4:5, 16:9) con el dato, su contexto automático, el gráfico, la fuente y la marca; "Comparar presidentes"; comentario propio; vista simple del Histórico.~~ ✅ 2026-11-10 (las ideas "Compartir gráficos" y "Responder y verificar afirmaciones" siguen abiertas en lo que toca a 7b y 7c)

@@ -1,0 +1,100 @@
+{
+ "actualizado": "2026-11-12",
+ "leeme": "Supuestos de la estimación propia de reservas netas con el método del FMI (docs/specs/herencia.md, fase 3; pipeline/reservas_netas.py). Montos en millones de US$. Cada tramo vale desde 'desde' (inclusive) hasta el tramo siguiente. Verificado contra los documentos el 2026-11-12.",
+ "inicio": "2024-04-01",
+ "swaps": [
+  {
+   "desde": "2024-04-01",
+   "valor": 18300,
+   "cita": "FMI, CR 24/167 (8ª revisión), PDF pág. 12: PBOC swap 18.3; BIS 0.0 (datos al 29-05-2024)",
+   "url": "https://www.imf.org/-/media/files/publications/cr/2024/english/1argea2024002.pdf"
+  },
+  {
+   "desde": "2025-12-01",
+   "valor": 20000,
+   "cita": "FMI, CR 26/105 (artículo IV 2026), PDF pág. 44, recuadro 7: swaps with the PBoC and BIS (about US$20 billion)",
+   "url": "https://www.imf.org/-/media/files/publications/cr/2026/english/1argea2026001.pdf"
+  }
+ ],
+ "sedesa": [
+  {
+   "desde": "2024-04-01",
+   "valor": 1900,
+   "cita": "FMI, CR 24/167, PDF pág. 12: Other (incl. deposit insurance) 1.9",
+   "url": "https://www.imf.org/-/media/files/publications/cr/2024/english/1argea2024002.pdf"
+  },
+  {
+   "desde": "2026-01-01",
+   "valor": 2000,
+   "cita": "FMI, CR 26/105, PDF pág. 44, recuadro 7: liabilities of the deposit guarantee fund (US$2 billion)",
+   "url": "https://www.imf.org/-/media/files/publications/cr/2026/english/1argea2026001.pdf"
+  }
+ ],
+ "fmi": {
+  "base_deg": 31100.0,
+  "base_cita": "FMI, Financial Position in the Fund for Argentina as of March 31, 2025: Extended Arrangements 31,100.00 (SDR Million), antes del acuerdo del 11-04-2025",
+  "usd_por_deg": 1.3654,
+  "usd_por_deg_cita": "FMI, CR 26/105, memorándum técnico, PDF pág. 114, tipos de programa: 1.459,42 pesos por dólar y 1.992,62 pesos por DEG (1.992,62 / 1.459,42 = 1,3654)",
+  "url": "https://www.imf.org/external/np/fin/tad/exfin2.aspx?memberKey1=30&date1key=2026-10-31",
+  "deg_fin_de_mes": {
+   "2025-04": 40260.0,
+   "2025-05": 40260.0,
+   "2025-06": 40260.0,
+   "2025-07": 40260.0,
+   "2025-08": 41789.0,
+   "2025-09": 41789.0,
+   "2025-10": 41789.0,
+   "2025-11": 41789.0,
+   "2025-12": 41789.0,
+   "2026-01": 41789.0,
+   "2026-02": 41789.0,
+   "2026-03": 41789.0,
+   "2026-04": 41789.0,
+   "2026-05": 42552.0,
+   "2026-06": 42552.0,
+   "2026-07": 42552.0,
+   "2026-08": 42552.0,
+   "2026-09": 41968.67,
+   "2026-10": 41968.67
+  },
+  "deg_cita": "FMI, Financial Position in the Fund for Argentina as of <fin de cada mes>, sección IV (Outstanding Purchases and Loans)"
+ },
+ "controles": [
+  {
+   "fecha": "2024-05-29",
+   "fmi": 300,
+   "cita": "FMI, CR 24/167, PDF pág. 12: Net International Reserves 0.3 (datos al 29-05-2024)",
+   "url": "https://www.imf.org/-/media/files/publications/cr/2024/english/1argea2024002.pdf"
+  },
+  {
+   "fecha": "2024-12-30",
+   "fmi": -2400,
+   "cita": "FMI, CR 26/105, PDF pág. 69: well below end-2024 levels (-$2.4 billion)",
+   "url": "https://www.imf.org/-/media/files/publications/cr/2026/english/1argea2026001.pdf"
+  },
+  {
+   "fecha": "2025-12-30",
+   "fmi": -11700,
+   "cita": "FMI, CR 26/105, PDF pág. 69: NIR fell to -$11.7 billion (at current rates) by end-2025",
+   "url": "https://www.imf.org/-/media/files/publications/cr/2026/english/1argea2026001.pdf"
+  }
+ ],
+ "no_incluye": "repos con bancos y BOPREAL que vencen en menos de un año, el swap con el Tesoro de EE.UU., futuros y forwards, y la valuación del oro a precio de programa",
+ "controles_bcra": [
+  {
+   "fecha": "2024-12-30",
+   "bcra": -2400,
+   "cita": "BCRA, Informe de Política Monetaria de diciembre de 2025, pág. 57, cuadro 1 (cómputo derivado del balance del BCRA), 31/12/24: Reservas Internacionales Netas -2,4",
+   "url": "https://www.bcra.gob.ar/archivos/Pdfs/PublicacionesEstadisticas/informes/informe-politica-monetaria-2025-T4.pdf"
+  },
+  {
+   "fecha": "2025-12-30",
+   "bcra": 2900,
+   "cita": "BCRA, Informe de Política Monetaria de diciembre de 2025, pág. 57, cuadro 1 (cómputo derivado del balance del BCRA), 31/12/25: Reservas Internacionales Netas 2,9",
+   "url": "https://www.bcra.gob.ar/archivos/Pdfs/PublicacionesEstadisticas/informes/informe-politica-monetaria-2025-T4.pdf"
+  }
+ ],
+ "definicion_bcra_cita": "BCRA, Informe de Política Monetaria de diciembre de 2025, pág. 57: al sólo contemplar los pasivos propios del balance del BCRA (y no los del Tesoro), no se descuentan los desembolsos del crédito del FMI al Tesoro.",
+ "definicion_bcra_url": "https://www.bcra.gob.ar/archivos/Pdfs/PublicacionesEstadisticas/informes/informe-politica-monetaria-2025-T4.pdf",
+ "no_incluye_bcra": "repos con bancos y BOPREAL que vencen en menos de un año, el swap con el Tesoro de EE.UU. y futuros y forwards"
+}

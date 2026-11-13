@@ -12,7 +12,7 @@ import type { Expr, Motor } from "./motor";
 import { grupoDe } from "./catalogo";
 import { datosDesde, variacionMostrada } from "./tablas";
 import { BASE_HERENCIA, GRUPOS_HERENCIA, tablaHerencia } from "./herencia";
-import { filasInforme, type DatoInforme } from "./herencia-informes";
+import { filasEstimaciones, filasInforme, type DatoInforme, type FilaInforme, type ReservasNetas } from "./herencia-informes";
 
 /** Lo que muestra una sección de presidentes y, por lo tanto, lo que lleva la imagen. Todo viene tal como está en pantalla. */
 export type VistaPres =
@@ -21,7 +21,7 @@ export type VistaPres =
   | { tipo: "variables"; presId: string; exprs: Expr[]; base: BaseCfg }
   | { tipo: "mandato"; expr: Expr; modo: ModoMandato; presIds: string[]; anc: string | null; md: string | null; mh: string | null; valorFinal?: boolean; base: BaseCfg }
   | { tipo: "ranking"; crit: CritRk; inds: IndRk[]; usaVars: boolean; base: BaseCfg }
-  | { tipo: "herencia"; presId: string; ids: string[]; base: BaseCfg; informes?: DatoInforme[] }; // ids: series de la tabla que están en el catálogo (base fija T-1); informes: datos cargados a mano (fase 2)
+  | { tipo: "herencia"; presId: string; ids: string[]; base: BaseCfg; informes?: DatoInforme[]; rn?: ReservasNetas | null }; // ids: series de la tabla que están en el catálogo (base fija T-1); informes: datos cargados a mano (fase 2)
 export interface OpcionesPres { formato: FormatoImg; comentario: string }
 
 export const esVistaPres = (v: unknown): v is VistaPres => !!v && typeof v === "object" && "tipo" in v;
@@ -206,11 +206,14 @@ function imagenHerencia(m: Motor, v: Extract<VistaPres, { tipo: "herencia" }>, o
   // los datos de texto (cepo, acuerdo con el FMI) no entran en una columna de números: van como frases, completos
   const textos = inf.filter((f) => f.def.tipo === "texto").map((f) =>
     neutro(`${f.def.nombre}: recibió «${f.recibio?.txt ?? "sin dato"}»; ${t.enCurso ? "hoy" : "entregó"} «${f.entrego?.txt ?? "sin dato"}».`));
-  const filasInf = inf.filter((f) => f.def.tipo !== "texto").map((f): FilaVariable & { grupo: string } => ({
-    grupo: f.def.grupo, nombre: f.def.nombre, unidad: `${f.def.unidad} (dato de informe)`, ini: f.recibio?.txt ?? "–", fin: f.entrego?.txt ?? "–",
+  const aFila = (f: FilaInforme, marca: string): FilaVariable & { grupo: string } => ({
+    grupo: f.def.grupo, nombre: f.def.nombre, unidad: `${f.def.unidad} (${marca})`, ini: f.recibio?.txt ?? "–", fin: f.entrego?.txt ?? "–",
     variacion: f.cambio, cls: "neutro", nota: `${f.recibio?.mes ?? "sin dato"} → ${f.entrego?.mes ?? "sin dato"}`, spark: [],
-  }));
-  const filas: FilaVariable[] = GRUPOS_HERENCIA.flatMap((g) => [...filasSerie, ...filasInf].filter((x) => x.grupo === g)).map(({ grupo: _g, ...x }) => x);
+  });
+  const filasInf = inf.filter((f) => f.def.tipo !== "texto").map((f) => aFila(f, "dato de informe"));
+  // estimaciones (fase 3): al final, con quién estima en la unidad
+  const filasEst = filasEstimaciones(v.informes ?? [], v.rn ?? null, crearPres(m.F), t.k).map((f) => aFila(f, `estimación: ${f.def.quien}`));
+  const filas: FilaVariable[] = [...GRUPOS_HERENCIA.flatMap((g) => [...filasSerie, ...filasInf].filter((x) => x.grupo === g)), ...filasEst].map(({ grupo: _g, ...x }) => x);
   const fin = Math.min(p.i1, F.length - 1);
   const d = esqueleto(m, o, BASE_HERENCIA, `Herencia de ${p.n}: lo que recibió${t.mesT1 ? ` (${t.mesT1})` : ""} y ${t.enCurso ? "el último dato" : `lo que entregó (${fmtMes(F[fin])})`}`, F[fin]);
   d.inicioTxt = null;

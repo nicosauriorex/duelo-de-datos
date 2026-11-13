@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Fragment, useMemo, useState } from "react";
 import { useSeccion } from "../useSeccion";
 import { Cargando, Modal, Selector, Seg } from "../ui";
-import { useHerenciaInformes } from "../useHerenciaInformes";
+import { useHerenciaInformes, useReservasNetas } from "../useHerenciaInformes";
 import { BotonInfo } from "../Variables";
 import { BotonCompartir } from "../PanelCompartir";
 import { BotonLink } from "../BotonLink";
@@ -18,7 +18,8 @@ import {
   type FilaHerencia, type Punto,
 } from "@/lib/herencia";
 import {
-  FILAS_INFORME, PREF_INF, clavesCargadas, filasInforme, puntoInforme, traspasosInforme, type DatoInforme, type DefInforme, type FilaInforme, type PuntoInforme,
+  FILAS_INFORME, PREF_INF, clavesCargadas, cualRNPropia, defRNPropia, dosDefiniciones, filasEstimaciones, filasInforme, puntoInforme, rangoControles, traspasosInforme,
+  type DatoInforme, type DefInforme, type DefinicionRN, type FilaInforme, type PuntoInforme, type ReservasNetas,
 } from "@/lib/herencia-informes";
 import { unoDe, useParams } from "@/lib/url";
 import type { Motor } from "@/lib/motor";
@@ -46,18 +47,78 @@ function VentanaCita({ d, x, onCerrar }: { d: DefInforme; x: DatoInforme; onCerr
         {x.cita ? <><dt>Qué dice</dt><dd><q>{x.cita}</q></dd></> : null}
         {x.nota ? <><dt>Nota</dt><dd>{x.nota}</dd></> : null}
       </dl>
-      <p className="note">Es un dato oficial que no está en una serie abierta: se copió a mano del documento.{d.nota ? ` ${d.nota}` : ""}</p>
+      <p className="note">
+        {d.grupo !== "Estimaciones" ? "Es un dato oficial que no está en una serie abierta: se copió a mano del documento."
+          : d.oficial ? `Cifra que publicó el ${d.quien ?? x.organismo} en un informe, no como serie: se copió a mano del documento.`
+          : `Es una estimación de ${d.quien ?? x.organismo}, no un dato oficial del país: se copió a mano del documento.`}
+        {d.nota ? ` ${d.nota}` : ""}
+      </p>
+    </Modal>
+  );
+}
+
+const fmtUS = (v: number) => `${v < 0 ? "−" : ""}${Math.abs(v).toLocaleString("es-AR", { maximumFractionDigits: 0 })}`;
+const fechaTxt = (f: string) => f.split("-").reverse().join("/");
+
+/** Una estimación propia de reservas netas: la cuenta con sus componentes, los supuestos con su cita y cuánto se apartó de la cifra publicada
+ *  con esa definición (FMI o Banco Central). */
+function VentanaEstimacion({ rn, cual, onCerrar }: { rn: ReservasNetas; cual: DefinicionRN; onCerrar: () => void }) {
+  const u = rn.ultimo, D = defRNPropia(cual), bcra = cual === "bcra", netas = bcra ? u.netas_bcra ?? u.netas + u.fmi : u.netas;
+  const quien = bcra ? "el Banco Central" : "el FMI";
+  const controles = bcra
+    ? (rn.controles_bcra ?? []).map((c) => ({ fecha: c.fecha, propia: c.propia, oficial: c.bcra, dif: c.dif, url: c.url }))
+    : rn.controles.map((c) => ({ fecha: c.fecha, propia: c.propia, oficial: c.fmi, dif: c.dif, url: c.url }));
+  return (
+    <Modal titulo={`Cómo se calcula: ${D.nombre}`} onCerrar={onCerrar}>
+      <h3 className="her-cita-t">{D.nombre}</h3>
+      <p className="note">Estimación de Primero los Datos, no un dato oficial: la cuenta {bcra ? "con la definición del Banco Central" : "del FMI"} hecha con lo que el Banco Central publica cada día. Al {fechaTxt(u.fecha)}, en millones de US$:</p>
+      <dl className="her-cita">
+        <dt>Reservas brutas</dt><dd>{fmtUS(u.brutas)} (Banco Central, variable 1)</dd>
+        <dt>− Encajes en dólares</dt><dd>{fmtUS(u.encajes)} (depósitos de los bancos en el Banco Central, variable 1243)</dd>
+        <dt>− Swaps con China y el BIS</dt><dd>{fmtUS(u.swaps)} (supuesto, de los informes del FMI)</dd>
+        <dt>− Seguro de depósitos</dt><dd>{fmtUS(u.sedesa)} (supuesto, de los informes del FMI)</dd>
+        {bcra ? null : <><dt>− Crédito del FMI desde 2025</dt><dd>{fmtUS(u.fmi)} (lo que el FMI giró desde el acuerdo de abril de 2025, neto de lo que se le pagó)</dd></>}
+        <dt>= Reservas netas</dt><dd><b>{fmtUS(netas)}</b></dd>
+      </dl>
+      {bcra ? (
+        <p className="note">
+          No se restan los {fmtUS(u.fmi)} millones que prestó el FMI desde abril de 2025: según el Banco Central, son deuda del Tesoro y no de su balance
+          {rn.definicion_bcra?.url ? <> (<a href={rn.definicion_bcra.url} target="_blank" rel="noopener noreferrer">informe de política monetaria de diciembre de 2025, pág. 57</a>)</> : null}.
+          Con el método del FMI, que sí los resta, la misma cuenta da {fmtUS(u.netas)}.
+        </p>
+      ) : (
+        <p className="note">Sin restar el crédito del FMI, que es lo que hace la definición del Banco Central, la misma cuenta da {fmtUS(u.netas_bcra ?? u.netas + u.fmi)}.</p>
+      )}
+      {bcra
+        ? <p className="note">La definición del Banco Central resta todos sus pasivos en moneda extranjera que vencen en menos de un año. De esos, no son públicos y no entran en esta cuenta: {rn.no_incluye_bcra ?? rn.no_incluye}. Por eso la estimación puede dar más alta que la cifra del Banco Central.</p>
+        : <p className="note">No entran, porque no son públicos: {rn.no_incluye}.</p>}
+      <h4 className="her-cita-t">Contra {quien}</h4>
+      <p className="note">La misma cuenta en las fechas en que {quien} publicó sus reservas netas se apartó {rangoControles(rn, cual)}:</p>
+      <dl className="her-cita">
+        {controles.map((c) => (
+          <Fragment key={c.fecha}>
+            <dt>{fechaTxt(c.fecha)}</dt>
+            <dd>propia {fmtUS(c.propia)}; <a href={c.url} target="_blank" rel="noopener noreferrer">{bcra ? "Banco Central" : "FMI"}</a> {fmtUS(c.oficial)} (diferencia {c.dif > 0 ? "+" : ""}{fmtUS(c.dif)})</dd>
+          </Fragment>
+        ))}
+      </dl>
+      <h4 className="her-cita-t">Supuestos</h4>
+      <ul className="method">
+        {rn.supuestos.filter((x) => !bcra || !/FMI desde/.test(x.concepto)).map((x, i) => (
+          <li key={i}>{x.concepto[0].toUpperCase() + x.concepto.slice(1)}{x.valor != null ? `, desde el ${fechaTxt(x.desde)}: ${fmtUS(x.valor)}` : ""}. Fuente: <a href={x.url} target="_blank" rel="noopener noreferrer">{x.cita}</a>.</li>
+        ))}
+      </ul>
     </Modal>
   );
 }
 
 /** Celda de un dato de informe: el valor y su mes son un botón que abre la cita. */
-function CeldaInforme({ d, p, verCita }: { d: DefInforme; p: PuntoInforme | null; verCita: VerCita }) {
-  if (!p) return <td className="her-sin">sin dato<small>no hay informe de esa fecha</small></td>;
+function CeldaInforme({ d, p, verCita, motivo }: { d: DefInforme; p: PuntoInforme | null; verCita: VerCita; motivo?: string }) {
+  if (!p) return <td className="her-sin">sin dato<small>{motivo ?? d.sinDato ?? "no hay informe de esa fecha"}</small></td>;
   return (
     <td>
       <button type="button" className="her-inf" onClick={() => verCita(d, p.dato)} aria-label={`${p.txt}, ${p.mes}: ver de qué documento sale`}>
-        {p.txt}<small>{p.mes} · informe</small>
+        {p.txt}<small>{p.mes} · {d.grupo === "Estimaciones" ? "estimación" : "informe"}</small>
       </button>
     </td>
   );
@@ -68,7 +129,7 @@ function FilaInf({ f, verCita }: { f: FilaInforme; verCita: VerCita }) {
     <tr>
       <CeldaVar nombre={f.def.nombre} unidad={f.def.unidad} />
       <CeldaInforme d={f.def} p={f.recibio} verCita={verCita} />
-      <CeldaInforme d={f.def} p={f.entrego} verCita={verCita} />
+      <CeldaInforme d={f.def} p={f.entrego} verCita={verCita} motivo={f.sinEntrego} />
       <Valor tono={null} sub={f.cambioAbs ? <small>{f.cambioAbs}</small> : null}>{f.cambio}</Valor>
     </tr>
   );
@@ -91,12 +152,14 @@ export function Herencia() {
   const sec = useSeccion(IDS);
   const { motor: m } = sec;
   const inf = useHerenciaInformes();
+  const rn = useReservasNetas();
+  const [verRN, setVerRN] = useState<DefinicionRN | null>(null);
   const [cita, setCita] = useState<{ d: DefInforme; x: DatoInforme } | null>(null);
-  const verCita: VerCita = (d, x) => setCita({ d, x });
+  const verCita: VerCita = (d, x) => { const c = cualRNPropia(d.clave); if (c) setVerRN(c); else setCita({ d, x }); };
   const PRES: Pres[] = useMemo(() => (m ? crearPres(m.F) : []), [m]);
 
   if (sec.errorGeneral) return <p className="error" role="alert">{sec.errorGeneral}</p>;
-  if (!m || !montado || sec.ocupado || !inf.datos) return <Cargando />;
+  if (!m || !montado || sec.ocupado || !inf.datos || rn === undefined) return <Cargando />;
   const datosInf = inf.datos, cargadas = clavesCargadas(datosInf);
 
   const ultimo = PRES[PRES.length - 1];
@@ -106,11 +169,11 @@ export function Herencia() {
   const clave = defPorClave(pv)?.clave ?? (pv.startsWith(PREF_INF) && cargadas.has(pv.slice(PREF_INF.length)) ? pv : FILAS_HERENCIA[0].clave);
   const tabla = tablaHerencia(m, pres.id);
   if (!tabla) return <Cargando />;
-  const filasInf = filasInforme(datosInf, PRES, tabla.k);
+  const filasInf = filasInforme(datosInf, PRES, tabla.k).filter((f) => f.def.grupo !== "Estimaciones"), filasEst = filasEstimaciones(datosInf, rn, PRES, tabla.k);
   const faltan = FALTA_CARGAR.filter(([, , claves]) => !claves.every((c) => cargadas.has(c)));
   const opcionesVar: [string, string][] = [
     ...tabla.filas.map((f) => [f.def.clave, `${f.grupo}: ${f.nombre}`] as [string, string]),
-    ...FILAS_INFORME.filter((d) => cargadas.has(d.clave)).map((d) => [PREF_INF + d.clave, `${d.grupo}: ${d.nombre} (informes)`] as [string, string]),
+    ...FILAS_INFORME.filter((d) => cargadas.has(d.clave)).map((d) => [PREF_INF + d.clave, `${d.grupo}: ${d.nombre}${d.grupo === "Estimaciones" ? ` (${d.quien})` : " (informes)"}`] as [string, string]),
   ];
   const enCurso = tabla.enCurso, finTxt = fmtMes(m.F[Math.min(pres.i1, m.F.length - 1)]);
   const colFin = enCurso ? "Hoy" : "Entregó";
@@ -140,7 +203,7 @@ export function Herencia() {
                 onElegir={(v) => set({ p: v === ultimo.id ? null : v })} />
               <BotonCompartir className="btn" titulo={`Primero los Datos: herencia de ${pres.n}`} href={() => window.location.href}
                 title="Armar una imagen de esta tabla para compartir" aria-label={`Compartir como imagen: herencia de ${pres.n}`}
-                crearVista={() => ({ tipo: "herencia", presId: pres.id, ids: IDS.filter((id) => !!m.SER[id]), base: BASE_HERENCIA, informes: datosInf })}><IconoCompartir />Compartir</BotonCompartir>
+                crearVista={() => ({ tipo: "herencia", presId: pres.id, ids: IDS.filter((id) => !!m.SER[id]), base: BASE_HERENCIA, informes: datosInf, rn })}><IconoCompartir />Compartir</BotonCompartir>
             </div>
             <p className="note">
               {pres.n} asumió en {fmtMes(pres.ini)}. <b>Recibió</b>: último dato en o antes de {tabla.mesT1 ?? "el mes anterior a asumir"}.{" "}
@@ -170,6 +233,34 @@ export function Herencia() {
                 {filasInf.filter((f) => f.def.nota).map((f) => <li key={f.def.clave}><b>{f.def.nombre}</b>: {f.def.nota}</li>)}
               </ul>
             </details>
+            {filasEst.length ? (
+              <div className="her-est">
+                <h3 className="her-est-t">Estimaciones y cifras sin serie oficial</h3>
+                <p className="note">Datos que no tienen una serie oficial: los estima el FMI, el Banco Central en un informe, un centro de estudios o este sitio, y cada uno dice quién. Sin color: no se califican.</p>
+                {(() => {
+                  const dd = dosDefiniciones(datosInf, rn);
+                  return dd ? (
+                    <p className="note">
+                      Hay más de una definición de reservas netas. Al {fechaTxt(dd.fecha)}: {fmtUS(dd.fmi)} millones de US$ según el FMI y {dd.bcra > 0 ? "+" : ""}{fmtUS(dd.bcra)} según el Banco Central, {fmtUS(dd.dif)} de diferencia.
+                      {dd.credito != null ? ` La diferencia es casi igual a lo que prestó el FMI desde abril de 2025 (${fmtUS(dd.credito)} en la cuenta propia a esa fecha), que la definición del FMI resta y la del Banco Central no, porque es deuda del Tesoro.` : ""}
+                    </p>
+                  ) : null;
+                })()}
+                <div className="tablewrap fija her-tabla"><table>
+                  <thead><tr><th>Variable</th><th>Recibió</th><th>{colFin}</th><th>Cambio</th></tr></thead>
+                  <tbody>{filasEst.map((f) => <FilaInf key={f.def.clave} f={f} verCita={verCita} />)}</tbody>
+                </table></div>
+                {rn && filasEst.some((f) => cualRNPropia(f.def.clave) && f.entrego)
+                  ? <p className="note">Las estimaciones propias se apartaron {rangoControles(rn, "fmi")} de las cifras del FMI y {rangoControles(rn, "bcra")} de las del Banco Central, en las fechas en que cada uno publicó. Tocá su valor para ver la cuenta.</p>
+                  : null}
+                <details className="her-plegado">
+                  <summary>Notas de las estimaciones</summary>
+                  <ul className="method">
+                    {filasEst.filter((f) => f.def.nota).map((f) => <li key={f.def.clave}><b>{f.def.nombre}</b> ({f.def.quien}): {f.def.nota}</li>)}
+                  </ul>
+                </details>
+              </div>
+            ) : null}
             {notaT}
           </>
         ) : (
@@ -197,6 +288,7 @@ export function Herencia() {
         {inf.error ? <p className="note">{inf.error}</p> : null}
       </div>
       {cita ? <VentanaCita d={cita.d} x={cita.x} onCerrar={() => setCita(null)} /> : null}
+      {verRN && rn ? <VentanaEstimacion rn={rn} cual={verRN} onCerrar={() => setVerRN(null)} /> : null}
     </section>
   );
 }

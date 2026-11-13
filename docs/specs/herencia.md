@@ -1,6 +1,6 @@
 # Herencia: recibido contra entregado
 
-Estado: fases 1 y 2 implementadas (2026-11-12); la fase 3 necesita una decisión del usuario.
+Estado: fases 1, 2 y 3 implementadas (2026-11-12).
 Fase 2: 42 datos en `datos/manual/herencia.json` (deuda pública bruta, % del PIB y en moneda extranjera desde 2007; deuda con el FMI en DEG y acuerdo vigente desde 2003; cepo desde 2011; deuda de importadores de los informes desde 2019; BOPREAL), cada uno verificado contra su documento. `traspaso` = mes de asunción del que recibe o "hoy". Filas sin color; deuda de importadores de los informes en fila aparte (otro relevamiento). Sin cargar: cepo de 2003 y 2007, FMI anterior a 2003. El nombre y la unidad que se muestran salen de `FILAS_INFORME` (`web/lib/herencia-informes.ts`), no de cada entrada: el JSON no lleva `nombre`.
 Decisiones de la implementación: un dato vale como "recibió" o "entregó" si tiene hasta 12 meses de atraso (`MAX_ATRASO` en `web/lib/herencia.ts`); precios regulados contra el nivel general en base dic-16 = 100 (sin enlace a la ficha, que usa otra escala); pasivos / base monetaria como cuenta propia (el motor no admite esa relación); las reservas de la tabla son el promedio del mes en dólares de hoy, no el saldo de un día: no coinciden con las cifras de "Cómo se verifica".
 Ideas: "Herencia: recibido contra entregado" (IDEAS.md, 2026-11-12).
@@ -71,8 +71,37 @@ Archivo `datos/manual/herencia.json` (versionado, como los datos de Congreso), u
 - Cifras ya vistas en la investigación, SIN verificar en el documento (no cargarlas sin leer la fuente): deuda comercial por importaciones de bienes US$ 40.249 millones al 31-12-2024; acuerdos con el FMI de 2018 (US$ 56.300 millones), 2022 (US$ 44.000 millones) y 2025 (US$ 20.000 millones); cepo desde 28-10-2011, levantado en dic-2015, repuesto el 1-9-2019, levantado para personas el 14-4-2025.
 - Quién lo hace: un agente que pueda abrir PDF (los investigadores no pudieron leerlos: llegaron como binario) o el usuario. Cada cifra con documento, página y fecha; sin cita no se carga.
 
-## Fase 3 (necesita una decisión del usuario): estimaciones privadas
-Reservas netas, SIRA, puts, dividendos retenidos, cobertura de tarifas. No tienen dato oficial. Opciones: (a) no mostrarlas, solo explicar por qué (lo que hace la fase 1); (b) mostrarlas como "estimación de <fuente>", en un bloque aparte y sin color, cargadas a mano con su cita. Recomendación: (b) solo para las reservas netas, que tienen metodología publicada por el FMI, y siempre que la cifra salga de un documento del FMI; el resto, (a).
+## Fase 3: reservas netas y lo que no era "no medible" (decidido el 2026-11-12)
+Decisión del usuario: opción (b) solo para las reservas netas que publica el FMI, más una réplica propia al día con el método del FMI, rotulada como estimación; cargar como datos de informe lo que resultó tener fuente oficial, y sumar la serie privada del IIEP sobre tarifas. Investigado el 2026-11-12; cada cifra verificada contra su documento.
+
+### Requisitos
+1. **Datos oficiales nuevos** (van como la fase 2, en `datos/manual/herencia.json`, en su grupo y con la marca "informe"):
+   - Importaciones pendientes de pago (Banco Central, estimación al 12-12-2023: US$ 57.800 millones, comunicado del 25-01-2024; el padrón de Comercio dio 42.600 y el exceso sobre lo habitual, 13.600: en la nota). Grupo "Deuda y sector externo".
+   - Puts de los bancos (opciones de liquidez sobre títulos del Tesoro, Banco Central): $ 12,27 billones de dic-2023 al 31-12-2023 (estados contables 2023, nota 5); 0 desde el 10-06-2025 (comunicado de rescisión). Grupo "Banco Central".
+   - Cobertura del costo de la electricidad (precio estacional / precio monómico del MEM, Secretaría de Energía, Res. 7/2024): 79 % en feb-2019, 57 % en nov-2023. Grupo "Precios".
+   - Precios acordados (INDEC, nota del informe del IPC: % de los precios relevados en el GBA que están en programas de acuerdo): 2,56 % en nov-2023. Grupo "Precios".
+2. **Bloque "Estimaciones y cifras sin serie oficial"** debajo de la tabla: tabla propia con el mismo formato (Recibió, Entregó/Hoy, Cambio), sin color, y una línea que explique quién estima cada una:
+   - Reservas netas según el FMI: 2019-12 = 12.400 (CR 23/133: 8.800 a fin de 2022, "3.600 menos que a fin de 2019"; la suma se dice en la nota); 2023-12 = −11.200 al 7-12-2023 (CR 24/37); "hoy" = −11.700 al 31-12-2025 (CR 26/105), el último stock publicado. Sin dato de 2015 (el FMI no lo publicó).
+   - Reservas netas según el Banco Central (pedido del usuario, 2026-11-13): definición propia del BCRA ("criterios jurídicos y contables"), informe de política monetaria de dic-2025, págs. 55 y 57 (cuadro 1, leído en el PDF): −11.200 al 7-12-2023 y +2.900 a fin de 2025. Sobre la tabla, una línea compara las dos definiciones en la misma fecha: la diferencia es casi igual al crédito del FMI desde abril de 2025, que el FMI resta y el Banco Central no (pág. 57).
+   - Reservas netas, estimación propia con la definición del Banco Central (pedido del usuario, 2026-11-13): la misma cuenta sin restar el crédito del FMI (el BCRA no lo descuenta porque es deuda del Tesoro, informe de política monetaria de dic-2025, pág. 57). Controles contra el cuadro 1 de ese informe: 31/12/24 −2.400 y 31/12/25 +2.900 (`controles_bcra` en los supuestos). Campo `netas_bcra` en `reservas_netas.json`.
+   - Reservas netas, estimación propia con el método del FMI: solo "Hoy" (la serie empieza en abr-2024). Va con su fórmula, los supuestos y la diferencia con el FMI en las fechas en que publicó (ver abajo).
+   - Cobertura de costos de los servicios públicos del AMBA (IIEP, UBA-CONICET; luz, gas, agua y transporte): solo "Hoy" (57 % en oct-2026, reporte #43); la serie empieza en 2023 y no es comparable con la de la Secretaría de Energía.
+3. **Estimación propia de reservas netas** (`pipeline/reservas_netas.py` → `web/public/datos/reservas_netas.json`, sin red con `--solo-json`):
+   - Fórmula: reservas brutas (API BCRA variable 1) − encajes en dólares de los bancos en el BCRA (variable 1243) − swaps con el Banco Popular de China y el BIS − seguro de depósitos (SEDESA) − crédito neto del FMI desde el inicio del acuerdo de 2025.
+   - Los dos primeros son series diarias (respaldo en `datos/cache/bcra_1.csv` y `bcra_1243.csv`). Los demás, supuestos con cita en `datos/manual/reservas_netas_supuestos.json`, por tramos de fechas: swaps 18.300 desde abr-2024 (CR 24/167) y unos 20.000 desde dic-2025 (CR 26/105, recuadro 7); SEDESA 1.900 (CR 24/167) y 2.000 desde 2026 (CR 26/105); FMI = (crédito del Fondo en DEG a fin de cada mes − 31.100 DEG del 31-03-2025) × 1,3654 US$ por DEG (tipos de programa del memorándum técnico, CR 26/105).
+   - No entran (no son públicos): repos con bancos y BOPREAL que vencen en menos de un año, el swap con el Tesoro de EE.UU., futuros y forwards, y la valuación del oro a precio de programa. Decirlo.
+   - Controles: la misma cuenta en las fechas en que el FMI publicó un stock (29-05-2024: +300; 30-12-2024: −2.400; 30-12-2025: −11.700). El JSON trae la diferencia de cada uno y la página la muestra ("en esas fechas la estimación se apartó entre X y Y millones del FMI"). Si la diferencia pasa de 3.000 millones, el pipeline avisa.
+   - Formato: `{ "actualizado", "ultimo": {fecha, netas, brutas, encajes, swaps, sedesa, fmi}, "mensual": [{mes, netas}], "controles": [{fecha, propia, fmi, dif, cita}], "supuestos": [...] }`.
+4. "Lo que no se puede medir" queda con los dividendos retenidos (sin dato oficial; el BOPREAL Serie 4 da solo el tope del bono), los productos con precios congelados y las reservas netas como dato oficial (remite al bloque de estimaciones).
+5. Imagen: las filas de estimaciones van al final, con "(estimación)" en la unidad; las de texto, como frases (fase 2).
+
+### Casos borde
+- La estimación propia sin dato reciente (más de 20 días): "sin dato" y por qué.
+- Si el FMI publica un stock nuevo (informe de la 3ª revisión, dic-2026), se agrega como "hoy" del FMI y como control.
+- D-012: ni el FMI ni la estimación se califican; sin color.
+
+### Cómo se verifica
+`python pipeline/obtener_datos.py --solo-json` arma `reservas_netas.json` con los tres controles; `npm run tipos`, `npm run build`, `npm run previas`; `/herencia/` a 360 y 1280 px con el bloque de estimaciones y la cita de cada dato; `revisor`.
 
 ## Fuera de alcance
 Calificar la herencia; comparar promesas con resultados; datos anteriores a 1996 que no estén en series abiertas.

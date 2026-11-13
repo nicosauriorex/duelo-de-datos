@@ -1242,6 +1242,10 @@ tr.nota-grupo td { background: var(--surface-0); color: var(--text-secondary); t
 .her-inf { all: unset; box-sizing: border-box; display: inline-flex; flex-direction: column; align-items: flex-end; min-height: var(--alto-toque); justify-content: center; cursor: pointer; text-align: right; text-decoration: underline dotted; text-underline-offset: 3px; color: inherit; max-width: 16ch; white-space: normal; }
 .her-inf small { text-decoration: none; }
 .her-cita-t { margin: 0 var(--e-6) var(--e-2) 0; }
+h4.her-cita-t { margin: var(--e-4) 0 var(--e-1); font-size: var(--t-md); }
+/* bloque de estimaciones (fase 3): separado de la tabla de datos oficiales por una línea */
+.her-est { margin-top: var(--e-5); padding-top: var(--e-3); border-top: var(--linea) solid var(--border-fuerte); }
+.her-est-t { margin: 0 0 var(--e-1); font-size: var(--t-md); }
 .her-cita { display: grid; grid-template-columns: max-content 1fr; gap: var(--e-1) var(--e-3); margin: var(--e-2) 0; }
 .her-cita dt { color: var(--text-secondary); font-size: var(--t-xs); }
 .her-cita dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }

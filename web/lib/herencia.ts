@@ -215,12 +215,9 @@ export function traspasos(m: Motor, clave: string): VistaTraspasos | null {
 // ---------------------------------------------------------------- lo que no se puede medir y lo que falta cargar (al pie de la página)
 /** Lista C de la spec: sin dato oficial. */
 export const NO_MEDIBLE: [string, string][] = [
-  ["Reservas netas", "No hay serie oficial: solo aparecen en documentos del FMI y en estimaciones privadas; el swap con China y los encajes en dólares no están en las series abiertas del Banco Central."],
-  ["Importaciones pendientes de pago (SIRA)", "No hay un dato oficial del total de permisos pendientes."],
-  ["Opciones de venta de los bancos (puts)", "No hay un dato oficial del total."],
-  ["Dividendos retenidos de empresas", "No hay un dato oficial."],
-  ["Cuánto del costo cubren las tarifas", "Solo hay estimaciones privadas; lo medible es cómo se movieron los precios regulados contra el resto (fila de Precios)."],
-  ["Precios congelados", "Solo se conocen las fechas de los programas, no un indicador mensual."],
+  ["Dividendos retenidos de empresas", "No hay un dato oficial del total. El Banco Central creó en abril de 2025 un bono para pagarlos (BOPREAL Serie 4, hasta US$ 3.000 millones), pero ese es el tope del bono, no lo que estaba retenido."],
+  ["Productos con precios congelados", "Solo se conocen las fechas de los programas; lo medible es la parte de los precios del IPC que estaba en programas acordados (fila de Precios)."],
+  ["Reservas netas como dato oficial", "Ningún organismo argentino publica una serie: hay cifras del FMI en sus informes y una estimación propia con su método (bloque de estimaciones)."],
 ];
 /** Lista B de la spec: dato oficial que está en un informe (se carga a mano, con su cita; lib/herencia-informes.ts).
  *  El tercer elemento son las claves de `FILAS_INFORME` que lo cubren: un ítem sale de la lista cuando todas tienen algún dato cargado. */

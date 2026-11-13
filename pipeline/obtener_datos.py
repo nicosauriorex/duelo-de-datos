@@ -34,6 +34,7 @@ import salarios
 import semaforo
 import gasto_nacion
 import herencia_informes
+import reservas_netas
 
 RAIZ = Path(__file__).resolve().parent.parent  # carpeta del proyecto
 OUT = RAIZ / "datos"
@@ -315,6 +316,12 @@ def escribir_json_web(datos, ctx=None, pm=None, cap=None, con_red=True):
             (destino / "herencia_informes.json").write_text(json.dumps(inf, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     except Exception as e:
         print(f"Herencia (datos de informes): no se pudo armar, se sigue sin herencia_informes.json ({e}).")
+    # Reservas netas, estimación propia con el método del FMI (herencia, fase 3): con red baja los encajes (variable 1243); sin red usa el respaldo.
+    # Va fuera del hash. Si falla, la corrida sigue sin reservas_netas.json.
+    try:
+        (destino / "reservas_netas.json").write_text(json.dumps(reservas_netas.construir_json(con_red), ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    except Exception as e:
+        print(f"Reservas netas: no se pudo armar, se sigue sin reservas_netas.json ({e}).")
     # "version" cambia con cada dato nuevo: la web la agrega a cada pedido para no mezclar cachés viejos y nuevos.
     (destino / "catalogo.json").write_text(
         json.dumps({"version": h.hexdigest()[:10], "fechas": datos["fechas"], "series": meta}, ensure_ascii=False, separators=(",", ":")),
