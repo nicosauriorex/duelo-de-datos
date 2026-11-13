@@ -33,6 +33,7 @@ import precios_mundo
 import salarios
 import semaforo
 import gasto_nacion
+import herencia_informes
 
 RAIZ = Path(__file__).resolve().parent.parent  # carpeta del proyecto
 OUT = RAIZ / "datos"
@@ -306,6 +307,14 @@ def escribir_json_web(datos, ctx=None, pm=None, cap=None, con_red=True):
             (destino / nombre).write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     except Exception as e:
         print(f"Gasto de la Nación: no se pudo armar, se sigue sin gasto_nacion*.json ({e}).")
+    # Herencia, fase 2: datos de informes cargados a mano (datos/manual/herencia.json), sin red. Va fuera del hash.
+    # Un dato sin cita completa corta solo este archivo: la corrida sigue y la página muestra las series sin los datos de informes.
+    try:
+        inf = herencia_informes.construir_json()
+        if inf is not None:
+            (destino / "herencia_informes.json").write_text(json.dumps(inf, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    except Exception as e:
+        print(f"Herencia (datos de informes): no se pudo armar, se sigue sin herencia_informes.json ({e}).")
     # "version" cambia con cada dato nuevo: la web la agrega a cada pedido para no mezclar cachés viejos y nuevos.
     (destino / "catalogo.json").write_text(
         json.dumps({"version": h.hexdigest()[:10], "fechas": datos["fechas"], "series": meta}, ensure_ascii=False, separators=(",", ":")),

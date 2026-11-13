@@ -16,11 +16,12 @@ Hecho y publicado (detalle en `docs/ROADMAP.md`):
 - Parte diario del Banco Central (2026-11-12, `docs/specs/parte-diario-bcra.md`, D-019): `/bcra/` con ocho variables diarias, variaciones, contexto, gráfico, imagen, texto para copiar y vista previa en redes; bloque en la portada.
 - Semáforo de actividad (2026-11-12, `docs/specs/semaforo-actividad.md`, D-020): `/semaforo/` con 29 indicadores, interanual y mes contra mes (solo ajuste oficial), índice de difusión, ventana por indicador, imagen y vista previa en redes.
 - Herencia, fase 1 (2026-11-12, `docs/specs/herencia.md`): `/herencia/` con 19 datos oficiales al recibir y al entregar cada presidente (T-1 fijo), vista "Todos los traspasos", imagen, vista previa en redes y lo que no se puede medir; series nuevas de subsidios a la energía y deuda con importadores.
+- Herencia, fase 2 (2026-11-12): 42 datos oficiales de informes y planillas (Finanzas, FMI, Banco Central) cargados a mano en `datos/manual/herencia.json` con documento, página y cita (`pipeline/herencia_informes.py` los controla y copia); en la tabla con la marca "informe" y la cita al tocarlos, en "Todos los traspasos" y en la imagen.
 - En qué gasta la Nación, fase 1 (2026-11-12, `docs/specs/gasto-nacion.md`): `/gasto/` con el gasto de la Administración Nacional 2018-2026 de Presupuesto Abierto (`pipeline/gasto_nacion.py`, respaldos `datos/cache/gasto_nacion_*`): para qué, quién (hasta cada universidad), en qué y dónde; pesos de hoy, % del total y % del PIB; buscador, comparación entre años (desde 2004 por finalidad), imagen y vista previa.
 - Datos: canastas corregidas; respaldo del IPC cuando la API de INDEC no responde; filtro de cotizaciones sueltas; corridas a las 16:10, 17:15 y 21:00 (hora argentina, las dos primeras solo en días hábiles); publicación rápida cuando el push no toca el pipeline.
 
 ## Qué sigue, en orden
-1. **Herencia, fases 2 y 3** — `docs/specs/herencia.md` (la fase 1 está hecha). Fase 2: cargar a mano datos de informes en PDF con su cita (hace falta poder leer PDF). Fase 3: decisión del usuario sobre mostrar estimaciones privadas (reservas netas).
+1. **Herencia, fase 3** — `docs/specs/herencia.md` (fases 1 y 2 hechas). Decisión del usuario sobre mostrar estimaciones privadas (reservas netas). Datos de informes que quedan por cargar: cepo de 2003 y 2007, FMI de 1995 a 2002; al publicarse informes nuevos, actualizar las entradas "hoy" de `datos/manual/herencia.json`.
 2. **En qué gasta la Nación, fases 2 a 4** — `docs/specs/gasto-nacion.md` (fase 1 hecha). Fase 2: el año en curso mes a mes. Fase 3: universidades; el archivo anual ya trae cada universidad (transferencias del Tesoro); falta cargar lo que solo está en PDF y la rendición de cuentas con sus citas.
 3. **Provincias** — `docs/specs/provincias.md`. Solo se puede hacer la fase 1 (gasto de la Nación en cada provincia, depende del punto anterior). Lo demás está bloqueado: el sitio de la DNAP (`economia.gob.ar/dnap`) tenía el certificado vencido el 2026-11-12. Fase 0: reintentar o que el usuario mire qué planillas publica.
 4. **Pendientes del semáforo**: revisar o retirar "Producción de autos" del catálogo general; ajuste estacional serio (X-13 con corrección de calendario) para completar el mes contra mes; indicadores sin fuente legible (CAME, patentamientos, Construya, escrituras, leche, petróleo), candidatos para la idea de "agentes que buscan el dato" (`docs/IDEAS.md`).
@@ -29,6 +30,13 @@ Hecho y publicado (detalle en `docs/ROADMAP.md`):
 7. **Mantenimiento del pipeline** (auditoría, etapa 4): descargas duplicadas o sin caché al inicio de `obtener_datos.py`, serie de UTDT cortada en 2005, series sin uso, helpers repetidos.
 
 ## Sin verificar (revisar antes de dar por cerrado)
+De la herencia, fase 2 (verificado: cada cifra contra su planilla, PDF o página del FMI; tabla a 360 px sin desborde, cita que se cierra con Atrás, "Todos los traspasos" de un dato de informe, imagen de la vista previa):
+- La deuda/PIB de 2023 (154,5 %) es la que publica Finanzas; el salto se explica en la nota, pero puede llamar la atención.
+- La moneda extranjera de 2007 a 2015 se mide sin los holdouts y desde 2019 con ellos (Finanzas no publica lo otro): lo dicen las notas.
+- BOPREAL de "hoy" es lo colocado en total, no lo que queda por pagar.
+- Las cifras de "hoy" hay que actualizarlas a mano cuando salgan informes nuevos.
+- La página a 1280 px se vio solo en una captura chica; la cita no se probó en un celular real.
+
 Del gasto de la Nación (fase 1; verificado: totales 2023 y 2024 contra la serie oficial, UBA 2024, 14.994 vistas que cierran, página a 360 y 1280 px sin errores, buscador, imagen de la vista previa):
 - La corrida en GitHub con red (bajada de los 9 años, cerca de 1 minuto) y el cambio de año: que 2026 siga "en curso" hasta que la fuente publique su cierre (a mediados de 2027).
 - Tres organismos comparados a mano con el sitio de Presupuesto Abierto (la spec lo pide; se comparó solo UBA y Conicet contra el archivo).

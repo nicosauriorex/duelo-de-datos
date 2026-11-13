@@ -29,6 +29,7 @@ import { armarImagenSemaforo, dibujarImagenSemaforo } from "../lib/imagen-semafo
 import { armarImagenPres } from "../lib/imagen-presidentes";
 import { anioDefecto, armarImagenGasto, armarVista, crearDeflactor, decodificarAnio, decodificarIndice, textosPreviaGasto } from "../lib/gasto";
 import { BASE_HERENCIA, idsHerencia, tablaHerencia, textosPreviaHerencia } from "../lib/herencia";
+import type { DatoInforme, DatosInformes } from "../lib/herencia-informes";
 
 const RAIZ = path.resolve(__dirname, "..");
 const DATOS = path.join(RAIZ, "public", "datos");
@@ -172,7 +173,11 @@ function previaDeHerencia(m: Motor, metas: SerieMeta[], pal: ReturnType<typeof p
     const archivos = new Set(ids.map((id) => metas.find((s) => s.id === id)!.archivo));
     for (const a of archivos) m.agregar(metas.filter((s) => s.archivo === a), leerJson<Record<string, SerieDatos>>(`${a}.json`));
     const presId = PRES_DEF[PRES_DEF.length - 1].id, t = tablaHerencia(m, presId);
-    const datos = t && armarImagenPres(m, { tipo: "herencia", presId, ids, base: BASE_HERENCIA }, { formato: "16x9", comentario: "" });
+    // datos de informes (fase 2): si el archivo no está, la imagen sale solo con las series, como la página
+    let informes: DatoInforme[] = [];
+    if (fs.existsSync(path.join(DATOS, "herencia_informes.json"))) informes = leerJson<DatosInformes>("herencia_informes.json").datos ?? [];
+    else avisar("herencia: sin herencia_informes.json, la imagen va sin los datos de informes");
+    const datos = t && armarImagenPres(m, { tipo: "herencia", presId, ids, base: BASE_HERENCIA, informes }, { formato: "16x9", comentario: "" });
     if (!t || !datos) { avisar("herencia: no hay datos para armar la imagen (/herencia/ usa la imagen general)"); return false; }
     fs.writeFileSync(path.join(SALIDA, "herencia.png"), aPng((cv) => dibujarImagen(cv, datos, pal, DIBUJO), DIBUJO));
     const ult = Math.max(...t.filas.map((f) => f.entrego?.i ?? -1)), fecha = m.F[Math.max(0, ult)];

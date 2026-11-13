@@ -11,7 +11,8 @@ import { fmtMes, lastIdx, ok } from "./formato";
 import type { Expr, Motor } from "./motor";
 import { grupoDe } from "./catalogo";
 import { datosDesde, variacionMostrada } from "./tablas";
-import { BASE_HERENCIA, tablaHerencia } from "./herencia";
+import { BASE_HERENCIA, GRUPOS_HERENCIA, tablaHerencia } from "./herencia";
+import { filasInforme, type DatoInforme } from "./herencia-informes";
 
 /** Lo que muestra una sección de presidentes y, por lo tanto, lo que lleva la imagen. Todo viene tal como está en pantalla. */
 export type VistaPres =
@@ -20,7 +21,7 @@ export type VistaPres =
   | { tipo: "variables"; presId: string; exprs: Expr[]; base: BaseCfg }
   | { tipo: "mandato"; expr: Expr; modo: ModoMandato; presIds: string[]; anc: string | null; md: string | null; mh: string | null; valorFinal?: boolean; base: BaseCfg }
   | { tipo: "ranking"; crit: CritRk; inds: IndRk[]; usaVars: boolean; base: BaseCfg }
-  | { tipo: "herencia"; presId: string; ids: string[]; base: BaseCfg };                 // ids: series de la tabla que están en el catálogo (base fija T-1)
+  | { tipo: "herencia"; presId: string; ids: string[]; base: BaseCfg; informes?: DatoInforme[] }; // ids: series de la tabla que están en el catálogo (base fija T-1); informes: datos cargados a mano (fase 2)
 export interface OpcionesPres { formato: FormatoImg; comentario: string }
 
 export const esVistaPres = (v: unknown): v is VistaPres => !!v && typeof v === "object" && "tipo" in v;
@@ -190,25 +191,35 @@ function imagenHerencia(m: Motor, v: Extract<VistaPres, { tipo: "herencia" }>, o
   const conDato = t.filas.filter((f) => f.c && (f.recibio || f.entrego));
   if (!conDato.length) return null;
   const F = m.F, p = t.pres;
-  const filas: FilaVariable[] = conDato.map((f) => {
+  const filasSerie = conDato.map((f): FilaVariable & { grupo: string } => {
     const c = f.c!, desde = f.recibio?.i ?? f.entrego!.i, hasta = f.entrego?.i ?? f.recibio!.i;
     // los meses de los datos van debajo del cambio (pueden ser de varios meses antes del traspaso en series trimestrales o semestrales)
     const corto = (t: string) => t.replace("la serie empieza en", "serie desde").replace("la serie termina en", "serie hasta");
     const nota = f.recibio && f.entrego ? `${f.recibio.mes} → ${f.entrego.mes}` : f.recibio ? `${f.recibio.mes} → sin dato (${corto(f.sinEntrego)})` : `sin dato (${corto(f.sinRecibio)}) → ${f.entrego!.mes}`;
     return {
-      nombre: f.nombre, unidad: f.unidad, ini: f.recibio?.txt ?? "–", fin: f.entrego?.txt ?? "–", variacion: f.cambio, cls: f.cls, nota,
+      grupo: f.grupo, nombre: f.nombre, unidad: f.unidad, ini: f.recibio?.txt ?? "–", fin: f.entrego?.txt ?? "–", variacion: f.cambio, cls: f.cls, nota,
       spark: c.v.slice(desde, hasta + 1),
     };
   });
+  // datos de informes (fase 2): sin recorrido (son dos datos sueltos) y con el mes de cada uno; sin color, como en la página
+  const inf = filasInforme(v.informes ?? [], crearPres(m.F), t.k);
+  // los datos de texto (cepo, acuerdo con el FMI) no entran en una columna de números: van como frases, completos
+  const textos = inf.filter((f) => f.def.tipo === "texto").map((f) =>
+    neutro(`${f.def.nombre}: recibió «${f.recibio?.txt ?? "sin dato"}»; ${t.enCurso ? "hoy" : "entregó"} «${f.entrego?.txt ?? "sin dato"}».`));
+  const filasInf = inf.filter((f) => f.def.tipo !== "texto").map((f): FilaVariable & { grupo: string } => ({
+    grupo: f.def.grupo, nombre: f.def.nombre, unidad: `${f.def.unidad} (dato de informe)`, ini: f.recibio?.txt ?? "–", fin: f.entrego?.txt ?? "–",
+    variacion: f.cambio, cls: "neutro", nota: `${f.recibio?.mes ?? "sin dato"} → ${f.entrego?.mes ?? "sin dato"}`, spark: [],
+  }));
+  const filas: FilaVariable[] = GRUPOS_HERENCIA.flatMap((g) => [...filasSerie, ...filasInf].filter((x) => x.grupo === g)).map(({ grupo: _g, ...x }) => x);
   const fin = Math.min(p.i1, F.length - 1);
   const d = esqueleto(m, o, BASE_HERENCIA, `Herencia de ${p.n}: lo que recibió${t.mesT1 ? ` (${t.mesT1})` : ""} y ${t.enCurso ? "el último dato" : `lo que entregó (${fmtMes(F[fin])})`}`, F[fin]);
   d.inicioTxt = null;
   const sin = t.filas.length - conDato.length;
-  d.frases = [neutro(`Recibió: último dato en o antes del mes anterior a asumir. ${t.enCurso ? "Hoy: último dato publicado" : "Entregó: último dato del mandato"}.${sin ? ` ${sin} ${sin === 1 ? "variable no tiene" : "variables no tienen"} datos para este período.` : ""}`)];
+  d.frases = [neutro(`Recibió: último dato en o antes del mes anterior a asumir. ${t.enCurso ? "Hoy: último dato publicado" : "Entregó: último dato del mandato"}.${sin ? ` ${sin} ${sin === 1 ? "variable no tiene" : "variables no tienen"} datos para este período.` : ""}`), ...textos];
   d.lienzo = { tipo: "variables", filas, presId: p.id, enc: { ini: "Recibió", fin: t.enCurso ? "Hoy" : "Entregó", vr: "Cambio", sp: "Recorrido", sinDato: "sin dato" } };
   d.unidad = "Cambio en % (en puntos si el dato ya es un porcentaje). Debajo, los meses de los dos datos";
   const calcs = conDato.map((f) => f.c!);
-  const fu = fuentesTxt(calcs.map((c) => c.serie.fuente));
+  const fu = fuentesTxt([...calcs.map((c) => c.serie.fuente), ...new Set(inf.flatMap((f) => [f.recibio, f.entrego]).flatMap((x) => (x ? [`${x.dato.organismo} (informes)`] : [])))]);
   d.fuente = fu.fuente; d.fuenteCorta = fu.fuenteCorta; d.nota = notaInflacion(calcs, false);
   return d;
 }

@@ -1,6 +1,7 @@
 # Herencia: recibido contra entregado
 
-Estado: fase 1 implementada (2026-11-12); las fases 2 y 3 necesitan lo que se indica en cada una.
+Estado: fases 1 y 2 implementadas (2026-11-12); la fase 3 necesita una decisión del usuario.
+Fase 2: 42 datos en `datos/manual/herencia.json` (deuda pública bruta, % del PIB y en moneda extranjera desde 2007; deuda con el FMI en DEG y acuerdo vigente desde 2003; cepo desde 2011; deuda de importadores de los informes desde 2019; BOPREAL), cada uno verificado contra su documento. `traspaso` = mes de asunción del que recibe o "hoy". Filas sin color; deuda de importadores de los informes en fila aparte (otro relevamiento). Sin cargar: cepo de 2003 y 2007, FMI anterior a 2003. El nombre y la unidad que se muestran salen de `FILAS_INFORME` (`web/lib/herencia-informes.ts`), no de cada entrada: el JSON no lleva `nombre`.
 Decisiones de la implementación: un dato vale como "recibió" o "entregó" si tiene hasta 12 meses de atraso (`MAX_ATRASO` en `web/lib/herencia.ts`); precios regulados contra el nivel general en base dic-16 = 100 (sin enlace a la ficha, que usa otra escala); pasivos / base monetaria como cuenta propia (el motor no admite esa relación); las reservas de la tabla son el promedio del mes en dólares de hoy, no el saldo de un día: no coinciden con las cifras de "Cómo se verifica".
 Ideas: "Herencia: recibido contra entregado" (IDEAS.md, 2026-11-12).
 

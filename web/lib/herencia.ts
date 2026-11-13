@@ -68,7 +68,7 @@ export const FILAS_HERENCIA: DefFila[] = [
   { clave: "cuenta_corriente", grupo: "Deuda y sector externo", id: "dg_160_2_tl_cuennte_0_t_22", medidas: [{ med: "corr", esc: "pib" }] },
   {
     clave: "importadores", grupo: "Deuda y sector externo", id: "dg_313_1_deuda_por_nes_0_t_28", medidas: [{ med: "usdr" }, { med: "real" }], nombre: "Deuda con importadores",
-    nota: "La serie abierta va de 2001 a 2017; después, el dato solo está en los informes del Banco Central (falta cargar).",
+    nota: "La serie abierta va de 2001 a 2017. Desde 2017 el dato sale de los informes de deuda externa privada del Banco Central (fila “Deuda comercial de importadores (informes)”), con otro relevamiento: no se empalman.",
   },
   // Social
   { clave: "pobreza", grupo: "Social", id: "pob_tasa_pobreza_personas", medidas: [{ med: "asis" }] },
@@ -222,13 +222,14 @@ export const NO_MEDIBLE: [string, string][] = [
   ["Cuánto del costo cubren las tarifas", "Solo hay estimaciones privadas; lo medible es cómo se movieron los precios regulados contra el resto (fila de Precios)."],
   ["Precios congelados", "Solo se conocen las fechas de los programas, no un indicador mensual."],
 ];
-/** Lista B de la spec: dato oficial que está en un informe (se cargará a mano, con su cita). */
-export const FALTA_CARGAR: [string, string][] = [
-  ["Deuda pública (bruta, en % del PIB y parte en moneda extranjera)", "Informes mensuales de la Secretaría de Finanzas."],
-  ["Deuda con el FMI y estado del acuerdo vigente", "Documentos del FMI de cada acuerdo (2018, 2022 y 2025)."],
-  ["Deuda con importadores después de 2017", "Informes trimestrales del Banco Central sobre deuda externa privada."],
-  ["Bonos del Banco Central para importadores (BOPREAL)", "Resultados de las licitaciones del Banco Central."],
-  ["Restricciones para comprar dólares vigentes al asumir", "Comunicaciones del Banco Central con la fecha de cada cambio."],
+/** Lista B de la spec: dato oficial que está en un informe (se carga a mano, con su cita; lib/herencia-informes.ts).
+ *  El tercer elemento son las claves de `FILAS_INFORME` que lo cubren: un ítem sale de la lista cuando todas tienen algún dato cargado. */
+export const FALTA_CARGAR: [string, string, string[]][] = [
+  ["Deuda pública (bruta, en % del PIB y parte en moneda extranjera)", "Informes de la Secretaría de Finanzas.", ["deuda_bruta_usd", "deuda_bruta_pib", "deuda_moneda_ext"]],
+  ["Deuda con el FMI y estado del acuerdo vigente", "Documentos del FMI de cada acuerdo (2018, 2022 y 2025).", ["fmi_deuda", "fmi_acuerdo"]],
+  ["Deuda con importadores después de 2017", "Informes del Banco Central sobre deuda externa privada.", ["deuda_importadores"]],
+  ["Bonos del Banco Central para importadores (BOPREAL)", "Resultados de las licitaciones del Banco Central.", ["bopreal"]],
+  ["Restricciones para comprar dólares vigentes al asumir", "Comunicaciones del Banco Central con la fecha de cada cambio.", ["cepo"]],
 ];
 
 // ---------------------------------------------------------------- vista previa en redes

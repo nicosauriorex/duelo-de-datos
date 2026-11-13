@@ -1,10 +1,11 @@
 "use client";
 // Herencia (/herencia/, docs/specs/herencia.md): qué recibió cada presidente al asumir y qué entregó (o qué hay hoy), con valores, meses y fuente.
-// Los cálculos están en lib/herencia.ts; acá solo se dibuja. Estado en la URL: `p` (presidente), `vista` (uno / traspasos) y `v` (variable de "Todos los traspasos").
+// Los cálculos están en lib/herencia.ts y lib/herencia-informes.ts (datos de informes cargados a mano, fase 2); acá solo se dibuja. Estado en la URL: `p` (presidente), `vista` (uno / traspasos) y `v` (variable de "Todos los traspasos").
 import Link from "next/link";
-import { Fragment, useMemo } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useSeccion } from "../useSeccion";
-import { Cargando, Selector, Seg } from "../ui";
+import { Cargando, Modal, Selector, Seg } from "../ui";
+import { useHerenciaInformes } from "../useHerenciaInformes";
 import { BotonInfo } from "../Variables";
 import { BotonCompartir } from "../PanelCompartir";
 import { BotonLink } from "../BotonLink";
@@ -16,6 +17,9 @@ import {
   BASE_HERENCIA, FALTA_CARGAR, FILAS_HERENCIA, GRUPOS_HERENCIA, MAX_ATRASO, NO_MEDIBLE, defPorClave, idsHerencia, tablaHerencia, traspasos,
   type FilaHerencia, type Punto,
 } from "@/lib/herencia";
+import {
+  FILAS_INFORME, PREF_INF, clavesCargadas, filasInforme, puntoInforme, traspasosInforme, type DatoInforme, type DefInforme, type FilaInforme, type PuntoInforme,
+} from "@/lib/herencia-informes";
 import { unoDe, useParams } from "@/lib/url";
 import type { Motor } from "@/lib/motor";
 
@@ -26,6 +30,48 @@ const VISTAS: [string, string][] = [["uno", "Un presidente"], ["traspasos", "Tod
 function CeldaDato({ p, motivo }: { p: Punto | null; motivo: string }) {
   if (p) return <td>{p.txt}<small>{p.mes}</small></td>;
   return <td className="her-sin">sin dato<small>{motivo}</small></td>;
+}
+
+/** Lo que se abre al tocar un dato de informe: el documento, la página y la cita. */
+type VerCita = (d: DefInforme, x: DatoInforme) => void;
+function VentanaCita({ d, x, onCerrar }: { d: DefInforme; x: DatoInforme; onCerrar: () => void }) {
+  return (
+    <Modal titulo={`De dónde sale: ${d.nombre}`} onCerrar={onCerrar}>
+      <h3 className="her-cita-t">{d.nombre}</h3>
+      <p className="note">{typeof x.valor === "number" ? `${puntoInforme(d, x).txt} ${d.unidad}` : x.valor}, al {x.fecha_dato.split("-").reverse().join("/")}.</p>
+      <dl className="her-cita">
+        <dt>Organismo</dt><dd>{x.organismo}</dd>
+        <dt>Documento</dt><dd><a href={x.url} target="_blank" rel="noopener noreferrer">{x.documento}</a></dd>
+        <dt>Dónde</dt><dd>{x.pagina}</dd>
+        {x.cita ? <><dt>Qué dice</dt><dd><q>{x.cita}</q></dd></> : null}
+        {x.nota ? <><dt>Nota</dt><dd>{x.nota}</dd></> : null}
+      </dl>
+      <p className="note">Es un dato oficial que no está en una serie abierta: se copió a mano del documento.{d.nota ? ` ${d.nota}` : ""}</p>
+    </Modal>
+  );
+}
+
+/** Celda de un dato de informe: el valor y su mes son un botón que abre la cita. */
+function CeldaInforme({ d, p, verCita }: { d: DefInforme; p: PuntoInforme | null; verCita: VerCita }) {
+  if (!p) return <td className="her-sin">sin dato<small>no hay informe de esa fecha</small></td>;
+  return (
+    <td>
+      <button type="button" className="her-inf" onClick={() => verCita(d, p.dato)} aria-label={`${p.txt}, ${p.mes}: ver de qué documento sale`}>
+        {p.txt}<small>{p.mes} · informe</small>
+      </button>
+    </td>
+  );
+}
+
+function FilaInf({ f, verCita }: { f: FilaInforme; verCita: VerCita }) {
+  return (
+    <tr>
+      <CeldaVar nombre={f.def.nombre} unidad={f.def.unidad} />
+      <CeldaInforme d={f.def} p={f.recibio} verCita={verCita} />
+      <CeldaInforme d={f.def} p={f.entrego} verCita={verCita} />
+      <Valor tono={null} sub={f.cambioAbs ? <small>{f.cambioAbs}</small> : null}>{f.cambio}</Valor>
+    </tr>
+  );
 }
 
 function FilaTabla({ f }: { f: FilaHerencia }) {
@@ -44,17 +90,28 @@ export function Herencia() {
   const [p, set, montado] = useParams();
   const sec = useSeccion(IDS);
   const { motor: m } = sec;
+  const inf = useHerenciaInformes();
+  const [cita, setCita] = useState<{ d: DefInforme; x: DatoInforme } | null>(null);
+  const verCita: VerCita = (d, x) => setCita({ d, x });
   const PRES: Pres[] = useMemo(() => (m ? crearPres(m.F) : []), [m]);
 
   if (sec.errorGeneral) return <p className="error" role="alert">{sec.errorGeneral}</p>;
-  if (!m || !montado || sec.ocupado) return <Cargando />;
+  if (!m || !montado || sec.ocupado || !inf.datos) return <Cargando />;
+  const datosInf = inf.datos, cargadas = clavesCargadas(datosInf);
 
   const ultimo = PRES[PRES.length - 1];
   const pres = PRES.find((x) => x.id === p.get("p")) ?? ultimo;
   const vista = unoDe(p.get("vista"), ["uno", "traspasos"] as const, "uno");
-  const clave = defPorClave(p.get("v"))?.clave ?? FILAS_HERENCIA[0].clave;
+  const pv = p.get("v") ?? "";
+  const clave = defPorClave(pv)?.clave ?? (pv.startsWith(PREF_INF) && cargadas.has(pv.slice(PREF_INF.length)) ? pv : FILAS_HERENCIA[0].clave);
   const tabla = tablaHerencia(m, pres.id);
   if (!tabla) return <Cargando />;
+  const filasInf = filasInforme(datosInf, PRES, tabla.k);
+  const faltan = FALTA_CARGAR.filter(([, , claves]) => !claves.every((c) => cargadas.has(c)));
+  const opcionesVar: [string, string][] = [
+    ...tabla.filas.map((f) => [f.def.clave, `${f.grupo}: ${f.nombre}`] as [string, string]),
+    ...FILAS_INFORME.filter((d) => cargadas.has(d.clave)).map((d) => [PREF_INF + d.clave, `${d.grupo}: ${d.nombre} (informes)`] as [string, string]),
+  ];
   const enCurso = tabla.enCurso, finTxt = fmtMes(m.F[Math.min(pres.i1, m.F.length - 1)]);
   const colFin = enCurso ? "Hoy" : "Entregó";
 
@@ -83,7 +140,7 @@ export function Herencia() {
                 onElegir={(v) => set({ p: v === ultimo.id ? null : v })} />
               <BotonCompartir className="btn" titulo={`Primero los Datos: herencia de ${pres.n}`} href={() => window.location.href}
                 title="Armar una imagen de esta tabla para compartir" aria-label={`Compartir como imagen: herencia de ${pres.n}`}
-                crearVista={() => ({ tipo: "herencia", presId: pres.id, ids: IDS.filter((id) => !!m.SER[id]), base: BASE_HERENCIA })}><IconoCompartir />Compartir</BotonCompartir>
+                crearVista={() => ({ tipo: "herencia", presId: pres.id, ids: IDS.filter((id) => !!m.SER[id]), base: BASE_HERENCIA, informes: datosInf })}><IconoCompartir />Compartir</BotonCompartir>
             </div>
             <p className="note">
               {pres.n} asumió en {fmtMes(pres.ini)}. <b>Recibió</b>: último dato en o antes de {tabla.mesT1 ?? "el mes anterior a asumir"}.{" "}
@@ -93,28 +150,32 @@ export function Herencia() {
               <thead><tr><th>Variable</th><th>Recibió</th><th>{colFin}</th><th>Cambio</th></tr></thead>
               <tbody>
                 {GRUPOS_HERENCIA.map((g) => {
-                  const filas = tabla.filas.filter((f) => f.grupo === g);
-                  if (!filas.length) return null;
+                  const filas = tabla.filas.filter((f) => f.grupo === g), fi = filasInf.filter((f) => f.def.grupo === g);
+                  if (!filas.length && !fi.length) return null;
                   return (
                     <Fragment key={g}>
                       <tr className="her-grupo"><td colSpan={4}>{g}</td></tr>
                       {filas.map((f) => <FilaTabla key={f.def.clave} f={f} />)}
+                      {fi.map((f) => <FilaInf key={f.def.clave} f={f} verCita={verCita} />)}
                     </Fragment>
                   );
                 })}
               </tbody>
             </table></div>
-            <p className="note">Tocá el nombre de una variable para ver su ficha.</p>
+            <p className="note">Tocá el nombre de una variable para ver su ficha.{filasInf.length ? " Los datos marcados “informe” se copiaron a mano de documentos oficiales: tocalos para ver de cuál." : ""}</p>
             <details className="her-plegado">
               <summary>Notas de cada dato</summary>
               <ul className="method">
                 {tabla.filas.filter((f) => f.def.nota).map((f) => <li key={f.def.clave}><b>{f.nombre}</b>: {f.def.nota}</li>)}
+                {filasInf.filter((f) => f.def.nota).map((f) => <li key={f.def.clave}><b>{f.def.nombre}</b>: {f.def.nota}</li>)}
               </ul>
             </details>
             {notaT}
           </>
         ) : (
-          <Traspasos m={m} clave={clave} onVariable={(v) => set({ v: v === FILAS_HERENCIA[0].clave ? null : v })} opciones={tabla.filas.map((f) => [f.def.clave, `${f.grupo}: ${f.nombre}`] as [string, string])} nota={notaT} />
+          clave.startsWith(PREF_INF)
+            ? <TraspasosInf datos={datosInf} PRES={PRES} clave={clave} onVariable={(v) => set({ v: v === FILAS_HERENCIA[0].clave ? null : v })} opciones={opcionesVar} verCita={verCita} />
+            : <Traspasos m={m} clave={clave} onVariable={(v) => set({ v: v === FILAS_HERENCIA[0].clave ? null : v })} opciones={opcionesVar} nota={notaT} />
         )}
       </div>
       <div className="card">
@@ -124,14 +185,18 @@ export function Herencia() {
             {NO_MEDIBLE.map(([t, por]) => <li key={t}><b>{t}</b>: {por}</li>)}
           </ul>
         </details>
-        <details className="her-plegado">
-          <summary>Lo que falta cargar</summary>
-          <p className="note">Son datos oficiales que no están en series abiertas sino en informes: se van a cargar a mano, cada uno con su documento y página.</p>
-          <ul className="method">
-            {FALTA_CARGAR.map(([t, de]) => <li key={t}><b>{t}</b>: {de}</li>)}
-          </ul>
-        </details>
+        {faltan.length ? (
+          <details className="her-plegado">
+            <summary>Lo que falta cargar</summary>
+            <p className="note">Son datos oficiales que no están en series abiertas sino en informes: se van a cargar a mano, cada uno con su documento y página.</p>
+            <ul className="method">
+              {faltan.map(([t, de]) => <li key={t}><b>{t}</b>: {de}</li>)}
+            </ul>
+          </details>
+        ) : null}
+        {inf.error ? <p className="note">{inf.error}</p> : null}
       </div>
+      {cita ? <VentanaCita d={cita.d} x={cita.x} onCerrar={() => setCita(null)} /> : null}
     </section>
   );
 }
@@ -168,6 +233,42 @@ function Traspasos({ m, clave, onVariable, opciones, nota }: { m: Motor; clave: 
         </tbody>
       </table></div>
       {nota}
+    </div>
+  );
+}
+
+/** "Todos los traspasos" de un dato de informe: la misma tabla, con cada valor como botón que abre su cita. */
+function TraspasosInf({ datos, PRES, clave, onVariable, opciones, verCita }: {
+  datos: DatoInforme[]; PRES: Pres[]; clave: string; onVariable: (v: string) => void; opciones: [string, string][]; verCita: VerCita }) {
+  const t = traspasosInforme(datos, clave.slice(PREF_INF.length), PRES);
+  if (!t) return null;
+  const hoy = PRES[PRES.length - 1];
+  return (
+    <div id="traspasos">
+      <div className="controls">
+        <Selector etiqueta="Variable" valor={clave} opciones={opciones} onElegir={onVariable} />
+        <BotonLink id="traspasos" titulo={`Primero los Datos: ${t.def.nombre} en cada traspaso presidencial`} />
+      </div>
+      <p className="note">
+        {t.def.nombre} ({t.def.unidad}): el dato de cada traspaso, copiado a mano de un documento oficial. Tocá un valor para ver de cuál.{t.def.nota ? ` ${t.def.nota}` : ""}
+      </p>
+      <div className="tablewrap fija her-tabla"><table>
+        <thead><tr><th>Traspaso</th><th>Entregó → recibió</th><th>Valor</th></tr></thead>
+        <tbody>
+          {t.filas.map((f) => (
+            <tr key={f.a.id}>
+              <td>{f.mes}</td>
+              <td className="her-quien">{f.de.n} →<small>{f.a.n}</small></td>
+              <CeldaInforme d={t.def} p={f.dato} verCita={verCita} />
+            </tr>
+          ))}
+          <tr className="her-hoy">
+            <td>Hoy</td>
+            <td className="her-quien">{hoy.n}<small>en funciones</small></td>
+            <CeldaInforme d={t.def} p={t.hoy} verCita={verCita} />
+          </tr>
+        </tbody>
+      </table></div>
     </div>
   );
 }
