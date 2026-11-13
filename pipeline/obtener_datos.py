@@ -32,6 +32,7 @@ import macro
 import precios_mundo
 import salarios
 import semaforo
+import universidades
 import gasto_mensual
 import gasto_nacion
 import herencia_informes
@@ -316,6 +317,14 @@ def escribir_json_web(datos, ctx=None, pm=None, cap=None, con_red=True):
             (destino / nombre).write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     except Exception as e:
         print(f"Gasto de la Nación (mensual): no se pudo armar, se sigue sin gasto_nacion_mensual.json ({e}).")
+    # Gasto de la Nación, fase 3: transferencias a cada universidad (de los respaldos de gasto_nacion_*) y estudiantes del PIU de la AGN
+    # (respaldos datos/cache/universidades_*; una bajada por día como mucho). Va fuera del hash. Si un control no pasa o algo falla,
+    # la corrida sigue sin universidades.json.
+    try:
+        for nombre, obj in universidades.construir_json(con_red).items():
+            (destino / nombre).write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    except Exception as e:
+        print(f"Universidades: no se pudo armar, se sigue sin universidades.json ({e}).")
     # Herencia, fase 2: datos de informes cargados a mano (datos/manual/herencia.json), sin red. Va fuera del hash.
     # Un dato sin cita completa corta solo este archivo: la corrida sigue y la página muestra las series sin los datos de informes.
     try:

@@ -10,6 +10,7 @@ import { Cargando, Desplegable, Selector, Seg } from "../ui";
 import { Sparkline } from "../Sparkline";
 import { PanelGasto } from "../PanelGasto";
 import { GastoMensual } from "../GastoMensual";
+import Link from "next/link";
 import { avisoCompartir, compartir } from "@/lib/compartir";
 import { fmtMillones, nfDec } from "@/lib/formato";
 import {
@@ -19,6 +20,7 @@ import {
   type ArchivoAnio, type Barra, type Deflactor, type Forma, type IndiceGasto, type Vista,
 } from "@/lib/gasto";
 import { crearDeflactorMensual, opcionesVista, type DeflactorMensual } from "@/lib/gasto-mensual";
+import { esProgramaU } from "@/lib/universidades";
 import { useParams } from "@/lib/url";
 
 export function Gasto() {
@@ -142,6 +144,9 @@ function Lista({ vista: v, onIr, onTodas }: { vista: Vista; onIr: (r: string[]) 
         <p className="note">{v.unidad}.{v.medidaUsada === "pct" && v.ruta.length ? " Cada barra, sobre el gasto total del año." : ""}</p>
         {v.aviso && <p className="note gas-aviso" role="status">{v.aviso}</p>}
       </div>
+      {v.forma === "quien" && v.ruta.some((n) => esProgramaU(n)) && (
+        <p className="gas-nota-donde"><Link prefetch={false} href={`/universidades/?anio=${v.anio.anio}`} className="enlace-parte">Ver cuánto recibió cada universidad, año por año</Link></p>
+      )}
       {v.forma === "donde" && <p className="note gas-nota-donde">{NOTA_DONDE}</p>}
       {v.barras.length ? (
         <>
@@ -276,7 +281,7 @@ function Pie({ ix, anio }: { ix: IndiceGasto; anio: number }) {
         <li><b>Qué incluye</b>: la Administración Nacional (la administración central, los organismos descentralizados y la seguridad social, como la ANSES). <b>No incluye</b> las empresas públicas ni los fondos fiduciarios, y tampoco el gasto de las provincias ni de los municipios con sus propios recursos (sí lo que la Nación les transfiere).</li>
         <li><b>Presupuestado</b>: lo que aprobó la ley de presupuesto al empezar el año. <b>Vigente</b>: el presupuesto con las modificaciones que se le hicieron durante el año. <b>Gastado (devengado)</b>: el gasto ya hecho, cuando el bien o el servicio se recibió y nace la obligación de pagarlo, aunque todavía no se haya pagado. El % ejecutado es lo gastado sobre lo vigente; si una fila no lo muestra, es porque la fuente no trae el crédito vigente completo en ese nivel (pasa, por ejemplo, con cada universidad).</li>
         <li><b>Pesos de hoy</b>: el monto de cada año ajustado por inflación con el IPC (el IPC del último mes publicado sobre el IPC promedio de ese año). <b>% del PIB</b>: sobre el producto bruto de ese año a precios corrientes.</li>
-        <li><b>Universidades</b>: no figuran como organismos del presupuesto: reciben transferencias del programa “Desarrollo de la Educación Superior”, que se abre por universidad en Quién.</li>
+        <li><b>Universidades</b>: no figuran como organismos del presupuesto: reciben transferencias del programa “Desarrollo de la Educación Superior”, que se abre por universidad en Quién. <Link prefetch={false} href="/universidades/">Cuánto reciben las universidades</Link>, con su evolución, los estudiantes y el control.</li>
         <li><b>Nombres</b>: en palabras de todos los días; el nombre del presupuesto aparece al abrir cada nivel. Un organismo que cambió de ministerio se sigue por su nombre.</li>
         <li><b>Fuente</b>: {a ? fuenteTxt(a) : "Presupuesto Abierto (Ministerio de Economía)"}.{enCurso.map((x) => ` ${x.anio} está en curso: los datos llegan hasta el ${fechaLarga(x.actualizado) ?? "último dato publicado"} y cambian a medida que avanza el año.`).join("")} Montos redondeados: por eso se muestra la diferencia por redondeo cuando la suma no da justo.</li>
       </ul>

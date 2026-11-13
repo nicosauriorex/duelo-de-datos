@@ -33,6 +33,9 @@ export const DESCRIPCION_HERENCIA = "Cómo estaban las reservas, el dólar, las 
 /** La vista previa del gasto de la Nación (`previas/gasto.json`): título y descripción con el total del último año cerrado. */
 export interface PreviaGasto { titulo: string; descripcion: string; fecha: string; imagen: string }
 export const DESCRIPCION_GASTO = "En qué gasta el Estado nacional cada año: para qué, quién, en qué y dónde, cuánto se presupuestó y cuánto se ejecutó. Datos oficiales de Presupuesto Abierto.";
+/** La vista previa de las universidades (`previas/universidades.json`): título y descripción con el total del último año cerrado. */
+export interface PreviaUniversidades { titulo: string; descripcion: string; fecha: string; imagen: string }
+export const DESCRIPCION_UNIVERSIDADES = "Cuánto transfirió la Nación a cada universidad nacional desde 2018, en pesos de hoy y como % del PIB, con estudiantes y control y rendición de cuentas. Datos oficiales.";
 export interface DatosPrevias { generado: string; datos: Record<string, PreviaDato> }
 
 /** Open Graph y Twitter de una página. `imagen` puede ser relativa (se completa con `metadataBase`) o absoluta. */
