@@ -1,6 +1,6 @@
 # Provincias: gasto, impuestos y ranking
 
-Estado: fase 1 implementada (2026-11-13); fase 0 resuelta (2026-11-13): la DNAP publica en argentina.gob.ar. Las fases 2 y 3 hay que reescribirlas con esas planillas antes de implementarlas
+Estado: fase 1 implementada (2026-11-13); fase 0 resuelta (2026-11-13): la DNAP publica en argentina.gob.ar. Fases 2 y 3: spec lista (2026-11-13), sin implementar
 Ideas: "Gasto e impuestos de las provincias y la Nación" (IDEAS.md, 2026-11-12). El gasto de la Nación va en `gasto-nacion.md`.
 
 ## Objetivo
@@ -46,7 +46,7 @@ Sin la fase 0 no se implementan las fases 2 y 3: no cargar cifras por provincia 
 
 Control de unidad (2026-11-13): el "VII. Gastos totales" del Consolidado de `serie_aif-apnf-2025.xlsx`, en millones de pesos, sobre el PIB nominal de `gasto_nacion_finfun` da 17,3 % (2018), 17,1 % (2019), 16,7 % (2022), 17,4 % (2023), 15,5 % (2024) y 15,8 % (2025). Mismo orden que el agregado de datos.gob.ar (2023 entre 15 y 17 % del PIB): la unidad es millones de pesos corrientes. La diferencia de 2023 (algo por encima del rango) hay que explicarla al implementar (cobertura o definición del agregado).
 
-Quedan de la fase 0: (a) confirmar la unidad de recursos de origen nacional; (b) la población 2022-2040 de INDEC y el censo 2022 (la planilla de empleo trae una columna de habitantes que sirve para controlar); (c) mirar la estructura de las alícuotas de Ingresos Brutos antes de diseñar la fase 3. Con esto, las fases 2 y 3 dejan de estar bloqueadas: falta reescribirlas con estas fuentes antes de implementar.
+Cerrado el mismo día: (a) la unidad de recursos de origen nacional es millones de pesos (Buenos Aires 2025: coparticipación neta 8.834.740,3 en `informacion_consolidada2025` hoja CONS = "Distribución Secundaria Neta" de `serie_aif`); (b) población: se sigue usando la proyección INDEC con base 2010 de la fase 1 (no hay archivo con base 2022); (c) alícuotas: estructura descripta en la fase 3. Controles extra hechos el 2026-11-13: en `serie_aif` la suma de las 24 hojas da el Consolidado (diferencia 0,000 % en 2005, 2015, 2023 y 2025); en `serie_ff` el total de las finalidades da el "VII. Gastos totales" de `serie_aif`; la hoja "Total" de `serie_top_1984_2025` da el "De Origen Provincial" de `serie_aif` (Buenos Aires, Córdoba, Mendoza y Formosa, 0,000 %).
 
 ## Fase 1 (se puede hacer ya): la Nación en cada provincia
 Estado: implementada (2026-11-13). Desvíos: `sin_provincia` trae también "Exterior" (id 95, aparece en 2026); las barras del detalle van en pesos de hoy (el por habitante, en la cabecera y la evolución); la tabla suma la fila "Las 24 juntas". Depende de `gasto-nacion.md` (usa el mismo archivo de Presupuesto Abierto). Página propia `/provincias/` ("Cuánto gasta la Nación en cada provincia").
@@ -102,12 +102,78 @@ Estado: implementada (2026-11-13). Desvíos: `sin_provincia` trae también "Exte
 - En el navegador (`web-out`): `/provincias/` a 360 y 1280 px sin desborde ni errores de consola; cambiar medida y "Qué gasto"; abrir una provincia, sus tres formas y la evolución; Atrás cierra el detalle; link compartido con `?prov=14&medida=total` abre lo mismo; imagen en el panel; link desde `/gasto/` Dónde.
 - Revisor contra esta spec.
 
-## Fase 2 (bloqueada por la fase 0): las cuentas de cada provincia
-Con las planillas de la DNAP: gasto de cada provincia por finalidad y por tipo; recaudación propia por impuesto; recursos de origen nacional; resultado; deuda. Todo por habitante y en pesos de hoy. Ranking por indicador, con la posición de cada provincia y sin puntaje combinado por defecto (como se hizo con el Ranking de presidentes: el combinado, si se hace, plegado y explicado).
-Indicadores previstos: gasto por habitante; sueldos sobre gasto total; recaudación propia por habitante; Ingresos Brutos por habitante y como parte de la recaudación propia; dependencia de fondos nacionales (recursos nacionales sobre ingresos totales); resultado; deuda por habitante.
+## Fase 2: las cuentas de cada provincia
+Estado: spec lista (2026-11-13), sin implementar. Fuente: DNAP (ver "Resultado de la fase 0"). Va en la misma página `/provincias/` como segunda vista: arriba, un `Seg` "Lo que gasta la Nación ahí" (la fase 1, por defecto) / "Las cuentas de cada provincia" (`vista=cuentas` en la URL). Sin `vista`, la página se ve igual que hoy: los links compartidos no cambian.
 
-## Fase 3 (sin fuente): presión de Ingresos Brutos y exenciones
-Comparar alícuotas por actividad y exenciones entre provincias no tiene base oficial. Opciones cuando se retome: (a) usar la recaudación de Ingresos Brutos por habitante y sobre el empleo privado registrado de cada provincia (serie que sí existe) como aproximación, diciéndolo; (b) cargar a mano las alícuotas generales de las leyes impositivas de cada provincia para unas pocas actividades testigo (comercio minorista, industria, construcción, servicios financieros), con la cita de cada ley; (c) citar un estudio privado como estimación. Decisión del usuario.
+### Pipeline
+1. `pipeline/provincias_dnap.py` (nuevo; patrón de `provincias.py`: respaldos en `datos/cache/provincias_dnap_*`, como mucho una bajada por día con `provincias_dnap_meta.json`, `con_red=False` usa solo respaldos, uso suelto `--bajar` y `--sin-red`).
+   - Busca cada link en su página (regex sobre el nombre: `serie_aif-apnf-\d{4}.*\.xlsx`, `serie_ff-apnf.*\.xlsx`, `serie_top_1984_\d{4}.*\.xlsx`, `ocupacion_salarios_2005_2016.*\.xlsx`, `ocupacion_salarios_2017_\d{4}.*\.xlsx`, `stock_.*trim_\d{4}.*\.xlsx` el más reciente), nunca con el nombre fijo: los sufijos `_0`, `_1` cambian en cada edición. Links relativos (`/sites/…`) y con prefijo basura (`blank:#`) se normalizan. User-Agent de navegador genérico. Si una página no responde o el link no aparece, se usa el respaldo y se avisa.
+   - Respaldos: el `.xlsx` original de cada archivo (son de 50 a 500 KB) y un CSV largo por tema ya leído (`provincia, anio, concepto, valor`).
+2. Lectura (filas por texto, no por posición; la fila de encabezado se encuentra por su texto: "CONCEPTO", "FINALIDAD Y FUNCION", "PROVINCIAS", "Jurisdicción", "JURISDICCIONES"):
+   - **Cuentas** (`serie_aif`, 2005-último año cerrado): por provincia y año, los 43 renglones; se guardan con un id corto: `ing_cor`, `trib_prov` ("De Origen Provincial"), `trib_nac` ("De Origen Nacional"), `copart` (Distribución secundaria neta), `fin_edu`, `contrib_ss`, `regalias`, `transf_cor_ing`, `ing_cap`, `transf_cap_ing`, `gas_cor`, `personal`, `intereses` (Rentas de la propiedad del gasto), `prest_ss`, `transf_cor_gas`, `gas_cap`, `inversion` (Inversión real directa), `transf_cap_gas`, `inv_fin`, `ing_tot`, `gas_tot`, `res_eco`, `res_fin`, `res_pri`, `gas_pri`. Los dos "Rentas de la propiedad" y "Transferencias" (ingreso y gasto) se distinguen por el bloque en el que aparecen (I/IV o II/V).
+   - **Finalidad y función** (`serie_ff`, 2005-último año): por provincia y año, finalidades y funciones con el árbol de la planilla (finalidad = renglón sin sangría; las funciones debajo).
+   - **Recaudación propia por impuesto** (`serie_top_1984_<año>`, hojas Ingresos Brutos, Inmobiliario, Sellos, Automotores, Otros, Total): se usa desde 2005.
+   - **Empleo** (`ocupacion_salarios_*`, hoja por año): planta ocupada, gasto en personal (miles de $ → se pasa a millones), gasto medio mensual, empleados cada mil habitantes (el de la DNAP, con su población).
+   - **Deuda** (`stock_<trim>_trim_<año>`, el más reciente): stock total sin deuda flotante y por acreedor (Gobierno Nacional, FFFIR, FFDP, bancos, deuda consolidada, bonos, organismos internacionales) y su fecha (de la fila "STOCK DE DEUDA PROVINCIAL AL …").
+   - Nombres: una tabla de alias de las 24 jurisdicciones al código INDEC de la fase 1 (las planillas usan "Ciudad", "CABA", "G.C.B.A.", "Bs Aires", "BUENOS AIRES", "Chubut (*)", sin tildes o con tildes mal codificadas…). Un nombre sin alias → `RuntimeError` con el nombre (no se pierde una provincia en silencio).
+3. Controles (si uno falla, `RuntimeError`: la corrida sigue sin `provincias_cuentas.json`, como universidades):
+   - por provincia y año: `ing_tot` = `ing_cor` + `ing_cap`; `gas_tot` = `gas_cor` + `gas_cap`; `res_fin` = `ing_tot` − `gas_tot` (tolerancia 1 millón);
+   - la suma de las 24 = Consolidado en `gas_tot` e `ing_tot` (0,01 %);
+   - total de finalidades = `gas_tot` por provincia y año (0,01 %);
+   - hoja "Total" de la recaudación = `trib_prov` por provincia y año (0,5 %; avisa con la lista si alguna se pasa, falla si son más de 3);
+   - deuda: fila TOTAL = suma de las 24 (0,01 %);
+   - empleo: la población de la DNAP y la de la fase 1 a menos de 3 % por provincia en 2024 (avisa);
+   - 2023: `gas_tot` consolidado entre 15 y 19 % del PIB (de `gasto_nacion`; da 17,4).
+4. Salida `web/public/datos/provincias_cuentas.json` (montos en millones de pesos corrientes, 1 decimal):
+   `{ "generado", "fuente", "fuentes": {"cuentas", "finalidad", "recaudacion", "empleo", "deuda"} (cada una: página, archivo y fecha de bajada), "anios": [2005…], "provincias": [ {"id": "14", "c": {"<id corto>": [por año]}, "fin": [ {"n": "Salud", "f": "Servicios sociales", "v": [por año]} ], "imp": {"ib", "inmo", "sellos", "auto", "otros": [por año]}, "emp": {"planta", "personal", "medio", "c1000": [por año]}, "deuda": {"total", "gob_nac", "fffir", "ffdp", "bancos", "consolidada", "bonos", "org_int"} } ], "deuda_fecha": "2026-06-30", "consolidado": {"c": {...}} }`
+   `null` donde no hay dato. Tamaño objetivo < 400 KB. La población se toma de `provincias.json` (no se repite).
+5. `obtener_datos.py`: llamada después de `provincias.py`, fuera del hash, con `try/except` y aviso. Funciona con `--solo-json`. Docstring con fuentes, respaldos, controles y uso suelto.
+6. El año en curso (2026, por trimestre) queda fuera de esta fase: se compara siempre años cerrados.
+
+### Sitio (vista "Las cuentas de cada provincia")
+7. Cálculos en `web/lib/provinciasCuentas.ts` (pesos de hoy con el deflactor de `gasto.ts`; por habitante con la población de `provincias.json`, que arranca en 2010: antes de 2010 solo se muestran montos y porcentajes). Carga en `useProvincias.ts` (`provincias_cuentas.json` al abrir esta vista).
+8. Arriba: año (2010 a último cerrado; por defecto el último) y un **indicador** elegido de una lista corta con su explicación en una línea (ventana o lista de botones como el resto del sitio; nada de `<select>` nativo). Indicadores (todos con su fórmula visible en el detalle):
+   - Gasto por habitante (`gas_tot` / población, pesos de hoy).
+   - Sueldos sobre el gasto total (`personal` / `gas_tot`, %).
+   - Obra pública sobre el gasto total (`inversion` / `gas_tot`, %).
+   - Recaudación propia por habitante (`trib_prov` / población, pesos de hoy).
+   - Ingresos Brutos sobre la recaudación propia (`ib` / `trib_prov`, %).
+   - Cuánto depende de la Nación ((`trib_nac` + `transf_cor_ing` + `transf_cap_ing`) / `ing_tot`, %; la aclaración dice que las transferencias son casi todas de la Nación).
+   - Resultado financiero sobre los ingresos (`res_fin` / `ing_tot`, %) y resultado primario (`res_pri` / `ing_tot`, %).
+   - Empleados públicos cada mil habitantes (el de la DNAP) y sueldo medio mensual en pesos de hoy.
+   - Deuda por habitante (último stock / población del año del stock, pesos de hoy de esa fecha) y deuda sobre los ingresos del último año cerrado (%). Estos dos no dependen del año elegido: se dice la fecha.
+   En la URL: `vista=cuentas`, `ind=<id>`, `anio`, `prov`.
+9. Tabla de las 24 ordenada por el indicador (posición, nombre, valor, variación contra el año anterior: real si es un monto, en puntos si es un porcentaje). Fila "Las 24 juntas" (con el consolidado) aparte, sin posición. Primera columna fija; nada desborda a 360 px. **Sin puntaje combinado**; sin colores de bueno o malo en la tabla (D-012): el orden es de mayor a menor y se puede invertir.
+10. Al tocar una provincia, detalle (con cruz y Atrás, `useAtras`): sus cuentas del año en una tabla corta que cierra (ingresos: propios por impuesto, de la Nación, otros; gastos: sueldos, jubilaciones provinciales, transferencias, intereses, obra pública, otros; resultado), el gasto por finalidad como barras, y la evolución 2010-último año del indicador elegido (gráfico chico como el de la fase 1).
+11. Aclaraciones visibles: es la Administración Pública No Financiera de cada provincia (no municipios ni empresas provinciales); ejecución "provisoria" según la DNAP; algunas provincias tienen su propia caja de jubilaciones y otras la transfirieron a la Nación (eso cambia mucho "Gasto por habitante" y "Sueldos"): se marca en la tabla a las que tienen caja propia (lista en el código, con la cita de la DNAP o de ANSES); la Ciudad recibe coparticipación desde 2003 con un régimen distinto.
+12. Compartir: imagen de las 24 en barras con el indicador y el año elegidos, mismos formatos que la fase 1; link. Vista previa en redes: `previas/provincias-cuentas.png` y `.json` con título neutro ("Las cuentas de las 24 provincias, <año>").
+13. Links: desde la vista de la fase 1 (línea "¿Y lo que gasta cada provincia? Ver sus cuentas"), portada sin cambios.
+
+### Cómo se verifica
+- `python pipeline/provincias_dnap.py --bajar` baja todo y pasa los controles; `--sin-red` lo rearma igual; `python pipeline/obtener_datos.py --solo-json` termina con `provincias_cuentas.json` (< 400 KB).
+- A mano: Córdoba 2024, gasto total de la hoja "Córdoba" de `serie_aif` / población 2024 = lo que muestra la tabla (con el factor de pesos de hoy anotado); Buenos Aires 2025, Ingresos Brutos de `serie_top` igual al detalle.
+- `npm run tipos`, `npm run build`, `npm run previas`.
+- En el navegador: `/provincias/` sin parámetros se ve igual que antes; `?vista=cuentas` a 360 y 1280 px sin desborde ni errores de consola; cambiar indicador, año e invertir el orden; abrir una provincia; Atrás cierra el detalle; link con `?vista=cuentas&ind=deuda&prov=14` abre lo mismo; imagen en el panel.
+- Revisor contra esta spec.
+
+## Fase 3: alícuotas de Ingresos Brutos
+Estado: spec lista (2026-11-13), sin implementar; va después de la fase 2. Fuente: DNAP, `asuntosprovinciales/direccion-de-recursos-provinciales/ingresos-brutos`, archivos `<año>_ib.xlsx` (2024 y 2025), marcados por la DNAP "provisorio - en desarrollo".
+
+### Estructura de la planilla (2025, mirada el 2026-11-13)
+Una hoja. Fila 4: el año, "Alícuota Máxima Consenso Fiscal" y una columna por jurisdicción (Buenos Aires, CABA, Catamarca, Chaco…). Debajo, bloques por actividad: el renglón de la actividad principal en la columna 0 (Agricultura…, Pesca, Explotación minas y canteras, Industria manufacturera, Industria papelera, Electricidad gas y agua, Construcción, Comercio…) con la alícuota general; debajo, en la columna 1, aperturas: por tamaño del contribuyente ("ingresos MAYORES / MEDIOS / MENORES a un nivel determinado", "Sujeto a ciertos requisitos…") y por subactividad (Matarifes, Generación de energía…). Las celdas son números (fracción: 0,0075 = 0,75 %), texto ("exenta") o rangos en texto ("1,70% - 2,21% -2,50%"). Una celda vacía en la actividad principal con datos en las aperturas significa que esa provincia solo tiene alícuotas por apertura.
+
+### Pipeline
+1. En `provincias_dnap.py`: bajar los `<año>_ib.xlsx` que aparezcan en la página (respaldo del original) y armar `provincias_alicuotas.json`: `{ "fuente", "aviso": "Provisorio, en desarrollo (DNAP)", "anios": [2024, 2025], "actividades": [ {"n": "Industria manufacturera", "tope": [por año], "prov": {"<id>": [por año: número | texto | null]}, "aperturas": [ {"n": "Contribuyentes con ingresos MENORES…", "tope", "prov"} ] } ] }`. Los números se guardan como porcentaje con 2 decimales; el texto, tal cual (se limpia el espacio).
+2. Controles: las 24 columnas reconocidas con el mismo alias de la fase 2; al menos 8 actividades principales; ningún número fuera de 0 a 15 %. Si cambia la estructura, `RuntimeError` y la página sale sin este bloque.
+
+### Sitio
+3. En la vista "Las cuentas de cada provincia", bloque "Cuánto cobra cada provincia de Ingresos Brutos": elegir actividad (lista corta) y año; tabla de las 24 con la alícuota general, la diferencia con el tope del Consenso Fiscal (en puntos) y una marca si tiene aperturas (al tocar, se ven las aperturas como texto). Arriba, el aviso de la DNAP ("provisorio") y que es la alícuota **teórica** de la ley, no lo que se paga en promedio (para eso está "Ingresos Brutos por habitante" de la fase 2).
+4. Sin ranking ni colores de bueno o malo; orden por alícuota, invertible.
+5. Exenciones: fuera de alcance (no hay base oficial). Se dice en el pie.
+
+### Cómo se verifica
+- Industria manufacturera 2025: tope 1,5 %, Buenos Aires 1,5 %, Catamarca 1 % (de la planilla, a mano) igual a la tabla.
+- La tabla a 360 px; una celda con rango en texto se ve completa; aperturas con Atrás.
 
 ## Fuera de alcance
 Municipios y tasas municipales; calificar a las provincias; "% del producto de la provincia" mientras no haya una serie uniforme.
