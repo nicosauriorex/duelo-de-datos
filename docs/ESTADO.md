@@ -39,7 +39,7 @@ A futuro, sin recomendar: el bloque 7c-3 (relatos, posts y video) está anotado 
 
 ## Sin verificar (revisar antes de dar por cerrado)
 De provincias, fase 4 (verificado: `provincias_dnap.py` con red y `--sin-red`, controles —acumulado 44,1 % del año, finalidades 0,000 %, recaudación 1 caso fuera: San Luis 2025—; Buenos Aires gastos II-2026 = 21.667.604,4 y Córdoba Ingresos Brutos 1.461.758,4 iguales a las planillas; `--solo-json`, tipos, build; en el navegador `anio=2026` tabla y variación contra ene-jun 2025, detalle de Córdoba con cuentas que cierran, Atrás, `ind=empleados` que cae al defecto, deuda sin aviso del período, 360 px sin desborde ni errores de consola, imagen 1:1; sin `anio` igual que antes; revisor sin bloqueantes):
-- La corrida en GitHub (bajada de las planillas trimestrales desde Actions).
+- La corrida en GitHub del 2026-11-13 (1972c71) terminó en verde: pasó el control de acumulado (44,1 %) y publicó `parcial` (2025-2026, II trimestre) en `provincias_cuentas.json`. Usó el respaldo (bajado ese día): la bajada de las planillas trimestrales desde Actions se prueba en la corrida del día siguiente.
 - La vista a 1280 px con `anio=2026` y el tema claro no se miraron; la imagen en 4:5 y 16:9 tampoco.
 - La planilla de 2025 al II trimestre es de una edición anterior a la serie anual: la variación compara dos ediciones provisorias.
 
