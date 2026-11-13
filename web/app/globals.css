@@ -1446,3 +1446,19 @@ button.gas-abrir:focus-visible { outline: var(--linea) solid var(--foco); outlin
 .pc-fin h3 { margin: 0 0 var(--e-1); }
 .pc-evo-neg { opacity: .5; }
 .prov-link-cuentas { margin-top: var(--e-3); }
+
+/* Alícuotas de Ingresos Brutos (fase 3). Reusa .prov-tabla, .prov-abrir, .prov-nom y .prov-total-n. */
+.pc-ib { margin-top: var(--e-4); min-width: 0; }
+.pc-ib-aviso, .pc-ib-pie { max-width: 80ch; overflow-wrap: anywhere; }
+.pc-ib-tabla td.pc-ib-valor { white-space: normal; overflow-wrap: anywhere; min-width: 90px; max-width: 200px; }
+.pc-ib-tabla td.pc-ib-dif { white-space: nowrap; color: var(--text-secondary); }
+.pc-ib-quieta { display: block; padding: 6px var(--e-2); }
+/* la marca va debajo del nombre: al lado, en la columna fija a 360 px, partía los nombres en mitad de la palabra */
+.pc-ib-tabla .prov-abrir { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.pc-ib-tabla .prov-nom { overflow-wrap: normal; word-break: normal; hyphens: none; }
+.pc-ib-tabla .pc-ib-marca { margin-left: 0; }
+.pc-ib-marca { flex: none; margin-left: auto; padding: 0 var(--e-2); border: var(--linea) solid var(--border-fuerte); border-radius: 999px; color: var(--acento-texto); font-size: var(--t-xs); font-weight: 600; white-space: nowrap; }
+.pc-ib-aper { margin: var(--e-3) 0 0; display: grid; gap: var(--e-2); }
+.pc-ib-aper > div { display: grid; gap: 2px; padding-bottom: var(--e-2); border-bottom: var(--linea) solid var(--border); }
+.pc-ib-aper dt { color: var(--text-secondary); font-size: var(--t-sm); overflow-wrap: anywhere; }
+.pc-ib-aper dd { margin: 0; font-weight: 800; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }

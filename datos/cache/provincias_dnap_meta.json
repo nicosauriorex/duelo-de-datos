@@ -1,5 +1,6 @@
 {
  "bajado": "2026-11-13",
+ "bajado_ib": "2026-11-13",
  "deuda_fecha": "2026-06-30",
  "fuentes": {
   "cuentas": {
@@ -26,6 +27,18 @@
    "archivo": "https://www.argentina.gob.ar/sites/default/files/serie_top_1984_2025_0.xlsx",
    "bajado": "2026-11-13",
    "pagina": "https://www.argentina.gob.ar/economia/sechacienda/asuntosprovinciales/direccion-de-recursos-provinciales/recursos-tributarios-de-origen-provincial-top"
+  }
+ },
+ "fuentes_ib": {
+  "2024": {
+   "archivo": "https://www.argentina.gob.ar/sites/default/files/2024_ib.xlsx",
+   "bajado": "2026-11-13",
+   "pagina": "https://www.argentina.gob.ar/economia/sechacienda/asuntosprovinciales/direccion-de-recursos-provinciales/ingresos-brutos"
+  },
+  "2025": {
+   "archivo": "https://www.argentina.gob.ar/sites/default/files/2025_ib.xlsx",
+   "bajado": "2026-11-13",
+   "pagina": "https://www.argentina.gob.ar/economia/sechacienda/asuntosprovinciales/direccion-de-recursos-provinciales/ingresos-brutos"
   }
  }
 }

@@ -42,6 +42,13 @@ Controles (si alguno no cierra, este módulo levanta RuntimeError y la corrida s
   provincias que no la transfirieron (si no, solo avisa con la lista).
 Un nombre de jurisdicción sin alias levanta RuntimeError con el nombre.
 
+Fase 3, alícuotas teóricas de Ingresos Brutos -> web/public/datos/provincias_alicuotas.json (aparte: si falla, las cuentas salen igual
+y viceversa). Página asuntosprovinciales/direccion-de-recursos-provinciales/ingresos-brutos, archivos <año>_ib.xlsx (2024 y 2025;
+la DNAP los marca "provisorio - en desarrollo"). Respaldos: provincias_dnap_ib_<año>.xlsx (el original); en la meta, "fuentes_ib" y
+"bajado_ib". Los números se guardan como porcentaje con 2 decimales (la planilla trae fracciones), el texto tal cual ("exenta",
+rangos como "1,70% - 2,21% -2,50%"); "sin datos" queda null. Controles (RuntimeError si no pasan): las 24 columnas con los alias de
+arriba más el tope del Consenso Fiscal, al menos 8 actividades principales por año, ningún número fuera de 0 a 15 %.
+
 Uso suelto:  python pipeline/provincias_dnap.py --bajar    (baja las planillas y deja los respaldos, sin armar el JSON)
              python pipeline/provincias_dnap.py            (con red, arma en memoria y muestra el tamaño; no escribe en web/)
              python pipeline/provincias_dnap.py --sin-red  (igual, solo con los respaldos)
@@ -88,6 +95,16 @@ ARCHIVOS = {
     "deuda": [(r"stock_(?:iv|iii|ii|i)_trim_\d{4}.*\.xlsx", "provincias_dnap_deuda.xlsx")],
 }
 TEMAS = list(PAGINAS)
+
+# Fase 3: alícuotas teóricas de Ingresos Brutos (un archivo por año, <año>_ib.xlsx). Va aparte de TEMAS: si falla, las cuentas salen igual.
+PAGINA_IB = "asuntosprovinciales/direccion-de-recursos-provinciales/ingresos-brutos"
+PATRON_IB = r"^(\d{4})_ib.*\.xlsx$"
+AVISO_IB = "Provisorio, en desarrollo (DNAP)"
+FUENTE_IB = ("Dirección Nacional de Asuntos Provinciales (Subsecretaría de Coordinación Fiscal Provincial, Ministerio de Economía), "
+             "alícuotas teóricas de Ingresos Brutos según la normativa de cada provincia (interpretación de la SSCFP).")
+IB_MIN_PRINCIPAL = 5     # una fila de la columna 0 con menos provincias con dato (y alguna) es una apertura de la actividad de arriba
+IB_MIN_ACTIVIDADES = 8
+IB_MAX_PCT = 15.0
 
 CORDOBA = 14
 
@@ -385,6 +402,177 @@ def _leer_deuda(raw):
             if v is not None:
                 filas.append((pid, anio, ident, v))
     return pd.DataFrame(filas, columns=["provincia", "anio", "concepto", "valor"]), fecha
+
+
+# ---------- alícuotas de Ingresos Brutos (fase 3) ----------
+
+def _celda_ib(x):
+    """Número -> porcentaje con 2 decimales (la planilla trae fracciones: 0,0075 = 0,75 %); texto -> tal cual sin espacios de más;
+    vacío o "sin datos" -> None."""
+    if x is None or (isinstance(x, float) and pd.isna(x)):
+        return None
+    if isinstance(x, (int, float)):
+        return round(float(x) * 100, 2)
+    t = re.sub(r"\s+", " ", str(x)).strip()
+    if not t or _n(t) in ("sindatos", "sd", "nd"):
+        return None
+    return t
+
+
+def _leer_alicuotas(raw):
+    """Un <año>_ib.xlsx -> (año, columnas {col: código o "tope"}, actividades [{"n", "fila": {cod|"tope": valor}, "aperturas": [...]}]).
+    Estructura (2024 y 2025): una hoja; la fila de encabezado tiene el año en la columna 0, "Alícuota Máxima Consenso Fiscal" y una
+    columna por jurisdicción. Debajo, la actividad principal en la columna 0 y sus aperturas en la columna 1. Algunas filas de la
+    columna 0 con una o dos provincias (Agricultura, Ganadería…) son aperturas de la actividad de arriba. Termina en la primera
+    fila vacía."""
+    d = pd.read_excel(io.BytesIO(raw), header=None)
+    enc = None
+    for i in range(min(15, d.shape[0])):
+        if any("consenso" in _n(v) for v in d.iloc[i].tolist()):
+            enc = i
+            break
+    if enc is None:
+        raise RuntimeError("no aparece la fila de encabezado con 'Alícuota Máxima Consenso Fiscal'")
+    anio = _num(d.iloc[enc, 0])
+    if anio is None or not 2000 <= anio <= 2100:
+        raise RuntimeError(f"el encabezado no trae el año en la primera columna ({d.iloc[enc, 0]!r})")
+    cols = {}
+    for c in range(2, d.shape[1]):
+        v = d.iloc[enc, c]
+        if pd.isna(v) or not str(v).strip():
+            continue
+        cols[c] = "tope" if "consenso" in _n(v) else _cod(v)
+    cods = [k for k in cols.values() if k != "tope"]
+    if "tope" not in cols.values():
+        raise RuntimeError("falta la columna del tope del Consenso Fiscal")
+    if sorted(cods) != sorted(PROVINCIAS) or len(cods) != len(set(cods)):
+        faltan = sorted(PROVINCIAS[c] for c in set(PROVINCIAS) - set(cods))
+        raise RuntimeError(f"las columnas no son las 24 jurisdicciones (faltan: {faltan}; columnas: {len(cods)})")
+
+    actividades = []
+    for i in range(enc + 1, d.shape[0]):
+        c0, c1 = d.iloc[i, 0], d.iloc[i, 1]
+        vacia0, vacia1 = pd.isna(c0) or not str(c0).strip(), pd.isna(c1) or not str(c1).strip()
+        if vacia0 and vacia1:
+            break
+        fila = {k: _celda_ib(d.iloc[i, c]) for c, k in cols.items()}
+        con_dato = sum(1 for k, v in fila.items() if k != "tope" and v is not None)
+        nombre = re.sub(r"\s+", " ", str(c0 if not vacia0 else c1)).strip()
+        if not vacia0 and (con_dato == 0 or con_dato >= IB_MIN_PRINCIPAL):
+            actividades.append({"n": nombre, "fila": fila, "aperturas": []})
+        else:
+            if not actividades:
+                raise RuntimeError(f"la fila {i + 1} es una apertura ({nombre!r}) y no hay una actividad principal arriba")
+            if not vacia0:   # se avisa: si aparece una actividad principal nueva con pocas provincias, hay que verla
+                print(f"  alícuotas {int(anio)}: {nombre!r} (columna 0, {con_dato} provincias con dato) va como apertura de {actividades[-1]['n']!r}")
+            actividades[-1]["aperturas"].append({"n": nombre, "fila": fila})
+    return int(anio), actividades
+
+
+def _controles_alicuotas(por_anio):
+    for anio, acts in por_anio.items():
+        if len(acts) < IB_MIN_ACTIVIDADES:
+            raise RuntimeError(f"{anio}: solo {len(acts)} actividades principales (se esperan al menos {IB_MIN_ACTIVIDADES})")
+        fuera = []
+        for a in acts:
+            for f in [a] + a["aperturas"]:
+                for k, v in f["fila"].items():
+                    if isinstance(v, float) and not 0 <= v <= IB_MAX_PCT:
+                        fuera.append(f"{a['n']} / {f['n']} / {k}: {v}")
+        if fuera:
+            raise RuntimeError(f"{anio}: alícuotas fuera de 0 a {IB_MAX_PCT:.0f} %: {'; '.join(fuera[:5])}")
+        print(f"  control alícuotas {anio}: 24 jurisdicciones, {len(acts)} actividades, "
+              f"{sum(len(a["aperturas"]) for a in acts)} renglones de apertura (con o sin dato), todo entre 0 y {IB_MAX_PCT:.0f} %")
+
+
+def _bajar_alicuotas(meta):
+    """Baja todos los <año>_ib.xlsx de la página y deja los originales en provincias_dnap_ib_<año>.xlsx. Si falla, no toca nada."""
+    html = _bytes(BASE + PAGINA_IB, timeout=60).decode("utf-8", "replace")
+    links = [u for u in _links(html) if re.search(PATRON_IB, u.rsplit("/", 1)[-1])]
+    if not links:
+        raise RuntimeError(f"no aparece ningún link que coincida con {PATRON_IB!r}")
+    archivos = {}
+    for u in links:
+        b = _bytes(u)
+        anio, _ = _leer_alicuotas(b)   # que se pueda leer antes de reemplazar el respaldo
+        archivos[anio] = (u, b)
+    for anio, (u, b) in archivos.items():
+        (CACHE / f"provincias_dnap_ib_{anio}.xlsx").write_bytes(b)
+        meta.setdefault("fuentes_ib", {})[str(anio)] = {"pagina": BASE + PAGINA_IB, "archivo": u, "bajado": date.today().isoformat()}
+
+
+def _actualizar_alicuotas(con_red):
+    """Como mucho una bajada por día (meta "bajado_ib"). Si falla y hay respaldo, avisa y sigue con el respaldo."""
+    meta = _meta()
+    hoy = date.today().isoformat()
+    hay = any(CACHE.glob("provincias_dnap_ib_*.xlsx"))
+    if not con_red or (hay and meta.get("bajado_ib") == hoy):
+        return
+    try:
+        _bajar_alicuotas(meta)
+        meta["bajado_ib"] = hoy
+        _guardar_meta(meta)
+        print("  provincias_dnap: alícuotas de Ingresos Brutos bajadas")
+    except Exception as e:  # noqa: BLE001
+        if not hay:
+            raise RuntimeError(f"no se pudieron bajar las alícuotas de Ingresos Brutos y no hay respaldo ({e})") from e
+        print(f"  provincias_dnap: error al bajar las alícuotas ({e}); uso el respaldo")
+
+
+def construir_alicuotas(con_red=True):
+    """provincias_alicuotas.json desde los respaldos provincias_dnap_ib_<año>.xlsx. Levanta RuntimeError si cambió la estructura."""
+    CACHE.mkdir(parents=True, exist_ok=True)
+    _actualizar_alicuotas(con_red)
+    archivos = sorted(CACHE.glob("provincias_dnap_ib_*.xlsx"))
+    if not archivos:
+        raise RuntimeError("no hay respaldo de las alícuotas de Ingresos Brutos (datos/cache/provincias_dnap_ib_<año>.xlsx)")
+    por_anio = {}
+    for f in archivos:
+        anio, acts = _leer_alicuotas(f.read_bytes())
+        por_anio[anio] = acts
+    _controles_alicuotas(por_anio)
+    anios = sorted(por_anio)
+    ultimo = anios[-1]
+
+    # Las actividades y aperturas se emparejan entre años por nombre normalizado y sin la "s" final ("Generación de energías" en
+    # 2024 y "de energía" en 2025), en el orden del último año.
+    def _k(nombre):
+        return _n(nombre).rstrip("s")
+
+    orden, nombres = [], {}
+    for anio in [ultimo] + anios[:-1]:
+        for a in por_anio[anio]:
+            k = _k(a["n"])
+            if k not in nombres:
+                orden.append(k)
+                nombres[k] = a["n"]
+
+    def serie(filas, clave):
+        return [f["fila"].get(clave) if f else None for f in filas]
+
+    actividades = []
+    for k in orden:
+        filas = [next((a for a in por_anio[y] if _k(a["n"]) == k), None) for y in anios]
+        ap_orden, ap_nombres = [], {}
+        for f in filas[::-1]:
+            for ap in (f["aperturas"] if f else []):
+                kk = _k(ap["n"])
+                if kk not in ap_nombres:
+                    ap_orden.append(kk)
+                    ap_nombres[kk] = ap["n"]
+        aperturas = []
+        for kk in ap_orden:
+            fs = [next((ap for ap in f["aperturas"] if _k(ap["n"]) == kk), None) if f else None for f in filas]
+            prov = {str(c): serie(fs, c) for c in PROVINCIAS}
+            prov = {p: v for p, v in prov.items() if any(x is not None for x in v)}
+            tope = serie(fs, "tope")
+            if prov or any(x is not None for x in tope):
+                aperturas.append({"n": ap_nombres[kk], "tope": tope, "prov": prov})
+        actividades.append({"n": nombres[k], "tope": serie(filas, "tope"),
+                            "prov": {str(c): serie(filas, c) for c in PROVINCIAS}, "aperturas": aperturas})
+    meta = _meta()
+    return {"generado": date.today().isoformat(), "fuente": FUENTE_IB, "aviso": AVISO_IB,
+            "fuentes": meta.get("fuentes_ib", {}), "anios": anios, "actividades": actividades}
 
 
 # ---------- bajada ----------
@@ -732,15 +920,29 @@ def construir(con_red=True):
 
 
 def construir_json(con_red=True):
-    return construir(con_red)
+    """Las cuentas (fase 2) y las alícuotas (fase 3) por separado: si una falla, la otra sale igual. Levanta solo si fallan las dos."""
+    out, errores = {}, []
+    for nombre, f in (("cuentas", construir), ("alícuotas", lambda r: {"provincias_alicuotas.json": construir_alicuotas(r)})):
+        try:
+            out.update(f(con_red))
+        except Exception as e:  # noqa: BLE001
+            errores.append(f"{nombre}: {e}")
+            print(f"  provincias_dnap: no se pudieron armar las {nombre}; la página sale sin ellas ({e})")
+    if not out:
+        raise RuntimeError("; ".join(errores))
+    return out
 
 
 if __name__ == "__main__":
     if "--bajar" in sys.argv:
         if bajar():
             _guardar_meta({**_meta(), "bajado": date.today().isoformat()})
+        _bajar_alicuotas(m := _meta())
+        m["bajado_ib"] = date.today().isoformat()
+        _guardar_meta(m)
+        print("  provincias_dnap: alícuotas de Ingresos Brutos bajadas")
         sys.exit(0)
-    res = construir(con_red="--sin-red" not in sys.argv)
+    res = construir_json(con_red="--sin-red" not in sys.argv)
     for nombre, obj in sorted(res.items()):
         txt = json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
         print(f"{nombre}: {len(txt.encode('utf-8')) / 1024:.0f} KB")

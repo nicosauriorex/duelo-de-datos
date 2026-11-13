@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { decodificarAnioProv, decodificarProv, type ArchivoProv, type DatosProv } from "@/lib/provincias";
 import { decodificarCuentas, type DatosCuentas } from "@/lib/provinciasCuentas";
+import { decodificarAlicuotas, type DatosAlicuotas } from "@/lib/provinciasAlicuotas";
 
 let promesa: Promise<DatosProv> | null = null;
 function bajar(): Promise<DatosProv> {
@@ -78,4 +79,28 @@ export function useProvinciasCuentas(activo: boolean, version: string): { datos:
     return () => { vivo = false; };
   }, [activo, version]);
   return { datos: estado.datos, cargando: activo && !estado.listo, error: estado.error };
+}
+
+// ---------------------------------------------------------------- alícuotas de Ingresos Brutos (fase 3): provincias_alicuotas.json, opcional
+let promesaAlicuotas: Promise<DatosAlicuotas> | null = null;
+function bajarAlicuotas(version: string): Promise<DatosAlicuotas> {
+  if (!promesaAlicuotas) {
+    promesaAlicuotas = fetch(`/datos/provincias_alicuotas.json?v=${encodeURIComponent(version)}`, { cache: "no-cache" })
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .then((c) => { const d = decodificarAlicuotas(c); if (!d) throw new Error("el archivo no trae alícuotas"); return d; })
+      .catch((e) => { promesaAlicuotas = null; throw e; });
+  }
+  return promesaAlicuotas;
+}
+
+/** Baja `provincias_alicuotas.json`. Si falta o no valida, `datos` queda en null: el bloque de alícuotas no aparece y el resto de la vista sigue igual. */
+export function useProvinciasAlicuotas(version: string): { datos: DatosAlicuotas | null; cargando: boolean; error: string | null } {
+  const [estado, setEstado] = useState<{ datos: DatosAlicuotas | null; error: string | null; listo: boolean }>({ datos: null, error: null, listo: false });
+  useEffect(() => {
+    let vivo = true;
+    bajarAlicuotas(version).then((datos) => { if (vivo) setEstado({ datos, error: null, listo: true }); })
+      .catch((e: Error) => { if (vivo) setEstado({ datos: null, error: e.message, listo: true }); });
+    return () => { vivo = false; };
+  }, [version]);
+  return { datos: estado.datos, cargando: !estado.listo, error: estado.error };
 }

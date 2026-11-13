@@ -2,10 +2,12 @@
 // Las cuentas de cada provincia (/provincias/?vista=cuentas, docs/specs/provincias.md, fase 2): un indicador de las cuentas de los gobiernos provinciales,
 // de las 24 jurisdicciones, y el detalle de cada una. Todas las cuentas están en lib/provinciasCuentas.ts; acá solo se dibuja.
 // Estado en la URL: vista=cuentas, ind (id del indicador), anio, orden (desc | asc) y prov (provincia abierta).
+// El bloque de alícuotas de Ingresos Brutos (fase 3, ProvinciasAlicuotas.tsx) usa ib_act, ib_anio e ib_orden.
 import { useCallback, useMemo, useState } from "react";
 import { useProvinciasCuentas } from "../useProvincias";
 import { Cargando, Modal, Selector, Seg } from "../ui";
 import { PanelGasto } from "../PanelGasto";
+import { Alicuotas } from "./ProvinciasAlicuotas";
 import { avisoCompartir, compartir } from "@/lib/compartir";
 import { fechaLarga } from "@/lib/gasto";
 import { extremoTxt } from "@/lib/universidades";
@@ -66,6 +68,7 @@ function CuerpoC({ d, c, p, set, montado }: { d: DatosCuentas; c: Contexto; p: U
           {aviso && <p className="aviso-link" role="status">{aviso}</p>}
         </>
       )}
+      <Alicuotas c={c} p={p} set={set} />
       <Pie d={d} />
       {abierta && <DetalleCuentas x={x} id={abierta.id} anio={anio} ind={ind} orden={orden} def={def} onCerrar={() => set({ prov: null })} />}
       {imagen && vista && <PanelGasto armar={armarImg} titulo={titulo} href={href} onCerrar={() => setImagen(false)} />}

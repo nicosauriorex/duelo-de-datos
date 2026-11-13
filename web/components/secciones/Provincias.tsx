@@ -62,7 +62,7 @@ function Cuerpo({ c }: { c: Contexto }) {
   const agregado = useMemo(() => (c.d.agregado ? armarAgregado(c.d.agregado) : null), [c.d.agregado]);
   const cerrarDetalle = () => set({ prov: null, forma: null, ruta: null, todas: null });
 
-  const cambiarVista = (v: string) => set({ vista: v === VISTA_CUENTAS ? v : null, anio: null, medida: null, gasto: null, prov: null, forma: null, ruta: null, todas: null, ind: null, orden: null });
+  const cambiarVista = (v: string) => set({ vista: v === VISTA_CUENTAS ? v : null, anio: null, medida: null, gasto: null, prov: null, forma: null, ruta: null, todas: null, ind: null, orden: null, ib_act: null, ib_anio: null, ib_orden: null });
   const selectorVista = (
     <div className="controls prov-vista"><label>Qué ver</label>
       <Seg valor={enCuentas ? VISTA_CUENTAS : "nacion"} opciones={[["nacion", "Lo que gasta la Nación ahí"], [VISTA_CUENTAS, "Las cuentas de cada provincia"]]} onElegir={cambiarVista} /></div>

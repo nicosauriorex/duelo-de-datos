@@ -262,7 +262,7 @@ Idea del usuario, con cuatro ejemplos de consultoras (Max Capital, Econviews, un
 → specs: docs/specs/gasto-nacion.md (Nación por partida y por entidad, con universidades; hecha, ver "Hecho") y docs/specs/provincias.md (bloqueada en parte: el sitio de la DNAP no carga).
 Idea del usuario. Agregado el mismo día: ~~ver el presupuesto de cada entidad pública (por ejemplo en qué gastan las universidades) y aclarar si lo tienen sin rendir~~ ✅ 2026-11-13 (lo que se puede: ver "Hecho").
 - ~~Gasto de la Nación por partida presupuestaria~~ ✅ 2026-11-12; gasto de las provincias por partida: pendiente.
-- Qué provincias cobran más impuestos (por ejemplo Ingresos Brutos), contemplando exenciones.
+- ~~Qué provincias cobran más impuestos (por ejemplo Ingresos Brutos)~~ ✅ 2026-11-13 (`/provincias/?vista=cuentas`: recaudación propia por habitante y por impuesto, fase 2, y alícuotas teóricas de Ingresos Brutos, fase 3); contemplando exenciones: pendiente, no hay base oficial.
 - Un ranking de provincias. (Lo que se puede hoy, el gasto de la Nación en cada provincia por habitante: ✅ 2026-11-13, `/provincias/`, fase 1 de docs/specs/provincias.md; el ranking de las cuentas de cada provincia sigue bloqueado.)
 - A resolver: fuentes (Presupuesto Abierto para la Nación; ejecución presupuestaria y recaudación provincial por tributo de la Dirección Nacional de Asuntos Provinciales; leyes impositivas de cada provincia para alícuotas y exenciones); cómo comparar (por habitante, como % del producto de la provincia, en pesos de hoy); el sitio hoy no tiene datos por provincia salvo el IPC por región: es un bloque nuevo, con su propio archivo de datos como el parte del BCRA. Comparar alícuotas con exenciones es mucho más difícil que comparar recaudación.
 

@@ -337,7 +337,8 @@ def escribir_json_web(datos, ctx=None, pm=None, cap=None, con_red=True):
         print(f"Provincias: no se pudo armar, se sigue sin provincias*.json ({e}).")
     # Provincias, fase 2: las cuentas de cada provincia (ingresos, gastos, finalidad, recaudación por impuesto, empleo y deuda) de la
     # DNAP (respaldos datos/cache/provincias_dnap_*; una bajada por día como mucho). Va fuera del hash. Si un control no pasa o algo
-    # falla, la corrida sigue sin provincias_cuentas.json.
+    # falla, la corrida sigue sin provincias_cuentas.json. Fase 3: las alícuotas de Ingresos Brutos (provincias_alicuotas.json), que
+    # salen o fallan por separado de las cuentas.
     try:
         for nombre, obj in provincias_dnap.construir_json(con_red).items():
             (destino / nombre).write_text(json.dumps(obj, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
