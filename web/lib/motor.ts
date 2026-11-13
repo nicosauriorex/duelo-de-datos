@@ -203,6 +203,9 @@ export function crearMotor(F: string[]) {
       if (v[1]) return `en US$ ${FX_NOM[v[1]]}${v[0] === "usdr" ? " de hoy" : ""}`;
       return v[0] === "usdr" ? "dólares de hoy" : "dólares corrientes";
     }
+    if (g.k === "valor") return "";                          // el valor tal cual: el nombre alcanza, sin "(tal cual)"
+    // no "índice tal cual (base 100)": la base va en la unidad (índices generales y de rubros de precios)
+    if ((g.k === "indice" && v[0] === "corr") || (g.k === "var" && v[0] === "ind" && v[1] !== "real")) return "índice";
     const t = g.etq(v);
     return /^[A-ZÁÉÍÓÚ]{2,}/.test(t) ? t : t.charAt(0).toLowerCase() + t.slice(1);
   };

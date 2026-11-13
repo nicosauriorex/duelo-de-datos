@@ -38,9 +38,12 @@ Hecho y publicado (detalle en `docs/ROADMAP.md`):
 A futuro, sin recomendar: el bloque 7c-3 (relatos, posts y video) está anotado en `docs/ROADMAP.md`, sección "A futuro"; no se propone hasta que el usuario lo pida.
 
 ## Sin verificar (revisar antes de dar por cerrado)
+De la tanda 6 (2026-11-13, `docs/specs/ajustes-tanda-6.md`: textos internos y limpieza; verificado: tipos, build, `npm run previas`, prueba de `fuentePublica` con las fuentes del catálogo sin restos de "serie"/"API"/"variable"/"_", y en el navegador la imagen de EMAE con "Fuente: datos.gob.ar" y título sin "(tal cual)", la de reservas con "Fuente: BCRA", el renglón de Variables "EMAE · índice 2004=100" e "IPC Bienes (Nacional) · índice", `/mandato/?mmo=indice` sin errores):
+- La fuente con organismo de las series de datos.gob.ar ("INDEC vía datos.gob.ar, serie …") se ve recién con la corrida completa en GitHub.
+- Los botones de medida siguen diciendo "Tal cual" (fuera de la tanda).
 De provincias, fase 4 (verificado: `provincias_dnap.py` con red y `--sin-red`, controles —acumulado 44,1 % del año, finalidades 0,000 %, recaudación 1 caso fuera: San Luis 2025—; Buenos Aires gastos II-2026 = 21.667.604,4 y Córdoba Ingresos Brutos 1.461.758,4 iguales a las planillas; `--solo-json`, tipos, build; en el navegador `anio=2026` tabla y variación contra ene-jun 2025, detalle de Córdoba con cuentas que cierran, Atrás, `ind=empleados` que cae al defecto, deuda sin aviso del período, 360 px sin desborde ni errores de consola, imagen 1:1; sin `anio` igual que antes; revisor sin bloqueantes):
 - La corrida en GitHub del 2026-11-13 (1972c71) terminó en verde: pasó el control de acumulado (44,1 %) y publicó `parcial` (2025-2026, II trimestre) en `provincias_cuentas.json`. Usó el respaldo (bajado ese día): la bajada de las planillas trimestrales desde Actions se prueba en la corrida del día siguiente.
-- La vista a 1280 px con `anio=2026` y el tema claro no se miraron; la imagen en 4:5 y 16:9 tampoco.
+- Mirado el 2026-11-13 (tanda 6): la vista a 1280 px con `anio=2026` en tema claro y la imagen en 4:5 (1080×1350, las 23 provincias con dato) y 16:9 (dos columnas, 12 y 11); La Pampa sin dato de 2026 queda afuera de la imagen con su nota.
 - La planilla de 2025 al II trimestre es de una edición anterior a la serie anual: la variación compara dos ediciones provisorias.
 
 De Gobierno y Congreso, carga manual (verificado: el pipeline valida bancas contra bloques y corta con una fila rota; `--solo-json`, tipos, build; con Playwright a 360 y 1280 px la sección y el detalle de Macri sin desborde ni errores de consola; totales contra cifras conocidas: Cambiemos 105 diputados en 2018, LLA 38 en 2024 y 95 en 2026, 7 senadores de LLA en 2024, FdT 41 senadores en 2020):
@@ -145,9 +148,7 @@ Durante la tanda 3 las capturas del navegador fallaron: se comprobó contenido y
 - Cristina: celeste en el primer mandato y azul en el segundo (dos tonos de la misma familia, a propósito).
 - La vista interanual de la inflación se titula "Inflación"; "interanual" aparece en la línea de la unidad.
 - Si se sigue un enlace del sitio con una ventana abierta, la página de destino se carga entera (no es una transición interna); así el historial queda sin entradas de más.
-- En las imágenes, algunos títulos y fuentes traen texto del catálogo que no es del público ("PIB … (tal cual)", "datos.gob.ar, serie 3.2_OGP_D_2004_T_17", "API pobreza_eph"): pendiente de nombres; cambiar `fuente` necesita la corrida completa del pipeline.
-- `web/lib/previas.ts` repite en chico la lógica de moneda de `difAbsTxt` y el recorte de fuente de `fuentesTxt`: unificar si se vuelven a tocar.
-- Quedan reglas CSS sin uso de versiones anteriores (`.chips`, `.voto-aviso`) y ramas del modo "índice" de Meses de mandato que ya no se alcanzan.
+- `web/lib/previas.ts` y `difAbsTxt` (`motor.ts`) separan la moneda de la unidad cada uno a su modo: no es la misma regla (la vista previa exige que toda la unidad sea monetaria), se dejó así (tanda 6).
 
 ## Herramientas
 - `python pipeline/ver_cache.py <nombre>`: mira un archivo de `datos/cache/` sin volcarlo (columnas y pocas filas). Es la única forma permitida de leer el caché.

@@ -9,6 +9,7 @@ import { fmtMes, nf0, nf1, fmtNum, norm, ok } from "./formato";
 import type { Calculo, Expr, Motor } from "./motor";
 import { filasDeTabla, tablaATexto } from "./tabla-texto";
 import { variacionMostrada } from "./tablas";
+import { fuentePublica, organismoDe, SITIO_FUENTES } from "./fuente-publica";
 
 /** Lo que muestra un gráfico de Histórico y, por lo tanto, lo que lleva la imagen. */
 export interface VistaImg {
@@ -48,20 +49,19 @@ export function tituloVariable(m: Motor, e: Expr, c: Calculo): string {
   const r = m.resumenMedida(c.serie, e.med ?? m.medDefault(c.serie));
   return r ? `${c.nombre} (${r})` : c.nombre;
 }
+/** La fuente de una serie en la imagen: sin números de serie ni nombres de API; "ver Fuentes" pasa a la dirección (la imagen no tiene botones). */
+export const fuenteLegible = fuentePublica;
 /** Texto de fuentes de una imagen con varias variables: la lista sin repetir y, si no entra, una versión corta con el enlace al detalle. */
-/** Algunas series traen "ver Fuentes" como fuente (el detalle está en la página de fuentes): en la imagen, que no tiene botones, va la dirección. */
-export const fuenteLegible = (f: string): string => (/^ver fuentes$/i.test(f.trim()) ? `ver ${SITIO_FUENTES}` : f);
 export function fuentesTxt(fuentes: string[]): { fuente: string; fuenteCorta: string } {
   const u = [...new Set(fuentes.filter(Boolean).map(fuenteLegible))];
   // instituciones: cada fuente puede traer varias separadas por ";" y aclaraciones ("INDEC (IPC)", "… vía datos.gob.ar", "de 2007 a 2016, …")
-  const inst0 = [...new Set(u.flatMap((f) => f.split(";")).map((x) => x.trim()).filter((x) => /^[A-ZÁÉÍÓÚÑ]/.test(x)).map((x) => x.replace(/\s*(\(| vía |,| - | – ).*$/, "")))];
+  const inst0 = [...new Set(u.flatMap((f) => f.split(";")).map(organismoDe).filter(Boolean))];
   const inst = inst0.length ? inst0 : u;
   return {
     fuente: `${u.length > 1 ? "Fuentes" : "Fuente"}: ${u.join("; ")}`,
     fuenteCorta: `Fuentes: ${inst.length > 2 ? `${inst[0]}, ${inst[1]} y otras` : inst.join(" y ")}; detalle en ${SITIO_FUENTES}`,
   };
 }
-const SITIO_FUENTES = "primerolosdatos.com.ar/fuentes";
 
 export const slug = (s: string) => norm(s).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48);
 

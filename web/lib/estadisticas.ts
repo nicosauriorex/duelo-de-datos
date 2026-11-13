@@ -412,7 +412,7 @@ export function estimarVoto(m: Motor, F: string[], PRES: Pres[], metrica: string
 }
 
 // ---------------------------------------------------------------- Meses de mandato
-export type ModoMandato = "teorico" | "var" | "indice" | "valor";
+export type ModoMandato = "teorico" | "var" | "valor";
 export interface ParamsMandato {
   expr: Expr; modo: ModoMandato; banda: boolean; b: BaseCfg;
   presIds: Set<string>; anc: string | null; md: string | null; mh: string | null;   // md/mh: parámetros de URL tal cual
@@ -439,7 +439,6 @@ export function calcularMandato(m: Motor, PRES: Pres[], PRES_T0: Pres[], q: Para
   const conv = (xv: number | null, x0: number | null) => {
     if (!ok(x0) || !ok(xv) || x0 === 0) return null;
     if (c.pct && modo !== "valor") return xv - x0 + (teo && ok(ancla) ? ancla : 0);
-    if (modo === "indice") return xv / x0 * 100;
     if (modo === "var") return (xv / x0 - 1) * 100;
     if (teo) return ok(ancla) ? ancla * xv / x0 : null;
     return xv;
@@ -459,7 +458,6 @@ export function calcularMandato(m: Motor, PRES: Pres[], PRES_T0: Pres[], q: Para
   const rows = todas.slice(desde, hasta + 1);
   let fmtAxis: (v: number) => string, fmtTip: (v: number) => string, ref: number | null = null;
   if (c.pct && modo !== "valor") { fmtAxis = (v) => nf0.format(v); fmtTip = (v) => nf1.format(v) + " %"; ref = teo ? ancla : 0; }
-  else if (modo === "indice") { fmtAxis = (v) => nf0.format(v); fmtTip = (v) => nf1.format(v); ref = 100; }
   else if (modo === "var") { fmtAxis = (v) => nf0.format(v) + " %"; fmtTip = (v) => (v > 0 ? "+" : "") + nf1.format(v) + " %"; ref = 0; }
   else { fmtAxis = (v) => c.pct ? nf0.format(v) + " %" : (Math.abs(v) >= 1e6 ? nf1.format(v / 1e6) + " M" : Math.abs(v) >= 1e4 ? nf0.format(v / 1e3) + " mil" : fmtNum(v)); fmtTip = (v) => m.fmtC(c, v); ref = teo ? ancla : null; }
   const vals = rows.flatMap((r) => pres.map((x) => r[x.id])).filter((v) => ok(v) && v > 0) as number[];
@@ -467,12 +465,12 @@ export function calcularMandato(m: Motor, PRES: Pres[], PRES_T0: Pres[], q: Para
   const paso = (hasta - desde) > 36 ? 6 : (hasta - desde) > 12 ? 3 : 1;
   const cel = (x: Pres, t: number) => { const r = todas[t]; return r && ok(r[x.id]) ? fmtTip(r[x.id]) : "–"; };
   const nota = (teo ? `Partiendo de ${ancTxt}: `.replace("de el ", "del ") + `${m.fmtC(c, ancla)} (${c.unidad}), y aplicando ${c.pct ? "los cambios en puntos" : "las variaciones"} de cada mandato. `
-    : `Unidad: ${modo === "indice" ? "índice" : modo === "var" && !c.pct ? "%" : c.unidad}. `) + `Mes 0 = ${baseTxt(b)}.` +
+    : `Unidad: ${modo === "var" && !c.pct ? "%" : c.unidad}. `) + `Mes 0 = ${baseTxt(b)}.` +
     (c.pct ? " En porcentajes se suman los cambios en puntos, no se multiplican." : "") + (bnd ? " La sombra va del mínimo al máximo diario de cada mes." : "") +
     (q.banda && !c.lo ? " (Esta variable no tiene datos diarios: no hay rango.)" : "");
   return { c, pres, teo, ancOpc, anc, ancTxt, ancla, maxMes, desde, hasta, rows, fmtAxis, fmtTip, ref, usarLog, paso, nota, cel, todas, bnd };
 }
 
-export const TITULOS_MANDATO: Record<ModoMandato, string> = { teorico: "precio teórico", indice: "índice, mes 0 = 100", var: "variación % desde el mes 0", valor: "valor" };
+export const TITULOS_MANDATO: Record<ModoMandato, string> = { teorico: "precio teórico", var: "variación % desde el mes 0", valor: "valor" };
 /** Nombre abreviado de un presidente para espacios chicos ("Néstor Kirchner" → "Néstor K.", "Alberto Fernández" → "Alberto F."): el `corto` de `PRES_DEF`. */
 export const nombreCorto = (n: string): string => (PRES_DEF.find((p) => p.n === n) as { corto?: string } | undefined)?.corto ?? n;

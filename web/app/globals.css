@@ -450,19 +450,7 @@ td.nombre a:hover { text-decoration: underline; }
 .btn.drop .et { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 @media (max-width: 640px) { .solo-grande { display: none; } }
 
-/* Chips de resumen (celular) */
-.chips { display: none; gap: var(--e-2); overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; margin-bottom: var(--e-3); padding-bottom: 2px; }
-.chip { flex: none; scroll-snap-align: start; display: flex; gap: var(--e-2); align-items: center; border: 1px solid var(--border); border-top: var(--linea) solid var(--border-fuerte);
-  border-radius: 0; background: var(--surface-1); padding: 5px 10px; font-size: var(--t-sm); white-space: nowrap; }
-.chip .col { display: flex; flex-direction: column; }
-.chip .ln { display: flex; gap: 6px; align-items: baseline; line-height: 1.35; }
-.chip .ln .punto { align-self: center; width: 8px; height: 8px; }
-.chip .n { color: var(--text-secondary); font-size: var(--t-xs); font-weight: 700; text-transform: uppercase; }
-.chip .v { font-weight: 800; }
-.chip .vr { font-size: var(--t-xs); }
-.chip .f { color: var(--text-muted); font-size: var(--t-micro); }
 @media (max-width: 639.98px) {
-  .chips { display: flex; }
   .tiles.res { display: none; }
   .refleg .rv, .refleg .ri small { display: none; }
 }
@@ -739,7 +727,6 @@ svg.mini-bueno { color: var(--bueno); } svg.mini-malo { color: var(--malo); }
 @media (min-width: 1024px) {
   .grilla-graf.multi { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--e-4); align-items: start; }
   .grilla-graf.multi .tiles.res { display: none; }
-  .grilla-graf.multi .chips { display: flex; }
   .grilla-graf.multi .refleg .rv, .grilla-graf.multi .refleg .ri small { display: none; }
   .bloque-graf.compacto .vars-graf { display: flex; flex-direction: column; }
   .bloque-graf.compacto .fila-var { padding: 6px var(--e-2); } /* sin scroll horizontal: el panel de medida se abre dentro de la fila */
@@ -805,7 +792,7 @@ svg.mini-bueno { color: var(--bueno); } svg.mini-malo { color: var(--malo); }
   padding: 0 max(var(--e-4), calc((100% - var(--ancho-pagina)) / 2 + var(--e-4))); scroll-padding-inline: max(var(--e-4), calc((100% - var(--ancho-pagina)) / 2 + var(--e-4))); }
 .pista::after { content: ""; flex: 0 0 60%; }
 @media (min-width: 768px) { .placa[aria-current] { box-shadow: inset 0 6px 0 var(--sobre-acento); } }
-.pista::-webkit-scrollbar, .subtabs::-webkit-scrollbar, .chips::-webkit-scrollbar, .tiles.res::-webkit-scrollbar { display: none; }
+.pista::-webkit-scrollbar, .subtabs::-webkit-scrollbar, .tiles.res::-webkit-scrollbar { display: none; }
 .placa { flex: 0 0 min(86%, 440px); height: 400px; scroll-snap-align: start; container-type: inline-size; background: var(--acento); color: var(--sobre-acento);
   clip-path: polygon(0 0, calc(100% - var(--corte-placa)) 0, 100% var(--corte-placa), 100% 100%, 0 100%); }
 .placa-link { display: flex; flex-direction: column; height: 100%; padding: var(--e-5) var(--e-5) 0; color: inherit; text-decoration: none; }
@@ -948,7 +935,6 @@ tr.clic.abierto > td { font-weight: 700; }
 .mis-var .stats small { display: block; color: var(--text-muted); font-size: var(--t-micro); }
 .anim-barra { display: flex; flex-wrap: wrap; gap: var(--e-2); align-items: center; margin-bottom: var(--e-2); }
 .voto-rango { font-size: var(--t-lg); font-weight: 800; margin: var(--e-1) 0; }
-.voto-aviso { border: 1px solid var(--malo); background: var(--malo-f1); color: var(--sobre-malo-1); border-radius: var(--r-2); padding: var(--e-2) var(--e-3); font-size: var(--t-sm); margin: var(--e-2) 0; }
 
 /* Precios en el mundo (bloque 6c) */
 .seg button:disabled { opacity: .45; cursor: not-allowed; }

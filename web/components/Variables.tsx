@@ -335,7 +335,7 @@ export function RenglonVariable({ e, onChange, color, quitable, sinRel, onMover,
   const conRel = !!B && motor.relPermitido(A) && !escV && !sinRel;
   const med = e.med === "vac" ? "via" : e.med || motor.medDefault(A);
   const resumen = conRel ? `en términos de ${B!.n}` : escV === "pib" ? "% del PIB" : escV === "pc" ? "por habitante"
-    : motor.cantMedidas(motor.gruposMedida(A)) < 2 ? (motor.esIndice(A) ? "índice" : A.u) : motor.resumenMedida(A, med);
+    : motor.cantMedidas(motor.gruposMedida(A)) < 2 ? (motor.esIndice(A) ? "índice" : A.u) : motor.resumenMedida(A, med) || A.u;   // el valor tal cual no tiene resumen: va la unidad
   const verEnSalarios = !sinRel && !conRel && !escV && motor.relPermitido(A) && A.tipo === "ars" && A.cat[0] === "Precios" && metas.some((m) => m.id === "sipa_med");
   const error = errores[A.archivo] || (B && errores[B.archivo]);
   return (

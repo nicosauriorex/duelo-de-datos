@@ -1,6 +1,7 @@
 // Vista previa de los links en redes (docs/specs/vista-previa-links.md): lo que comparten el script que genera las imágenes
 // (scripts/generar-previas.ts) y las páginas que las anuncian en su HTML (layout y /dato/<slug>/). Sin `fs`: sirve en cualquier lado.
 import type { Metadata } from "next";
+import { organismoDe } from "./fuente-publica";
 
 export const SITIO_URL = "https://primerolosdatos.com.ar";
 export const NOMBRE_SITIO = "Primero los Datos";
@@ -61,13 +62,6 @@ const MAX_DESC = 200;
 const MAX_UNIDAD_TITULO = 25;
 const mayuscula = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-/** Solo el organismo de una fuente del catálogo, en palabras del público ("INDEC", "BCRA", "Secretaría de Trabajo"); vacío si la fuente
- *  es un portal, un cálculo o un enlace ("datos.gob.ar, serie …", "cálculo propio", "ver Fuentes"): esas no se nombran. */
-export function organismoDe(fuente: string): string {
-  const inst = fuente.split(";")[0].trim();
-  if (!/^[A-ZÁÉÍÓÚÑ]/.test(inst)) return "";
-  return inst.replace(/\s*(\(| vía |,| - | – ).*$/, "").replace(/^Sec\. de /, "Secretaría de ").trim();
-}
 
 /** Frase de la unidad en palabras ("millones de pesos de 2004", "pesos de ago-26 por dólar"). */
 const unidadEnPalabras = (u: string) => u.replace(/por US\$/g, "por dólar").replace(/US\$/g, "dólares").replace(/\$/g, "pesos");

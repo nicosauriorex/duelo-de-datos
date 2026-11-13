@@ -258,6 +258,22 @@ def bcra(idx):
     return out
 
 
+# Organismo de origen de cada conjunto de datos de datos.gob.ar (el número antes del primer punto del id de serie).
+ORGANISMO_DGO = {
+    "3": "INDEC", "4": "INDEC", "33": "INDEC", "42": "INDEC", "43": "INDEC", "44": "INDEC", "52": "INDEC", "74": "INDEC",
+    "143": "INDEC", "149": "INDEC", "160": "INDEC", "453": "INDEC", "455": "INDEC", "458": "INDEC",
+    "151": "Sec. de Trabajo (SIPA)", "379": "Secretaría de Hacienda", "363": "Secretaría de Energía", "172": "ARCA (ex AFIP)",
+    "370": "Universidad Torcuato Di Tella", "380": "Universidad Torcuato Di Tella",
+    "38": "Asociación de Fabricantes de Cemento Portland", "41": "Ministerio de Economía",
+}
+
+
+def _fuente_dgo(sid):
+    """Fuente de una serie de datos.gob.ar sin fuente propia: el organismo (si se conoce), el portal y el número de serie."""
+    org = ORGANISMO_DGO.get(sid.split(".")[0])
+    return f"{org} vía datos.gob.ar, serie {sid}" if org else f"datos.gob.ar, serie {sid}"
+
+
 def _trim_a_mes(s, idx, repartir=False):
     """Trimestral (fecha = 1er mes) a mensual: repite el valor en los 3 meses, o lo divide por 3 si es un flujo."""
     s = s.dropna()
@@ -348,7 +364,7 @@ def datos_gob(idx, ipc=None):
         if op.get("x100") and v.max() < 1.5:
             v = v * 100
         v = _trim_a_mes(v, idx, repartir=True) if op.get("trim_flujo") else (_trim_a_mes(v, idx) if op.get("trim_stock") else v.reindex(idx))
-        out.append(S("dg_" + slug(sid), n, ruta, tipo, u, v, dr, op.get("fuente", f"datos.gob.ar, serie {sid}"), desc, agg=op.get("agg", False), flujo=op.get("flujo", False)))
+        out.append(S("dg_" + slug(sid), n, ruta, tipo, u, v, dr, op.get("fuente", _fuente_dgo(sid)), desc, agg=op.get("agg", False), flujo=op.get("flujo", False)))
     get = lambda k: next((o["v"] for o in out if o["id"] == "dg_" + slug(k)), None)  # noqa: E731
     if get("74.3_IET_0_M_16") is not None and get("74.3_IIT_0_M_25") is not None:
         out.append(S("dg_saldo_comercial", "Saldo comercial (exportaciones - importaciones)", EX, "usd", "millones de US$",

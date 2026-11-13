@@ -41,7 +41,7 @@ export function Mandato() {
   const clave = p.toString() + JSON.stringify(b);
   useEffect(() => { setAnim(null); }, [clave]);
 
-  const modoUrl = unoDe(p.get("mmo"), ["teorico", "var", "indice", "valor"] as const, MODO_MANDATO_DEF);
+  const modoUrl = unoDe(p.get("mmo"), ["teorico", "var", "indice", "valor"] as const, MODO_MANDATO_DEF);   // "indice" (links viejos) = Variación %
   const modo: ModoMandato = modoUrl === "indice" ? "var" : modoUrl;
   const selIds = new Set(lista(p.has("mp") ? p.get("mp") : DEF_PRES).filter((id) => PRES_T0.some((x) => x.id === id)));
   const banda = unoDe(p.get("mbd"), ["no", "si"] as const, "no");

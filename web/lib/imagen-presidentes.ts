@@ -156,7 +156,7 @@ export function armarImagenPres(m: Motor, v: VistaPres, o: OpcionesPres): DatosI
       };
     });
     d.fmtEje = D.fmtAxis; d.ejeX = "mes"; d.log = D.usarLog; d.refLinea = D.ref;
-    const unidadDato = v.modo === "indice" ? "índice, mes 0 = 100" : v.modo === "var" && !D.c.pct ? "variación en %, desde el mes 0" : D.c.unidad;
+    const unidadDato = v.modo === "var" && !D.c.pct ? "variación en %, desde el mes 0" : D.c.unidad;
     d.unidad = `Eje horizontal: meses desde el inicio de cada mandato${recorte} · ${unidadDato}`;
     d.fuente = "Fuente: " + fuenteLegible(D.c.serie.fuente);
     d.nota = [D.teo ? `Punteadas: precio teórico, partiendo de ${m.fmtC(D.c, D.ancla)} (${D.ancTxt}).` : "", notaInflacion([D.c], false)].filter(Boolean).join(" ");
