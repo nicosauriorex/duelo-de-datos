@@ -73,7 +73,6 @@ dg_380_3_desagregacnal_0_t_43
 dg_380_3_icc_nacionnal_0_t_12
 dg_38_3_cem_1994_m_7
 dg_3_2_ogp_d_2004_t_17
-dg_41_3_aa_0_a_23
 dg_41_3_gn_0_a_11
 dg_42_3_eph_puntuatal_0_m_30
 dg_43_2_ectat_0_t_33
