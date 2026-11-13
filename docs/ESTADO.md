@@ -50,7 +50,7 @@ De universidades (verificado: cierre por año 2018-2026 contra el programa, UBA 
 - UBA 2018 da 19.225,3 millones contra 19.383,7 del informe AGN 2023-004 (−0,8 %; la AGN probablemente suma otras jurisdicciones).
 - Sin estudiantes en el PIU: Salta, Jujuy, Formosa, Santiago del Estero, Madres de Plaza de Mayo, Pilar, del Delta y Río Tercero. El total por estudiante del sistema usa el total de las 61.
 - La Resolución 77/2025 se citó desde la spec (investigada el 2026-11-12); no se volvió a abrir.
-- La primera bajada del PIU en GitHub (unos 110 CSV): tiempo y que no falle. Si el PIU suma una universidad con otro nombre, avisa y queda sin estudiantes hasta agregar un alias.
+- La corrida en GitHub del 2026-11-13 (fed1810) terminó en verde con los controles de universidades y publicó `universidades.json`. Si el PIU suma una universidad con otro nombre, avisa y queda sin estudiantes hasta agregar un alias.
 - La imagen no respeta el buscador (sale la lista completa); los formatos 4:5 y 16:9 no se miraron; las capturas del navegador fallaron a 1280 px (se verificó leyendo la página).
 
 Del gasto de la Nación, fase 2 (verificado: controles contra el anual, `--solo-json`, tipos y build, `/gasto/?vista=mes` a 360 px sin desborde en Para qué y Quién con migas, a 1024 px con En qué, imagen 1:1 en el panel, cuentas de la tabla mes por mes, link viejo `/gasto/` igual, sin errores de consola; revisor pasado y sus observaciones corregidas):
