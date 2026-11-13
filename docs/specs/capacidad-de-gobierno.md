@@ -1,6 +1,6 @@
 # Capacidad de gobierno (bloque 6d)
 
-Estado: implementada en parte (2026-11-09). Código completo; datos automáticos (DNU y leyes desde dic-2011) cargados; faltan a mano bancas, bloques y vetos, y leyes de 1989 a 2011 (ver D-009).
+Estado: implementada (2026-11-13), salvo las leyes del Ejecutivo de 1989 a dic-2011 (sin fuente con aprobadas). Código y datos automáticos (DNU y leyes desde dic-2011) del 2026-11-09; bancas, bloques y vetos cargados a mano el 2026-11-13 (ver D-009).
 
 ## Objetivo
 Mostrar cuánto respaldo tuvo cada presidente en el Congreso y cómo gobernó con él, para juzgar sus resultados con ese contexto. Son cuatro indicadores, todos con el mismo criterio para todos los presidentes desde Menem:
