@@ -3,6 +3,7 @@
 // El índice se baja una sola vez por visita y cada año, una sola vez por archivo. Si el archivo falta o no valida, `datos` queda en null y `error` dice por qué.
 import { useEffect, useState } from "react";
 import { decodificarAnioProv, decodificarProv, type ArchivoProv, type DatosProv } from "@/lib/provincias";
+import { decodificarCuentas, type DatosCuentas } from "@/lib/provinciasCuentas";
 
 let promesa: Promise<DatosProv> | null = null;
 function bajar(): Promise<DatosProv> {
@@ -52,4 +53,29 @@ export function useProvinciasAnio(archivo: string | null, version: string): { da
   }, [archivo, version]);
   const actual = !!archivo && estado.clave === archivo;
   return { datos: actual ? estado.datos : null, cargando: !!archivo && !actual, error: actual ? estado.error : null };
+}
+
+// ---------------------------------------------------------------- las cuentas de cada provincia (fase 2): provincias_cuentas.json, solo al abrir esa vista
+let promesaCuentas: Promise<DatosCuentas> | null = null;
+function bajarCuentas(version: string): Promise<DatosCuentas> {
+  if (!promesaCuentas) {
+    promesaCuentas = fetch(`/datos/provincias_cuentas.json?v=${encodeURIComponent(version)}`, { cache: "no-cache" })
+      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .then((c) => { const d = decodificarCuentas(c); if (!d) throw new Error("el archivo no trae cuentas"); return d; })
+      .catch((e) => { promesaCuentas = null; throw e; });
+  }
+  return promesaCuentas;
+}
+
+/** Baja `provincias_cuentas.json` cuando `activo` es true. Si falta o no valida, `datos` queda en null y `error` dice por qué (la vista de la fase 1 sigue andando). */
+export function useProvinciasCuentas(activo: boolean, version: string): { datos: DatosCuentas | null; cargando: boolean; error: string | null } {
+  const [estado, setEstado] = useState<{ datos: DatosCuentas | null; error: string | null; listo: boolean }>({ datos: null, error: null, listo: false });
+  useEffect(() => {
+    if (!activo) return;
+    let vivo = true;
+    bajarCuentas(version).then((datos) => { if (vivo) setEstado({ datos, error: null, listo: true }); })
+      .catch((e: Error) => { if (vivo) setEstado({ datos: null, error: `No se pudieron cargar las cuentas de las provincias (${e.message}).`, listo: true }); });
+    return () => { vivo = false; };
+  }, [activo, version]);
+  return { datos: estado.datos, cargando: activo && !estado.listo, error: estado.error };
 }

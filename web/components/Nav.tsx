@@ -21,7 +21,7 @@ const SUBSECCIONES: [string, string, string][] = [
 const GRUPO_PRES = new Set([...SUBSECCIONES.map((s) => s[0]), "curiosidades"]);
 const TITULOS: Record<string, string> = {
   historico: "Histórico", presidentes: "Por presidente", ranking: "Ranking de presidentes", mandato: "Meses de mandato", herencia: "Herencia",
-  curiosidades: "Curiosidades", congreso: "Gobierno y Congreso", elecciones: "Elecciones", contexto: "Contexto internacional", bcra: "Parte del Banco Central", semaforo: "Semáforo de actividad", gasto: "En qué gasta la Nación", universidades: "Cuánto reciben las universidades", provincias: "Cuánto gasta la Nación en cada provincia", plantillas: "Gráficos listos", fuentes: "Fuentes",
+  curiosidades: "Curiosidades", congreso: "Gobierno y Congreso", elecciones: "Elecciones", contexto: "Contexto internacional", bcra: "Parte del Banco Central", semaforo: "Semáforo de actividad", gasto: "En qué gasta la Nación", universidades: "Cuánto reciben las universidades", provincias: "Las provincias", plantillas: "Gráficos listos", fuentes: "Fuentes",
 };
 /** Páginas donde aparece "Volver" si se llegó desde otra página del sitio. */
 const CON_VOLVER = new Set(["historico", "tema", "dato", "bcra", "semaforo", "gasto", "universidades", "provincias", ...GRUPO_PRES]);

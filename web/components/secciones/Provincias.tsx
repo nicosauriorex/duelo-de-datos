@@ -2,6 +2,7 @@
 // Cuánto gasta la Nación en cada provincia (/provincias/, docs/specs/provincias.md, fase 1): el gasto que la Nación declara ubicado en cada una de las 24
 // jurisdicciones, por habitante, en total o como % de lo ubicado, con y sin jubilaciones y asignaciones. Tocar una provincia abre su detalle (Para qué, Quién,
 // En qué y su evolución). Todas las cuentas están en lib/provincias.ts; acá solo se dibuja.
+// La vista "Las cuentas de cada provincia" (fase 2, ?vista=cuentas) está en ProvinciasCuentas.tsx; sin `vista` la página es la de siempre.
 // Estado en la URL: anio, medida (hab | total | pct), gasto (todo | sin_ss), prov (provincia abierta), forma (para_que | quien | en_que), ruta (nombres separados por "~") y todas.
 import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
@@ -9,6 +10,8 @@ import { useProvincias, useProvinciasAnio } from "../useProvincias";
 import { useSeccion } from "../useSeccion";
 import { Cargando, Modal, Selector, Seg } from "../ui";
 import { PanelGasto } from "../PanelGasto";
+import { Cuentas } from "./ProvinciasCuentas";
+import { VISTA_CUENTAS } from "@/lib/provinciasCuentas";
 import { avisoCompartir, compartir } from "@/lib/compartir";
 import { nf0 } from "@/lib/formato";
 import {
@@ -49,7 +52,8 @@ function Cuerpo({ c }: { c: Contexto }) {
   const anio = anioValidoP(c, p.get("anio")) ?? def;
   const medida: MedidaP = esMedidaP(p.get("medida")) ? (p.get("medida") as MedidaP) : MEDIDA_P_DEFECTO;
   const gasto: GastoP = esGastoP(p.get("gasto")) ? (p.get("gasto") as GastoP) : GASTO_P_DEFECTO;
-  const abierta = montado ? buscarProv(c.d, p.get("prov")) : null;
+  const enCuentas = p.get("vista") === VISTA_CUENTAS;
+  const abierta = montado && !enCuentas ? buscarProv(c.d, p.get("prov")) : null;
   const vista = useMemo(() => armarVistaP(c, { anio, medida, gasto }), [c, anio, medida, gasto]);
   const href = hrefP({ anio, medida, gasto }, def);
   const titulo = vista ? tituloP(vista) : TITULO_P;
@@ -58,8 +62,16 @@ function Cuerpo({ c }: { c: Contexto }) {
   const agregado = useMemo(() => (c.d.agregado ? armarAgregado(c.d.agregado) : null), [c.d.agregado]);
   const cerrarDetalle = () => set({ prov: null, forma: null, ruta: null, todas: null });
 
+  const cambiarVista = (v: string) => set({ vista: v === VISTA_CUENTAS ? v : null, anio: null, medida: null, gasto: null, prov: null, forma: null, ruta: null, todas: null, ind: null, orden: null });
+  const selectorVista = (
+    <div className="controls prov-vista"><label>Qué ver</label>
+      <Seg valor={enCuentas ? VISTA_CUENTAS : "nacion"} opciones={[["nacion", "Lo que gasta la Nación ahí"], [VISTA_CUENTAS, "Las cuentas de cada provincia"]]} onElegir={cambiarVista} /></div>
+  );
+  if (enCuentas) return <section className="prov">{selectorVista}<Cuentas c={c} p={p} set={set} montado={montado} /></section>;
+
   return (
     <section className="prov">
+      {selectorVista}
       <p className="sub">Cuánto gasta la Nación en cada provincia, año por año, por habitante y en pesos de hoy. Datos oficiales del presupuesto.</p>
       <p className="callout prov-aclara">
         Es el gasto que la Nación declara ubicado en cada provincia (jubilaciones, asignaciones, universidades, obras y transferencias no automáticas). <b>No es el gasto del
@@ -81,6 +93,7 @@ function Cuerpo({ c }: { c: Contexto }) {
         </>
       )}
       {agregado && <Agregado g={agregado} d={c.d} />}
+      <p className="note prov-link-cuentas">¿Y lo que gasta cada provincia? <button type="button" className="enlace" onClick={() => cambiarVista(VISTA_CUENTAS)}>Ver sus cuentas</button></p>
       <Pie d={c.d} v={vista} />
       {abierta && <Detalle c={c} prov={abierta} anio={anio} medida={medida} gasto={gasto} p={p} set={set} def={def} onCerrar={cerrarDetalle} />}
       {imagen && vista && <PanelGasto armar={armarImg} titulo={titulo} href={href} onCerrar={() => setImagen(false)} />}

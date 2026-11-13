@@ -30,6 +30,7 @@ import { armarImagenPres } from "../lib/imagen-presidentes";
 import { anioDefecto, armarImagenGasto, armarVista, crearDeflactor, decodificarAnio, decodificarIndice, textosPreviaGasto } from "../lib/gasto";
 import { anioDefectoU, armarImagenU, armarVistaU, crearContexto, decodificarUniv, textosPreviaU } from "../lib/universidades";
 import { anioDefectoP, armarImagenP, armarVistaP, crearContexto as crearContextoP, decodificarProv, textosPreviaP } from "../lib/provincias";
+import { anioDefectoC, armarImagenC, armarVistaC, crearCtxC, decodificarCuentas, textosPreviaC } from "../lib/provinciasCuentas";
 import { BASE_HERENCIA, idsHerencia, tablaHerencia, textosPreviaHerencia } from "../lib/herencia";
 import type { DatoInforme, DatosInformes, ReservasNetas } from "../lib/herencia-informes";
 
@@ -277,6 +278,30 @@ function previaDeProvincias(m: Motor, pal: ReturnType<typeof paletaDe>): boolean
   }
 }
 
+/** Imagen y textos de las cuentas de cada provincia (/provincias/?vista=cuentas), con la vista de entrada (último año, gasto por habitante): `previas/provincias-cuentas.png`
+ *  y `previas/provincias-cuentas.json`. Si falta `provincias_cuentas.json` (o `provincias.json`), avisa y sigue. */
+function previaDeProvinciasCuentas(m: Motor, pal: ReturnType<typeof paletaDe>): boolean {
+  const archivo = path.join(DATOS, "provincias_cuentas.json"), base = path.join(DATOS, "provincias.json");
+  if (!fs.existsSync(archivo) || !fs.existsSync(base)) { avisar("no está provincias_cuentas.json: se saltea la imagen de las cuentas de las provincias"); return false; }
+  try {
+    const d = decodificarProv(JSON.parse(fs.readFileSync(base, "utf8"))), cu = decodificarCuentas(JSON.parse(fs.readFileSync(archivo, "utf8")));
+    if (!d || !cu) { avisar("provincias_cuentas.json no trae datos: se saltea la imagen de las cuentas de las provincias"); return false; }
+    const x = crearCtxC(cu, crearContextoP(d, crearDeflactor(m.F, m.base().IPC)));
+    const anio = anioDefectoC(x), vista = armarVistaC(x, { anio, ind: "gasto_hab", orden: "desc" });
+    if (!vista) { avisar("cuentas de las provincias: no hay datos para armar la imagen"); return false; }
+    fs.writeFileSync(path.join(SALIDA, "provincias-cuentas.png"), aPng((cv) => dibujarImagen(cv, armarImagenC(vista, "16x9"), pal, DIBUJO), DIBUJO));
+    const { titulo, descripcion } = textosPreviaC(vista), fecha = cu.generado || String(anio);
+    const previa: PreviaProvincias = { titulo, descripcion, fecha, imagen: `/${CARPETA_PREVIAS}/provincias-cuentas.png?v=${encodeURIComponent(fecha)}` };
+    fs.writeFileSync(path.join(SALIDA, "provincias-cuentas.json"), JSON.stringify(previa, null, 1));
+    console.log(`provincias-cuentas: ${titulo}
+  ${descripcion}`);
+    return true;
+  } catch (err) {
+    avisar(`cuentas de las provincias: ${(err as Error).message}`);
+    return false;
+  }
+}
+
 function main() {
   registrarFuente();
   const pal = paletaDe(tokensOscuros(), FAMILIA, {});
@@ -330,13 +355,14 @@ function main() {
   const conGasto = previaDelGasto(m, pal);
   const conUniversidades = previaDeUniversidades(m, pal);
   const conProvincias = previaDeProvincias(m, pal);
+  const conProvinciasCuentas = previaDeProvinciasCuentas(m, pal);
   fs.writeFileSync(path.join(SALIDA, "sitio.png"), aPng((cv) => dibujarImagenSitio(cv, pal, {
     titulo: "Datos de Argentina, en debate.",
     bajada: DESCRIPCION_SITIO.replace(/^Datos de Argentina, en debate\.\s*/, ""),
     temas: TEMAS.map((t) => t.nombre),
     pie: "Datos oficiales: INDEC, BCRA, Secretaría de Trabajo y otras fuentes",
   }, PREVIA), PREVIA));
-  console.log(`\nPrevias: ${n} de ${DATOS_FIJOS.length} datos fijos, más sitio.png${conParte ? ", bcra.png" : ""}${conSemaforo ? ", semaforo.png" : ""}${conHerencia ? ", herencia.png" : ""}${conGasto ? ", gasto.png" : ""}${conUniversidades ? ", universidades.png" : ""}${conProvincias ? ", provincias.png" : ""}, en ${((Date.now() - inicio) / 1000).toFixed(1)} s.${avisos.length ? ` Avisos: ${avisos.length}.` : ""}`);
+  console.log(`\nPrevias: ${n} de ${DATOS_FIJOS.length} datos fijos, más sitio.png${conParte ? ", bcra.png" : ""}${conSemaforo ? ", semaforo.png" : ""}${conHerencia ? ", herencia.png" : ""}${conGasto ? ", gasto.png" : ""}${conUniversidades ? ", universidades.png" : ""}${conProvincias ? ", provincias.png" : ""}${conProvinciasCuentas ? ", provincias-cuentas.png" : ""}, en ${((Date.now() - inicio) / 1000).toFixed(1)} s.${avisos.length ? ` Avisos: ${avisos.length}.` : ""}`);
 }
 
 main();

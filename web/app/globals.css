@@ -1424,3 +1424,25 @@ button.gas-abrir:focus-visible { outline: var(--linea) solid var(--foco); outlin
 /* Filas de barras dentro de una ventana: `.modal li button` las vuelve flex y parte los nombres; acá siguen como en /gasto/. */
 .modal li button.gas-abrir { display: block; padding: var(--e-2) var(--e-1); border-radius: 0; }
 .modal li button.gas-abrir:focus-visible { outline: var(--linea) solid var(--foco); outline-offset: -2px; }
+
+/* Las cuentas de cada provincia (/provincias/?vista=cuentas, fase 2). Reusa .prov-*, .gas-* y .uni-evo-*. */
+.prov-vista { margin-bottom: var(--e-3); }
+.prov-vista .seg { flex-wrap: wrap; }
+.pc-sel-ind { min-width: 0; max-width: 100%; }
+.pc-sel-ind .sel-btn { max-width: 100%; }
+.pc-explica { max-width: 80ch; margin: 0 0 var(--e-3); overflow-wrap: anywhere; }
+.prov-aclara p { margin: 0 0 var(--e-2); }
+.prov-aclara p:last-child { margin-bottom: 0; }
+.pc-nota-caja { max-width: 72ch; }
+.pc-cuentas { margin: var(--e-3) 0; min-width: 0; }
+.pc-cuentas table { width: 100%; }
+.pc-cuentas th[scope="row"] { text-align: left; font-weight: 600; overflow-wrap: anywhere; white-space: normal; text-transform: none; letter-spacing: normal; position: static; min-width: 0; width: auto; max-width: none; }
+.pc-cuentas td { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pc-cuentas .pc-cab th { text-align: left; color: var(--text-secondary); font-size: var(--t-sm); padding-top: var(--e-3); }
+.pc-cuentas .pc-sub { padding-left: var(--e-4); font-weight: 400; }
+.pc-cuentas .pc-total th, .pc-cuentas .pc-total td { font-weight: 800; border-top: var(--linea) solid var(--border-fuerte); }
+.pc-leyenda { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.pc-fin { margin-top: var(--e-4); }
+.pc-fin h3 { margin: 0 0 var(--e-1); }
+.pc-evo-neg { opacity: .5; }
+.prov-link-cuentas { margin-top: var(--e-3); }
