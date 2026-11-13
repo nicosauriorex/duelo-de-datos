@@ -41,7 +41,7 @@ De Gobierno y Congreso, carga manual (verificado: el pipeline valida bancas cont
 - Los cortes reconstruidos del listado nominal difieren de los cuadros oficiales en 1 a 3 bancas por bloque (1996-1999 hasta 4); por eso los 1 de marzo usan el cuadro oficial cuando se puede leer.
 - Roles propio/aliado: criterio propio, sin una fuente que cite cada interbloque. Discutible: el PJ como propio de Kirchner en 2003-2005, Coalición Cívica con Macri, sin aliados para Menem (UCeDé) ni para Milei (PRO).
 - Vetos desde 2003 contados de Infoleg: CFK 2 da 1 solo veto en cuatro años; no se comparó con otra fuente.
-- La corrida en GitHub (el push toca `datos/`, va completa).
+- La corrida completa en GitHub del 2026-11-13 (5cb64d9) terminó en verde y publicó `capacidad.json` con los 64 cortes y los vetos (Milei 2024: 2 totales y 1 parcial; 2025: 7 totales, 3 insistidos); responde en el sitio.
 - El tema claro y la imagen compartible de la sección no se miraron.
 
 De la herencia, fase 3 (verificado: cifras contra sus documentos, controles de la estimación, página a 360 px, ventana con Atrás, imagen de la vista previa):
