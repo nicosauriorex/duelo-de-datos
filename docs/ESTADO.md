@@ -47,7 +47,7 @@ De la herencia, fase 2 (verificado: cada cifra contra su planilla, PDF o página
 - La página a 1280 px se vio solo en una captura chica; la cita no se probó en un celular real.
 
 De provincias, fase 2 (verificado: Córdoba 2024 gasto total, Buenos Aires 2025 Ingresos Brutos y deuda de Córdoba iguales a las planillas; suma de las 24 = consolidado; caja propia = las 13 esperadas; tipos, build, previas; `/provincias/` sin parámetros igual; `?vista=cuentas` a 360 y 1280 px sin desborde ni errores de consola; detalle de Córdoba que cierra, Atrás; "Las 24 juntas" con valor en todos los indicadores; revisor en dos pasadas):
-- La corrida en GitHub (baja seis planillas de argentina.gob.ar; el sitio a veces devuelve 403 a pedidos automáticos).
+- La corrida en GitHub del 2026-11-13 (43400ca) terminó en verde: controles de cuentas y caja propia (13) pasaron, publicó `provincias_cuentas.json` (24 provincias, hasta 2025, La Pampa 2025 sin cuentas) y `/provincias/` responde. Pero usó el respaldo (bajado ese día): la bajada desde GitHub a argentina.gob.ar (que a veces devuelve 403 a pedidos automáticos) se prueba en la corrida del día siguiente.
 - La imagen dentro del panel en sus tres formatos (la captura del navegador falló; se vio la previa 16:9).
 - La Pampa 2025 sin cuentas y sin deuda publicadas: revisar cuando la DNAP actualice. El control finalidades = gasto total no cierra en 2024 (ediciones distintas, hasta 3,75 %).
 - La población de la DNAP (empleados cada mil) difiere más de 3 % de la de INDEC en 8 provincias.
