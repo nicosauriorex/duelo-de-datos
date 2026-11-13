@@ -44,11 +44,18 @@ Del 1 al 5 no necesitan backend ni datos nuevos: se pueden ir publicando de a un
 | 11 | Herencia: recibido contra entregado | Sección en Presidentes: cómo estaba cada variable al asumir y al entregar; fase 1 con series oficiales, fase 2 con datos de informes cargados a mano, fase 3 estimaciones | No (2 series nuevas de datos.gob.ar) | Hecho (2026-11-12): series, datos de informes, reservas netas del FMI y estimación propia — [spec](specs/herencia.md) |
 | 12 | En qué gasta la Nación | Gasto nacional por finalidad, organismo, tipo de gasto y provincia, año por año; universidades con lo que hay | No (datos de Presupuesto Abierto, archivo aparte) | Hecho (fases 1 a 3, 2026-11-12 y 2026-11-13); la fase 4 (empresas públicas) queda sin fuente — [spec](specs/gasto-nacion.md) |
 | 13 | Provincias | La Nación en cada provincia (fase 1); cuentas de cada provincia y ranking (bloqueado: falta la fuente de la DNAP) | No | Fase 1 hecha (2026-11-13): `/provincias/`, gasto de la Nación en cada provincia por habitante; fase 2 hecha (2026-11-13): `/provincias/?vista=cuentas`, cuentas de cada provincia de la DNAP; fase 3 hecha (2026-11-13): alícuotas teóricas de Ingresos Brutos 2024-2025 en la misma vista; queda sumar 2026 por trimestre a las cuentas — [spec](specs/provincias.md) |
-| 7c-3 | Relatos, posts y video | "Contestar un relato"; posts automáticos; video de la animación | A definir | Sin spec |
 | 8 | Cuentas y comunidad | Comunidad: posts, votos, comentarios, ratios, rankings, moderación | Sí | Sin spec |
 | 9 | Novedades, calendario y predicciones | Novedades, calendario y predicciones | Sí | Sin spec |
 
 Después de la auditoría del 2026-11-10 ([informe](AUDITORIA-2026-11-10.md)) el bloque 7 pasó a ser la prioridad: es lo que convierte al sitio en una herramienta para responder en redes. El 6d queda en espera de la carga manual.
+
+## A futuro (no recomendar)
+
+Quedan anotados para no olvidarlos, pero no entran en "¿Qué sigue?" ni se proponen hasta que el usuario los pida (decidido el 2026-11-13).
+
+| # | Bloque | Ideas (secciones de IDEAS.md) | Backend | Estado |
+|---|---|---|---|---|
+| 7c-3 | Relatos, posts y video | "Contestar un relato"; posts automáticos en X; video de la animación del mandato. Decisiones abiertas: sello verdadero/falso (choca con D-012), cuenta y clave de la API de X | A definir | Sin spec |
 
 ## Fase 1 en detalle
 
