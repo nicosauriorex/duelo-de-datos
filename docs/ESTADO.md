@@ -47,7 +47,7 @@ De la herencia, fase 2 (verificado: cada cifra contra su planilla, PDF o página
 - La página a 1280 px se vio solo en una captura chica; la cita no se probó en un celular real.
 
 De provincias, fase 1 (verificado: controles del pipeline —24 + sin provincia = total en los 9 años, Córdoba y CABA 2024 contra la fuente, población 2024 = total país, agregado—, `--solo-json`, tipos, build, previas, `/provincias/` a 360 y 1280 px sin desborde ni errores de consola, detalle con sin jubilaciones, Escape y Atrás, link desde `/gasto/`, imagen 16:9 de la vista previa; revisor pasado y sus observaciones corregidas):
-- La corrida completa en GitHub (los respaldos de gasto ya traen los cruces: no debería rebajar los años cerrados).
+- La corrida completa en GitHub del 2026-11-13 (498b1f0) terminó en verde: los controles de los 9 años pasaron, publicó `provincias.json` y la previa; `/provincias/` responde en el sitio.
 - La imagen en 1:1 y 4:5 con 24 filas; el tema claro.
 - La población de 2022 en adelante es la proyección con base 2010 (el censo 2022 dio algo menos): cambia poco el por habitante, pero no es el dato del censo.
 - La lista de barras y el gráfico de evolución están copiados de `/gasto/` y `/universidades/` dentro de `Provincias.tsx`: si cambian allá, hay que cambiarlos acá (o extraerlos a un componente común).
