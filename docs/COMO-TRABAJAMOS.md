@@ -67,7 +67,7 @@ Publicar: un push que solo toca `web/` o `docs/` se publica en un minuto; si toc
 
 ## Hábitos que ahorran tokens
 
-- **Una tarea por sesión.** Cada mensaje reenvía toda la conversación; una sesión con tres temas paga los tres en cada mensaje. Terminaste algo → sesión nueva (o `/clear`). Una sesión larga de orquestación es la excepción: conviene mientras dura la tanda, y al cerrarla se actualiza `docs/ESTADO.md` para poder empezar limpio.
+- **Una tarea por sesión.** Cada mensaje reenvía toda la conversación; una sesión con tres temas paga los tres en cada mensaje. Terminaste algo → sesión nueva (o `/clear`). Una sesión larga de orquestación es la excepción: conviene mientras dura la tanda, y al cerrarla se actualiza `docs/ESTADO.md` para poder empezar limpio. Claude avisa cuándo conviene cambiar (bloque terminado y tema nuevo, o conversación muy larga) y deja el texto para pegar en la sesión nueva.
 - **Pedidos concretos.** "Arreglá el filtro de fecha de Histórico que se superpone" gasta mucho menos que "mejorá la página".
 - **Pará temprano.** Si arranca mal, cortalo (Esc) y corregí; no esperes a que termine.
 - **Subagentes con criterio.** Sirven para búsquedas largas, trabajo en paralelo o una revisión con ojos frescos; no dan mejores respuestas y cada uno gasta sus propios tokens. Su informe no es prueba: lo que dicen que hicieron se compila y se mira antes de darlo por bueno.
