@@ -48,7 +48,7 @@ De la herencia, fase 2 (verificado: cada cifra contra su planilla, PDF o página
 - La página a 1280 px se vio solo en una captura chica; la cita no se probó en un celular real.
 
 De provincias, fase 3 (verificado: bajada de las dos planillas y controles —24 columnas, 18 actividades, todo entre 0 y 15 %—; Industria manufacturera 2025 tope 1,5, Buenos Aires 1,5, Catamarca 1,5 y CABA 1 igual a la planilla —la spec decía Catamarca 1 % por error—; las tres filas de la columna 0 que pasan a aperturas son Agricultura, Ganadería y Caza y silvicultura; `--sin-red`, `--solo-json`, tipos, build; con Playwright a 360 y 1280 px sin desborde ni errores de consola, ventana de aperturas que cierra con Atrás, link con `ib_act`/`ib_anio`/`ib_orden`; revisor sin bloqueantes, sus observaciones menores corregidas):
-- La corrida en GitHub (bajada de `ingresos-brutos` desde Actions).
+- La corrida en GitHub del 2026-11-13 (314ef03) terminó en verde: pasaron los controles de las alícuotas (24 jurisdicciones, 18 actividades) y publicó `provincias_alicuotas.json` (24 KB, responde en el sitio). Usó el respaldo (bajado ese día): la bajada de `ingresos-brutos` desde Actions se prueba en la corrida del día siguiente.
 - El bloque a 1280 px se midió pero no se miró; el tema claro no se miró.
 - Sin imagen para compartir (la spec no la pide; choca con la regla "lo que se ve se puede compartir").
 - Si la DNAP publica 2026 con otros nombres de actividad, salen como actividades nuevas (se emparejan por nombre).
