@@ -1,6 +1,6 @@
 # Provincias: gasto, impuestos y ranking
 
-Estado: fase 1 implementada (2026-11-13); las fases 2 y 3 están bloqueadas por falta de fuente verificada (2026-11-12)
+Estado: fase 1 implementada (2026-11-13); fase 0 resuelta (2026-11-13): la DNAP publica en argentina.gob.ar. Las fases 2 y 3 hay que reescribirlas con esas planillas antes de implementarlas
 Ideas: "Gasto e impuestos de las provincias y la Nación" (IDEAS.md, 2026-11-12). El gasto de la Nación va en `gasto-nacion.md`.
 
 ## Objetivo
@@ -27,6 +27,26 @@ Conclusión: casi todo lo que se pidió depende de la DNAP. Por lo que se conoce
 2. Con las planillas a la vista, completar esta spec: para cada una, URL, hoja, columnas, unidad, años. Verificar la unidad contra una cifra conocida.
 3. Buscar las proyecciones de población 2022-2040 de INDEC y el dato del censo 2022 por provincia.
 Sin la fase 0 no se implementan las fases 2 y 3: no cargar cifras por provincia desde notas de prensa ni desde copias de terceros.
+
+### Resultado de la fase 0 (2026-11-13): fuente encontrada
+`economia.gob.ar/dnap` sigue con el certificado vencido, pero la DNAP publica todo en `argentina.gob.ar`. Base de las páginas: `https://www.argentina.gob.ar/economia/sechacienda/`; base de los archivos: `https://www.argentina.gob.ar/sites/default/files/`. Los nombres de archivo cambian con cada edición (sufijos `_0`, `_1`, `_2`...): el pipeline tiene que leer el link desde la página, no fijarlo. Una página (`coordinacion-fiscal-provincial/recursos-tributarios-de-origen-provincial-top`) devuelve 403; la misma información está en `asuntosprovinciales/direccion-de-recursos-provinciales/recursos-tributarios-de-origen-provincial-top`.
+
+| Tema | Página (desde la base) | Archivo | Formato | Años |
+|---|---|---|---|---|
+| Cuentas de cada provincia (ingresos por tipo, gasto por objeto, resultado económico, primario y financiero) | `coordinacion-fiscal-provincial/ejecucion-presupuestaria-provincial/ejecuciones` | `serie_aif-apnf-2025.xlsx` (serie); un `.xls` por año (`ejec._presup._acod_<año>_-_trim._iv.xls` hasta 2004, `ejecuciones_presupuestarias_apnf_<año>_-_trim_iv.xls` después) y 2026 por trimestre | Una hoja por jurisdicción + "Consolidado"; fila "CONCEPTO" con los años en columnas; 43 renglones (I. Ingresos corrientes … X. Gastos primarios). Millones de pesos corrientes, ejecución provisoria, Administración Pública No Financiera | Serie 2005-2025; archivos sueltos desde 1983; 2026 hasta el II trimestre |
+| Gasto de cada provincia por finalidad y función | `.../ejecucion-presupuestaria-provincial/gastos-por` | `serie_ff-apnf_2.xlsx`; `gfyf_*` por año | Igual: hoja por jurisdicción ("CABA", "Bs Aires"…), fila "FINALIDAD Y FUNCION", millones de pesos | 2005-2025 (sueltos desde 1983; 2026 I y II trim.) |
+| Recaudación propia por impuesto | `asuntosprovinciales/direccion-de-recursos-provinciales/recursos-tributarios-de-origen-provincial-top` | `top_trim_<año>_N.xlsx` (trimestral), `informacion_mensual_<año>.xlsx` (2017 en adelante) | Hoja por trimestre; fila "Provincias" con Ingresos Brutos, Inmobiliario, Sellos, Automotores, Otros, Total. Millones de pesos. Hay provincias sin dato en el último trimestre (La Pampa en II-2026) | Mensual desde 2017; trimestral hasta II-2026 |
+| Recursos de origen nacional (coparticipación y leyes especiales) | `asuntosprovinciales/ron` | `informacion_consolidada<año>_N.xlsx` (`.xls` hasta 2023) | Una hoja por mes + "CONS"; encabezado en varias filas (ley, fondo); provincias en filas. Unidad a confirmar (la hoja no la dice en la parte vista; los montos de 2025 son del orden de millones de pesos) | 2003-2026 |
+| Stock de deuda de cada provincia | `coordinacion-fiscal-provincial/deuda-publica-provincial/evolucion-de-stock` | `stock_<trim>_trim_<año>.xlsx` (consolidado) y un archivo por provincia | Una hoja; provincias en filas; total sin deuda flotante y por acreedor (Gobierno Nacional, FFFIR, FFDP, bancos, deuda consolidada, bonos, organismos internacionales). Millones de pesos | Hasta el 30-06-2026 |
+| Servicios de la deuda y deuda flotante | `.../deuda-publica-provincial/evolucion-de-servicios` y `evolucion-de-deuda` | `ev._de_servicios_-_consolidado_<año>_-_trim._*.xls`, `2trim_deuda_flotante_2026.xlsx` | A mirar | Servicios desde 2005 |
+| Empleo público y gasto salarial | `.../ejecucion-presupuestaria-provincial/ocupacion-y` | `ocupacion_salarios_2005_2016.xlsx`, `ocupacion_salarios_2017_2025.xlsx`; `escalafon_apnf_<año>`, `institucional_apnf_<año>`; `ccoo_c_1000_hab_0.xlsx` | Hoja por año: gasto en personal (miles de $), planta ocupada, gasto medio mensual, habitantes y empleados cada mil habitantes | 2005-2025 |
+| Alícuotas de Ingresos Brutos (fase 3) | `asuntosprovinciales/direccion-de-recursos-provinciales/ingresos-brutos` | `2024_ib.xlsx`, `2025_ib.xlsx` | Alícuotas teóricas por actividad y provincia, con aperturas por tamaño del contribuyente; "provisorio, en desarrollo". Hay que mirar bien la estructura | 2024 y 2025 |
+| Presupuesto de cada provincia | `.../ejecucion-presupuestaria-provincial/presupuestos` | `presupuesto_provincial_-_<provincia>_N.xls` | A mirar | — |
+| Otros | `.../informacion-economica-provincial/indicadores` (exportaciones, actividades relevantes, empleo, educación, población y superficie por provincia); `.../asuntosprovinciales/direccion-de-recursos-provinciales/regalias` (regalías de hidrocarburos, PDF) | | | |
+
+Control de unidad (2026-11-13): el "VII. Gastos totales" del Consolidado de `serie_aif-apnf-2025.xlsx`, en millones de pesos, sobre el PIB nominal de `gasto_nacion_finfun` da 17,3 % (2018), 17,1 % (2019), 16,7 % (2022), 17,4 % (2023), 15,5 % (2024) y 15,8 % (2025). Mismo orden que el agregado de datos.gob.ar (2023 entre 15 y 17 % del PIB): la unidad es millones de pesos corrientes. La diferencia de 2023 (algo por encima del rango) hay que explicarla al implementar (cobertura o definición del agregado).
+
+Quedan de la fase 0: (a) confirmar la unidad de recursos de origen nacional; (b) la población 2022-2040 de INDEC y el censo 2022 (la planilla de empleo trae una columna de habitantes que sirve para controlar); (c) mirar la estructura de las alícuotas de Ingresos Brutos antes de diseñar la fase 3. Con esto, las fases 2 y 3 dejan de estar bloqueadas: falta reescribirlas con estas fuentes antes de implementar.
 
 ## Fase 1 (se puede hacer ya): la Nación en cada provincia
 Estado: implementada (2026-11-13). Desvíos: `sin_provincia` trae también "Exterior" (id 95, aparece en 2026); las barras del detalle van en pesos de hoy (el por habitante, en la cabecera y la evolución); la tabla suma la fila "Las 24 juntas". Depende de `gasto-nacion.md` (usa el mismo archivo de Presupuesto Abierto). Página propia `/provincias/` ("Cuánto gasta la Nación en cada provincia").
