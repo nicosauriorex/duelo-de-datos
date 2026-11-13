@@ -9,9 +9,10 @@ import { FORMATOS_IMG, type FormatoImg } from "@/lib/config";
 import { archivoPng, avisoImagen, compartirImagen, copiarImagen, descargarImagen, puedeCompartirArchivo, puedeCopiarImagen, type ResultadoImagen } from "@/lib/compartir";
 import { dibujarImagen, esperarFuentes } from "@/lib/imagen";
 import { leerPaleta } from "@/lib/imagen-paleta";
-import { armarImagenGasto, type Vista } from "@/lib/gasto";
+import type { DatosImagen } from "@/lib/imagen";
 
-export function PanelGasto({ vista, titulo, href, onCerrar }: { vista: Vista; titulo: string; href: string; onCerrar: () => void }) {
+/** `armar`: arma los datos de la imagen para un formato (la vista anual o la mensual); tiene que cambiar de identidad solo cuando cambia la vista. */
+export function PanelGasto({ armar, titulo, href, onCerrar }: { armar: (formato: FormatoImg) => DatosImagen; titulo: string; href: string; onCerrar: () => void }) {
   const { config, cambiar } = useConfig();
   const formato: FormatoImg = config.formatoImagen;
   const canvas = useRef<HTMLCanvasElement>(null), previa = useRef<HTMLDivElement>(null);
@@ -24,7 +25,7 @@ export function PanelGasto({ vista, titulo, href, onCerrar }: { vista: Vista; ti
     let vivo = true;
     (async () => {
       setArchivo(null); setEstado("cargando");
-      const datos = armarImagenGasto(vista, formato);
+      const datos = armar(formato);
       const pal = leerPaleta(config.colPres);
       await esperarFuentes(pal.familia);
       if (!vivo || !canvas.current) return;
@@ -33,7 +34,7 @@ export function PanelGasto({ vista, titulo, href, onCerrar }: { vista: Vista; ti
       canvas.current.toBlob((b) => { if (vivo) setArchivo(b ? archivoPng(b, datos.archivo) : null); }, "image/png");
     })();
     return () => { vivo = false; };
-  }, [vista, formato, config.colPres]);
+  }, [armar, formato, config.colPres]);
 
   const mostrar = (t: string | null) => { setAviso(t); if (t) setTimeout(() => setAviso(null), 4000); };
   const alResultado = (r: ResultadoImagen) => mostrar(avisoImagen(r));

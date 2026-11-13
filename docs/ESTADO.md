@@ -19,11 +19,12 @@ Hecho y publicado (detalle en `docs/ROADMAP.md`):
 - Herencia, fase 2 (2026-11-12): 42 datos oficiales de informes y planillas (Finanzas, FMI, Banco Central) cargados a mano en `datos/manual/herencia.json` con documento, página y cita (`pipeline/herencia_informes.py` los controla y copia); en la tabla con la marca "informe" y la cita al tocarlos, en "Todos los traspasos" y en la imagen.
 - Herencia, fase 3 (2026-11-12, D-021): bloque "Estimaciones y cifras sin serie oficial" con las reservas netas del FMI (2019, 2023 y fin de 2025) y del Banco Central con su propia definición (dic-2023 y fin de 2025: +2.900), dos estimaciones propias al día con datos del Banco Central (`pipeline/reservas_netas.py`, supuestos con cita en `datos/manual/reservas_netas_supuestos.json`): con el método del FMI, −3.983 millones al 05-11-2026 (controles contra el FMI: −84, −397 y +1.251), y con la definición del Banco Central, que no resta el crédito del FMI, +10.857 (controles: −397 y +1.246) y la cobertura de tarifas del IIEP; datos oficiales nuevos: importaciones pendientes, puts, cobertura de la electricidad y precios acordados.
 - En qué gasta la Nación, fase 1 (2026-11-12, `docs/specs/gasto-nacion.md`): `/gasto/` con el gasto de la Administración Nacional 2018-2026 de Presupuesto Abierto (`pipeline/gasto_nacion.py`, respaldos `datos/cache/gasto_nacion_*`): para qué, quién (hasta cada universidad), en qué y dónde; pesos de hoy, % del total y % del PIB; buscador, comparación entre años (desde 2004 por finalidad), imagen y vista previa.
+- En qué gasta la Nación, fase 2 (2026-11-13): "Cómo viene <año>" en `/gasto/?vista=mes` con el archivo mensual de Presupuesto Abierto (`pipeline/gasto_mensual.py`, respaldos `datos/cache/gasto_mensual_*`, salida `gasto_nacion_mensual.json`): gastado en pesos de hoy de los meses completos, variación real contra los mismos meses del año anterior, % del crédito vigente gastado, barras por mes con el mes parcial aparte, lista por Para qué / Quién / En qué con orden por monto o variación, imagen. Controles contra el anual: 2025 −0,000 %, 2026 +0,10 %, vigente 0,000 %.
 - Datos: canastas corregidas; respaldo del IPC cuando la API de INDEC no responde; filtro de cotizaciones sueltas; corridas a las 16:10, 17:15 y 21:00 (hora argentina, las dos primeras solo en días hábiles); publicación rápida cuando el push no toca el pipeline.
 
 ## Qué sigue, en orden
 1. **Herencia: mantenimiento** — al salir informes nuevos, actualizar las entradas "hoy" de `datos/manual/herencia.json` y, cuando el FMI publique un nivel de reservas netas (informe de la 3ª revisión, dic-2026), sumarlo como "hoy" y como control en `datos/manual/reservas_netas_supuestos.json` (también los saldos de DEG de cada mes). Faltan: cepo de 2003 y 2007, FMI de 1995 a 2002.
-2. **En qué gasta la Nación, fases 2 a 4** — `docs/specs/gasto-nacion.md` (fase 1 hecha). Fase 2: el año en curso mes a mes. Fase 3: universidades; el archivo anual ya trae cada universidad (transferencias del Tesoro); falta cargar lo que solo está en PDF y la rendición de cuentas con sus citas.
+2. **En qué gasta la Nación, fases 3 y 4** — `docs/specs/gasto-nacion.md` (fases 1 y 2 hechas). Fase 3: universidades; el archivo anual ya trae cada universidad (transferencias del Tesoro); falta cargar lo que solo está en PDF y la rendición de cuentas con sus citas.
 3. **Provincias** — `docs/specs/provincias.md`. Solo se puede hacer la fase 1 (gasto de la Nación en cada provincia, depende del punto anterior). Lo demás está bloqueado: el sitio de la DNAP (`economia.gob.ar/dnap`) tenía el certificado vencido el 2026-11-12. Fase 0: reintentar o que el usuario mire qué planillas publica.
 4. **Pendientes del semáforo**: revisar o retirar "Producción de autos" del catálogo general; ajuste estacional serio (X-13 con corrección de calendario) para completar el mes contra mes; indicadores sin fuente legible (CAME, patentamientos, Construya, escrituras, leche, petróleo), candidatos para la idea de "agentes que buscan el dato" (`docs/IDEAS.md`).
 5. **Relatos, posts y video** (bloque 7c-3, sin spec): "contestar un relato", publicar solo en X, video de la animación. Necesita decisiones del usuario: cuenta y clave de la API de X; si "contestar un relato" lleva sello verdadero/falso (choca con D-012).
@@ -33,7 +34,6 @@ Hecho y publicado (detalle en `docs/ROADMAP.md`):
 ## Sin verificar (revisar antes de dar por cerrado)
 De la herencia, fase 3 (verificado: cifras contra sus documentos, controles de la estimación, página a 360 px, ventana con Atrás, imagen de la vista previa):
 - La estimación propia depende de supuestos fijos (swaps 20.000, SEDESA 2.000) tomados de un recuadro del FMI de abril de 2026; si cambian los swaps o aparecen repos de corto plazo, se aparta más. El saldo de DEG hay que cargarlo a mano cada mes.
-- La corrida en GitHub del 2026-11-13 (commit 5f16b31) baja por primera vez la variable 1243 (encajes) y arma `reservas_netas.json`: al cerrar la sesión seguía corriendo; mirar que terminó en verde y que https://primerolosdatos.com.ar/datos/reservas_netas.json existe.
 - La estimación con la definición del Banco Central probablemente da algo más alta que la cifra que publicaría el Banco Central: no puede restar los pasivos de corto plazo que no son públicos (repos, swap con el Tesoro de EE.UU.). A fin de 2025 se pasó en 1.246 millones.
 - La vista a 1280 px y el bloque en el tema claro no se miraron.
 
@@ -43,6 +43,13 @@ De la herencia, fase 2 (verificado: cada cifra contra su planilla, PDF o página
 - BOPREAL de "hoy" es lo colocado en total, no lo que queda por pagar.
 - Las cifras de "hoy" hay que actualizarlas a mano cuando salgan informes nuevos.
 - La página a 1280 px se vio solo en una captura chica; la cita no se probó en un celular real.
+
+Del gasto de la Nación, fase 2 (verificado: controles contra el anual, `--solo-json`, tipos y build, `/gasto/?vista=mes` a 360 px sin desborde en Para qué y Quién con migas, a 1024 px con En qué, imagen 1:1 en el panel, cuentas de la tabla mes por mes, link viejo `/gasto/` igual, sin errores de consola; revisor pasado y sus observaciones corregidas):
+- La corrida en GitHub (baja dos ZIP de 11 y 15 MB, 335 MB sin comprimir leídos por partes): memoria y tiempo en Actions.
+- Los formatos 4:5 y 16:9 de la imagen; el gráfico de 11 columnas en un celular real.
+- La variación real depende del IPC mensual de `base.json` (−0,9 % ene–oct 2026 contra 2025; nominal +31,7 %); no se comparó con otra fuente.
+- Un programa que cambió de nombre o de ministerio entre años sale como "Nuevo en <año>" (no hay empalme por ids).
+- En enero, sin meses completos del año nuevo, la vista muestra el año anterior completo contra el previo (regla del pipeline, sin probar).
 
 Del gasto de la Nación (fase 1; verificado: totales 2023 y 2024 contra la serie oficial, UBA 2024, 14.994 vistas que cierran, página a 360 y 1280 px sin errores, buscador, imagen de la vista previa):
 - La corrida en GitHub con red (bajada de los 9 años, cerca de 1 minuto) y el cambio de año: que 2026 siga "en curso" hasta que la fuente publique su cierre (a mediados de 2027).

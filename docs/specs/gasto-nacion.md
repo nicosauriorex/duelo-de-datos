@@ -1,6 +1,6 @@
 # En qué gasta la Nación (por partida y por entidad)
 
-Estado: fase 1 implementada (2026-11-12); las fases 2 a 4, según se indica.
+Estado: fase 1 implementada (2026-11-12); fase 2 implementada (2026-11-13); las fases 3 y 4, según se indica.
 Decisiones de la implementación: un año está cerrado cuando la fuente publica su actualización de cierre (posterior a marzo del año siguiente), no por calendario; las barras se redondean repartiendo la diferencia por mayor resto para que sumen el total que se ve; el % ejecutado no se muestra donde lo gastado supera el crédito vigente (pasa con cada universidad: el vigente no se reparte a ese nivel); el pipeline repone tildes que la fuente no trae; incisos 6 y 7 con nombres del público ("Préstamos y compras de activos financieros", "Deuda: intereses y pagos de capital"); medida, etapa y buscador en desplegables para que el dato se vea sin deslizar.
 Ideas: "Gasto e impuestos de las provincias y la Nación" y "presupuesto de cada entidad pública, por ejemplo las universidades" (IDEAS.md, 2026-11-12). Las provincias van en su propia spec (`provincias.md`).
 
@@ -62,7 +62,50 @@ Montos en millones de pesos corrientes, redondeados a 1 decimal. Etapas, siempre
 Requisito 0 cerrado y anotado; `--solo-json`, `npm run previas`, `tipos`, `build`; el total de un año coincide con la fuente oficial; tres organismos comparados con Presupuesto Abierto; `/gasto/` a 360 y 1280 px en las cuatro formas; barridos; `revisor`.
 
 ## Fase 2: cómo viene el año en curso
-Ejecución mes a mes del año en curso contra el presupuesto, con el archivo mensual (pesado: leer por partes en el pipeline y guardar solo el agregado). Permite ver qué organismos ejecutaron más o menos de lo previsto a la fecha.
+Ejecución mes a mes del año en curso contra el presupuesto y contra el mismo período del año anterior, con el archivo mensual. Permite ver qué organismos gastaron más o menos que el año pasado a la misma altura y cuánto del crédito ya usaron.
+
+### La fuente mensual (probada el 2026-11-13)
+- `.../datasets/<AÑO>/credito-mensual-<AÑO>.zip` (2026: 11,5 MB comprimido, 335 MB y 362 mil filas sin comprimir; 2025: 15 MB). Mismas 56 columnas que el anual más `impacto_presupuestario_anio` y `impacto_presupuestario_mes` (1 a 12). utf-8 con BOM (las tildes vienen bien); **decimales con coma**.
+- Cómo vienen las etapas por mes: **presupuestado**, todo en enero; **vigente**, el de enero más las modificaciones de cada mes (la suma acumulada da el vigente al cierre de cada mes; 2026: 148.069 en enero → 152.475 mil millones, igual al vigente del archivo anual); **devengado** y **pagado**, lo de cada mes.
+- El último mes viene **parcial**: el archivo de 2026 se actualizó el 11-11-2026 y noviembre trae solo 0,9 billones contra 12,4 de octubre. Meses completos = los anteriores al mes de `ultima_actualizacion_fecha` (todos, si la fecha es del año siguiente o del último día del mes).
+- Controles conocidos: la suma de los meses de 2025 debe dar el devengado del archivo anual de 2025; la de 2026, el del anual de 2026 (son fotos del mismo día o de días cercanos).
+
+### Pipeline
+1. `pipeline/gasto_mensual.py` (aparte de `gasto_nacion.py`, que se importa para reusar `limpiar`, `_clave`, `_con_tildes`, `INCISOS`, `_fecha_actualizacion`, `anio_cerrado` y `_get`). Lee el CSV **por partes** (`chunksize`, solo las columnas que usa) y agrega por mes; el crudo no se guarda.
+2. Años: el año en curso (`A`, el último con al menos un mes completo; en enero, si no hay ninguno, el anterior) y `A-1`. Respaldos versionados en `datos/cache/gasto_mensual_<AÑO>.csv` (formato largo: `arbol, ids, n1, n2, n3, mes, pres, vig, dev`, montos en millones, una fila por hoja y mes) y fechas en `datos/cache/gasto_mensual_meta.json`. `A-1` cerrado (`anio_cerrado`) no se vuelve a bajar; el año en curso, a lo sumo una vez por día. Con `--solo-json`, solo respaldos.
+3. Árboles: `para_que` (finalidad → función), `quien` (jurisdicción → entidad → programa, sin el nivel de universidades) y `en_que` (inciso con nombre del público y técnico en `t` → partida principal). Nombres con `limpiar` y tildes repuestas; un nodo de un año se empareja con el del otro por `_clave` del nombre limpio (si un programa cambió de nombre, queda sin año anterior y el sitio lo dice).
+4. Controles (si no pasan, no se escribe el archivo, se avisa y la corrida sigue): la suma de los 12 meses de `A-1` da el devengado del archivo anual de `A-1` con menos de 0,5 % de diferencia; la de `A`, el del anual de `A` con menos de 2 %; el vigente acumulado de `A` da el vigente del anual de `A` con menos de 2 %; cada árbol suma el mismo total.
+5. Salida `web/public/datos/gasto_nacion_mensual.json` (se llama desde `obtener_datos.py` igual que `gasto_nacion`, fuera del hash; si falla, la corrida sigue sin el archivo).
+
+### Formato (contrato entre pipeline y sitio)
+Montos en millones de pesos corrientes, 1 decimal.
+```
+{ "generado": "AAAA-MM-DD", "fuente": "...", "anio": 2026, "anio_ant": 2025,
+  "actualizado": "2026-11-11", "meses_completos": 10, "mes_parcial": 11 | null,
+  "total": NodoM,
+  "arboles": { "para_que": NodoM, "quien": NodoM, "en_que": NodoM } }
+NodoM = { "n": nombre, "t"?: técnico,
+  "d":  [devengado de cada mes de A, desde enero hasta el último con datos (incluye el parcial)],
+  "a":  [devengado de cada mes de A-1, 12 valores],
+  "vd": [vigente al cierre de cada mes de A, mismo largo que d],
+  "va": [vigente al cierre de cada mes de A-1, 12 valores],
+  "p":  presupuestado inicial de A, "pa": presupuestado inicial de A-1,
+  "h"?: [NodoM, ...] }   // hijos ordenados por devengado de A a la fecha, de mayor a menor
+```
+Un nodo que no existe en un año lleva ceros en ese año. `total` es la raíz (igual a la raíz de cada árbol).
+
+### Sitio
+6. En `/gasto/`, arriba de todo, un `Seg` de dos opciones: **"Año completo"** (lo de la fase 1, por defecto) y **"Cómo viene <A>"**. Va en la URL (`vista=mes`); los demás parámetros de la fase 1 no cambian de significado. Si el archivo mensual no está, el `Seg` no aparece y un link viejo con `vista=mes` muestra el año completo.
+7. "Cómo viene <A>", de arriba abajo:
+   - **Tres tarjetas** (meses completos, ene a <mes>): gastado en pesos de hoy; variación real contra el mismo período de `A-1`; % del crédito vigente ya gastado, con el de `A-1` a la misma altura ("en 2025 a esta altura: 78 %"). Sin veredicto (D-012) y sin verde/rojo: el gasto que sube no es bueno ni malo.
+   - **Gráfico de barras por mes**, `A` contra `A-1`, en pesos de hoy (cada mes deflactado con el IPC de ese mes; los meses sin IPC publicado, con el último, y se dice). El mes parcial se ve aparte, más claro y marcado "parcial, al 11-11", y no entra en ninguna cuenta.
+   - **Lista** con las formas Para qué / Quién / En qué (`Seg`; Dónde no va): cada fila con el nombre, lo gastado a la fecha en pesos de hoy, la variación real contra `A-1` y el % ejecutado del vigente (con el de `A-1`). Orden elegible: monto (por defecto), más subió, más bajó. Al tocar una fila se abre su nivel siguiente, con migas, igual que en la fase 1. Filas sin año anterior: "nuevo en <A>" o "sin dato de <A-1>" en lugar de la variación; una variación sobre una base de menos de 0,1 % del total del nivel abierto que además más que se duplica se muestra como "—" con la explicación en la misma fila (evita "+4.000 %"; tocar la fila ya abre el nivel siguiente). Hasta 10 filas y "Otros", y las cuentas cierran.
+   - Compartir: imagen con las tres cifras y las diez filas que se ven (nueva función en `web/lib/gasto.ts`, mismo panel `PanelGasto`).
+   - Nota plegada: qué es el devengado, por qué el último mes no cuenta, que el vigente cambia durante el año y que se compara con la misma cantidad de meses del año anterior; fuente y fecha.
+8. Cálculos en `web/lib/gasto.ts` (o `gasto-mensual.ts`): deflactor mensual sobre el IPC de `base.json`; carga en `useGasto.ts`. Reglas de siempre: formato es-AR, 360 px sin desborde, sin `<select>` nativo, palabras del público.
+
+### Cómo se verifica
+`python pipeline/gasto_mensual.py` con red pasa los controles; `--solo-json` arma el archivo desde los respaldos; la suma ene-oct 2026 del archivo coincide con la del CSV crudo; `tipos` y `build`; `/gasto/?vista=mes` a 360 y 1280 px en las tres formas, con el mes parcial aparte y las cuentas cerrando; un link viejo de `/gasto/` sigue igual; `revisor`.
 
 ## Fase 3: universidades nacionales (con lo que hay)
 Lo que los datos oficiales permiten hoy, y lo que no:

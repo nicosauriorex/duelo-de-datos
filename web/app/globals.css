@@ -1310,3 +1310,36 @@ button.gas-abrir:focus-visible { outline: var(--linea) solid var(--foco); outlin
 .gas-mini-ext { display: flex; justify-content: space-between; flex-wrap: wrap; gap: var(--e-1) var(--e-3); margin: var(--e-1) 0 0; font-size: var(--t-xs); color: var(--text-secondary); }
 .gas-mini-ext b { color: var(--text-primary); font-variant-numeric: tabular-nums; }
 .gas-tabla-anios td { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Gasto de la Nación: "Cómo viene el año" (vista=mes) */
+.gas-vista { margin: var(--e-1) 0 var(--e-3); }
+.gas-vista .seg { display: flex; width: 100%; max-width: 560px; }
+.gas-vista .seg button { flex: 1 1 0; min-width: 0; }
+.gm-tarjetas { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--e-2); margin: var(--e-3) 0; }
+.gm-tarjeta { min-width: 0; background: var(--surface-1); border: 1px solid var(--border); border-top: var(--linea) solid var(--border-fuerte); padding: var(--e-2) var(--e-3); }
+.gm-tarjeta p { margin: 0; overflow-wrap: anywhere; }
+.gm-tj-k { font-size: var(--t-sm); font-weight: 700; }
+.gm-tj-v { font-size: var(--t-cifra-tarjeta); font-weight: 800; line-height: 1.2; margin: 2px 0; font-variant-numeric: tabular-nums; }
+.gm-tj-s { font-size: var(--t-xs); color: var(--text-muted); line-height: 1.4; }
+.gm-graf { margin: var(--e-3) 0; }
+.gm-graf h3 { margin: 0 0 var(--e-1); font-size: var(--t-base); font-weight: 800; }
+.gm-leyenda { display: flex; flex-wrap: wrap; gap: var(--e-1) var(--e-3); margin: 0 0 var(--e-2); font-size: var(--t-xs); color: var(--text-secondary); }
+.gm-leyenda span { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.gm-sw { display: inline-block; flex: none; width: 12px; height: 12px; border-radius: 2px; }
+.gm-barras { display: flex; align-items: flex-end; gap: 3px; min-width: 0; }
+.gm-mes { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; }
+.gm-mes-parcial { margin-left: var(--e-2); padding-left: var(--e-2); border-left: 1px dashed var(--border-fuerte); }
+.gm-par { display: flex; align-items: flex-end; justify-content: center; gap: 1px; height: 140px; border-bottom: 1px solid var(--border-fuerte); }
+.gm-b { display: block; flex: 1 1 0; min-width: 3px; max-width: 14px; border-radius: 2px 2px 0 0; }
+.gm-b-a { background: var(--series-1); }
+.gm-b-ant { background: var(--text-muted); }
+.gm-b-parcial { background: color-mix(in srgb, var(--series-1) 30%, transparent); border: 1px dashed var(--series-1); }
+.gm-et { text-align: center; font-size: var(--t-micro); color: var(--text-secondary); overflow: hidden; padding-top: 2px; }
+.gm-tabla > summary { min-height: var(--alto-toque); display: list-item; padding: var(--e-2) 0; font-weight: 700; cursor: pointer; }
+.gm-tabla td { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.gm-tabla tr.gm-total > * { border-top: var(--linea) solid var(--border-fuerte); font-weight: 800; }
+.gm-tabla tr.gm-fila-parcial > * { color: var(--text-secondary); }
+.gm-orden { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-2); margin: var(--e-3) 0 var(--e-1); }
+.gm-orden .lbl { font-size: var(--t-sm); color: var(--text-secondary); }
+.gm-orden .seg button { min-height: var(--alto-toque); padding: 0 var(--e-3); }
+.gm-nota { color: var(--text-muted); }

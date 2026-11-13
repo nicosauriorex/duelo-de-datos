@@ -3,6 +3,7 @@
 // Van aparte del catálogo (no pasan por DatosProvider). Cada archivo se baja una sola vez por visita y queda en memoria.
 import { useEffect, useState } from "react";
 import { decodificarAnio, decodificarIndice, type ArchivoAnio, type IndiceGasto } from "@/lib/gasto";
+import { decodificarMensual, type ArchivoMensual } from "@/lib/gasto-mensual";
 
 let indice: Promise<IndiceGasto> | null = null;
 const anios = new Map<string, Promise<ArchivoAnio>>();
@@ -60,5 +61,23 @@ export function useGastoAnios(ix: IndiceGasto | null, archivos: string[]): { lis
     });
     return () => { vivo = false; };
   }, [ix, clave]);
+  return estado;
+}
+
+let mensual: Promise<ArchivoMensual | null> | null = null;
+/** El archivo de la ejecución mensual (fase 2). Si falta o no valida, `datos` queda en null y la vista "Cómo viene" no aparece (sin error en pantalla). */
+export function useGastoMensual(): { datos: ArchivoMensual | null; listo: boolean } {
+  const [estado, setEstado] = useState<{ datos: ArchivoMensual | null; listo: boolean }>({ datos: null, listo: false });
+  useEffect(() => {
+    let vivo = true;
+    if (!mensual) {
+      mensual = fetch("/datos/gasto_nacion_mensual.json", { cache: "no-cache" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((c) => decodificarMensual(c))
+        .catch(() => null);
+    }
+    mensual.then((datos) => { if (vivo) setEstado({ datos, listo: true }); });
+    return () => { vivo = false; };
+  }, []);
   return estado;
 }

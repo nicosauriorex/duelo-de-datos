@@ -2,20 +2,23 @@
 // En qué gasta la Nación (/gasto/, docs/specs/gasto-nacion.md): una lista de barras de mayor a menor para cuatro formas de mirar el gasto
 // (para qué, quién, en qué, dónde), por año, en pesos de hoy, % del total o % del PIB. Tocar una barra abre su nivel siguiente.
 // Todas las cuentas están en lib/gasto.ts; acá solo se dibuja. Estado en la URL: anio, med, etapa, forma, ruta (nombres separados por "~") y todas.
-import { useMemo, useState } from "react";
-import { useGastoAnios, useGastoIndice } from "../useGasto";
+// Con el archivo mensual (fase 2) se suma `vista=mes` ("Cómo viene el año"), que dibuja components/GastoMensual.tsx; sin el archivo, esa vista no existe.
+import { useCallback, useMemo, useState } from "react";
+import { useGastoAnios, useGastoIndice, useGastoMensual } from "../useGasto";
 import { useSeccion } from "../useSeccion";
 import { Cargando, Desplegable, Selector, Seg } from "../ui";
 import { Sparkline } from "../Sparkline";
 import { PanelGasto } from "../PanelGasto";
+import { GastoMensual } from "../GastoMensual";
 import { avisoCompartir, compartir } from "@/lib/compartir";
 import { fmtMillones, nfDec } from "@/lib/formato";
 import {
   BAJADA_FORMA, ETAPAS, ETAPA_DEFECTO, FORMAS, FORMA_DEFECTO, MEDIDAS, MEDIDA_DEFECTO, NIVELES, NOTA_DONDE,
-  anioDe, anioDefecto, aniosTxt, armarVista, buscar, crearDeflactor, decPctDe, escribirRuta, esEtapa, esForma, esMedida, fechaLarga, fuenteTxt, hrefVista, leerRuta,
+  anioDe, anioDefecto, aniosTxt, armarImagenGasto, armarVista, buscar, crearDeflactor, decPctDe, escribirRuta, esEtapa, esForma, esMedida, fechaLarga, fuenteTxt, hrefVista, leerRuta,
   nombreForma, opcionesAnio, otraUbicacionTxt, serieNodo, tituloVista,
   type ArchivoAnio, type Barra, type Deflactor, type Forma, type IndiceGasto, type Vista,
 } from "@/lib/gasto";
+import { crearDeflactorMensual, opcionesVista, type DeflactorMensual } from "@/lib/gasto-mensual";
 import { useParams } from "@/lib/url";
 
 export function Gasto() {
@@ -23,13 +26,14 @@ export function Gasto() {
   const sec = useSeccion([]);
   const m = sec.motor, listo = !!m && !sec.ocupado;
   const deflactor = useMemo(() => (m && listo ? crearDeflactor(m.F, m.base().IPC) : null), [m, listo]);
+  const deflactorM = useMemo(() => (m && listo ? crearDeflactorMensual(m.F, m.base().IPC) : null), [m, listo]);
   if (error) return <div className="card"><p className="error" role="alert">{error}</p><p className="note">El resto del sitio sigue funcionando. Probá de nuevo en un rato.</p></div>;
   if (sec.errorGeneral) return <p className="error" role="alert">{sec.errorGeneral}</p>;
-  if (!datos || !deflactor) return <Cargando texto="Cargando el gasto de la Nación…" />;
-  return <Cuerpo ix={datos} deflactor={deflactor} />;
+  if (!datos || !deflactor || !deflactorM) return <Cargando texto="Cargando el gasto de la Nación…" />;
+  return <Cuerpo ix={datos} deflactor={deflactor} deflactorM={deflactorM} />;
 }
 
-function Cuerpo({ ix, deflactor }: { ix: IndiceGasto; deflactor: Deflactor }) {
+function Cuerpo({ ix, deflactor, deflactorM }: { ix: IndiceGasto; deflactor: Deflactor; deflactorM: DeflactorMensual }) {
   const [p, set, montado] = useParams();
   const [imagen, setImagen] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -40,7 +44,10 @@ function Cuerpo({ ix, deflactor }: { ix: IndiceGasto; deflactor: Deflactor }) {
   const etapa = esEtapa(p.get("etapa")) ? p.get("etapa")! as typeof ETAPA_DEFECTO : ETAPA_DEFECTO;
   const ruta = leerRuta(p.get("ruta"));
   const todas = p.get("todas") === "1";
-  const { listos, cargando, error } = useGastoAnios(ix, montado ? [anio.archivo] : []);
+  const mensual = useGastoMensual();
+  const pideMes = p.get("vista") === "mes";
+  const modoMes = pideMes && !!mensual.datos;   // sin el archivo mensual, un link con vista=mes muestra el año completo
+  const { listos, cargando, error } = useGastoAnios(ix, montado && !modoMes ? [anio.archivo] : []);
   const archivo = listos.get(anio.archivo) ?? null;
   const vista = useMemo(() => (archivo ? armarVista({ archivo, anio, forma, ruta, medida, etapa, deflactor, max: todas ? Infinity : undefined }) : null),
     [archivo, anio, forma, p.get("ruta"), medida, etapa, deflactor, todas]);   // eslint-disable-line react-hooks/exhaustive-deps
@@ -49,49 +56,64 @@ function Cuerpo({ ix, deflactor }: { ix: IndiceGasto; deflactor: Deflactor }) {
   const vistaImg = useMemo(() => (!vista || !todas || !archivo ? vista : armarVista({ archivo, anio, forma, ruta, medida, etapa, deflactor })),
     [vista, todas, archivo, anio, forma, p.get("ruta"), medida, etapa, deflactor]);   // eslint-disable-line react-hooks/exhaustive-deps
 
+  const armarImg = useCallback((f: Parameters<typeof armarImagenGasto>[1]) => armarImagenGasto(vistaImg!, f), [vistaImg]);
   const mostrar = (t: string | null) => { setAviso(t); if (t) setTimeout(() => setAviso(null), 4000); };
   const ir = (r: string[]) => set({ ruta: escribirRuta(r), todas: null });
   const href = vista ? hrefVista(vista, def.anio) : "/gasto/";
   const titulo = vista ? tituloVista(vista) : "En qué gasta la Nación";
 
+  const cambiarVista = (v: string) => set(v === "mes"
+    ? { vista: "mes", todas: null, ...(forma === "donde" ? { forma: null, ruta: null } : {}) }   // Dónde no existe en "Cómo viene"
+    : { vista: null, todas: null });
+
   return (
     <section className="gas">
       <p className="sub">Cuánto gastó el Estado nacional cada año, en qué y quién, con datos oficiales del presupuesto.</p>
-      <div className="controls gas-controles">
-        <Selector etiqueta="Año" valor={String(anio.anio)} opciones={opcionesAnio(ix)} onElegir={(a) => set({ anio: Number(a) === def.anio ? null : a })} />
-        <Desplegable etiqueta={`${MEDIDAS.find((x) => x[0] === medida)![1]} · ${ETAPAS.find((x) => x[0] === etapa)![1]}`}>
-          <div className="controls"><label>Medida</label>
-            <Seg valor={medida} opciones={MEDIDAS} onElegir={(v) => set({ med: v === MEDIDA_DEFECTO ? null : v })} /></div>
-          <div className="controls"><label>Etapa</label>
-            <Seg valor={etapa} opciones={ETAPAS} onElegir={(v) => set({ etapa: v === ETAPA_DEFECTO ? null : v })} /></div>
-        </Desplegable>
-        <Desplegable etiqueta="Buscar">
-          {(cerrar) => (
-            <Buscador ix={ix} onIr={(r) => cerrar(() => set({ forma: r.forma === FORMA_DEFECTO ? null : r.forma, ruta: escribirRuta(r.ruta), anio: r.anio === def.anio ? null : String(r.anio), todas: null }))} />
-          )}
-        </Desplegable>
-      </div>
-      <div className="gas-formas" role="group" aria-label="Forma de mirar el gasto">
-        <Seg valor={forma} opciones={FORMAS} onElegir={(f) => set({ forma: f === FORMA_DEFECTO ? null : f, ruta: null, todas: null })} />
-      </div>
-      <p className="note gas-bajada">{BAJADA_FORMA[forma]}</p>
-
-
-      {error && <p className="error" role="alert">{error}</p>}
-      {!vista ? (cargando || !montado ? <Cargando texto={`Cargando ${anio.anio}…`} /> : <div className="card"><p className="note">No hay datos de esta forma para {anio.anio}.</p></div>) : (
+      {mensual.datos && (
+        <div className="gas-vista" role="group" aria-label="Qué período mirar">
+          <Seg valor={modoMes ? "mes" : "anio"} opciones={opcionesVista(mensual.datos)} onElegir={cambiarVista} />
+        </div>
+      )}
+      {pideMes && !mensual.listo ? <Cargando texto="Cargando la ejecución mensual…" /> : modoMes ? (
+        <GastoMensual ar={mensual.datos!} deflactor={deflactorM} p={p} set={set} />
+      ) : (
         <>
-          <Lista vista={vista} onIr={ir} onTodas={() => set({ todas: "1" })} />
-          <div className="gas-compartir" role="group" aria-label="Compartir esta vista">
-            <button type="button" className="btn primario" onClick={() => setImagen(true)}>Compartir como imagen</button>
-            <button type="button" className="btn" onClick={async () => mostrar(avisoCompartir(await compartir(href, titulo)))}>Copiar link</button>
+          <div className="controls gas-controles">
+            <Selector etiqueta="Año" valor={String(anio.anio)} opciones={opcionesAnio(ix)} onElegir={(a) => set({ anio: Number(a) === def.anio ? null : a })} />
+            <Desplegable etiqueta={`${MEDIDAS.find((x) => x[0] === medida)![1]} · ${ETAPAS.find((x) => x[0] === etapa)![1]}`}>
+              <div className="controls"><label>Medida</label>
+                <Seg valor={medida} opciones={MEDIDAS} onElegir={(v) => set({ med: v === MEDIDA_DEFECTO ? null : v })} /></div>
+              <div className="controls"><label>Etapa</label>
+                <Seg valor={etapa} opciones={ETAPAS} onElegir={(v) => set({ etapa: v === ETAPA_DEFECTO ? null : v })} /></div>
+            </Desplegable>
+            <Desplegable etiqueta="Buscar">
+              {(cerrar) => (
+                <Buscador ix={ix} onIr={(r) => cerrar(() => set({ forma: r.forma === FORMA_DEFECTO ? null : r.forma, ruta: escribirRuta(r.ruta), anio: r.anio === def.anio ? null : String(r.anio), todas: null }))} />
+              )}
+            </Desplegable>
           </div>
-          {aviso && <p className="aviso-link" role="status">{aviso}</p>}
-          <Comparar ix={ix} forma={forma} ruta={vista.ruta} deflactor={deflactor} />
+          <div className="gas-formas" role="group" aria-label="Forma de mirar el gasto">
+            <Seg valor={forma} opciones={FORMAS} onElegir={(f) => set({ forma: f === FORMA_DEFECTO ? null : f, ruta: null, todas: null })} />
+          </div>
+          <p className="note gas-bajada">{BAJADA_FORMA[forma]}</p>
+
+          {error && <p className="error" role="alert">{error}</p>}
+          {!vista ? (cargando || !montado ? <Cargando texto={`Cargando ${anio.anio}…`} /> : <div className="card"><p className="note">No hay datos de esta forma para {anio.anio}.</p></div>) : (
+            <>
+              <Lista vista={vista} onIr={ir} onTodas={() => set({ todas: "1" })} />
+              <div className="gas-compartir" role="group" aria-label="Compartir esta vista">
+                <button type="button" className="btn primario" onClick={() => setImagen(true)}>Compartir como imagen</button>
+                <button type="button" className="btn" onClick={async () => mostrar(avisoCompartir(await compartir(href, titulo)))}>Copiar link</button>
+              </div>
+              {aviso && <p className="aviso-link" role="status">{aviso}</p>}
+              <Comparar ix={ix} forma={forma} ruta={vista.ruta} deflactor={deflactor} />
+            </>
+          )}
+
+          <Pie ix={ix} anio={anio.anio} />
+          {imagen && vistaImg && <PanelGasto armar={armarImg} titulo={titulo} href={href} onCerrar={() => setImagen(false)} />}
         </>
       )}
-
-      <Pie ix={ix} anio={anio.anio} />
-      {imagen && vistaImg && <PanelGasto vista={vistaImg}titulo={titulo} href={href} onCerrar={() => setImagen(false)} />}
     </section>
   );
 }

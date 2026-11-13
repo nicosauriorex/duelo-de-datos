@@ -151,7 +151,7 @@ export const escribirRuta = (ruta: string[]): string | null => (ruta.length ? ru
 
 // ---------------------------------------------------------------- la vista (lista de barras)
 /** Escala con la que se muestra una lista entera: misma unidad y decimales para todas sus filas. */
-interface Escala { a: (x: number) => number; txt: (u: number) => string; dec: number }
+export interface Escala { a: (x: number) => number; txt: (u: number) => string; dec: number }
 const decPct = (minimo: number) => (minimo >= 1 ? 1 : minimo >= 0.1 ? 2 : 3);
 /** Decimales de una lista de porcentajes (según el menor distinto de cero), los mismos que usa la lista de barras. */
 export const decPctDe = (valores: (number | null)[]): number => {
@@ -159,13 +159,13 @@ export const decPctDe = (valores: (number | null)[]): number => {
   return decPct(xs.length ? Math.min(...xs) : 1);
 };
 /** Valor ya en la unidad que se muestra, redondeado como se muestra (para que las cuentas cierren con lo que se lee). */
-const mostrado = (e: Escala, x: number) => (valorMostrado(nfDec(e.dec).format(e.a(x))) ?? 0) || 0;
+export const mostrado = (e: Escala, x: number) => (valorMostrado(nfDec(e.dec).format(e.a(x))) ?? 0) || 0;
 /** Redondeo a `dec` decimales sin ruido de coma flotante ni cero negativo (para restas entre valores ya redondeados). */
-const aDec = (x: number, dec: number) => Math.round(x * 10 ** dec) / 10 ** dec || 0;
+export const aDec = (x: number, dec: number) => Math.round(x * 10 ** dec) / 10 ** dec || 0;
 /** Número con su signo ("−" solo si lo que se lee no es cero: `u` ya viene redondeado). */
-const conSigno = (u: number, dec: number) => `${u < 0 ? "−" : ""}${nfDec(dec).format(Math.abs(u))}`;
+export const conSigno = (u: number, dec: number) => `${u < 0 ? "−" : ""}${nfDec(dec).format(Math.abs(u))}`;
 
-function escalaDe(medida: Medida, total: number, minimo: number): Escala {
+export function escalaDe(medida: Medida, total: number, minimo: number): Escala {
   if (medida !== "hoy") {
     const dec = decPct(Math.abs(minimo));
     return { a: (x) => x, dec, txt: (u) => `${conSigno(u, dec)} %` };
@@ -210,7 +210,7 @@ export const MAX_BARRAS = 10;
 
 /** Redondea cada valor a `dec` decimales y reparte la diferencia con `objetivo` (ya redondeado) entre los de mayor resto,
  *  para que la suma de lo que se ve dé el total que se ve (método del mayor resto). Solo corrige diferencias de redondeo. */
-function repartir(vals: number[], objetivo: number, dec: number): number[] {
+export function repartir(vals: number[], objetivo: number, dec: number): number[] {
   const u = Math.pow(10, dec), crudos = vals.map((x) => x * u), base = crudos.map((x) => Math.round(x));
   let falta = Math.round(objetivo * u) - base.reduce((a, b) => a + b, 0);
   if (Math.abs(falta) > vals.length) return base.map((x) => x / u);   // no es redondeo: no se toca
