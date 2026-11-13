@@ -67,6 +67,7 @@ dg_379_9_gtos_prima017_39_96
 dg_379_9_ing_despue017_28_10
 dg_379_9_resultado_017_18_38
 dg_379_9_superavit_017_23_94
+dg_380_3_desagregaccro_0_t_40
 dg_380_3_desagregacles_0_t_50
 dg_380_3_desagregacnal_0_t_43
 dg_380_3_icc_nacionnal_0_t_12
