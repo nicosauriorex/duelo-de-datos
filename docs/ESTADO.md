@@ -1,6 +1,6 @@
 # Estado del proyecto
 
-Para retomar el trabajo en una sesión nueva. Actualizar al cerrar cada tanda. Última actualización: 2026-11-12.
+Para retomar el trabajo en una sesión nueva. Actualizar al cerrar cada tanda. Última actualización: 2026-11-13.
 
 ## Dónde estamos
 El sitio pasó de ser un explorador de series a una herramienta para responder en redes con una imagen (auditoría: `docs/AUDITORIA-2026-11-10.md`). Publicado en https://primerolosdatos.com.ar.
@@ -17,7 +17,7 @@ Hecho y publicado (detalle en `docs/ROADMAP.md`):
 - Semáforo de actividad (2026-11-12, `docs/specs/semaforo-actividad.md`, D-020): `/semaforo/` con 29 indicadores, interanual y mes contra mes (solo ajuste oficial), índice de difusión, ventana por indicador, imagen y vista previa en redes.
 - Herencia, fase 1 (2026-11-12, `docs/specs/herencia.md`): `/herencia/` con 19 datos oficiales al recibir y al entregar cada presidente (T-1 fijo), vista "Todos los traspasos", imagen, vista previa en redes y lo que no se puede medir; series nuevas de subsidios a la energía y deuda con importadores.
 - Herencia, fase 2 (2026-11-12): 42 datos oficiales de informes y planillas (Finanzas, FMI, Banco Central) cargados a mano en `datos/manual/herencia.json` con documento, página y cita (`pipeline/herencia_informes.py` los controla y copia); en la tabla con la marca "informe" y la cita al tocarlos, en "Todos los traspasos" y en la imagen.
-- Herencia, fase 3 (2026-11-12, D-021): bloque "Estimaciones y cifras sin serie oficial" con las reservas netas del FMI (2019, 2023 y fin de 2025) y del Banco Central con su propia definición (dic-2023 y fin de 2025: +2.900), dos estimaciones propias al día (método del FMI: −3.983; definición del Banco Central, sin restar el crédito del FMI: +10.857, al 05-11-2026), una estimación propia al día con su método (`pipeline/reservas_netas.py`, supuestos con cita en `datos/manual/reservas_netas_supuestos.json`, controles contra el FMI: −84, −397 y +1.251 millones; contra el Banco Central: −397 y +1.246) y la cobertura de tarifas del IIEP; datos oficiales nuevos: importaciones pendientes, puts, cobertura de la electricidad y precios acordados.
+- Herencia, fase 3 (2026-11-12, D-021): bloque "Estimaciones y cifras sin serie oficial" con las reservas netas del FMI (2019, 2023 y fin de 2025) y del Banco Central con su propia definición (dic-2023 y fin de 2025: +2.900), dos estimaciones propias al día con datos del Banco Central (`pipeline/reservas_netas.py`, supuestos con cita en `datos/manual/reservas_netas_supuestos.json`): con el método del FMI, −3.983 millones al 05-11-2026 (controles contra el FMI: −84, −397 y +1.251), y con la definición del Banco Central, que no resta el crédito del FMI, +10.857 (controles: −397 y +1.246) y la cobertura de tarifas del IIEP; datos oficiales nuevos: importaciones pendientes, puts, cobertura de la electricidad y precios acordados.
 - En qué gasta la Nación, fase 1 (2026-11-12, `docs/specs/gasto-nacion.md`): `/gasto/` con el gasto de la Administración Nacional 2018-2026 de Presupuesto Abierto (`pipeline/gasto_nacion.py`, respaldos `datos/cache/gasto_nacion_*`): para qué, quién (hasta cada universidad), en qué y dónde; pesos de hoy, % del total y % del PIB; buscador, comparación entre años (desde 2004 por finalidad), imagen y vista previa.
 - Datos: canastas corregidas; respaldo del IPC cuando la API de INDEC no responde; filtro de cotizaciones sueltas; corridas a las 16:10, 17:15 y 21:00 (hora argentina, las dos primeras solo en días hábiles); publicación rápida cuando el push no toca el pipeline.
 
@@ -33,7 +33,8 @@ Hecho y publicado (detalle en `docs/ROADMAP.md`):
 ## Sin verificar (revisar antes de dar por cerrado)
 De la herencia, fase 3 (verificado: cifras contra sus documentos, controles de la estimación, página a 360 px, ventana con Atrás, imagen de la vista previa):
 - La estimación propia depende de supuestos fijos (swaps 20.000, SEDESA 2.000) tomados de un recuadro del FMI de abril de 2026; si cambian los swaps o aparecen repos de corto plazo, se aparta más. El saldo de DEG hay que cargarlo a mano cada mes.
-- La corrida en GitHub baja por primera vez la variable 1243 (encajes): se comprueba al publicar.
+- La corrida en GitHub del 2026-11-13 (commit 5f16b31) baja por primera vez la variable 1243 (encajes) y arma `reservas_netas.json`: al cerrar la sesión seguía corriendo; mirar que terminó en verde y que https://primerolosdatos.com.ar/datos/reservas_netas.json existe.
+- La estimación con la definición del Banco Central probablemente da algo más alta que la cifra que publicaría el Banco Central: no puede restar los pasivos de corto plazo que no son públicos (repos, swap con el Tesoro de EE.UU.). A fin de 2025 se pasó en 1.246 millones.
 - La vista a 1280 px y el bloque en el tema claro no se miraron.
 
 De la herencia, fase 2 (verificado: cada cifra contra su planilla, PDF o página del FMI; tabla a 360 px sin desborde, cita que se cierra con Atrás, "Todos los traspasos" de un dato de informe, imagen de la vista previa):
@@ -100,7 +101,7 @@ Durante la tanda 3 las capturas del navegador fallaron: se comprobó contenido y
 - `python pipeline/ver_cache.py <nombre>`: mira un archivo de `datos/cache/` sin volcarlo (columnas y pocas filas). Es la única forma permitida de leer el caché.
 - Flujo elegido: spec e implementación en la misma sesión, orquestando subagentes (`CLAUDE.md`, `docs/COMO-TRABAJAMOS.md`).
 - Barrido después de cada tanda: `cd web && npx tsx scripts/barrido-cuentas.ts` (las cuentas cierran) y `web/scripts/barrido-navegador.js` (desbordes, capas con cruz y Atrás, repetidos, ceros con signo; se carga en la página y se llama a `barridoPLD()`; las instrucciones están en el encabezado). Ojo: el navegador de prueba guarda en caché el HTML de cada ruta; después de compilar, pedir cada ruta con `fetch(ruta, { cache: "reload" })` antes de medir.
-- Datos que no pasan por el motor mensual: `diario_bcra.json` (`pipeline/diario.py`, D-019) y `semaforo.json` (`pipeline/semaforo.py`, D-020). Para rebajar solo las series del semáforo: `python pipeline/semaforo.py --bajar`. Chequeos: `cd web && npx tsx scripts/chequeo-diario.ts` y `npx tsx scripts/chequeo-semaforo.ts`.
+- Datos que no pasan por el motor mensual: `diario_bcra.json` (`pipeline/diario.py`, D-019), `semaforo.json` (`pipeline/semaforo.py`, D-020), `herencia_informes.json` (`pipeline/herencia_informes.py`, desde `datos/manual/herencia.json`) y `reservas_netas.json` (`pipeline/reservas_netas.py`, D-021; `python pipeline/reservas_netas.py --bajar` lo prueba solo y muestra los controles). Para rebajar solo las series del semáforo: `python pipeline/semaforo.py --bajar`. Chequeos: `cd web && npx tsx scripts/chequeo-diario.ts` y `npx tsx scripts/chequeo-semaforo.ts`.
 - Subagentes: Sonnet con esfuerzo medio para lo normal y Opus solo para la pieza difícil (pedido del usuario, 2026-11-12). Para fuentes de datos, el agente `investigador-datos`.
 - Pendiente de herramientas: regenerar `DESIGN.md` con el documentador de Impeccable.
 
