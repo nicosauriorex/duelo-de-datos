@@ -1,6 +1,6 @@
 # Remodelación, etapa 3.1: inicio, buscador y navegación
 
-Estado: implementada y verificada en local (2026-11-13), esperando la aprobación del usuario. Sale de `docs/AUDITORIA-DISENO-2026-11-13.md`, D-023 y del sistema de `docs/specs/remodelacion-sistema.md` (componentes en `web/components/sistema/`).
+Estado: implementada (2026-11-13), aprobada y publicada (1080330). Sale de `docs/AUDITORIA-DISENO-2026-11-13.md`, D-023 y del sistema de `docs/specs/remodelacion-sistema.md` (componentes en `web/components/sistema/`).
 
 ## Objetivo
 Que la portada responda antes de pedir: el buscador encuentra la variable primero, cada número dice qué medida es, las preguntas se responden en el lugar y la navegación del celular queda al alcance del pulgar. No cambia ningún cálculo, ninguna URL ni ningún parámetro.
