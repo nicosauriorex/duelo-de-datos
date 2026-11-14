@@ -1018,23 +1018,53 @@ tr.nota-grupo td { background: var(--surface-0); color: var(--text-secondary); t
   .placa, .todo-fuente { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 
-/* Ficha del dato (FichaDato: página de cada tema y ruta /dato/). Tres bloques uno debajo del otro, en cualquier ancho. */
+/* Ficha del dato (FichaDato: página de cada tema y ruta /dato/), en capítulos sin cajas (docs/specs/remodelacion-fichas.md). */
 .ficha-tema { scroll-margin-top: calc(var(--nav-h) + var(--e-3)); }
-.ficha-nombre { overflow-wrap: anywhere; text-wrap: balance; }
-.tema-pagina .ficha-nombre { font-size: var(--t-xl); line-height: 1.2; }
-.ficha-nombre:focus { outline: none; }
-.ficha-nombre:focus-visible { outline: var(--linea) solid var(--foco); outline-offset: 4px; }
-.ficha-dato { display: flex; flex-direction: column; gap: var(--e-6); min-width: 0; }
-.ficha-bloque { min-width: 0; border-top: var(--linea) solid var(--border-fuerte); padding-top: var(--e-3); }
-.ficha-cab { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--e-2) var(--e-3); margin: 0 0 var(--e-2); }
-.ficha-cab .ficha-titulo { margin: 0; font-size: var(--t-lg); font-weight: 800; line-height: 1.2; }
-.ficha-cab .seg button { min-height: var(--alto-toque); padding: 0 var(--e-3); }
-.ficha-cifra .vs-cifra .v { font-size: clamp(2rem, 10vw, 3.25rem); }
-.ficha-bloque .card-simple { margin-bottom: 0; }
-/* R14: lo que sigue a una tabla o un gráfico queda separado; Compartir y "Abrir completo" siempre al pie del bloque */
-.ficha-acciones { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-2); margin-top: var(--e-3); }
-.ficha-acciones .btn { min-height: var(--alto-toque); }
-.ficha-acciones a.btn { color: var(--text-primary); }
+.fi { min-width: 0; }
+/* El título del dato dentro de un tema es un h2 (el h1 es el tema): mismo estilo que el h1 de /dato/, un poco más chico */
+.fi .cabdato h2 { margin: 0; font-size: var(--v-capitulo); font-weight: 900; font-stretch: var(--ancho-cond); text-transform: uppercase; line-height: 1; overflow-wrap: anywhere; min-width: 0; text-wrap: balance; }
+.fi .cabdato :is(h1, h2):focus { outline: none; }
+.fi .cabdato :is(h1, h2):focus-visible { outline: var(--linea) solid var(--foco); outline-offset: 4px; }
+/* Capítulos de la ficha: con poco ancho, Compartir y "Abrir completo" bajan debajo del título en vez de apretarlo */
+.fi .capitulo-cab { flex-wrap: wrap; }
+.fi .capitulo-textos { flex: 1 1 15rem; }
+.fi .capitulo-acciones { flex-wrap: wrap; }
+.fi .capitulo-cuerpo { display: flex; flex-direction: column; gap: var(--e-3); }
+.fi-abrir { min-height: var(--toque); color: var(--text-primary); }
+.fi-grafico { min-width: 0; }
+.fi-nota { margin: 0; font-size: var(--t-sm); line-height: 1.4; color: var(--text-muted); }
+.fi-frase { margin: 0; max-width: 60ch; font-size: var(--v-texto); line-height: 1.5; color: var(--text-secondary); }
+.fi-mas { margin: 0; }
+.fi-mas .enlace { display: inline-flex; align-items: center; min-height: var(--toque); }
+.fi-pres-cuerpo { min-width: 0; }
+.fi-pres-cuerpo .tmand-mas { margin-bottom: var(--e-2); }
+/* "Ver también": links con forma de chip, en una fila que se desliza dentro de sí misma */
+.fi-ver { display: flex; flex-direction: column; gap: var(--e-1); margin-top: var(--e-5); min-width: 0; }
+.fi-ver-rot { font-size: var(--v-rotulo); font-weight: 600; font-stretch: var(--ancho-semi); color: var(--text-muted); }
+.fi-ver .chips > a { flex: none; display: block; min-height: var(--toque); padding: 4px 0; color: var(--text-primary); text-decoration: none; }
+.fi-ver .chips > a:hover .chips-cuerpo { background: var(--acento-suave); }
+.fi-ver .chips > a:focus-visible { outline-offset: -2px; }
+/* "Cómo se mide": plegado al final, sin caja; solo una línea arriba como los capítulos */
+.fi-metodo { margin: var(--e-7) 0 0; padding: 0; background: none; border: 0; border-top: 1px solid var(--border); border-radius: 0; }
+.fi-metodo > summary { display: list-item; min-height: var(--toque); padding: var(--e-3) 0; font-size: var(--t-md); font-weight: 800; color: var(--text-primary); cursor: pointer; }
+.fi-metodo > summary:focus-visible { outline: var(--linea) solid var(--foco); outline-offset: 2px; }
+.fi-metodo-cuerpo { padding-bottom: var(--e-3); font-size: var(--t-sm); line-height: 1.5; color: var(--text-secondary); max-width: 70ch; }
+.fi-metodo-cuerpo p { margin: 0 0 var(--e-2); }
+
+/* BarrasMes: el mismo mes de cada año, en columnas (SVG medido al ancho: nunca desliza la página) */
+.bmes { position: relative; width: 100%; min-width: 0; }
+.bmes-svg { display: block; max-width: 100%; touch-action: pan-y; }
+.bmes-svg:focus { outline: none; }
+.bmes-svg:focus-visible { outline: var(--linea) solid var(--foco); outline-offset: 2px; }
+.bmes-col { fill: var(--neutral); opacity: .45; }
+.bmes-col.bmes-sel { opacity: .9; }
+.bmes-col.bmes-actual { fill: var(--acento); opacity: 1; }
+.bmes-col.bmes-ref { fill: var(--accion); opacity: 1; }   /* el año de "el más bajo/alto desde…": ni mejor ni peor, solo la referencia */
+.bmes-ref-txt { fill: var(--accion); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.bmes-cero { stroke: var(--axis); stroke-width: 1; shape-rendering: crispEdges; }
+.bmes-valor { fill: var(--text-primary); font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.bmes-rotulo { fill: var(--text-secondary); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.bmes-anio { fill: var(--text-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 /* Principales de un tema: la tarjeta es un botón que pone su variable en la ficha. El nombre largo baja de renglón (R5), no se corta. */
 .plantilla-link.ficha-elegir { width: 100%; height: 100%; padding-right: 14px; text-align: left; background: none; border: 0; font: inherit; color: inherit; cursor: pointer; }
 .ficha-elegir > span { display: block; }

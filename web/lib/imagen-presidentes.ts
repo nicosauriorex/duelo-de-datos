@@ -16,7 +16,7 @@ import { filasEstimaciones, filasInforme, type DatoInforme, type FilaInforme, ty
 
 /** Lo que muestra una sección de presidentes y, por lo tanto, lo que lleva la imagen. Todo viene tal como está en pantalla. */
 export type VistaPres =
-  | { tipo: "barras"; expr: Expr; presIds: string[]; base: BaseCfg }                  // presIds en el orden en que está la tabla
+  | { tipo: "barras"; expr: Expr; presIds: string[]; base: BaseCfg; metrica?: "prom" }                // presIds en el orden en que está la tabla
   | { tipo: "velas"; expr: Expr; presIds: string[]; base: BaseCfg }                   // las mismas velas que la pantalla
   | { tipo: "variables"; presId: string; exprs: Expr[]; base: BaseCfg }
   | { tipo: "mandato"; expr: Expr; modo: ModoMandato; presIds: string[]; anc: string | null; md: string | null; mh: string | null; valorFinal?: boolean; base: BaseCfg }
@@ -67,8 +67,11 @@ export function armarImagenPres(m: Motor, v: VistaPres, o: OpcionesPres): DatosI
       const st = statsMandato(F, c.v, p, b);
       if (!st.n || st.iniI === st.finI) { sin.push(p.n); return; }
       const ini = st.ini as number, fin = st.fin as number;
+      const prom = v.metrica === "prom";   // promedio del mandato: sin color de mejora o empeora
+      if (prom && !ok(st.prom)) { sin.push(p.n); return; }
       filas.push({
-        id: p.id, nombre: p.n, valor: varNum(c, st), variacion: variacionMostrada(m, c, ini, fin), cls: claseVariacion(c.dir, c.pct, ini, fin),
+        id: p.id, nombre: p.n, valor: prom ? (st.prom as number) : varNum(c, st), variacion: prom ? m.fmtC(c, st.prom as number) : variacionMostrada(m, c, ini, fin),
+        cls: prom ? "neutro" : claseVariacion(c.dir, c.pct, ini, fin),
         ini: m.fmtC(c, ini), fin: m.fmtC(c, fin), nota: notaParcial(F, st, baseIdx(F, p, b), p.i1),
       });
     });
@@ -76,7 +79,7 @@ export function armarImagenPres(m: Motor, v: VistaPres, o: OpcionesPres): DatosI
     const d = esqueleto(m, o, b, titulo, F[lastIdx(c.v)] ?? F[F.length - 1]);
     // palabras neutras (D-012): el color se explica por lo que hizo el dato, según qué dirección es favorable para ese dato
     const color = !c.dir ? "Sin colores: para este dato no se califica si subir o bajar es favorable." : c.dir > 0 ? "Verde: subió; rojo: bajó." : "Verde: bajó; rojo: subió.";
-    d.frases = [neutro(`Del inicio al cierre de cada mandato. ${color}`)];
+    d.frases = [neutro(v.metrica === "prom" ? "Promedio de todos los meses de cada mandato." : `Del inicio al cierre de cada mandato. ${color}`)];
     d.lienzo = { tipo: "barras", filas, sinDatos: sin };
     d.unidad = c.unidad; d.fuente = "Fuente: " + fuenteLegible(c.serie.fuente); d.nota = notaInflacion([c], false);
     return d;
@@ -139,7 +142,7 @@ export function armarImagenPres(m: Motor, v: VistaPres, o: OpcionesPres): DatosI
     const PRES_T0 = PRES.filter((x) => m.idxDe(x.ini) > 0);
     const D = calcularMandato(m, PRES, PRES_T0, { expr: v.expr, modo: v.modo, banda: false, b, presIds: new Set(v.presIds), anc: v.anc, md: v.md, mh: v.mh });
     if (!D || !D.pres.length || !D.rows.length) return null;
-    const titulo = `${D.c.corto}: ${TITULOS_MANDATO[v.modo]} por mes de mandato`;
+    const titulo = `${D.c.corto}: ${TITULOS_MANDATO[D.modo]} por mes de mandato`;
     const d = esqueleto(m, o, b, titulo, F[lastIdx(D.c.v)] ?? F[F.length - 1]);
     // la explicación va en letra chica y en dos renglones como máximo: el eje y la unidad (pie) y, si es teórico, el valor de partida (junto a la fuente)
     const recorte = D.desde > 0 || D.hasta < D.maxMes ? ` (meses ${D.desde} a ${D.hasta})` : "";
@@ -156,10 +159,10 @@ export function armarImagenPres(m: Motor, v: VistaPres, o: OpcionesPres): DatosI
       };
     });
     d.fmtEje = D.fmtAxis; d.ejeX = "mes"; d.log = D.usarLog; d.refLinea = D.ref;
-    const unidadDato = v.modo === "var" && !D.c.pct ? "variación en %, desde el mes 0" : D.c.unidad;
+    const unidadDato = D.modo === "var" && !D.c.pct ? "variación en %, desde el mes 0" : D.c.unidad;
     d.unidad = `Eje horizontal: meses desde el inicio de cada mandato${recorte} · ${unidadDato}`;
     d.fuente = "Fuente: " + fuenteLegible(D.c.serie.fuente);
-    d.nota = [D.teo ? `Punteadas: precio teórico, partiendo de ${m.fmtC(D.c, D.ancla)} (${D.ancTxt}).` : "", notaInflacion([D.c], false)].filter(Boolean).join(" ");
+    d.nota = [D.teo ? `Punteadas: mismo punto de partida, desde ${m.fmtC(D.c, D.ancla)} (${D.ancTxt}).` : "", notaInflacion([D.c], false)].filter(Boolean).join(" ");
     return d;
   }
 

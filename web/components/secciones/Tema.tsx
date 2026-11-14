@@ -142,7 +142,7 @@ export function TemaPagina({ t }: { t: Tema }) {
       {tarjetas.length > 0 && (
         <section aria-label="Principales">
           <h2>Principales</h2>
-          {tarjetas.length > 1 && <p className="note">Tocá uno para verlo abajo de tres formas: su historia, por presidente y por mes de mandato.</p>}
+          {tarjetas.length > 1 && <p className="note">Tocá uno para verlo abajo: cómo viene, cómo le fue con cada presidente y mes a mes desde que asumió.</p>}
           <div className="principales" style={{ ["--n" as string]: tarjetas.length, ["--c-med" as string]: columnasMedio(tarjetas.length), ["--c-ancho" as string]: columnasAncho(tarjetas.length) }}>
             {tarjetas.map(({ pr, ev }) => (
               <CardValor key={pr.nombre} titulo={pr.nombre} ev={ev} href={hrefHistorico(pr)} motor={m} onElegir={() => elegir(pr)} elegido={pr === principalElegido} />
@@ -153,8 +153,7 @@ export function TemaPagina({ t }: { t: Tema }) {
 
       {elegida && (
         <section aria-labelledby="ficha-tema-titulo" className="ficha-tema" ref={fichaRef}>
-          <h2 id="ficha-tema-titulo" className="ficha-nombre" ref={tituloFicha} tabIndex={-1}>{nombreFicha}</h2>
-          <FichaDato e={elegida} info={info} p={p} set={set} />
+          <FichaDato e={elegida} info={info} p={p} set={set} nivel={3} titulo={nombreFicha} tituloRef={tituloFicha} tituloId="ficha-tema-titulo" />
         </section>
       )}
 

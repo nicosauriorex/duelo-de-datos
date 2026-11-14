@@ -423,10 +423,12 @@ const entEn = (s: string | null, min: number, max: number, def: number): number 
 };
 /** Todo lo que muestra el gráfico de Meses de mandato: una sola fuente de verdad para la página y la imagen. Null si faltan datos. */
 export function calcularMandato(m: Motor, PRES: Pres[], PRES_T0: Pres[], q: ParamsMandato) {
-  const eB = q.expr, b = q.b, modo = q.modo;
+  const eB = q.expr, b = q.b;
   if (!m.SER[eB.id] || (eB.rel && !m.SER[eB.rel])) return null;
   const F = m.F;
   const c = m.calc(eB), arr = c.v;
+  // con una tasa no hay "mismo punto de partida": se muestra el valor real de cada mes (el modo efectivo se devuelve para que todo escriba lo mismo)
+  const modo: ModoMandato = c.pct && q.modo === "teorico" ? "valor" : q.modo;
   const bnd = q.banda && c.lo && c.hi ? [c.lo, c.hi] : null;
   const pres = PRES_T0.filter((x) => q.presIds.has(x.id));
   const teo = modo === "teorico";
@@ -466,11 +468,11 @@ export function calcularMandato(m: Motor, PRES: Pres[], PRES_T0: Pres[], q: Para
   const cel = (x: Pres, t: number) => { const r = todas[t]; return r && ok(r[x.id]) ? fmtTip(r[x.id]) : "–"; };
   const nota = (teo ? `Partiendo de ${ancTxt}: `.replace("de el ", "del ") + `${m.fmtC(c, ancla)} (${c.unidad}), y aplicando ${c.pct ? "los cambios en puntos" : "las variaciones"} de cada mandato. `
     : `Unidad: ${modo === "var" && !c.pct ? "%" : c.unidad}. `) + `Mes 0 = ${baseTxt(b)}.` +
-    (c.pct ? " En porcentajes se suman los cambios en puntos, no se multiplican." : "") + (bnd ? " La sombra va del mínimo al máximo diario de cada mes." : "") +
+    (c.pct && modo !== "valor" ? " En porcentajes se suman los cambios en puntos, no se multiplican." : "") + (bnd ? " La sombra va del mínimo al máximo diario de cada mes." : "") +
     (q.banda && !c.lo ? " (Esta variable no tiene datos diarios: no hay rango.)" : "");
-  return { c, pres, teo, ancOpc, anc, ancTxt, ancla, maxMes, desde, hasta, rows, fmtAxis, fmtTip, ref, usarLog, paso, nota, cel, todas, bnd };
+  return { c, modo, pres, teo, ancOpc, anc, ancTxt, ancla, maxMes, desde, hasta, rows, fmtAxis, fmtTip, ref, usarLog, paso, nota, cel, todas, bnd };
 }
 
-export const TITULOS_MANDATO: Record<ModoMandato, string> = { teorico: "precio teórico", var: "variación % desde el mes 0", valor: "valor" };
+export const TITULOS_MANDATO: Record<ModoMandato, string> = { teorico: "mismo punto de partida", var: "variación % desde el mes 0", valor: "valor" };
 /** Nombre abreviado de un presidente para espacios chicos ("Néstor Kirchner" → "Néstor K.", "Alberto Fernández" → "Alberto F."): el `corto` de `PRES_DEF`. */
 export const nombreCorto = (n: string): string => (PRES_DEF.find((p) => p.n === n) as { corto?: string } | undefined)?.corto ?? n;

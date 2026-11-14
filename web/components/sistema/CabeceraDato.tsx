@@ -1,18 +1,21 @@
 // Apertura de toda página de un dato: título, cifra con su fecha, deltas, frase y (opcional) el gráfico. Sin caja.
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import { Contador } from "../Movimiento";
 import { Delta, type DeltaProps } from "./Delta";
 import { InfoPunto } from "./InfoPunto";
 
-/** `secundarias`: otras medidas del mismo dato (por ejemplo, el interanual de la inflación mensual), como cifras chicas con su rótulo. */
-export function CabeceraDato({ titulo, cifra, unidad, fecha, deltas, secundarias = [], frase, info, children }: {
-  titulo: string; cifra: string; unidad?: string; fecha: string; deltas: DeltaProps[]; secundarias?: { rotulo: string; valor: string }[]; frase?: string; info?: ReactNode; children?: ReactNode;
+/** `secundarias`: otras medidas del mismo dato (por ejemplo, el interanual de la inflación mensual), como cifras chicas con su rótulo.
+ *  `nivel`: el del título (h1 en la página de un dato, h2 dentro de un tema). `tituloRef`/`tituloId`: para llevar el foco al título. */
+export function CabeceraDato({ titulo, cifra, unidad, fecha, deltas, secundarias = [], frase, info, nivel = 1, tituloRef, tituloId, children }: {
+  titulo: string; cifra: string; unidad?: string; fecha: string; deltas: DeltaProps[]; secundarias?: { rotulo: string; valor: string }[]; frase?: string; info?: ReactNode;
+  nivel?: 1 | 2; tituloRef?: Ref<HTMLHeadingElement>; tituloId?: string; children?: ReactNode;
 }) {
+  const H = nivel === 2 ? "h2" : "h1";
   return (
-    <header className="cabdato">
+    <header className="cabdato" data-nivel={nivel}>
       <div className="cabdato-izq">
         <div className="cabdato-titulo">
-          <h1>{titulo}</h1>
+          <H ref={tituloRef} id={tituloId} tabIndex={tituloRef ? -1 : undefined}>{titulo}</H>
           {info ? <InfoPunto etiqueta={`Qué es ${titulo}`}>{info}</InfoPunto> : null}
         </div>
         <p className="cabdato-cifra">

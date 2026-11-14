@@ -1,215 +1,315 @@
 "use client";
-// Ficha del dato: una variable vista de las tres formas fuertes del sitio, una debajo de la otra (también en celular):
-// Histórico (dato, contexto y gráfico), Por presidente (tabla resumida o velas) y Meses de mandato (presidentes desde el mes 0).
-// Cada bloque tiene su Compartir (las mismas imágenes de cada sección) y "Abrir completo", que lleva a la sección con la variable ya cargada.
-// Solo lo simple: las opciones de cada sección están en "Abrir completo". La usan la página de cada tema y la ruta /dato/.
-import { useMemo, type ReactNode } from "react";
+// Ficha del dato: una variable contada en capítulos cortos, cada uno con su pregunta (docs/specs/remodelacion-fichas.md):
+// Ahora (cifra, cambios y "Ver también"), ¿Cómo viene? (el gráfico con su período), ¿Cómo fue <mes> en otros años?,
+// ¿Cómo le fue con cada presidente? (tabla o velas), Mes a mes desde que asumió, Gráficos listos y, plegado al final, Cómo se mide.
+// Cada capítulo tiene su Compartir (imagen, link y texto) y, si corresponde, "Abrir completo" con la variable ya cargada en esa sección.
+// La usan la página de cada tema y la ruta /dato/.
+import { useMemo, useRef, useState, type ReactNode, type Ref } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useSeccion } from "./useSeccion";
 import { useConfig } from "./ConfigProvider";
-import { Cargando, Seg } from "./ui";
+import { useDeslizable } from "./Movimiento";
+import { Cargando } from "./ui";
 import { Grafico, type Fila, type OpcionesG, type SerieG } from "./Grafico";
 import { Velas } from "./Velas";
-import { BotonCompartir } from "./PanelCompartir";
-import { IconoCompartir, IconoIr } from "./Iconos";
+import { PanelCompartir, type VistaCompartir } from "./PanelCompartir";
+import { IconoIr } from "./Iconos";
 import { PALETA, vcolor } from "./util";
-import { COLS, CeldaPres, CeldasStats, LineaInicio, type InicioMandato } from "./secciones/comunes";
+import { LineaInicio, type InicioMandato } from "./secciones/comunes";
+import { CabeceraDato } from "./sistema/CabeceraDato";
+import { Capitulo } from "./sistema/Capitulo";
+import { CompartirHoja } from "./sistema/CompartirHoja";
+import { FilaChips } from "./sistema/FilaChips";
+import { TablaMandatos } from "./sistema/TablaMandatos";
+import { Lamina, Laminas } from "./sistema/Lamina";
+import { BarrasMes } from "./sistema/BarrasMes";
 import { unoDe } from "@/lib/url";
 import { baseDeConfig } from "@/lib/config";
-import { contextoDato } from "@/lib/contexto-dato";
-import { PRES_DEF, TITULOS_MANDATO, crearPres, etiqueta, franjasPres, nivelComparable, nombreCorto, statsMandato } from "@/lib/estadisticas";
+import { AYUDA_T, PRES_DEF, baseTxt, crearPres, etiqueta, franjasPres, nivelComparable, nombreCorto, statsMandato } from "@/lib/estadisticas";
 import { fmtMes } from "@/lib/formato";
 import { frecuenciaOrigen, textoTemporalidad } from "@/lib/historico";
-import { datoFijoDe, hrefFijo } from "@/lib/datos-fijos";
-import { fmtEjeDe, notaInflacion } from "@/lib/imagen-datos";
-import type { Expr, Motor } from "@/lib/motor";
-import { datosDesde, periodoMandato } from "@/lib/tablas";
-import { hrefHistorico, idsDe } from "@/lib/temas";
-import { historicoFicha, hrefMandatoDe, hrefPresidentesDe, mandatoFicha, paramsInicio, sinMandatoTxt, velasDe } from "@/lib/ficha";
+import { datoFijoDe, hrefFijo, mismaVariable } from "@/lib/datos-fijos";
+import { fmtEjeDe, notaInflacion, tituloVariable } from "@/lib/imagen-datos";
+import { fuentePublica } from "@/lib/fuente-publica";
+import { crearPlantillas, evaluar, hrefPlantilla } from "@/lib/plantillas";
+import type { Expr, Motor, SerieMeta } from "@/lib/motor";
+import { hrefDato, hrefHistorico, idsDe } from "@/lib/temas";
+import {
+  cabeceraFicha, filasMandatosFicha, historicoFicha, hrefMandatoDe, hrefPresidentesDe, mandatoFicha, mesesIguales, paramsInicio, periodosFicha,
+  relacionadasDe, sinMandatoTxt, velasDe, type CabeceraFicha, type PeriodoFicha,
+} from "@/lib/ficha";
 
 type SetFn = (cambios: Record<string, string | null | undefined>) => void;
-type Titulo = "h2" | "h3";
-const COLS_PRES = COLS.slice(0, 3);   // Inicio, Cierre y Variación
-const absoluto = (href: string) => () => window.location.origin + href;
+type Nivel = 2 | 3;
 /** Link que dan Compartir y "Copiar link": si la variable es un dato fijo, su página propia (/dato/<slug>/, con vista previa en redes)
- *  con lo que se está viendo (vista, presidente resaltado, inicio de mandato); si no, la sección con la variable. */
-const linkCompartir = (e: Expr, seccion: string, extra: Record<string, string> = {}) => {
+ *  con lo que se está viendo (período, vista, presidente resaltado, inicio de mandato); si no, la sección con la variable. */
+const linkCompartir = (e: Expr, seccion: string, extra: Record<string, string> = {}): string => {
   const fijo = datoFijoDe(e);
-  return absoluto(fijo ? hrefFijo(fijo.slug, extra) : seccion);
+  return fijo ? hrefFijo(fijo.slug, extra) : seccion;
 };
+const absoluto = (href: string) => new URL(href, window.location.origin).href;
 
-/** La ficha de una variable. `p`/`set` son los de la página (la vista Tabla o Velas se guarda en `pvista`, como en Por presidente).
- *  `info`: inicio de mandato de la página (`useBase`). `pd`: presidente que se resalta en la tabla y se suma a Meses de mandato. `nivel`: de qué nivel son los títulos de los bloques. */
-export function FichaDato({ e, info, p, set, pd = null, nivel = 3 }: {
-  e: Expr; info: InicioMandato; p: URLSearchParams; set: SetFn; pd?: string | null; nivel?: 2 | 3;
+/** La ficha de una variable. `p`/`set` son los de la página (el período del gráfico va en `fper`; la vista Tabla o Velas, en `pvista`).
+ *  `info`: inicio de mandato de la página (`useBase`). `pd`: presidente que se resalta en la tabla y se suma a Meses de mandato.
+ *  `nivel`: el de los títulos de los capítulos (2 en /dato/, 3 en los temas); el título del dato va un nivel más arriba.
+ *  `titulo`: el nombre que se muestra (si no llega, el nombre público con la medida). `tituloRef`/`tituloId`: para enfocar el título. */
+export function FichaDato({ e, info, p, set, pd = null, nivel = 3, titulo, tituloRef, tituloId }: {
+  e: Expr; info: InicioMandato; p: URLSearchParams; set: SetFn; pd?: string | null; nivel?: Nivel; titulo?: string; tituloRef?: Ref<HTMLHeadingElement>; tituloId?: string;
 }) {
   const ids = useMemo(() => idsDe(e), [e]);
   const sec = useSeccion(ids);
-  const { motor: m, version } = sec;
-  const H: Titulo = nivel === 2 ? "h2" : "h3";
+  const { motor: m, version, metas } = sec;
   const error = sec.archivos.some((a) => sec.errores[a]);
   if (!m || sec.ocupado || !m.SER[e.id] || (e.rel && !m.SER[e.rel])) {
-    return error && !sec.ocupado
-      ? <p className="error" role="alert">Los datos de esta variable no se pudieron cargar. Probá de nuevo más tarde o recargá la página.</p>
-      : <Cargando />;
+    // Mientras carga, el título ya está (así el foco y el desplazamiento de la página del tema tienen adónde ir)
+    const nombre = titulo ?? metas.find((s) => s.id === e.id)?.n ?? "";
+    const H = nivel === 2 ? "h1" : "h2";
+    return (
+      <div className="fi">
+        {nombre && <header className="cabdato" data-nivel={nivel === 2 ? 1 : 2}><div className="cabdato-titulo"><H ref={tituloRef} id={tituloId} tabIndex={tituloRef ? -1 : undefined}>{nombre}</H></div></header>}
+        {error && !sec.ocupado
+          ? <p className="error" role="alert">Los datos de esta variable no se pudieron cargar. Probá de nuevo más tarde o recargá la página.</p>
+          : <Cargando />}
+      </div>
+    );
   }
+  return <Ficha m={m} version={version} metas={metas} e={e} info={info} p={p} set={set} pd={pd} nivel={nivel} titulo={titulo} tituloRef={tituloRef} tituloId={tituloId} />;
+}
+
+function Ficha({ m, version, metas, e, info, p, set, pd, nivel, titulo, tituloRef, tituloId }: {
+  m: Motor; version: number; metas: SerieMeta[]; e: Expr; info: InicioMandato; p: URLSearchParams; set: SetFn; pd: string | null; nivel: Nivel;
+  titulo?: string; tituloRef?: Ref<HTMLHeadingElement>; tituloId?: string;
+}) {
+  const kE = `${e.id}~${e.med}~${e.rel}~${e.modo}~${e.esc}`;
+  const S = useMemo(() => Object.fromEntries(metas.map((s) => [s.id, s])), [metas]);
+  const c = m.calc(e);
+  const nombre = titulo ?? tituloVariable(m, e, c);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const cab = useMemo(() => cabeceraFicha(m, e), [m, version, kE]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const rel = useMemo(() => relacionadasDe(e, S, nivel === 3), [kE, S, nivel]);
   const inicio = paramsInicio(p);
+  const b = info.b;
+  const PRES = useMemo(() => crearPres(m.F), [m]);
+  // Meses de mandato se calcula acá: su nota de cálculo va en "Cómo se mide"
+  const mandato = useMemo(() => {
+    const PRES_T0 = PRES.filter((x) => m.idxDe(x.ini) > 0);
+    return mandatoFicha(m, PRES, PRES_T0, e, b, pd);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [m, version, kE, b, pd, PRES]);
+  const fuente = fuentePublica(c.serie.fuente);
+
   return (
-    <div className="ficha-dato">
-      <BloqueHistorico m={m} e={e} version={version} H={H} />
-      <BloquePresidentes m={m} e={e} info={info} H={H} pd={pd} inicio={inicio}
+    <div className="fi">
+      <CabeceraDato titulo={nombre} nivel={nivel === 2 ? 1 : 2} tituloRef={tituloRef} tituloId={tituloId}
+        cifra={cab?.cifra ?? "–"} fecha={cab ? `${cab.fecha}${cab.ultimoDisponible ? " · Último dato disponible" : ""}` : ""}
+        deltas={cab?.deltas ?? []} secundarias={cab?.secundarias} frase={cab?.frase}
+        info={<>{c.serie.desc ? <p>{c.serie.desc}</p> : null}<p>Fuente: {fuente}.</p></>} />
+      {rel.length > 0 && <VerTambien rel={rel} />}
+      <CapViene m={m} e={e} version={version} nivel={nivel} p={p} set={set} nombre={nombre} cab={cab} fuente={fuente} />
+      <CapMeses m={m} e={e} version={version} nivel={nivel} nombre={nombre} />
+      <CapPresidentes m={m} e={e} info={info} nivel={nivel} pd={pd} inicio={inicio} nombre={nombre}
         velas={unoDe(p.get("pvista"), ["tabla", "velas"] as const, "tabla") === "velas"} onVista={(v) => set({ pvista: v ? "velas" : null })} />
-      <BloqueMandato m={m} e={e} info={info} H={H} pd={pd} inicio={inicio} version={version} />
+      <CapMandato m={m} e={e} D={mandato} nivel={nivel} pd={pd} inicio={inicio} b={b} />
+      <CapLaminas m={m} e={e} metas={metas} nivel={nivel} nombre={S[e.id]?.n ?? c.nombre} />
+      <details className="fi-metodo">
+        <summary>Cómo se mide</summary>
+        <div className="fi-metodo-cuerpo">
+          <p>Unidad: {c.unidad}. Fuente: {fuente}.</p>
+          {notaInflacion([c], false) && <p>{notaInflacion([c], false)}</p>}
+          <p>Mes 0 de cada presidente: {baseTxt(b)}. {AYUDA_T}</p>
+          {mandato && <p>Mes a mes desde que asumió: {mandato.nota.replace(`Mes 0 = ${baseTxt(b)}.`, "").trim()}</p>}
+        </div>
+      </details>
     </div>
   );
 }
 
-/** Un bloque de la ficha: título, contenido y, debajo, Compartir y "Abrir completo" (siempre en el mismo lugar). */
-function Bloque({ H, titulo, extra, acciones, children }: { H: Titulo; titulo: string; extra?: ReactNode; acciones?: ReactNode; children: ReactNode }) {
+/** "Ver también": links a variables relacionadas, en una fila que se desliza de costado (como los chips). */
+function VerTambien({ rel }: { rel: { nombre: string; href: string }[] }) {
+  const fila = useRef<HTMLElement>(null);
+  useDeslizable(fila, false, rel.length);
   return (
-    <section className="ficha-bloque" aria-label={titulo}>
-      <div className="ficha-cab"><H className="ficha-titulo">{titulo}</H>{extra}</div>
-      {children}
-      {acciones && <div className="ficha-acciones">{acciones}</div>}
-    </section>
+    <div className="fi-ver">
+      <span className="fi-ver-rot" aria-hidden="true">Ver también</span>
+      <nav ref={fila} className="chips" aria-label="Ver también">
+        {rel.map((r) => <Link key={r.href} prefetch={false} href={r.href}><span className="chips-cuerpo">{r.nombre}</span></Link>)}
+      </nav>
+    </div>
   );
 }
-function Acciones({ compartir, href, donde }: { compartir: ReactNode; href: string; donde: string }) {
+
+/** Compartir de un capítulo: la hoja con imagen (si hay `vista`), link y texto; la imagen abre el panel de siempre. */
+function Compartir({ href, titulo, texto, vista }: { href: string; titulo: string; texto?: string; vista?: () => VistaCompartir | null }) {
+  const [abierto, setAbierto] = useState<VistaCompartir | null>(null);
+  return (
+    <>
+      <CompartirHoja href={href} titulo={titulo} texto={texto} onImagen={vista ? () => { const v = vista(); if (v) setAbierto(v); } : undefined} />
+      {abierto && createPortal(<PanelCompartir vista={abierto} href={absoluto(href)} titulo={titulo} onCerrar={() => setAbierto(null)} />, document.body)}
+    </>
+  );
+}
+function Acciones({ compartir, href, donde }: { compartir: ReactNode; href?: string; donde: string }) {
   return (
     <>
       {compartir}
-      <Link prefetch={false} className="btn" href={href} aria-label={`Abrir completo en ${donde}`}>Abrir completo<IconoIr /></Link>
+      {href && <Link prefetch={false} className="btn fi-abrir" href={href} aria-label={`Abrir completo en ${donde}`}>Abrir completo<IconoIr /></Link>}
     </>
   );
 }
 
-// ------------------------------------------------------------ 1. Histórico: el dato, su contexto y el gráfico de la serie
-function BloqueHistorico({ m, e, version, H }: { m: Motor; e: Expr; version: number; H: Titulo }) {
+// ------------------------------------------------------------ ¿Cómo viene? El gráfico de la serie, con su período
+function CapViene({ m, e, version, nivel, p, set, nombre, cab, fuente }: {
+  m: Motor; e: Expr; version: number; nivel: Nivel; p: URLSearchParams; set: SetFn; nombre: string; cab: CabeceraFicha | null; fuente: string;
+}) {
   const { config } = useConfig();
   const kE = `${e.id}~${e.med}~${e.rel}~${e.modo}~${e.esc}`;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const opciones = useMemo(() => periodosFicha(m, m.calc(e), config.desde), [m, version, kE, config.desde]);
+  const per = unoDe(p.get("fper"), opciones.map((o) => o[0]), "" as PeriodoFicha);
   const D = useMemo(() => {
     const c = m.calc(e);
-    const { E, rows } = historicoFicha(m, c, config.desde);
+    const { E, rows } = historicoFicha(m, c, config.desde, per);
     const fmt = (v: number) => m.fmtC(c, v);
     const series: SerieG[] = [{ key: "s0", name: c.corto, color: PALETA[0], fmt }];
     const opts: OpcionesG = { fmtAxis: fmtEjeDe(c), fmtTip: fmt, tipTitle: etiqueta, label: c.corto,
       marcas: [{ key: "s0", color: PALETA[0], fmt, tipos: new Set(["ult", "max", "min"]) }] };
     const temporal = textoTemporalidad({ freq: "M", ag: "promedio", meses: E.meses, suma: !!c.flujo, origen: frecuenciaOrigen(c.v) });
-    const inf = notaInflacion([c], false);
-    const nota = `${c.unidad}.${inf ? " " + inf : ""} Fuente: ${c.serie.fuente}.`;
-    return { c, E, rows, series, opts, temporal, nota, ctx: contextoDato(m, e) };
+    return { c, E, rows, series, opts, temporal };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [m, version, kE, config.desde]);
+  }, [m, version, kE, config.desde, per]);
   const franjas = useMemo(() => (config.franjas ? franjasPres(m.F, baseDeConfig(config, PRES_DEF.map((x) => x.id))) : undefined),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [config.franjas, m, config.t0, JSON.stringify(config.t0p)]);
   const opts = useMemo(() => (franjas ? { ...D.opts, franjas } : D.opts), [D.opts, franjas]);
-  const { c, E, ctx } = D;
-  const href = hrefHistorico(e);
+  const { c, E } = D;
+  const href = hrefHistorico(e, per ? { d: E.desde, h: E.hasta } : {});
+  const texto = cab ? `${nombre}: ${cab.cifra} en ${cab.fecha}. Fuente: ${fuente}.` : undefined;
   return (
-    <Bloque H={H} titulo="Histórico" acciones={
+    <Capitulo id="fi-viene" nivel={nivel} titulo="¿Cómo viene?" acciones={
       <Acciones donde="Histórico" href={href} compartir={
-        <BotonCompartir className="btn" titulo={c.nombre} href={linkCompartir(e, href)} title="Armar una imagen de este gráfico para compartir" aria-label="Compartir como imagen: histórico"
-          crearVista={() => ({ exprs: [e], modo: "valor", eje: "propia", desde: E.desde, hasta: E.hasta, meses: E.meses, freq: "M", ag: "promedio" })}><IconoCompartir />Compartir</BotonCompartir>} />}>
-      {ctx && (
-        <div className="vs-cab ficha-cifra">
-          <p className="vs-cifra"><span className="v">{ctx.valor}</span><span className="mes">{ctx.mes}{ctx.ultimoDisponible ? " · Último dato disponible" : ""}</span></p>
-          {ctx.frases.map((f) => <p key={f.texto} className={`vs-frase${f.cls ? " var-" + f.cls : ""}`}>{f.texto}</p>)}
-        </div>
-      )}
-      <p className="temporal">{D.temporal}</p>
-      <div className="card card-simple">
-        <Grafico rows={D.rows} series={D.series} opts={opts} />
-        <p className="note">{D.nota}</p>
-      </div>
-    </Bloque>
+        <Compartir titulo={nombre} href={linkCompartir(e, href, per ? { fper: per } : {})} texto={texto}
+          vista={() => ({ exprs: [e], modo: "valor", eje: "propia", desde: E.desde, hasta: E.hasta, meses: E.meses, freq: "M", ag: "promedio" })} />} />}>
+      {opciones.length > 1 && <FilaChips etiqueta="Período" opciones={opciones} valor={per} onElegir={(v) => set({ fper: v || null })} />}
+      <div className="fi-grafico"><Grafico rows={D.rows} series={D.series} opts={opts} /></div>
+      <p className="fi-nota">{D.temporal.replace(/\.?$/, ".")} Unidad: {c.unidad}.</p>
+    </Capitulo>
   );
 }
 
-// ------------------------------------------------------------ 2. Por presidente: Inicio, Cierre y Variación de cada mandato, en tabla o en velas
-function BloquePresidentes({ m, e, info, H, pd, inicio, velas: enVelas, onVista }: {
-  m: Motor; e: Expr; info: InicioMandato; H: Titulo; pd: string | null; inicio: Record<string, string>; velas: boolean; onVista: (velas: boolean) => void;
+// ------------------------------------------------------------ ¿Cómo fue <mes> en otros años?
+function CapMeses({ m, e, version, nivel, nombre }: { m: Motor; e: Expr; version: number; nivel: Nivel; nombre: string }) {
+  const kE = `${e.id}~${e.med}~${e.rel}~${e.modo}~${e.esc}`;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const mi = useMemo(() => mesesIguales(m, e), [m, version, kE]);
+  if (!mi) return null;
+  return (
+    <Capitulo id="fi-meses" nivel={nivel} titulo={`¿Cómo fue ${mi.mes} en otros años?`}
+      acciones={<Compartir titulo={`${nombre}: ${mi.mes} de cada año`} href={linkCompartir(e, hrefDato(e))} texto={`${nombre}. ${mi.frase}`} />}>
+      <BarrasMes filas={mi.filas} etiqueta={`${nombre}: ${mi.mes} de cada año, de ${mi.filas[0].anio} a ${mi.filas[mi.filas.length - 1].anio}`} />
+      <p className="fi-frase">{mi.frase}</p>
+    </Capitulo>
+  );
+}
+
+// ------------------------------------------------------------ ¿Cómo le fue con cada presidente? Tabla o velas
+function CapPresidentes({ m, e, info, nivel, pd, inicio, velas: enVelas, onVista, nombre }: {
+  m: Motor; e: Expr; info: InicioMandato; nivel: Nivel; pd: string | null; inicio: Record<string, string>; velas: boolean; onVista: (velas: boolean) => void; nombre: string;
 }) {
   const F = m.F, c = m.calc(e);
-  const todas = crearPres(F).map((x) => ({ x, st: statsMandato(F, c.v, x, info.b) }));
-  const filas = todas.filter((f) => f.st.n > 0);
-  if (!filas.length) {
-    return <Bloque H={H} titulo="Por presidente"><p className="note">Este dato no tiene valores en ningún mandato desde 1989.</p></Bloque>;
+  const T = filasMandatosFicha(m, e, info.b);
+  const titulo = "¿Cómo le fue con cada presidente?";
+  if (!T.filas.length) {
+    return <Capitulo id="fi-pres" nivel={nivel} titulo={titulo}><p className="note">Este dato no tiene valores en ningún mandato desde 1989.</p></Capitulo>;
   }
+  const todas = crearPres(F).map((x) => ({ x, st: statsMandato(F, c.v, x, info.b) }));
   const niv = nivelComparable(m, e);
   const { velas, sin } = velasDe(m, c, todas);   // como Por presidente: los que no tienen datos se listan al pie de las velas
   const sinVelas = enVelas && (!niv || velas.length === 0);
   const href = hrefPresidentesDe(e, enVelas, inicio);
-  const destacado = filas.find((f) => f.x.id === pd)?.x;
+  const ids = T.filas.map((f) => f.id);
+  const bajada = T.tasa ? "Inicio y cierre de cada mandato y el promedio de todos sus meses." : "Del inicio al cierre de cada mandato.";
   return (
-    <Bloque H={H} titulo="Por presidente"
-      extra={<Seg valor={enVelas ? "velas" : "tabla"} opciones={[["tabla", "Tabla"], ["velas", "Velas"]]} onElegir={(v) => onVista(v === "velas")} />}
-      acciones={<Acciones donde="Por presidente" href={href} compartir={
-        <BotonCompartir className="btn" titulo={`Primero los Datos: ${c.corto} por presidente${enVelas ? " (velas)" : ""}`} href={linkCompartir(e, href, { ...inicio, ...(enVelas ? { pvista: "velas" } : {}), ...(pd ? { pd } : {}) })} deshabilitado={sinVelas}
-          title={sinVelas ? "Las velas no se pueden armar con estos datos: no hay nada para compartir" : enVelas ? "Armar una imagen de estas velas para compartir" : "Armar una imagen de esta tabla para compartir"}
-          aria-label={`Compartir como imagen: por presidente, en ${enVelas ? "velas" : "tabla"}`}
-          crearVista={() => ({ tipo: enVelas ? "velas" : "barras", expr: e, presIds: filas.map((f) => f.x.id), base: info.b })}><IconoCompartir />Compartir</BotonCompartir>} />}>
+    <Capitulo id="fi-pres" nivel={nivel} titulo={titulo} bajada={bajada} acciones={
+      <Acciones donde="Por presidente" href={href} compartir={
+        <Compartir titulo={`${c.corto} por presidente${enVelas ? " (velas)" : ""}`}
+          href={linkCompartir(e, href, { ...inicio, ...(enVelas ? { pvista: "velas" } : {}), ...(pd ? { pd } : {}) })}
+          vista={sinVelas ? undefined : () => (enVelas
+            ? { tipo: "velas", expr: e, presIds: ids, base: info.b }
+            : { tipo: "barras", expr: e, presIds: ids, base: info.b, ...(T.tasa ? { metrica: "prom" as const } : {}) })} />} />}>
       <LineaInicio info={info} F={F} />
-      {destacado && <p className="note">Resaltado: {destacado.n}.</p>}
-      {!enVelas ? (
-        <div className="tablewrap fija"><table>
-          <thead><tr><th>Presidente</th>{COLS_PRES.map(([k, n]) => <th key={k}>{n}</th>)}</tr></thead>
-          <tbody>{filas.map(({ x, st }) => (
-            <tr key={x.id}>
-              <CeldaPres n={x.n} corto={x.corto} periodo={periodoMandato(F, x)} aparte={datosDesde(F, c.v, x)} sel={x.id === pd} />
-              <CeldasStats m={m} c={c} st={st} cols={COLS_PRES} />
-            </tr>
-          ))}</tbody>
-        </table></div>
-      ) : !niv ? (
-        <p className="note">En montos corrientes los valores de épocas distintas no se pueden poner en una misma escala (hay inflación de por medio). Elegí una medida real o un índice en &quot;Abrir completo&quot;, o mirá la vista Tabla, que compara las variaciones.</p>
-      ) : velas.length ? (
-        <Velas velas={velas} sinDatos={sin} unidad={c.unidad} minEscala={m.fmtC(c, Math.min(...velas.map((v) => v.min)))} maxEscala={m.fmtC(c, Math.max(...velas.map((v) => v.max)))} />
-      ) : <p className="note">Ningún presidente tiene datos completos de esta variable.</p>}
-      <p className="note">Unidad: {c.unidad}.{!enVelas ? " Variación: del inicio al cierre de cada mandato; verde = mejoró y rojo = empeoró, con el signo escrito." : ""}</p>
-    </Bloque>
+      <FilaChips etiqueta="Vista" opciones={[["tabla", "Tabla"], ["velas", "Velas"]]} valor={enVelas ? "velas" : "tabla"} onElegir={(v) => onVista(v === "velas")} />
+      <div className="fi-pres-cuerpo">
+        {!enVelas ? (
+          <TablaMandatos etiqueta={`${nombre} por presidente`} filas={T.filas} columnas={T.columnas} visibles={T.visibles} extras={T.extras} resaltar={pd ?? undefined} />
+        ) : !niv ? (
+          <p className="note">En montos corrientes los valores de épocas distintas no se pueden poner en una misma escala (hay inflación de por medio). Elegí una medida real o un índice en &quot;Abrir completo&quot;, o mirá la vista Tabla, que compara las variaciones.</p>
+        ) : velas.length ? (
+          <Velas velas={velas} sinDatos={sin} unidad={c.unidad} minEscala={m.fmtC(c, Math.min(...velas.map((v) => v.min)))} maxEscala={m.fmtC(c, Math.max(...velas.map((v) => v.max)))} />
+        ) : <p className="note">Ningún presidente tiene datos completos de esta variable.</p>}
+      </div>
+      <p className="fi-nota">Unidad: {c.unidad}.</p>
+    </Capitulo>
   );
 }
 
-// ------------------------------------------------------------ 3. Meses de mandato: cada presidente desde su mes 0, con los valores por defecto de esa sección
-function BloqueMandato({ m, e, info, H, pd, inicio, version }: { m: Motor; e: Expr; info: InicioMandato; H: Titulo; pd: string | null; inicio: Record<string, string>; version: number }) {
-  const b = info.b;
-  const PRES = useMemo(() => crearPres(m.F), [m]);
-  const kE = `${e.id}~${e.med}~${e.rel}~${e.modo}~${e.esc}`;
-  const D = useMemo(() => {
-    const PRES_T0 = PRES.filter((x) => m.idxDe(x.ini) > 0);
-    const r = mandatoFicha(m, PRES, PRES_T0, e, b, pd);
-    if (!r) return null;
-    const series: SerieG[] = r.pres.map((x) => ({ key: x.id, name: x.n, short: nombreCorto(x.n), color: x.color, dash: x.dash }));
+// ------------------------------------------------------------ Mes a mes, desde que asumió (Meses de mandato con sus valores por defecto)
+type DatosMandato = NonNullable<ReturnType<typeof mandatoFicha>>;
+function CapMandato({ m, e, D, nivel, pd, inicio, b }: { m: Motor; e: Expr; D: DatosMandato | null; nivel: Nivel; pd: string | null; inicio: Record<string, string>; b: InicioMandato["b"] }) {
+  const G = useMemo(() => {
+    if (!D) return null;
+    const series: SerieG[] = D.pres.map((x) => ({ key: x.id, name: x.n, short: nombreCorto(x.n), color: x.color, dash: x.dash }));
     const opts: OpcionesG = {
-      xVals: r.rows.map((f) => f.t as number), endLabels: true, log: r.usarLog, refLine: r.ref, fmtAxis: r.fmtAxis, fmtTip: r.fmtTip, fmtAxis2: null, label: r.c.corto,
-      xLabel: (f: Fila) => (f.t % r.paso === 0 ? (f.t === 0 ? "Mes 0" : String(f.t)) : ""),
+      xVals: D.rows.map((f) => f.t as number), endLabels: true, log: D.usarLog, refLine: D.ref, fmtAxis: D.fmtAxis, fmtTip: D.fmtTip, fmtAxis2: null, label: D.c.corto,
+      xLabel: (f: Fila) => (f.t % D.paso === 0 ? (f.t === 0 ? "Mes 0" : String(f.t)) : ""),
       tipTitle: (f: Fila) => `Mes ${f.t}`,
       tipSub: (f: Fila, se: SerieG) => (f["_f_" + se.key] ? ` <small style="color:var(--text-muted)">${fmtMes(f["_f_" + se.key])}</small>` : ""),
     };
-    return { ...r, series, opts };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [m, version, kE, b, pd, PRES]);
-  if (!D) {
+    return { series, opts };
+  }, [D]);
+  const titulo = "Mes a mes, desde que asumió";
+  if (!D || !G) {
     const c = m.calc(e);
-    return <Bloque H={H} titulo="Meses de mandato"><p className="note">{sinMandatoTxt(m, c, frecuenciaOrigen(c.v))}</p></Bloque>;
+    return <Capitulo id="fi-mandato" nivel={nivel} titulo={titulo}><p className="note">{sinMandatoTxt(m, c, frecuenciaOrigen(c.v))}</p></Capitulo>;
   }
   const href = hrefMandatoDe(e, { mp: D.mp, anc: D.ancParam }, inicio);
+  const bajada = D.modo === "teorico"
+    ? `Si todos arrancaran en el mismo punto: cada presidente parte del valor del mes 0 de Milei y sigue con sus propias variaciones. Unidad: ${D.c.unidad}.`
+    : "El valor de cada mes, contado desde el mes 0 de cada presidente.";
   return (
-    <Bloque H={H} titulo="Meses de mandato" acciones={
+    <Capitulo id="fi-mandato" nivel={nivel} titulo={titulo} bajada={bajada} acciones={
       <Acciones donde="Meses de mandato" href={href} compartir={
-        <BotonCompartir className="btn" titulo={`Primero los Datos: ${D.c.corto} por mes de mandato`} href={linkCompartir(e, href, { ...inicio, ...(pd ? { pd } : {}) })}
-          title="Armar una imagen de este gráfico para compartir" aria-label="Compartir como imagen: meses de mandato"
-          crearVista={() => ({ tipo: "mandato", expr: e, modo: D.modo, presIds: D.pres.map((x) => x.id), anc: D.ancParam, md: null, mh: null, base: b })}><IconoCompartir />Compartir</BotonCompartir>} />}>
-      <p className="note">Cada línea arranca en el mes 0 de un presidente ({TITULOS_MANDATO[D.modo]}).</p>
-      <div className="card card-simple">
-        <div className="legend">{D.pres.map((x) => <span key={x.id} style={vcolor(x.color)}>{x.n}</span>)}</div>
-        <Grafico rows={D.rows} series={D.series} opts={D.opts} />
-        <details className="contexto-plegado">
-          <summary>Cómo se calcula</summary>
-          <p className="note">{D.nota}</p>
-        </details>
-      </div>
-    </Bloque>
+        <Compartir titulo={`${D.c.corto} por mes de mandato`} href={linkCompartir(e, href, { ...inicio, ...(pd ? { pd } : {}) })}
+          vista={() => ({ tipo: "mandato", expr: e, modo: D.modo, presIds: D.pres.map((x) => x.id), anc: D.ancParam, md: null, mh: null, base: b })} />} />}>
+      <div className="legend">{D.pres.map((x) => <span key={x.id} style={vcolor(x.color)}>{x.n}</span>)}</div>
+      <div className="fi-grafico"><Grafico rows={D.rows} series={G.series} opts={G.opts} /></div>
+      {D.modo !== "teorico" && <p className="fi-nota">Unidad: {D.c.unidad}.</p>}
+    </Capitulo>
+  );
+}
+
+// ------------------------------------------------------------ Gráficos listos que usan esta serie
+const MAX_LAMINAS = 6;
+function CapLaminas({ m, e, metas, nivel, nombre }: { m: Motor; e: Expr; metas: SerieMeta[]; nivel: Nivel; nombre: string }) {
+  const kE = `${e.id}~${e.med}~${e.rel}~${e.modo}~${e.esc}`;
+  const todas = useMemo(() => crearPlantillas(metas), [metas]);
+  // Las curadas que usan la serie, sin la que muestra exactamente esta misma variable sola (sería la ficha otra vez)
+  const pls = useMemo(() => todas.filter((x) => x.curada && !x.propia && x.ids.includes(e.id) && !(x.e && mismaVariable(x.e, e) && x.ids.length === idsDe(e).length)).slice(0, MAX_LAMINAS),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [todas, kE]);
+  const ids = useMemo(() => [...new Set(pls.flatMap((x) => x.ids))], [pls]);
+  const sec = useSeccion(ids);
+  const evs = useMemo(() => (sec.ocupado ? [] : pls.map((x) => ({ x, ev: evaluar(m, x) })).filter((y) => y.ev)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pls, sec.ocupado, sec.version, m]);
+  if (!evs.length) return null;
+  return (
+    <Capitulo id="fi-laminas" nivel={nivel} titulo="Gráficos listos">
+      <Laminas etiqueta={`Gráficos listos con ${nombre}`}>
+        {evs.map(({ x, ev }) => <Lamina key={x.id} titulo={x.titulo} cifra={ev!.val} fecha={ev!.fecha} v={ev!.v} desde={m.idxDe("2003-01")} tono={ev!.cls} href={hrefPlantilla(x, ev!.vista)} />)}
+      </Laminas>
+      <p className="fi-mas"><Link prefetch={false} className="enlace" href={`/plantillas/?${new URLSearchParams({ q: nombre }).toString()}`}>Ver todos los gráficos listos</Link></p>
+    </Capitulo>
   );
 }

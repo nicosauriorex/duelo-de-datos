@@ -1,7 +1,7 @@
 "use client";
-// Ruta /dato/?v=<variable>: el nombre público de la variable y su ficha (Histórico, Por presidente y Meses de mandato).
+// Ruta /dato/?v=<variable>: la ficha de la variable, contada en capítulos (ver docs/specs/remodelacion-fichas.md).
 // Es el link para compartir un dato y adonde lleva "Ver" en "Preguntale a los datos". Parámetros: `v` (variable, como en Histórico),
-// `pd` (presidente que se resalta), `pvista` (Tabla o Velas, como en Por presidente) y el inicio de mandato (`t0`, `t0p`).
+// `pd` (presidente que se resalta), `pvista` (Tabla o Velas, como en Por presidente), `fper` (período del gráfico) y el inicio de mandato (`t0`, `t0p`).
 // En las páginas fijas (/dato/<slug>/, ver lib/datos-fijos.ts) la variable viene en `fija` y `v` no se lee; los demás parámetros, igual.
 import { useMemo } from "react";
 import type { Expr } from "@/lib/motor";
@@ -11,7 +11,6 @@ import { FichaDato } from "../FichaDato";
 import { useBase } from "./comunes";
 import { PRES_DEF } from "@/lib/estadisticas";
 import { EXPR_DEFECTO } from "@/lib/ficha";
-import { tituloVariable } from "@/lib/imagen-datos";
 import { decExpr, unoDe, useParams } from "@/lib/url";
 
 export function Dato({ fija }: { fija?: Expr } = {}) {
@@ -29,11 +28,9 @@ export function Dato({ fija }: { fija?: Expr } = {}) {
 
   if (errorGeneral) return <p className="error" role="alert">{errorGeneral}</p>;
   if (!e || !m) return <Cargando />;
-  // Nombre público con la medida ("Inflación (variación mensual)"); mientras llegan los datos de la serie, el nombre solo.
-  const titulo = m.SER[e.id] && (!e.rel || m.SER[e.rel]) ? tituloVariable(m, e, m.calc(e)) : metas.find((s) => s.id === e.id)?.n ?? "";
+  // El h1 es el título de la ficha (CabeceraDato): el nombre público con la medida ("Inflación (variación mensual)").
   return (
     <section>
-      <h1 className="titulo-tema">{titulo}</h1>
       <FichaDato e={e} info={info} p={p} set={set} pd={pd} nivel={2} />
     </section>
   );

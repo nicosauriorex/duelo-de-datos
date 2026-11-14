@@ -16,9 +16,9 @@ import { decExpr, enteroEn, encExpr, lista, unoDe, useParams } from "@/lib/url";
 import { vcolor } from "../util";
 
 // "indice" ya no se ofrece (es la misma curva que la variación): los links viejos con ese modo abren en Variación %
-const MODOS: [string, string][] = [["teorico", "Precio teórico"], ["var", "Variación %"], ["valor", "Valor del período"]];
+const MODOS: [string, string][] = [["teorico", "Mismo punto de partida"], ["var", "Variación %"], ["valor", "Valor del período"]];
 const AYUDA: Record<string, string> = {
-  teorico: "La misma curva que la variación, expresada en un precio de partida.",
+  teorico: "La misma curva que la variación, partiendo de un mismo valor.",
   var: "Cuánto subió desde el mes 0.",
   valor: "El dato tal cual, sin transformar.",
 };
@@ -61,6 +61,7 @@ export function Mandato() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [m, version, sec.ocupado, eB.id, eB.med, eB.rel, eB.modo, eB.esc, modo, banda, b, p, PRES_T0]);
 
+  const modoEf: ModoMandato = D ? D.modo : modo;   // con una tasa, "mismo punto de partida" se muestra como valor del período
   const maxAnim = D ? D.rows.length - 1 : 0;
   const ms = Math.round(Math.max(6000 / Math.max(1, maxAnim), Math.min(150, 12000 / Math.max(1, maxAnim))));
   const play = !!anim?.play;
@@ -97,14 +98,15 @@ export function Mandato() {
         </VentanaConfig>
         <VentanaConfig etiqueta="Cómo mostrar" titulo="Cómo mostrar">
           <div className="modos" role="radiogroup" aria-label="Cómo mostrar">
-            {MODOS.map(([k, t]) => (
+            {MODOS.filter(([k]) => !(D?.c.pct && k === "teorico")).map(([k, t]) => (
               <div key={k} className="modo">
-                <label className="radio"><input type="radio" name="mmo" checked={modo === k} onChange={() => set({ mmo: k === "teorico" ? null : k })} /> {t}</label>
+                <label className="radio"><input type="radio" name="mmo" checked={modoEf === k} onChange={() => set({ mmo: k === "teorico" ? null : k })} /> {t}</label>
                 <p className="note">{AYUDA[k]}</p>
-                {k === "teorico" && modo === "teorico" && D && (
+                {k === "teorico" && modoEf === "teorico" && D && (
                   <div className="sangria"><label>Partiendo de</label>
                     <Selector etiqueta="Partiendo de" valor={D.anc} opciones={D.ancOpc.map((o) => [o[0], o[1]] as [string, string])} onElegir={(v) => set({ anc: v === "milei" ? null : v })} /></div>
                 )}
+                {k === "teorico" && modoEf === "teorico" && D && <p className="note">{`Ejemplo: si con Milei el dato arrancó en 1.000 (${D.c.unidad}) y en el mes 20 de CFK 2 había subido 50 %, CFK 2 marca 1.500 en el mes 20.`}</p>}
               </div>
             ))}
           </div>
@@ -117,7 +119,7 @@ export function Mandato() {
       {!D ? (errs.length ? null : <Cargando />) : (
         <>
           <div className="card mand-grafico">
-            <h2>{D.c.corto}: {TITULOS[modo]} por mes de mandato</h2>
+            <h2>{D.c.corto}: {TITULOS[modoEf]} por mes de mandato</h2>
             <div className="anim-barra">
               {!anim ? <button type="button" className="btn" onClick={animar}>▶ Animar</button>
                 : anim.play ? <button type="button" className="btn" onClick={() => setAnim({ ...anim, play: false })}>⏸ Pausa</button>
@@ -126,7 +128,7 @@ export function Mandato() {
               {anim && <span className="lbl" role="status">Mes {D.rows[cuadro]?.t as number}</span>}
               <BotonCompartir className="btn" titulo={`Primero los Datos: ${D.c.corto} por mes de mandato`} href={() => window.location.href} deshabilitado={D.pres.length === 0}
                 title="Armar una imagen de este gráfico para compartir" aria-label="Compartir como imagen: meses de mandato"
-                crearVista={() => ({ tipo: "mandato", expr: eB, modo, presIds: D.pres.map((x) => x.id), anc: p.get("anc"), md: p.get("md"), mh: p.get("mh"), valorFinal, base: b })}><IconoCompartir />Compartir</BotonCompartir>
+                crearVista={() => ({ tipo: "mandato", expr: eB, modo: modoEf, presIds: D.pres.map((x) => x.id), anc: p.get("anc"), md: p.get("md"), mh: p.get("mh"), valorFinal, base: b })}><IconoCompartir />Compartir</BotonCompartir>
             </div>
             <div className="legend">{D.pres.map((x) => <span key={x.id} style={vcolor(x.color)}>{x.n}</span>)}</div>
             {/* tocar el gráfico pausa la animación */}
@@ -142,11 +144,10 @@ export function Mandato() {
             <details className="contexto-plegado">
               <summary>Cómo se calcula</summary>
               <p className="note">{D.nota}</p>
-              {modo === "teorico" && <p className="note">Si con Milei el dólar arrancó en $ 1.000 y en el mes 20 de CFK 2 había subido 50 %, CFK 2 marca $ 1.500 en el mes 20.</p>}
             </details>
           </div>
           <div className="card">
-            <h2>Resumen por hitos</h2><p className="note">Mismo cálculo que el gráfico ({TITULOS[modo]}) en meses clave y al final de cada mandato.</p>
+            <h2>Resumen por hitos</h2><p className="note">Mismo cálculo que el gráfico ({TITULOS[modoEf]}) en meses clave y al final de cada mandato.</p>
             <div className="tablewrap fija"><table>
               <thead><tr><th>Presidente</th><th>Mes 0</th>{HITOS.map((x) => <th key={x}>Mes {x}</th>)}<th>Final</th></tr></thead>
               <tbody>{D.pres.map((x) => {
