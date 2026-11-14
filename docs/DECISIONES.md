@@ -240,3 +240,12 @@ Una entrada por decisión de arquitectura. Formato: contexto, decisión, por qu�
 **Contexto**: la Cuenta de Inversión 2024 trae dos juegos de cifras que no cierran entre sí: lo que la Nación transfirió a cada universidad (3.285.292 millones; UBA 602.898, igual a Presupuesto Abierto) y lo que las universidades declaran como recursos y gastos (gastos 1.437.082; la UBA declara 240.745 de transferencias recibidas). No se encontró la explicación.
 **Decisión** (Claude, spec `gasto-nacion.md` fase 3): `/universidades/` muestra solo lo transferido (Presupuesto Abierto, 2018 en adelante) y, por estudiante, los datos del Portal de Información Universitaria de la AGN (provistos por el CIN, sin auditar) para 2023 y 2024. Los gastos declarados no se usan y la página explica por qué. Sobre la rendición de cuentas solo se citan documentos oficiales (art. 59 bis de la Ley 24.521, Cuenta de Inversión, informes de la AGN), sin afirmar quién rindió o no (D-012). Se revisa si aparece la explicación de la diferencia.
 
+
+## D-023 · Remodelación de UX/UI: "La Transmisión" llevada a todo el sitio — DECIDIDO (2026-11-13)
+**Contexto**: auditoría de diseño `docs/AUDITORIA-DISENO-2026-11-13.md` (Impeccable, 21/40): la identidad termina en la portada, todo va en cajas con borde, la configuración llega antes que la respuesta y hay dos visualizaciones que engañan con las tasas.
+**Decisión** (usuario, 2026-11-13):
+- Dirección "La Transmisión, página editorial": se conservan paleta, Archivo, corte, barra, placas, ley de colores y URLs; sin cajas por defecto, una respuesta por pantalla, una sola forma de mostrar una variación (`Delta`), ajustes a demanda (chips + hoja), movimiento solo en los datos.
+- En el celular, navegación con barra inferior (Inicio · Buscar · Histórico · Presidentes · Más); en la computadora sigue la barra de arriba.
+- Series que son tasas (inflación mensual y similares): en Meses de mandato se saca el "precio teórico" y se muestra el **valor real** de cada mes; la tabla Por presidente muestra inicio, cierre y promedio, sin la "variación" entre dos meses sueltos como dato principal. Las series en nivel conservan su cálculo con otro nombre y unidad en el eje.
+- Trabajo por etapas (sistema → inicio y buscador → fichas → histórico y presidentes → contexto → herramientas), con aprobación del usuario entre cada una.
+**Consecuencias**: los links viejos con `mmo=teorico` sobre una tasa tienen que abrir algo válido (el valor real), sin romper. Un componente común reemplaza las copias (lista de barras, paneles de imagen, tablas de mandatos).
