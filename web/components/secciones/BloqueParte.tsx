@@ -1,13 +1,16 @@
 "use client";
-// Bloque de la portada con las cifras principales del parte diario del Banco Central (docs/specs/parte-diario-bcra.md).
+// Zócalo de la portada con las cifras principales del parte diario del Banco Central (docs/specs/parte-diario-bcra.md, R7 de remodelacion-inicio-buscador.md).
 // Baja diario_bcra.json (~550 KB) recién cuando el bloque está por entrar en pantalla, para no demorar la portada.
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Entrada } from "../Movimiento";
 import { useDiario } from "../useDiario";
-import { variableDe, type ClaveDiario, type Parte } from "@/lib/diario";
+import { useDeslizable } from "../Movimiento";
+import { IconoDerecha } from "../Iconos";
+import { Delta } from "../sistema/Delta";
+import { variableDe, type ClaveDiario, type Parte, type ResumenVariable } from "@/lib/diario";
 
-const CIFRAS: ClaveDiario[] = ["minorista", "reservas", "compras"];
+const CIFRAS: ClaveDiario[] = ["minorista", "reservas", "compras", "base", "tamar"];
+const ROTULO = "En vivo · Banco Central";
 
 export function BloqueParte() {
   const ref = useRef<HTMLDivElement>(null);
@@ -21,30 +24,49 @@ export function BloqueParte() {
     return () => io.disconnect();
   }, []);
   const { parte, error } = useDiario(visible);
-  if (error) return null;   // sin el archivo, la portada no muestra un bloque vacío; la página /bcra/ explica el problema
+  if (error) return null;   // sin el archivo, la portada no muestra un zócalo vacío; la página /bcra/ explica el problema
   return (
-    <Entrada className="bloque ancho">
-      <h2 id="parte-banco-central">Parte del Banco Central</h2>
-      <p className="bajada-bloque">Los datos del día del Banco Central, cada uno con su fecha.</p>
-      <div ref={ref} className="parte-bloque-caja">{parte ? <Cifras parte={parte} /> : <p className="note" role="status">Cargando…</p>}</div>
-    </Entrada>
+    <div ref={ref} className="zocalo-sitio">
+      {parte ? <Zocalo parte={parte} /> : (
+        <div className="zocalo zocalo-espera">
+          <div className="ancho zocalo-in"><span className="zocalo-rotulo">{ROTULO}</span><p className="zocalo-nota" role="status">Cargando…</p></div>
+        </div>
+      )}
+    </div>
   );
 }
 
-function Cifras({ parte }: { parte: Parte }) {
+function Zocalo({ parte }: { parte: Parte }) {
+  const lista = useRef<HTMLUListElement>(null);
+  useDeslizable(lista, false, parte);
+  const vars = CIFRAS.map((c) => variableDe(parte, c)).filter((v): v is ResumenVariable => !!v);
   return (
-    <Link prefetch={false} href="/bcra/" className="parte-bloque" aria-label={`Abrir el parte del Banco Central del ${parte.fechaTxt}`}>
-      <span className="parte-bloque-fecha">Datos del {parte.fechaTxt}</span>
-      <ul className="parte-bloque-cifras">
-        {CIFRAS.map((c) => variableDe(parte, c)).filter((v) => !!v).map((v) => (
-          <li key={v!.clave}>
-            <span className="parte-bloque-n">{v!.corto}</span>
-            <b>{v!.valor}</b>
-            <small>{v!.atrasada ? `al ${v!.fechaTxt}` : v!.difAnterior ? `${v!.difAnterior} contra el día anterior` : ""}</small>
-          </li>
-        ))}
-      </ul>
-      <span className="parte-bloque-ir">Ver el parte completo</span>
+    <Link prefetch={false} href="/bcra/" className="zocalo" aria-label={`Abrir el parte del Banco Central del ${parte.fechaTxt}`}>
+      <div className="ancho zocalo-in">
+        <div className="zocalo-cab">
+          <span className="zocalo-rotulo">{ROTULO}</span>
+          <span className="zocalo-fecha">Datos del {parte.fechaTxt}</span>
+        </div>
+        <ul className="zocalo-cifras" ref={lista}>
+          {vars.map((v) => (
+            <li key={v.clave}>
+              <span className="zocalo-n">{v.corto}</span>
+              <b>{v.valor}</b>
+              <span className="zocalo-var">{v.atrasada ? <small>al {v.fechaTxt}</small> : <Variacion v={v} />}</span>
+            </li>
+          ))}
+        </ul>
+        <span className="zocalo-ir" aria-hidden="true"><IconoDerecha /></span>
+      </div>
     </Link>
   );
+}
+
+/** Cambio contra el día anterior. En compras (un flujo) no hay diferencia con el anterior: no se dice nada. */
+function Variacion({ v }: { v: ResumenVariable }) {
+  if (!v.difAnterior) return null;
+  const t = v.difAnterior;
+  if (!/^[+\-−]?\d/.test(t)) return <small>{t}</small>;   // por ejemplo "sin cambios"
+  const dir = t.startsWith("+") ? 1 : /^[-−]/.test(t) ? -1 : 0;
+  return <Delta texto={t} tono={v.clsAnterior} dir={dir} contra="vs día anterior" />;
 }

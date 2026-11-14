@@ -2,22 +2,24 @@
 // "Preguntale a los datos": oraciones con huecos y buscador libre.
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useDatos } from "../DatosProvider";
+import { useCargar, useDatos } from "../DatosProvider";
 import { useConfig } from "../ConfigProvider";
 import { Picker, conPunteroFino } from "../Variables";
 import { Modal, useAtras, useCapa } from "../ui";
 import { IconoIr } from "../Iconos";
-import { buscarSeries, palabrasBusqueda, textoBusqueda } from "@/lib/catalogo";
-import { medidaInicial } from "@/lib/config";
-import { medDefaultDe, type SerieMeta } from "@/lib/motor";
-import { rutaPublica } from "@/lib/nombres";
-import { filtrar, hrefPlantilla, type Plantilla } from "@/lib/plantillas";
+import { Sparkline } from "../Sparkline";
+import { FilaChips } from "../sistema/FilaChips";
+import { Delta } from "../sistema/Delta";
+import { IconoCerrar } from "../sistema/iconos";
+import { palabrasBusqueda, textoBusqueda } from "@/lib/catalogo";
+import { baseDeConfig } from "@/lib/config";
+import { type SerieMeta } from "@/lib/motor";
+import { PRES_DEF } from "@/lib/estadisticas";
 import {
   MEDIDAS_DOLAR, PRESIDENTES, SALARIOS, anios, contraer, hrefCompra, hrefDesde, hrefMedida, hrefPresidente, hrefSubio,
-  idsCompra, idsMontos, idsPrecios, rotulo, seccionesCompra, todosLosPrincipales, type Opcion,
+  idsCompra, idsMontos, idsPrecios, respuestaCompra, respuestaDesde, respuestaMedida, respuestaPresidente, respuestaSubio, rotulo,
+  seccionesCompra, todosLosPrincipales, type Opcion, type Respuesta,
 } from "@/lib/oraciones";
-import { TEMAS, hrefHistorico } from "@/lib/temas";
 
 /** Lista de opciones de un hueco. Va pegada a su botón (posición absoluta dentro del hueco): al deslizar la página se mueve con él y nunca queda flotando ni se va de la pantalla.
  *  Se abre hacia arriba si abajo no entra y se corre si se saldría por un costado. Flechas, Enter y Escape; el clic afuera la cierra. */
@@ -77,7 +79,7 @@ function ListaHueco({ etiqueta, valor, opciones, onElegir }: { etiqueta: string;
         <ul ref={lista} id={id} className={`hueco-menu${arriba ? " arriba" : ""}`} role="listbox" tabIndex={-1} aria-label={etiqueta} aria-activedescendant={`${id}-${activo}`}
           style={corrimiento ? { transform: `translateX(${corrimiento}px)` } : undefined} onKeyDown={tecla}>
           <li role="presentation" className="hueco-cerrar-fila">
-            <button type="button" className="hueco-cerrar" aria-label="Cerrar" tabIndex={-1} onClick={() => cerrar()}><span aria-hidden="true">×</span></button>
+            <button type="button" className="hueco-cerrar" aria-label="Cerrar" tabIndex={-1} onClick={() => cerrar()}><IconoCerrar /></button>
           </li>
           {opciones.map(([v, t], i) => (
             <li key={v} id={`${id}-${i}`} data-i={i} role="option" aria-selected={v === valor} className={i === activo ? "activo" : undefined}
@@ -151,20 +153,30 @@ function Hueco({ valor, opciones, onElegir, etiqueta, ids, S, compra }: {
   return <ListaHueco etiqueta={etiqueta} valor={valor} opciones={opciones ?? []} onElegir={onElegir} />;
 }
 
-/** Una pregunta y su "Ver" (adónde lleva cada una: ver los `href…` de `web/lib/oraciones.ts`). */
-function Oracion({ children, href }: { children: React.ReactNode; href: string }) {
-  const router = useRouter();
+type Clave = "compra" | "presidente" | "desde" | "dolares" | "subio";
+const PREGUNTAS: [Clave, string][] = [["compra", "Cuánto compra"], ["presidente", "Con cada presidente"], ["desde", "Desde un año"], ["dolares", "En dólares"], ["subio", "Qué subió más"]];
+const IDS_PRES = PRES_DEF.map((x) => x.id);
+
+/** La respuesta en el lugar: cifra grande, fecha, detalle, minigráfico y cambios. Mientras carga, "Calculando…" con el mismo alto. */
+function RespuestaVista({ r, listo, href }: { r: Respuesta | null; listo: boolean; href: string }) {
   return (
-    <li className="oracion">
-      <span className="texto-oracion">{children}</span>
-      <span className="acciones-oracion">
-        <button type="button" className="btn" onClick={() => router.push(href)}>Ver<IconoIr /></button>
-      </span>
-    </li>
+    <div className="preg-resp" aria-live="polite">
+      {!listo ? <p className="preg-espera">Calculando…</p> : !r ? <p className="preg-espera">No hay datos para esta combinación.</p> : (
+        <div className="preg-fundido" key={r.cifra + (r.fecha ?? "")}>
+          <p className="preg-cifra">{r.cifra}</p>
+          {(r.fecha || r.detalle) && <p className="preg-meta">{[r.fecha, r.detalle].filter(Boolean).join(" · ")}</p>}
+          {r.v && <div className="preg-mini"><Sparkline v={r.v} desde={r.desde ?? 0} /></div>}
+          {r.deltas && <div className="preg-deltas">{r.deltas.map((d, i) => <Delta key={i} {...d} />)}</div>}
+        </div>
+      )}
+      <Link prefetch={false} href={href} className="preg-ver">Ver completo<IconoIr /></Link>
+    </div>
   );
 }
 
 export function Oraciones({ S }: { S: Record<string, SerieMeta> }) {
+  const { motor, archivosDe, version, listo: catalogo } = useDatos();
+  const { config } = useConfig();
   const principales = useMemo(() => todosLosPrincipales(S), [S]);
   const clave = (i: number) => String(i);
   const opcPrincipales: Opcion[] = principales.map((p, i) => [clave(i), p.corto]);
@@ -174,76 +186,59 @@ export function Oraciones({ S }: { S: Record<string, SerieMeta> }) {
   const anioHoy = new Date().getFullYear();
   const lista = useMemo(() => anios(anioHoy), [anioHoy]);
 
+  const [elegida, setElegida] = useState<Clave>("compra");
   const [producto, setProducto] = useState("pp_gba_asado"), [salario, setSalario] = useState("sipa_med");
   const [ind2, setInd2] = useState(clave(Math.max(0, principales.findIndex((p) => p.id === "ipc_empalme" && p.med === "vm")))), [pres, setPres] = useState("milei");
   const [ind3, setInd3] = useState(clave(Math.max(0, principales.findIndex((p) => p.id === "sipa_med")))), [anio, setAnio] = useState("2017");
   const [monto, setMonto] = useState("sipa_med"), [med, setMed] = useState("usdr_blue");
   const [a, setA] = useState("ipc_gba_01_1_2_coicop"), [b, setB] = useState("ipc_gba_04_1_1_coicop");
-  if (!principales.length) return null;
   const p2 = principales[Number(ind2)] ?? principales[0], p3 = principales[Number(ind3)] ?? principales[0];
 
-  return (
-    <ul className="oraciones">
-      {S.sipa_med && (
-        <Oracion href={hrefCompra(producto, salario)}>
-          ¿Cuánto <Hueco valor={producto} ids={compra} compra etiqueta="Producto" onElegir={setProducto} S={S} /> compra un{" "}
-          <Hueco valor={salario} opciones={salarios} etiqueta="Salario" onElegir={setSalario} S={S} />?
-        </Oracion>
-      )}
-      <Oracion href={hrefPresidente(p2, pres)}>
-        ¿Cómo le fue <Hueco valor={ind2} opciones={opcPrincipalesA} etiqueta="Indicador" onElegir={setInd2} S={S} /> con{" "}
-        <Hueco valor={pres} opciones={PRESIDENTES} etiqueta="Presidente" onElegir={setPres} S={S} />?
-      </Oracion>
-      <Oracion href={hrefDesde(p3, anio)}>
-        ¿Cómo cambió <Hueco valor={ind3} opciones={opcPrincipales} etiqueta="Indicador" onElegir={setInd3} S={S} /> desde{" "}
-        <Hueco valor={anio} opciones={lista} etiqueta="Año" onElegir={setAnio} S={S} />?
-      </Oracion>
-      {S[monto] && (
-        <Oracion href={hrefMedida(monto, med)}>
-          ¿Cómo evolucionó <Hueco valor={monto} ids={montos} etiqueta="Monto" onElegir={setMonto} S={S} /> en{" "}
-          <Hueco valor={med} opciones={MEDIDAS_DOLAR} etiqueta="Medida" onElegir={setMed} S={S} />?
-        </Oracion>
-      )}
-      {S[a] && S[b] && (
-        <Oracion href={hrefSubio(a, b)}>
-          ¿Qué subió más: <Hueco valor={a} ids={precios} etiqueta="Primer precio" onElegir={setA} S={S} /> o{" "}
-          <Hueco valor={b} ids={precios} etiqueta="Segundo precio" onElegir={setB} S={S} />?
-        </Oracion>
-      )}
-    </ul>
-  );
-}
+  // Las preguntas que dependen de una serie ausente no aparecen como chip.
+  const disponibles = useMemo(() => PREGUNTAS.filter(([k]) =>
+    k === "compra" ? !!S.sipa_med : k === "dolares" ? !!S[monto] : k === "subio" ? !!(S[a] && S[b]) : true), [S, monto, a, b]);
+  const actual: Clave = disponibles.some(([k]) => k === elegida) ? elegida : (disponibles[0]?.[0] ?? "presidente");
 
-const MAX = 5;
-/** Caja Buscar: plantillas (título, descripción, etiquetas) y variables del catálogo. Enter (o el botón) abre la primera.
- *  Los resultados se abren encima del contenido: no lo mueven. Con `listo` en false se ve la caja, deshabilitada, mientras llegan los datos. */
-export function Buscar({ plantillas, S, listo = true }: { plantillas: Plantilla[]; S: Record<string, SerieMeta>; listo?: boolean }) {
-  const router = useRouter();
-  const { metas } = useDatos();
-  const { config } = useConfig();
-  const [q, setQ] = useState("");
-  const largo = q.trim().length > 2;   // hasta 2 caracteres no busca
-  const pls = useMemo(() => (largo ? filtrar(plantillas.filter((p) => !p.propia), q, S).slice(0, MAX) : []), [largo, plantillas, q, S]);
-  const vars = useMemo(() => (largo ? buscarSeries(metas, q, MAX) : []), [largo, metas, q]);
-  const hrefVar = (s: SerieMeta) => hrefHistorico({ id: s.id, med: medidaInicial(s.tipo, medDefaultDe(s), config), rel: null, modo: "compra", esc: "" });
-  const primero = pls[0] ? hrefPlantilla(pls[0]) : vars[0] ? hrefVar(vars[0]) : null;
+  const idsPregunta = useMemo(() => {
+    const x: (string | null | undefined)[] =
+      actual === "compra" ? [producto, salario] : actual === "presidente" ? [p2?.id, p2?.rel] : actual === "desde" ? [p3?.id, p3?.rel]
+        : actual === "dolares" ? [monto] : [a, b];
+    return x.filter(Boolean) as string[];
+  }, [actual, producto, salario, p2, p3, monto, a, b]);
+  const listo = useCargar(catalogo ? archivosDe(idsPregunta) : []) && catalogo;
+  const base = useMemo(() => baseDeConfig(config, IDS_PRES), [config]);
+  const respuesta = useMemo<Respuesta | null>(() => {
+    if (!motor || !listo) return null;
+    switch (actual) {
+      case "compra": return respuestaCompra(motor, producto, salario);
+      case "presidente": return p2 ? respuestaPresidente(motor, p2, pres, base) : null;
+      case "desde": return p3 ? respuestaDesde(motor, p3, anio) : null;
+      case "dolares": return respuestaMedida(motor, monto, med);
+      default: return respuestaSubio(motor, a, b, S);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [motor, listo, version, actual, producto, salario, p2, p3, pres, anio, monto, med, a, b, base, S]);
+  if (!principales.length) return null;
+
+  const href = actual === "compra" ? hrefCompra(producto, salario) : actual === "presidente" ? hrefPresidente(p2, pres) : actual === "desde" ? hrefDesde(p3, anio)
+    : actual === "dolares" ? hrefMedida(monto, med) : hrefSubio(a, b);
+
   return (
-    <div className="buscar-guiado">
-      <form role="search" onSubmit={(ev) => { ev.preventDefault(); if (primero) router.push(primero); }}>
-        <input type="search" value={q} disabled={!listo} aria-label="Buscar un dato" placeholder="Buscá: alquiler, dólar blue, carne…" onChange={(ev) => setQ(ev.target.value)} />
-        <button type="submit" className="btn primario" disabled={!listo} aria-label="Abrir el primer resultado"><IconoIr /></button>
-      </form>
-      {largo && (pls.length || vars.length ? (
-        <div className="resultados-busqueda" role="status">
-          {pls.length > 0 && <><h3>Gráficos listos</h3><ul>{pls.map((p) => <li key={p.id}><Link prefetch={false} href={hrefPlantilla(p)}>{p.titulo}</Link><small>{p.grupo}</small></li>)}</ul></>}
-          {vars.length > 0 && <><h3>Variables</h3><ul>{vars.map((s) => <li key={s.id}><Link prefetch={false} href={hrefVar(s)}>{s.n}</Link><small>{rutaPublica(s.cat).join(" › ")}</small></li>)}</ul></>}
-        </div>
-      ) : (
-        <div className="resultados-busqueda" role="status">
-          <p className="sin-resultados">No encontramos &quot;{q.trim()}&quot;. Probá con otra palabra o elegí un tema:</p>
-          <ul>{TEMAS.map((t) => <li key={t.slug}><Link prefetch={false} href={`/tema/${t.slug}/`}>{t.nombre}</Link></li>)}</ul>
-        </div>
-      ))}
+    <div className="preg">
+      <FilaChips opciones={disponibles} valor={actual} onElegir={(v) => setElegida(v as Clave)} etiqueta="Preguntas" />
+      <p className="preg-oracion">
+        {actual === "compra" && <>¿Cuánto <Hueco valor={producto} ids={compra} compra etiqueta="Producto" onElegir={setProducto} S={S} /> compra un{" "}
+          <Hueco valor={salario} opciones={salarios} etiqueta="Salario" onElegir={setSalario} S={S} />?</>}
+        {actual === "presidente" && <>¿Cómo le fue <Hueco valor={ind2} opciones={opcPrincipalesA} etiqueta="Indicador" onElegir={setInd2} S={S} /> con{" "}
+          <Hueco valor={pres} opciones={PRESIDENTES} etiqueta="Presidente" onElegir={setPres} S={S} />?</>}
+        {actual === "desde" && <>¿Cómo cambió <Hueco valor={ind3} opciones={opcPrincipales} etiqueta="Indicador" onElegir={setInd3} S={S} /> desde{" "}
+          <Hueco valor={anio} opciones={lista} etiqueta="Año" onElegir={setAnio} S={S} />?</>}
+        {actual === "dolares" && <>¿Cómo evolucionó <Hueco valor={monto} ids={montos} etiqueta="Monto" onElegir={setMonto} S={S} /> en{" "}
+          <Hueco valor={med} opciones={MEDIDAS_DOLAR} etiqueta="Medida" onElegir={setMed} S={S} />?</>}
+        {actual === "subio" && <>¿Qué subió más: <Hueco valor={a} ids={precios} etiqueta="Primer precio" onElegir={setA} S={S} /> o{" "}
+          <Hueco valor={b} ids={precios} etiqueta="Segundo precio" onElegir={setB} S={S} />?</>}
+      </p>
+      <RespuestaVista r={respuesta} listo={listo} href={href} />
     </div>
   );
 }

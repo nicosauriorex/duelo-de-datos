@@ -1,6 +1,9 @@
 // "Preguntale a los datos": oraciones con huecos y los links que arman. Pura lógica, sin React.
-import { FX_KEYS, FX_NOM, type Expr, type SerieMeta } from "./motor";
-import { PRES_DEF } from "./estadisticas";
+import { FX_KEYS, FX_NOM, type Calculo, type Expr, type Motor, type SerieMeta, type Vals } from "./motor";
+import { PRES_DEF, claseVariacion, crearPres, statsMandato } from "./estadisticas";
+import type { BaseCfg } from "./config";
+import { fmtMes, lastIdx, nf0, nf1, ok, r1 } from "./formato";
+import type { DeltaProps } from "@/components/sistema/Delta";
 import { encExpr } from "./url";
 import { todosLosPrincipales, hrefDato, hrefHistorico, type Principal } from "./temas";
 
@@ -74,3 +77,118 @@ export const hrefSubio = (a: string, b: string) =>
   `/historico/?${new URLSearchParams({ v: [e(a, { med: "real" }), e(b, { med: "real" })].map(encExpr).join(","), m: "b100" }).toString()}`;
 
 export { todosLosPrincipales };
+
+// ---- las respuestas en el lugar (funciones puras sobre el Motor; las cuentas salen de los valores mostrados)
+/** Lo que se dibuja bajo una pregunta: cifra grande, fecha y detalle, minigráfico (desde `desde`) y cambios. */
+export interface Respuesta { cifra: string; fecha?: string; detalle?: string; v?: Vals; desde?: number; deltas?: DeltaProps[] }
+
+const signo = (d: number): 1 | -1 | 0 => (d > 0 ? 1 : d < 0 ? -1 : 0);
+/** Un cambio entre dos valores del mismo cálculo, con el texto del motor y el tono según la dirección de la variable. */
+function deltaDe(m: Motor, c: Calculo, antes: number, ahora: number, contra?: string): DeltaProps {
+  const txt = m.variacionTxt(c, antes, ahora);
+  const d = c.pct ? r1(ahora) - r1(antes) : Math.abs(antes ? (ahora / antes - 1) * 100 : 0) < 0.05 ? 0 : ahora - antes;
+  // El triángulo sigue al signo del texto que se muestra (con base negativa, el cociente invierte el signo de la resta)
+  const porTexto = /^\+/.test(txt) ? 1 : /^[−-]/.test(txt) ? -1 : null;
+  return { texto: txt, tono: claseVariacion(c.dir, c.pct, antes, ahora), dir: txt === "–" ? 0 : porTexto ?? signo(d), contra };
+}
+const ultimo = (c: Calculo): number => lastIdx(c.v);
+const sinCalcular = (m: Motor, e: Expr) => !m.SER[e.id] || (!!e.rel && !m.SER[e.rel]);
+
+/** ¿Cuánto [producto] compra un [salario]? El último valor de "producto medido en salarios". */
+export function respuestaCompra(m: Motor, producto: string, salario: string): Respuesta | null {
+  const ex = e(producto, { rel: salario, med: "corr" });
+  if (sinCalcular(m, ex)) return null;
+  try {
+    const c = m.calc(ex), u = ultimo(c);
+    if (u < 0) return null;
+    const ant = c.v[u - 12];
+    // Como el gráfico listo de la misma cuenta ("110 kg", lib/curiosidades.ts): entero desde 100 y con la unidad corta ("kg", "litros")
+    const x = c.v[u] as number, unidad = c.unidad.split(" ")[0];
+    const cifra = (Math.abs(x) >= 100 ? nf0 : nf1).format(x) + (unidad && unidad.length <= 8 && !/^\d/.test(unidad) ? " " + unidad : "");
+    return {
+      cifra, fecha: fmtMes(m.F[u]), detalle: c.unidad, v: c.v, desde: m.idxDe("2003-01"),
+      deltas: ok(ant) ? [deltaDe(m, c, ant, c.v[u] as number, "vs hace un año")] : undefined,
+    };
+  } catch { return null; }
+}
+
+/** ¿Cómo le fue a [indicador] con [presidente]? Inicio → cierre del mandato; si es una tasa, el promedio (no la variación entre dos meses, D-023). */
+export function respuestaPresidente(m: Motor, p: Principal, presidente: string, base: BaseCfg): Respuesta | null {
+  if (sinCalcular(m, p)) return null;
+  try {
+    const pr = crearPres(m.F).find((x) => x.id === presidente);
+    if (!pr) return null;
+    const c = m.calc(p), st = statsMandato(m.F, c.v, pr, base);
+    if (!ok(st.ini) || !ok(st.fin) || st.iniI == null || st.finI == null) return null;
+    const rango = `${fmtMes(m.F[st.iniI])} → ${fmtMes(m.F[st.finI])}`;
+    const cifra = `${m.fmtC(c, st.ini)} → ${m.fmtC(c, st.fin)}`;
+    if (c.pct) {
+      return { cifra, fecha: rango, detalle: `Promedio del mandato de ${pr.n}: ${m.fmtC(c, st.prom)}`, v: c.v, desde: pr.i0 };
+    }
+    return { cifra, fecha: rango, detalle: `Mandato de ${pr.n}`, v: c.v, desde: pr.i0, deltas: [deltaDe(m, c, st.ini, st.fin)] };
+  } catch { return null; }
+}
+
+/** ¿Cómo cambió [indicador] desde [año]? El primer valor desde enero de ese año → el último. */
+export function respuestaDesde(m: Motor, p: Principal, anio: string): Respuesta | null {
+  if (sinCalcular(m, p)) return null;
+  try {
+    const c = m.calc(p), u = ultimo(c), i0 = Math.max(0, m.idxDe(`${anio}-01`));
+    let j = i0;
+    while (j < u && !ok(c.v[j])) j++;
+    if (u < 0 || j >= u || !ok(c.v[j])) return null;
+    return {
+      cifra: `${m.fmtC(c, c.v[j])} → ${m.fmtC(c, c.v[u])}`, fecha: `${fmtMes(m.F[j])} → ${fmtMes(m.F[u])}`, detalle: c.unidad, v: c.v, desde: j,
+      deltas: [deltaDe(m, c, c.v[j] as number, c.v[u] as number)],
+    };
+  } catch { return null; }
+}
+
+/** ¿Cómo evolucionó [monto] en [medida]? El último valor en esa medida y su cambio contra hace un año. */
+export function respuestaMedida(m: Motor, monto: string, med: string): Respuesta | null {
+  const ex = e(monto, { med });
+  if (sinCalcular(m, ex)) return null;
+  try {
+    const c = m.calc(ex), u = ultimo(c);
+    if (u < 0) return null;
+    const ant = c.v[u - 12];
+    // Montos en pesos o dólares: entero desde 100 y con la moneda adelante ("US$ 1.205"); el resto, con el formato del motor
+    const x = c.v[u] as number, unidad = c.unidad.split(" ")[0];
+    const cifra = /^(US\$|\$)/.test(unidad) ? `${unidad} ${(Math.abs(x) >= 100 ? nf0 : nf1).format(x)}` : m.fmtC(c, x);
+    return {
+      cifra, fecha: fmtMes(m.F[u]), detalle: c.unidad, v: c.v, desde: m.idxDe("2003-01"),
+      deltas: ok(ant) ? [deltaDe(m, c, ant, c.v[u] as number, "vs hace un año")] : undefined,
+    };
+  } catch { return null; }
+}
+
+/** ¿Qué subió más: [a] o [b]? Variación real acumulada de cada uno desde el primer mes en que los dos tienen dato, hasta el último mes en que los dos tienen. */
+export function respuestaSubio(m: Motor, a: string, b: string, S: Record<string, SerieMeta>): Respuesta | null {
+  const ea = e(a, { med: "real" }), eb = e(b, { med: "real" });
+  if (sinCalcular(m, ea) || sinCalcular(m, eb)) return null;
+  try {
+    const ca = m.calc(ea), cb = m.calc(eb);
+    const n = Math.min(ca.v.length, cb.v.length);
+    let s = -1, u = -1;
+    for (let i = 0; i < n; i++) if (ok(ca.v[i]) && ok(cb.v[i])) { if (s < 0) s = i; u = i; }
+    if (s < 0 || u <= s) return null;
+    const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+    const na = rotulo(a, S), nb = rotulo(b, S);
+    // El % que se muestra (1 decimal) es el que se compara: si dan igual, se dice igual.
+    const pa = r1(((ca.v[u] as number) / (ca.v[s] as number) - 1) * 100), pb = r1(((cb.v[u] as number) / (cb.v[s] as number) - 1) * 100);
+    const txt = (x: number) => `${x > 0 ? "+" : x < 0 ? "−" : ""}${nf1.format(Math.abs(x))} %`;
+    const plural = (t: string) => /^(los|las)\s/.test(t);
+    // Si los dos bajaron en pesos de hoy, el que "ganó" bajó menos: decirlo así (palabras neutras, D-012)
+    const [ga, pe] = pa > pb ? [na, nb] : [nb, na], verbo = (t: string, uno: string, varios: string) => (plural(t) ? varios : uno);
+    const cifra = pa === pb ? `${cap(na)} y ${nb} ${pa < 0 ? "bajaron" : "subieron"} igual`
+      : Math.max(pa, pb) < 0 ? `${cap(ga)} ${verbo(ga, "bajó", "bajaron")} menos que ${pe}`
+      : `${cap(ga)} ${verbo(ga, "subió", "subieron")} más que ${pe}`;
+    return {
+      cifra, fecha: `${fmtMes(m.F[s])} → ${fmtMes(m.F[u])}`, detalle: "Variación en pesos de hoy, desde el primer mes con datos de los dos",
+      deltas: [
+        { texto: txt(pa), tono: "neutro", dir: signo(pa), contra: na },
+        { texto: txt(pb), tono: "neutro", dir: signo(pb), contra: nb },
+      ],
+    };
+  } catch { return null; }
+}

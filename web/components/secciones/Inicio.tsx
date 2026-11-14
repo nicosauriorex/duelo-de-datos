@@ -4,19 +4,23 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useCargar, useDatos } from "../DatosProvider";
 import { Sparkline } from "../Sparkline";
-import { Contador, Entrada } from "../Movimiento";
+import { Contador, useDeslizable } from "../Movimiento";
 import { IconoDerecha, IconoIzquierda, IconoPausa, IconoSeguir } from "../Iconos";
-import { Modal } from "../ui";
 import { Redireccion } from "../Redireccion";
-import { Buscar, Oraciones } from "./Oraciones";
+import { Oraciones } from "./Oraciones";
 import { BloqueParte } from "./BloqueParte";
-import { Tarjeta } from "./Plantillas";
+import { Buscador } from "../sistema/Buscador";
+import { Capitulo } from "../sistema/Capitulo";
+import { Delta } from "../sistema/Delta";
+import { Lamina, Laminas } from "../sistema/Lamina";
 import { nf1 } from "@/lib/formato";
 import type { Comparacion, Comparaciones } from "@/lib/plantillas";
 import { ORGANISMOS } from "@/lib/fuentes";
 import type { Expr, Motor, SerieMeta } from "@/lib/motor";
 import { comparaciones, crearPlantillas, distanciaRecord, evaluar, interanualTxt, hrefPlantilla, plantillaDeExpr, plantillaSuelta, type Evaluada, type Plantilla } from "@/lib/plantillas";
 import { TEMAS, hrefHistorico, idsDe, principalesDe, type Tema } from "@/lib/temas";
+import { MAS_BUSCADOS } from "@/lib/busqueda";
+import { GRUPOS_SECCIONES, seccionesDe } from "@/lib/secciones";
 import { useParams } from "@/lib/url";
 import { PLACAS } from "@/lib/datos-fijos";
 
@@ -46,27 +50,9 @@ const CIFRAS: DefCifra[] = [
   { titulo: "Dólar blue, en pesos de hoy", e: PLACAS.dolarBlue, fuente: "Ámbito y Bluelytics" },
 ];
 
-/** Las demás secciones del sitio, para quien quiere buscar sus propias variables o combinarlas: [carpeta, nombre, para qué sirve].
- *  El orden de Presidentes es el del menú (Por presidente, Meses de mandato, Herencia, Ranking, Elecciones, Congreso). */
-const SECCIONES_INICIO: [string, string, string][] = [
-  ["historico", "Histórico", "Elegí cualquier dato y mirá cómo cambió en el tiempo, solo o comparado con otros."],
-  ["presidentes", "Por presidente", "Fijate qué pasó con un dato en el mandato de cada presidente."],
-  ["mandato", "Meses de mandato", "Poné a todos los presidentes en la misma largada y compará mes a mes."],
-  ["herencia", "Herencia", "Cómo estaba cada dato cuando asumió cada presidente y cómo lo dejó."],
-  ["ranking", "Ranking", "Ordená a los presidentes según cómo cambió cada dato en su mandato."],
-  ["elecciones", "Elecciones", "Mirá qué datos de la economía se movieron junto con el voto en cada elección."],
-  ["congreso", "Gobierno y Congreso", "Bancas, leyes, decretos y vetos de cada gobierno."],
-  ["contexto", "Contexto internacional", "Compará a la Argentina con otros países y con los precios del mundo."],
-  ["semaforo", "Semáforo de actividad", "Los indicadores de actividad en una tabla: cuáles subieron y cuáles bajaron cada mes."],
-  ["gasto", "En qué gasta la Nación", "Cuánto gastó el Estado nacional cada año: para qué, quién, en qué y dónde, presupuestado y ejecutado."],
-  ["universidades", "Cuánto reciben las universidades", "Lo que la Nación transfiere a cada universidad nacional, año por año, y cómo se controla."],
-  ["provincias", "Cuánto gasta la Nación en cada provincia", "El gasto que la Nación declara en cada provincia, por habitante y en pesos de hoy."],
-  ["plantillas", "Gráficos listos", "Gráficos ya armados para abrir, cambiar y compartir."],
-];
-
 /** Verdadero cuando el elemento entra (o está por entrar) en pantalla. */
-function useVisible() {
-  const ref = useRef<HTMLDivElement>(null);
+function useVisible<T extends HTMLElement = HTMLDivElement>() {
+  const ref = useRef<T>(null);
   const [visible, setVisible] = useState(false);
   useEffect(() => {
     const el = ref.current;
@@ -83,11 +69,12 @@ interface ItemCifra { d: DefCifra; p: Plantilla; ev: Evaluada | null; extra: Ext
 
 /** Una comparación de la placa: de cuándo es, el valor de entonces y cuánto cambió hasta hoy (con signo, texto y color). */
 function FilaComp({ c }: { c: Comparacion }) {
+  const dir = c.variacion.startsWith("+") ? 1 : /^[-−]/.test(c.variacion) ? -1 : 0;
   return (
     <li className="placa-comp" aria-label={`${c.rotulo}, ${c.fecha}: ${c.valor}. Cambio hasta hoy: ${c.variacion}`}>
       <span className="placa-comp-rot">{c.rotulo} ({c.fecha})</span>
       <b>{c.valor}</b>
-      <span className={`placa-var ${c.cls}`}>{c.variacion}</span>
+      <Delta en="placa" texto={c.variacion} tono={c.cls} dir={dir} />
     </li>
   );
 }
@@ -118,6 +105,7 @@ function Carrusel({ plantillas }: { plantillas: Plantilla[] }) {
   const [conFoco, setConFoco] = useState(false);      // foco del teclado adentro
   const [enPantalla, setEnPantalla] = useState(false);
   const [quieta, setQuieta] = useState(true);         // la página no se está deslizando
+  const [tactil, setTactil] = useState(false);        // celular o pantalla táctil: no avanza solo (R5), se desliza con el dedo
   const [reinicio, setReinicio] = useState(0);        // cambia cada vez que hay que volver a contar el intervalo desde cero
   const destino = useRef<{ k: number; hasta: number } | null>(null);   // placa a la que se está yendo por código
   const n = items.length;
@@ -139,6 +127,14 @@ function Carrusel({ plantillas }: { plantillas: Plantilla[] }) {
     };
     window.addEventListener("scroll", alDeslizarPagina, { passive: true });
     return () => { window.removeEventListener("scroll", alDeslizarPagina); window.clearTimeout(t); };
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767.98px), (pointer: coarse)");
+    const f = () => setTactil(mq.matches);
+    f();
+    mq.addEventListener("change", f);
+    return () => mq.removeEventListener("change", f);
   }, []);
 
   const izquierdaDe = (k: number) => {
@@ -168,21 +164,22 @@ function Carrusel({ plantillas }: { plantillas: Plantilla[] }) {
     if (p.scrollLeft >= p.scrollWidth - p.clientWidth - 2) mejor = Math.max(mejor, activa);   // al final de la pista las últimas no llegan al borde izquierdo
     if (mejor !== activa) setActiva(mejor);
   };
-  const corre = listo && !pausa && !encima && !conFoco && enPantalla && quieta;
+  const corre = listo && !pausa && !encima && !conFoco && enPantalla && quieta && !tactil;
 
   return (
     <div className="carrusel" ref={raiz} aria-roledescription="carrusel" aria-label="Los datos más buscados"
       onMouseEnter={() => setEncima(true)} onMouseLeave={() => setEncima(false)}
       onFocus={() => setConFoco(true)} onBlur={(ev) => { if (!ev.currentTarget.contains(ev.relatedTarget as Node | null)) setConFoco(false); }}>
       <div className="ancho carrusel-cab">
-        <h2 id="mas-buscados">Los datos más buscados</h2>
-        <div className="carrusel-ctrl">
-          <button type="button" className="btn-icono pausa" aria-pressed={pausa} aria-label={pausa ? "Seguir pasando los datos" : "Pausar el carrusel"} onClick={() => setPausa(!pausa)}>
-            {pausa ? <IconoSeguir /> : <IconoPausa />}
-          </button>
-          <button type="button" className="btn-icono" aria-label="Dato anterior" onClick={() => ir(activa - 1)}><IconoIzquierda /></button>
-          <button type="button" className="btn-icono" aria-label="Dato siguiente" onClick={() => ir(activa + 1)}><IconoDerecha /></button>
-        </div>
+        <Capitulo id="mas-buscados" titulo="Los datos más buscados" acciones={
+          <div className="carrusel-ctrl">
+            {!tactil && <button type="button" className="btn-icono pausa" aria-pressed={pausa} aria-label={pausa ? "Seguir pasando los datos" : "Pausar el carrusel"} onClick={() => setPausa(!pausa)}>
+              {pausa ? <IconoSeguir /> : <IconoPausa />}
+            </button>}
+            <button type="button" className="btn-icono" aria-label="Dato anterior" onClick={() => ir(activa - 1)}><IconoIzquierda /></button>
+            <button type="button" className="btn-icono" aria-label="Dato siguiente" onClick={() => ir(activa + 1)}><IconoDerecha /></button>
+          </div>
+        } />
       </div>
       <div className="ancho segmentos" data-corre={corre}>
         {items.map((it, k) => (
@@ -221,38 +218,64 @@ function Carrusel({ plantillas }: { plantillas: Plantilla[] }) {
   );
 }
 
+/** Cada fila se toca entera. Si el dato principal del tema es el de una placa, se usa la expresión de la placa: la misma serie no sale con dos medidas distintas (C3). */
 function FilaTema({ t, S }: { t: Tema; S: Record<string, SerieMeta> }) {
   const { motor, cargar, archivosDe, version } = useDatos();
-  const { ref, visible } = useVisible();
-  const [abierto, setAbierto] = useState(false);
-  const [largo, setLargo] = useState(false);
+  const { ref, visible } = useVisible<HTMLAnchorElement>();
   const primero = useMemo(() => principalesDe(t, S)[0], [t, S]);
-  useEffect(() => { if (visible && primero) cargar(archivosDe(idsDe(primero))); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [visible, primero]);
-  const ev = useMemo(() => (visible && motor && primero ? evaluar(motor, plantillaSuelta("t-" + t.slug, primero.nombre, primero)) : null),
+  const expr = useMemo<Expr | undefined>(() => (primero ? Object.values(PLACAS).find((x) => x.id === primero.id) ?? primero : undefined), [primero]);
+  useEffect(() => { if (visible && expr) cargar(archivosDe(idsDe(expr))); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [visible, expr]);
+  const ev = useMemo(() => {
+    if (!visible || !motor || !primero || !expr) return null;
+    return evaluar(motor, plantillaSuelta("t-" + t.slug, primero.nombre, expr)) ?? (expr !== primero ? evaluar(motor, plantillaSuelta("t-" + t.slug, primero.nombre, primero)) : null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [visible, motor, primero, version]);
-  const cerrar = () => { setAbierto(false); setLargo(false); };
+  }, [visible, motor, primero, expr, version]);
+  const desde = motor ? motor.idxDe("2003-01") : 0;
   return (
-    <div className="fila-tema" ref={ref}>
-      <Link prefetch={false} href={`/tema/${t.slug}/`} className="fila-tema-link" aria-label={`Ir al tema: ${t.nombre}`}>
+    <Link prefetch={false} href={`/tema/${t.slug}/`} className="fila-tema" ref={ref} aria-label={`Ir al tema: ${t.nombre}`}>
+      <span className="fila-tema-textos">
         <span className="nombre-tema">{t.nombre}</span>
-        <span className="dato-tema">{ev && primero ? <><b><Contador texto={ev.val} /></b><small>{primero.nombre} · {ev.fecha}</small></> : null}</span>
-        <IconoDerecha />
-      </Link>
-      <button type="button" className="btn-icono que-es" aria-label={`Qué es: ${t.nombre}`} onClick={() => setAbierto(true)}>?</button>
-      {abierto && (
-        <Modal titulo={t.nombre} onCerrar={cerrar}>
-          <div className="info-cuerpo">
-            <h2>{t.nombre}</h2>
-            <p>{t.corto}</p>
-            <button type="button" className="ver-mas" aria-expanded={largo} onClick={() => setLargo(!largo)}>{largo ? "ver menos" : "ver más"}</button>
-            {largo && <div className="info-larga" dangerouslySetInnerHTML={{ __html: t.largo }} />}
-          </div>
-          <footer>
-            <Link prefetch={false} className="btn" href={`/tema/${t.slug}/`}>Ir a la página del tema</Link>
-          </footer>
-        </Modal>
-      )}
+        <span className="corto-tema">{t.corto}</span>
+      </span>
+      <span className="dato-tema">{ev && primero ? <><b><Contador texto={ev.val} /></b><small>{primero.corto}{expr && expr !== primero && expr.med !== primero.med && expr.med === "via" ? ", interanual" : ""} · {ev.fecha}</small></> : null}</span>
+      <span className="mini-tema" aria-hidden="true">{ev ? <Sparkline v={ev.v} desde={desde} /> : null}</span>
+      <IconoDerecha />
+    </Link>
+  );
+}
+
+/** Los gráficos listos destacados: los datos se piden recién cuando el bloque está por entrar en pantalla. */
+function Destacadas({ lista }: { lista: Plantilla[] }) {
+  const { motor, cargar, archivosDe, version } = useDatos();
+  const { ref, visible } = useVisible<HTMLDivElement>();
+  const clave = lista.map((p) => p.id).join("|");
+  useEffect(() => { if (visible) cargar(archivosDe(lista.flatMap((p) => p.ids))); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [visible, clave]);
+  const evs = useMemo(() => lista.map((pl) => (visible && motor ? evaluar(motor, pl) : null)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [visible, motor, clave, version]);
+  const desde = motor ? motor.idxDe("2003-01") : 0;
+  return (
+    <div ref={ref}>
+      <Laminas etiqueta="Gráficos listos destacados">
+        {lista.map((pl, k) => {
+          const ev = evs[k];
+          return <Lamina key={pl.id} titulo={pl.titulo} cifra={ev?.val} fecha={ev?.fecha} v={ev?.v ?? []} desde={desde} tono={ev?.cls} href={hrefPlantilla(pl, ev?.vista)} />;
+        })}
+      </Laminas>
+    </div>
+  );
+}
+
+/** "Lo más buscado" de la apertura: links a las fichas, en una fila que se desliza. */
+function MasBuscado() {
+  const lista = useRef<HTMLUListElement>(null);
+  useDeslizable(lista);
+  return (
+    <div className="mas-buscados">
+      <span className="mas-buscados-rotulo" id="mas-buscado-r">Ir directo a</span>
+      <ul className="mas-buscados-lista" ref={lista} aria-labelledby="mas-buscado-r">
+        {MAS_BUSCADOS.map((m) => <li key={m.slug}><Link prefetch={false} href={`/dato/${m.slug}/`} className="chip-buscado">{m.titulo}</Link></li>)}
+      </ul>
     </div>
   );
 }
@@ -260,14 +283,12 @@ function FilaTema({ t, S }: { t: Tema; S: Record<string, SerieMeta> }) {
 export function Inicio() {
   const [p, , montado] = useParams();
   const { listo, metas, errorGeneral } = useDatos();
-  const [aviso, setAviso] = useState<string | null>(null);
   const S = useMemo(() => Object.fromEntries(metas.map((s) => [s.id, s])), [metas, listo]);   // eslint-disable-line react-hooks/exhaustive-deps
   const plantillas = useMemo(() => (listo ? crearPlantillas(metas) : []), [listo, metas]);
   const destacadas = useMemo(() => plantillas.filter((x) => x.grupo === "Destacados").slice(0, 6), [plantillas]);
 
   // Los links viejos a "/" traían parámetros de Histórico: se mandan allá con los mismos parámetros.
   if (montado && [...p.keys()].some((k) => !/^(utm_|fbclid$|gclid$)/.test(k))) return <Redireccion a="/historico/" />;
-  const mostrar = (a: string | null) => { setAviso(a); if (a) setTimeout(() => setAviso(null), 4000); };
 
   return (
     <div className="inicio">
@@ -275,57 +296,72 @@ export function Inicio() {
         <div className="ancho">
           <h1 className="titular">¿Cansado de que en redes hablen <em>sin datos?</em></h1>
           <p className="bajada">Buscá el dato, comparalo en el tiempo, entre presidentes y con el mundo.</p>
-          <Buscar plantillas={plantillas} S={S} listo={listo} />
+          <div className="apertura-buscar">
+            <Buscador sinAtajos />
+            <MasBuscado />
+          </div>
           <p className="lema"><strong>Datos de Argentina, en debate.</strong> Oficiales, sin opinión y actualizados todos los días.</p>
         </div>
       </header>
 
       {errorGeneral ? <div className="ancho"><p className="error" role="alert">{errorGeneral}</p></div> : <Carrusel plantillas={plantillas} />}
 
-      <Entrada className="bloque ancho">
-        <h2 id="temas">¿Qué datos te interesan?</h2>
-        <div className="temas">{TEMAS.map((t) => <FilaTema key={t.slug} t={t} S={S} />)}</div>
-      </Entrada>
+      <div className="bloque ancho">
+        <Capitulo id="temas" titulo="¿Qué datos te interesan?">
+          <div className="temas">{TEMAS.map((t) => <FilaTema key={t.slug} t={t} S={S} />)}</div>
+        </Capitulo>
+      </div>
 
       <BloqueParte />
 
-      <Entrada className="bloque ancho">
-        <h2>Preguntale a los datos</h2>
-        <p className="bajada-bloque">Armá la pregunta eligiendo las palabras subrayadas y tocá Ver.</p>
-        {listo ? <Oraciones S={S} /> : <p className="note oraciones-espera">Cargando…</p>}
-      </Entrada>
+      <div className="bloque ancho">
+        <Capitulo id="preguntale" titulo="Preguntale a los datos">
+          {listo ? <Oraciones S={S} /> : <p className="note oraciones-espera">Cargando…</p>}
+        </Capitulo>
+      </div>
 
-      <Entrada className="bloque ancho">
-        <h2 id="secciones">Armá tu propia consulta</h2>
-        <p className="bajada-bloque">Para quien quiere buscar sus propias variables o combinarlas: cada sección sirve para algo distinto.</p>
-        <ul className="secciones-inicio">
-          {SECCIONES_INICIO.map(([carpeta, nombre, para]) => (
-            <li key={carpeta}>
-              <h3>{nombre}</h3>
-              <p>{para}</p>
-              <Link prefetch={false} className="btn" href={`/${carpeta}/`} aria-label={`Abrir ${nombre}`}>Abrir</Link>
-            </li>
-          ))}
-        </ul>
-      </Entrada>
+      <div className="bloque ancho">
+        <Capitulo id="secciones" titulo="Todas las secciones" bajada="Para quien quiere buscar sus propias variables o combinarlas: cada sección sirve para algo distinto.">
+          <div className="indice-secciones">
+            {GRUPOS_SECCIONES.map((g) => {
+              const filas = seccionesDe(g.id).filter((s) => s.carpeta !== "plantillas");
+              return (
+                <section key={g.id} className="indice-grupo" aria-labelledby={`ind-${g.id}`}>
+                  <h3 id={`ind-${g.id}`}>{g.titulo}</h3>
+                  <ul>
+                    {filas.map((s) => (
+                      <li key={s.carpeta}>
+                        <Link prefetch={false} href={`/${s.carpeta}/`} className="indice-fila">
+                          <span className="indice-textos"><b>{s.nombre}</b><small>{s.para}</small></span>
+                          <IconoDerecha />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              );
+            })}
+          </div>
+        </Capitulo>
+      </div>
 
       {destacadas.length > 0 && (
-        <Entrada className="bloque ancho">
-          <h2>Gráficos listos destacados</h2>
-          <p className="bajada-bloque">Gráficos ya armados para abrir y compartir.</p>
-          {aviso && <p className="aviso-link" role="status">{aviso}</p>}
-          <div className="curios">{destacadas.map((pl) => <Tarjeta key={pl.id} pl={pl} onAviso={mostrar} />)}</div>
-        </Entrada>
+        <div className="bloque ancho">
+          <Capitulo id="destacados" titulo="Gráficos listos destacados" bajada="Gráficos ya armados para abrir y compartir.">
+            <Destacadas lista={destacadas} />
+            <p className="ver-todos"><Link prefetch={false} href="/plantillas/" className="btn">Ver todos los gráficos listos</Link></p>
+          </Capitulo>
+        </div>
       )}
 
-      <Entrada className="todo-fuente">
+      <section className="todo-fuente">
         <div className="ancho">
           <h2>Todo tiene fuente</h2>
           <ul className="organismos">{ORGANISMOS.map((o) => <li key={o}>{o}</li>)}</ul>
           <p className="por-que">Para discutir la economía con datos y no con sensaciones, y para que cualquiera pueda chequear lo que se dice. Todo sale de fuentes oficiales, sin interpretaciones ni opinión. Cada número se puede abrir, comparar y compartir, y todo se actualiza solo cada día.</p>
           <p className="acciones-vista"><Link prefetch={false} className="btn tinta" href="/fuentes/">Ver las fuentes</Link></p>
         </div>
-      </Entrada>
+      </section>
     </div>
   );
 }

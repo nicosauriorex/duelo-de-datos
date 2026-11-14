@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Archivo } from "next/font/google";
 import "./globals.css";
 import { DatosProvider, Errores } from "@/components/DatosProvider";
-import { Barra, CabeceraPagina, PieSitio } from "@/components/Nav";
+import { Barra, CabeceraPagina, NavegacionGlobal, PieSitio } from "@/components/Nav";
 import { ConfigProvider } from "@/components/ConfigProvider";
 import { SCRIPT_TEMA } from "@/lib/config";
 import { DESCRIPCION_SITIO, IMAGEN_SITIO, NOMBRE_SITIO, SITIO_URL, metaCompartir } from "@/lib/previas";
@@ -31,7 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Barra />
           <main id="contenido">
             <noscript><p className="aviso-js">Esta página necesita JavaScript para mostrar los gráficos y las tablas.</p></noscript>
-            <DatosProvider><Errores /><CabeceraPagina />{children}</DatosProvider>
+            <DatosProvider><Errores /><CabeceraPagina />{children}<NavegacionGlobal /></DatosProvider>
           </main>
           <PieSitio />
         </ConfigProvider>

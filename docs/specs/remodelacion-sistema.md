@@ -1,6 +1,6 @@
 # Remodelación, Fase 2: sistema de diseño
 
-Estado: implementada y verificada en local (2026-11-13), esperando la aprobación del usuario. Sale de `docs/AUDITORIA-DISENO-2026-11-13.md` y D-023.
+Estado: implementada (2026-11-13), aprobada por el usuario y publicada (177619c). Sale de `docs/AUDITORIA-DISENO-2026-11-13.md` y D-023.
 
 ## Objetivo
 Llevar "La Transmisión" de la portada a todo el sitio con un juego chico de componentes compartidos. En esta fase **no se toca ninguna página existente**: se crean los componentes y una página de muestra `/sistema/` (sin link desde el menú, fuera del sitemap y con `robots: noindex`), en la que el usuario los aprueba antes de aplicarlos en las etapas 3.1 a 3.5.

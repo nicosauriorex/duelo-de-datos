@@ -6,6 +6,11 @@ import { usePathname } from "next/navigation";
 import { BotonConfig } from "./ConfigProvider";
 import { useDeslizable } from "./Movimiento";
 import { IconoAbajo, IconoVolver } from "./Iconos";
+import { IconoBuscar } from "./sistema/iconos";
+import { BarraInferior } from "./sistema/BarraInferior";
+import { BuscadorGlobal } from "./sistema/BuscadorGlobal";
+import { Hoja } from "./sistema/Hoja";
+import { MenuMas } from "./sistema/MenuMas";
 import { ORGANISMOS } from "@/lib/fuentes";
 
 /** Las 5 secciones del menú: [carpeta, nombre]. */
@@ -85,6 +90,7 @@ export function Barra() {
             );
           })}
         </nav>
+        <button type="button" className="buscar-btn" aria-haspopup="dialog" aria-keyshortcuts="/" onClick={abrirBuscador}><IconoBuscar /><span>Buscar</span></button>
         <BotonConfig />
       </div>
       {enPres && (
@@ -93,6 +99,46 @@ export function Barra() {
         </nav>
       )}
     </header>
+  );
+}
+
+/** El buscador global se abre desde la barra de arriba (computadora), la barra de abajo (celular) o la tecla "/": un evento lo avisa. */
+const EVENTO_BUSCAR = "pld:buscar";
+const abrirBuscador = () => window.dispatchEvent(new Event(EVENTO_BUSCAR));
+
+/** Qué marca la barra inferior: Inicio en la portada y los temas, Histórico en el Histórico y las fichas, Presidentes en todo su grupo. */
+function actualInferior(ruta: string): string {
+  const c = carpetaDe(ruta);
+  if (ruta === "/" || c === "tema") return "inicio";
+  if (c === "historico" || c === "dato") return "historico";
+  if (GRUPO_PRES.has(c)) return "presidentes";
+  return "otra";
+}
+
+/** Navegación del celular (barra inferior, D-023) y buscador global. Va dentro de `DatosProvider`: el buscador usa los datos. */
+export function NavegacionGlobal() {
+  const ruta = usePathname() || "/";
+  const [buscar, setBuscar] = useState(false);
+  const [mas, setMas] = useState(false);
+  useEffect(() => {
+    const abrir = () => { setMas(false); setBuscar(true); };
+    const tecla = (ev: KeyboardEvent) => {
+      if (ev.key !== "/" || ev.metaKey || ev.ctrlKey || ev.altKey) return;
+      const t = ev.target as HTMLElement | null;
+      if (t && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName))) return;   // escribiendo en un campo: "/" es una letra más
+      if (document.querySelector('[role="dialog"]')) return;   // con una ventana abierta, no se abre otra encima
+      ev.preventDefault(); abrir();
+    };
+    window.addEventListener(EVENTO_BUSCAR, abrir);
+    document.addEventListener("keydown", tecla);
+    return () => { window.removeEventListener(EVENTO_BUSCAR, abrir); document.removeEventListener("keydown", tecla); };
+  }, []);
+  return (
+    <>
+      <BarraInferior actual={actualInferior(ruta)} onBuscar={() => setBuscar(true)} onMas={() => setMas(true)} />
+      <BuscadorGlobal abierto={buscar} onCerrar={() => setBuscar(false)} />
+      <Hoja titulo="Más secciones" abierta={mas} onCerrar={() => setMas(false)}><MenuMas actual={carpetaDe(ruta)} /></Hoja>
+    </>
   );
 }
 
