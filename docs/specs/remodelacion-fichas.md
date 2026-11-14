@@ -1,6 +1,6 @@
 # Remodelación, etapa 3.2: fichas de indicadores
 
-Estado: implementada en local (2026-11-13), sin commitear; falta la aprobación del usuario. Sale de `docs/AUDITORIA-DISENO-2026-11-13.md` (sección "Ficha de un dato", C1, C2 y C5), D-023 y el sistema de `docs/specs/remodelacion-sistema.md` (componentes en `web/components/sistema/`).
+Estado: implementada (2026-11-13) y publicada (4d2ad2c). Sale de `docs/AUDITORIA-DISENO-2026-11-13.md` (sección "Ficha de un dato", C1, C2 y C5), D-023 y el sistema de `docs/specs/remodelacion-sistema.md` (componentes en `web/components/sistema/`).
 
 ## Objetivo
 Que la ficha de un dato (`/dato/<slug>/`, `/dato/?v=…` y la ficha dentro de cada tema) cuente su historia en capítulos cortos, cada uno con su pregunta, y que deje de mostrar dos números engañosos con las tasas: el "precio teórico" de Meses de mandato (C1) y la "variación" entre dos meses sueltos como dato principal de la tabla por presidente (C2). Ninguna URL cambia de significado: los links compartidos siguen abriendo el mismo dato.
